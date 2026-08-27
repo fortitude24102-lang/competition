@@ -6,7 +6,7 @@
 
 **Architecture:** Portable JDK and sbt run directly on Windows. MSYS2 UCRT64 supplies Verilator without WSL or Docker. A project PowerShell script configures the current shell, while persistent user variables make the same tools available in fresh terminals.
 
-**Tech Stack:** Eclipse Temurin JDK 17, sbt 1.12.4, Scala 2.13.18, Chisel 7.7.0, MSYS2 UCRT64, Verilator 5.050, Vivado 2019.2, PowerShell, Git
+**Tech Stack:** Eclipse Temurin JDK 17, sbt 1.12.4, Scala 2.13.18, Chisel 7.7.0, firtool 1.139.0, MSYS2 UCRT64, Verilator 5.050, Vivado 2019.2, PowerShell, Git
 
 **Spec:** `docs/superpowers/specs/2026-08-27-chisel-environment-day1-design.md`
 
@@ -16,6 +16,7 @@
 - Store source and generated RTL below `D:\ZYNQ\smallproject`.
 - Reuse Vivado 2019.2; do not copy or upgrade it.
 - Pin Scala 2.13.18, Chisel 7.7.0, and sbt 1.12.4.
+- Pin firtool 1.139.0 and select it with `CHISEL_FIRTOOL_PATH` so Chisel does not cache it outside D:.
 - Use persistent user environment variables; do not require administrator access.
 - Stop at Day 0-1: no CPU, bus, memory map, accelerator registers, or video RTL.
 
@@ -25,23 +26,22 @@
 
 **Files:**
 - Create: `scripts/chisel-env.ps1`
+- Create: `scripts/verify-day1.ps1`
 - Create: `docs/chisel_env.md`
 
 **Interfaces:**
 - Consumes: official JDK 17, sbt 1.12.4, and MSYS2 archives
 - Produces: `CHISEL_ENV_HOME`, `JAVA_HOME`, cache variables, and a current-process `PATH` containing Java, sbt, MSYS2 UCRT64, and Verilator
 
-- [ ] **Step 1: Record the failing environment check**
+- [ ] **Step 1: Write and run the failing Day 0-1 verification**
 
-Run from a fresh PowerShell process:
+Create `scripts/verify-day1.ps1` as an end-to-end check that loads `chisel-env.ps1`, confirms required commands, regenerates `Blink.sv`, checks its top-level contract, and runs Verilator lint. Run it before implementation:
 
 ```powershell
-java -version
-sbt --version
-verilator --version
+.\scripts\verify-day1.ps1
 ```
 
-Expected: each command is currently missing.
+Expected: FAIL because `scripts/chisel-env.ps1` and the toolchain do not exist yet.
 
 - [ ] **Step 2: Download and unpack the portable tools**
 
@@ -51,9 +51,10 @@ Create `D:\Chisel-environment\downloads`, then download:
 https://api.adoptium.net/v3/binary/latest/17/ga/windows/x64/jdk/hotspot/normal/eclipse
 https://github.com/sbt/sbt/releases/download/v1.12.4/sbt-1.12.4.zip
 https://github.com/msys2/msys2-installer/releases/download/nightly-x86_64/msys2-base-x86_64-latest.sfx.exe
+https://github.com/llvm/circt/releases/download/firtool-1.139.0/firrtl-bin-windows-x64.zip
 ```
 
-Unpack JDK to `D:\Chisel-environment\jdk-17`, sbt to `D:\Chisel-environment\sbt`, and MSYS2 to `D:\Chisel-environment\msys64`.
+Unpack JDK to `D:\Chisel-environment\jdk-17`, sbt to `D:\Chisel-environment\sbt`, MSYS2 to `D:\Chisel-environment\msys64`, and firtool to `D:\Chisel-environment\firtool-1.139.0`.
 
 - [ ] **Step 3: Install Verilator inside MSYS2 UCRT64**
 
@@ -256,4 +257,3 @@ Replace any planned version wording in `docs/chisel_env.md` with the versions pr
 git add docs/chisel_env.md
 git commit -m "docs(chisel): record reproducible Day 0-1 setup"
 ```
-

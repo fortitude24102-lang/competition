@@ -9,6 +9,7 @@ Prepare a reproducible Windows Chisel environment and complete only the Day 0-1 
 - JDK: Eclipse Temurin 17 LTS, unpacked below the environment directory.
 - Build tool: sbt 1.12.4, matching the selected official Chisel template.
 - Chisel project: Scala 2.13.18 and Chisel 7.7.0, pinned in project files.
+- RTL compiler: firtool 1.139.0, the version paired with Chisel 7.7.0, stored locally and selected with `CHISEL_FIRTOOL_PATH`.
 - Simulation tool: MSYS2 UCRT64 with its packaged Verilator 5.050.
 - FPGA tool: reuse the installed Vivado 2019.2; do not copy or upgrade it.
 
