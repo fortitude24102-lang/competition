@@ -10,6 +10,7 @@
 | Chisel | 7.7.0（由工程锁定） | `chisel/build.sbt` |
 | firtool | 1.139.0 | `D:\Chisel-environment\firtool-1.139.0` |
 | Verilator | 5.050 | `D:\Chisel-environment\msys64` |
+| WSL 测试 JRE | OpenJDK 17.0.20 | `D:\Chisel-environment\wsl\java17-root` |
 | Vivado | 2019.2 | `D:\visit\Vivado\2019.2` |
 | Git | 2.55.0.windows.3 | 系统现有安装 |
 
@@ -45,12 +46,24 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-day1.ps
 
 已验证结果：Chisel 生成成功，Verilator lint 通过，Vivado RTL elaboration 为 0 Warnings、0 Critical Warnings、0 Errors。
 
+## 运行 Chisel 单元测试
+
+Chisel 官方不提供原生 Windows Verilator 仿真支持，因此单元测试通过本机已有的 Ubuntu WSL2 运行；JRE、firtool 缓存和 sbt 缓存仍位于 `D:\Chisel-environment`。
+
+```powershell
+cd D:\ZYNQ\smallproject
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\test-chisel.ps1
+```
+
+当前 `RegDemoSpec` 验证复位值、写入 `0x55` 以及禁止写入时保持原值。
+
 ## 缓存位置
 
 - Coursier：`D:\Chisel-environment\cache\coursier`
 - sbt boot：`D:\Chisel-environment\cache\sbt\boot`
 - sbt global：`D:\Chisel-environment\cache\sbt\global`
 - Ivy：`D:\Chisel-environment\cache\ivy`
+- WSL firtool：`D:\Chisel-environment\wsl\firtool-cache`
 
 ## 注意事项
 

@@ -1,5 +1,6 @@
 chisel/target/
 chisel/project/target/
+chisel/build/
 chisel/.bsp/
 chisel/.metals/
 generated/filelist.f
