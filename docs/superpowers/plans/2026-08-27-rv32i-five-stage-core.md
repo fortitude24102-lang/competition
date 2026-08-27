@@ -188,17 +188,17 @@ git commit -m "feat(cpu): define RV32I core interfaces"
 - Consumes: enums and `DecodedControl` from Task 2.
 - Produces: `Decoder.io.inst: UInt(32.W)`, `io.control: DecodedControl`, `io.immediate: UInt(32.W)`, `io.rs1/rs2/rd: UInt(5.W)`.
 
-- [ ] **Step 1: Write table-driven failing tests**
+- [x] **Step 1: Write table-driven failing tests**
 
 Use exact instruction words: `addi x1,x2,-1 = 0xfff10093`, `add x3,x1,x2 = 0x002081b3`, `lw x5,8(x6) = 0x00832283`, `sw x5,12(x6) = 0x00532623`, `beq x1,x2,8 = 0x00208463`, `jal x1,8 = 0x008000ef`, and `0xffffffff` illegal. Check register fields, sign-extended immediate, writeback selector, memory flags, and legality.
 
 Run the single spec and expect failure because `Decoder` is absent.
 
-- [ ] **Step 2: Implement opcode/funct decode with safe defaults**
+- [x] **Step 2: Implement opcode/funct decode with safe defaults**
 
 Default every instruction to `legal := false.B`, no register write, no memory request, and no branch. Decode RV32I opcode classes `LUI`, `AUIPC`, `JAL`, `JALR`, `BRANCH`, `LOAD`, `STORE`, `OP-IMM`, `OP`, `MISC-MEM`, and `SYSTEM`; reject reserved funct combinations. Generate I/S/B/U/J immediates directly from instruction fields and sign-extend to 32 bits.
 
-- [ ] **Step 3: Run decoder and full tests**
+- [x] **Step 3: Run decoder and full tests**
 
 Run:
 
@@ -209,7 +209,7 @@ powershell -ExecutionPolicy Bypass -File scripts/test-chisel.ps1
 
 Expected: all tests pass.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```powershell
 git add chisel/src/main/scala/cpu/Decoder.scala chisel/src/test/scala/cpu/DecoderSpec.scala
