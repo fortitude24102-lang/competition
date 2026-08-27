@@ -230,21 +230,21 @@ git commit -m "feat(cpu): decode the RV32I base ISA"
 - Produces: `RegFile` with `rs1/rs2`, `rd`, `writeEnable`, `writeData`, `rs1Data/rs2Data`.
 - Produces: `Execute` with selected operands, `aluOp`, `branchOp`, `pc`, `immediate`, `aluResult`, `branchTaken`, `branchTarget`.
 
-- [ ] **Step 1: Write failing register and ALU tests**
+- [x] **Step 1: Write failing register and ALU tests**
 
 Check that x0 remains zero after a write, same-cycle WB data is visible on matching read ports, ADD/SUB/SLL/SRL/SRA/SLT/SLTU results match 32-bit expectations, signed and unsigned branches differ at `0xffffffff` versus `1`, and JALR clears target bit zero.
 
-- [ ] **Step 2: Implement minimal combinational execute logic**
+- [x] **Step 2: Implement minimal combinational execute logic**
 
 Use `RegInit(VecInit(Seq.fill(32)(0.U(32.W))))` for a simple FPGA-friendly first version, two combinational reads, and one synchronous write. Implement one ALU `switch`; compute branch comparison and `pc + immediate` in parallel with the ALU. Select JALR target as `(rs1 + immediate) & "hfffffffe".U`.
 
-- [ ] **Step 3: Run focused and full tests**
+- [x] **Step 3: Run focused and full tests**
 
 Run `sbt "testOnly cpu.RegFileSpec cpu.ExecuteSpec"` through WSL, then `scripts/test-chisel.ps1`.
 
 Expected: all tests pass.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```powershell
 git add chisel/src/main/scala/cpu/RegFile.scala chisel/src/main/scala/cpu/Execute.scala chisel/src/test/scala/cpu/RegFileSpec.scala chisel/src/test/scala/cpu/ExecuteSpec.scala
