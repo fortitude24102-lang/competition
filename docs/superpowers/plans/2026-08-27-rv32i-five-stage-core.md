@@ -113,7 +113,7 @@ git commit -m "build(riscv): add local bare-metal toolchain setup"
 - Produces: `DecodedControl`, `CoreBusReq`, `CoreBusResp`, `CoreBusIO`, `CommitTrace`, `TrapTrace` bundles.
 - Produces: `TrapCause` UInt constants matching RISC-V cause numbers.
 
-- [ ] **Step 1: Write failing encoding and bundle-width tests**
+- [x] **Step 1: Write failing encoding and bundle-width tests**
 
 ```scala
 class Rv32IsaSpec extends AnyFunSpec with ChiselSim {
@@ -133,7 +133,7 @@ Import `org.scalatest.matchers.should.Matchers` and mix in `Matchers` so `should
 
 Run `powershell -ExecutionPolicy Bypass -File scripts/test-chisel.ps1` and expect compilation to fail because `cpu.Rv32Isa` does not exist.
 
-- [ ] **Step 2: Implement the exact public bundles and enums**
+- [x] **Step 2: Implement the exact public bundles and enums**
 
 ```scala
 package cpu
@@ -163,13 +163,13 @@ object TrapCause {
 
 `DecodedControl` contains `legal`, `rs1Used`, `rs2Used`, `aluOp`, `op1Sel`, `op2Sel`, `branchOp`, `memRead`, `memWrite`, `memWidth`, `memUnsigned`, `regWrite`, `wbSel`, `ecall`, and `ebreak`. `CoreBusReq` contains `addr`, `write`, `size`, `wdata`, and `wstrb`; `CoreBusResp` contains `rdata` and `error`.
 
-- [ ] **Step 3: Run all Chisel tests**
+- [x] **Step 3: Run all Chisel tests**
 
 Run `powershell -ExecutionPolicy Bypass -File scripts/test-chisel.ps1`.
 
 Expected: existing RegDemo tests and new definition tests pass.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```powershell
 git add chisel/src/main/scala/cpu chisel/src/test/scala/cpu/Rv32IsaSpec.scala
