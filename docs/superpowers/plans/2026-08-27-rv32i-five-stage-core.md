@@ -55,7 +55,7 @@
 - Produces: `/mnt/d/Chisel-environment/riscv-toolchain/usr/bin/riscv64-unknown-elf-{gcc,objcopy,objdump}`.
 - Produces: Windows environment variable `RISCV_TOOLCHAIN_HOME=D:\Chisel-environment\riscv-toolchain`.
 
-- [ ] **Step 1: Write the compiler smoke command before installation**
+- [x] **Step 1: Write the compiler smoke command before installation**
 
 Run:
 
@@ -65,7 +65,7 @@ wsl.exe -d Ubuntu -- bash -lc 'test -x /mnt/d/Chisel-environment/riscv-toolchain
 
 Expected: non-zero exit because the compiler is not installed at the required location.
 
-- [ ] **Step 2: Add the minimal extraction script**
+- [x] **Step 2: Add the minimal extraction script**
 
 ```bash
 #!/usr/bin/env bash
@@ -81,7 +81,7 @@ for package in ./*.deb; do dpkg-deb -x "$package" "$root"; done
 
 The PowerShell wrapper calls this file through Ubuntu, sets `RISCV_TOOLCHAIN_HOME` for the current user, and exits with the WSL status. Add `D:\Chisel-environment\riscv-toolchain\usr\bin` to the local `chisel-env.ps1` tool path list without removing existing entries.
 
-- [ ] **Step 3: Run setup and verify RV32I compilation**
+- [x] **Step 3: Run setup and verify RV32I compilation**
 
 Run:
 
@@ -92,7 +92,7 @@ wsl.exe -d Ubuntu -- bash -lc 'p=/mnt/d/Chisel-environment/riscv-toolchain/usr/b
 
 Expected: disassembly contains `addi` and `ebreak`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```powershell
 git add scripts/setup-riscv-toolchain.sh scripts/setup-riscv-toolchain.ps1 scripts/chisel-env.ps1

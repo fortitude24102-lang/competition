@@ -6,6 +6,7 @@ $requiredDirectories = @(
     (Join-Path $environmentRoot 'firtool-1.139.0\bin'),
     (Join-Path $environmentRoot 'msys64\ucrt64\bin'),
     (Join-Path $environmentRoot 'msys64\usr\bin'),
+    (Join-Path $environmentRoot 'riscv-toolchain\usr\bin'),
     (Join-Path $environmentRoot 'bin')
 )
 
@@ -23,6 +24,7 @@ $env:SBT_BOOT_DIRECTORY = Join-Path $environmentRoot 'cache\sbt\boot'
 $env:SBT_GLOBAL_BASE = Join-Path $environmentRoot 'cache\sbt\global'
 $env:SBT_IVY_HOME = Join-Path $environmentRoot 'cache\ivy'
 $env:VERILATOR_ROOT = Join-Path $environmentRoot 'msys64\ucrt64\share\verilator'
+$env:RISCV_TOOLCHAIN_HOME = Join-Path $environmentRoot 'riscv-toolchain'
 $env:SBT_OPTS = "-Dsbt.boot.directory=$env:SBT_BOOT_DIRECTORY -Dsbt.global.base=$env:SBT_GLOBAL_BASE -Dsbt.ivy.home=$env:SBT_IVY_HOME"
 
 $toolPaths = @(
@@ -30,6 +32,7 @@ $toolPaths = @(
     (Join-Path $env:JAVA_HOME 'bin'),
     (Join-Path $environmentRoot 'sbt\bin'),
     $env:CHISEL_FIRTOOL_PATH,
+    (Join-Path $env:RISCV_TOOLCHAIN_HOME 'usr\bin'),
     (Join-Path $environmentRoot 'msys64\ucrt64\bin'),
     (Join-Path $environmentRoot 'msys64\usr\bin')
 )
