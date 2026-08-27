@@ -263,19 +263,19 @@ git commit -m "feat(cpu): add register file and execute units"
 - Consumes: `MemWidth`, effective address, rs2 store data, and 32-bit response data.
 - Produces: `misaligned`, `wstrb`, shifted `wdata`, and sign/zero-extended `loadData`.
 
-- [ ] **Step 1: Write failing byte/half/word tests**
+- [x] **Step 1: Write failing byte/half/word tests**
 
 Test all four byte offsets for LB/LBU/SB, both legal halfword offsets for LH/LHU/SH, word offset zero for LW/SW, and misalignment at halfword offsets 1/3 and word offsets 1/2/3.
 
-- [ ] **Step 2: Implement format logic**
+- [x] **Step 2: Implement format logic**
 
 Derive byte shift from `addr(1,0) << 3`. `SB` uses `1.U << addr(1,0)`, `SH` uses `3.U << addr(1,0)`, and `SW` uses `15.U`. Select the addressed byte/halfword before applying `Cat(Fill(...), data)` sign extension.
 
-- [ ] **Step 3: Run focused and full tests**
+- [x] **Step 3: Run focused and full tests**
 
 Run `sbt "testOnly cpu.LoadStoreUnitSpec"`, then the project test script.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```powershell
 git add chisel/src/main/scala/cpu/LoadStoreUnit.scala chisel/src/test/scala/cpu/LoadStoreUnitSpec.scala
