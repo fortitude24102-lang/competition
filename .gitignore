@@ -1,0 +1,6 @@
+chisel/target/
+chisel/project/target/
+chisel/.bsp/
+chisel/.metals/
+generated/filelist.f
+generated/verification/

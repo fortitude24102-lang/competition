@@ -41,7 +41,9 @@ cd D:\ZYNQ\smallproject
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-day1.ps1
 ```
 
-验证脚本会重新生成 `Blink.sv`、检查顶层端口，并运行 Verilator lint。
+验证脚本会重新生成 `Blink.sv`、检查顶层端口、运行 Verilator lint，并用 Vivado 2019.2 针对 `xc7z015clg485-2` 做内存工程 RTL elaboration。
+
+已验证结果：Chisel 生成成功，Verilator lint 通过，Vivado RTL elaboration 为 0 Warnings、0 Critical Warnings、0 Errors。
 
 ## 缓存位置
 

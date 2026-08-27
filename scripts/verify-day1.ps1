@@ -9,6 +9,11 @@ if (-not (Test-Path -LiteralPath $environmentScript -PathType Leaf)) {
 
 . $environmentScript
 
+$malformedPathEntries = $env:Path -split ';' | Where-Object { $_ -match '^[A-Za-z_][A-Za-z0-9_]*=' }
+if ($malformedPathEntries) {
+    throw "Malformed PATH entries remain: $($malformedPathEntries -join ', ')"
+}
+
 foreach ($command in 'java', 'sbt', 'verilator', 'git', 'vivado') {
     if (-not (Get-Command $command -ErrorAction SilentlyContinue)) {
         throw "Required command is unavailable: $command"
@@ -41,6 +46,16 @@ foreach ($pattern in 'module\s+Blink', '\bclock\b', '\breset\b', '\bio_led\b') {
 & verilator --lint-only --top-module Blink $generatedRtl
 if ($LASTEXITCODE -ne 0) {
     throw "Verilator lint failed with exit code $LASTEXITCODE"
+}
+
+$vivadoCheck = Join-Path $PSScriptRoot 'vivado-check.tcl'
+if (-not (Test-Path -LiteralPath $vivadoCheck -PathType Leaf)) {
+    throw "Missing Vivado check script: $vivadoCheck"
+}
+
+& vivado -mode batch -nojournal -nolog -notrace -source $vivadoCheck -tclargs $generatedRtl
+if ($LASTEXITCODE -ne 0) {
+    throw "Vivado RTL elaboration failed with exit code $LASTEXITCODE"
 }
 
 Write-Host 'Day 0-1 verification passed.'

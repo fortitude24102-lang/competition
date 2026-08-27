@@ -34,4 +34,6 @@ $toolPaths = @(
     (Join-Path $environmentRoot 'msys64\usr\bin')
 )
 
-$env:Path = (($toolPaths + ($env:Path -split ';')) | Where-Object { $_ } | Select-Object -Unique) -join ';'
+$env:Path = (($toolPaths + ($env:Path -split ';')) |
+    Where-Object { $_ -and $_ -notmatch '^[A-Za-z_][A-Za-z0-9_]*=' } |
+    Select-Object -Unique) -join ';'
