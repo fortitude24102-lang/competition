@@ -54,7 +54,8 @@ module Queue2_FetchPacket(	// src/main/scala/chisel3/util/Queue.scala:60:7
                 io_deq_ready,	// src/main/scala/chisel3/util/Queue.scala:72:14
   output        io_deq_valid,	// src/main/scala/chisel3/util/Queue.scala:72:14
   output [31:0] io_deq_bits_pc,	// src/main/scala/chisel3/util/Queue.scala:72:14
-                io_deq_bits_inst	// src/main/scala/chisel3/util/Queue.scala:72:14
+                io_deq_bits_inst,	// src/main/scala/chisel3/util/Queue.scala:72:14
+  input         io_flush	// src/main/scala/chisel3/util/Queue.scala:72:14
 );
 
   wire [63:0] _ram_ext_R0_data;	// src/main/scala/chisel3/util/Queue.scala:73:91
@@ -73,12 +74,9 @@ module Queue2_FetchPacket(	// src/main/scala/chisel3/util/Queue.scala:60:7
     end
     else begin	// src/main/scala/chisel3/util/Queue.scala:60:7
       automatic logic do_deq = io_deq_ready & ~empty;	// src/main/scala/chisel3/util/Queue.scala:78:25, :102:19, src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-      if (do_enq)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-        enq_ptr_value <= enq_ptr_value - 1'h1;	// src/main/scala/chisel3/util/Counter.scala:61:40, :77:24
-      if (do_deq)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-        deq_ptr_value <= deq_ptr_value - 1'h1;	// src/main/scala/chisel3/util/Counter.scala:61:40, :77:24
-      if (do_enq != do_deq)	// src/main/scala/chisel3/util/Queue.scala:76:27, :93:{15,27}, :94:16, src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-        maybe_full <= do_enq;	// src/main/scala/chisel3/util/Queue.scala:76:27, src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
+      enq_ptr_value <= ~io_flush & (do_enq ? enq_ptr_value - 1'h1 : enq_ptr_value);	// src/main/scala/chisel3/util/Counter.scala:61:40, :77:{15,24}, :98:11, src/main/scala/chisel3/util/Queue.scala:86:16, :96:15, src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
+      deq_ptr_value <= ~io_flush & (do_deq ? deq_ptr_value - 1'h1 : deq_ptr_value);	// src/main/scala/chisel3/util/Counter.scala:61:40, :77:{15,24}, :98:11, src/main/scala/chisel3/util/Queue.scala:86:16, :90:16, :96:15, src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
+      maybe_full <= ~io_flush & (do_enq == do_deq ? maybe_full : do_enq);	// src/main/scala/chisel3/util/Counter.scala:98:11, src/main/scala/chisel3/util/Queue.scala:76:27, :86:16, :93:{15,27}, :94:16, :96:15, :99:16, src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
     end
   end // always @(posedge)
   `ifdef ENABLE_INITIAL_REG_	// src/main/scala/chisel3/util/Queue.scala:60:7

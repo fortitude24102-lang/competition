@@ -7,7 +7,8 @@ module Decoder(	// src/main/scala/cpu/Decoder.scala:6:7
   output [3:0]  io_control_aluOp,	// src/main/scala/cpu/Decoder.scala:7:14
   output [1:0]  io_control_op1Sel,	// src/main/scala/cpu/Decoder.scala:7:14
   output        io_control_op2Sel,	// src/main/scala/cpu/Decoder.scala:7:14
-                io_control_memRead,	// src/main/scala/cpu/Decoder.scala:7:14
+  output [3:0]  io_control_branchOp,	// src/main/scala/cpu/Decoder.scala:7:14
+  output        io_control_memRead,	// src/main/scala/cpu/Decoder.scala:7:14
                 io_control_regWrite,	// src/main/scala/cpu/Decoder.scala:7:14
   output [1:0]  io_control_wbSel,	// src/main/scala/cpu/Decoder.scala:7:14
   output [31:0] io_immediate,	// src/main/scala/cpu/Decoder.scala:7:14
@@ -16,107 +17,114 @@ module Decoder(	// src/main/scala/cpu/Decoder.scala:6:7
                 io_rd	// src/main/scala/cpu/Decoder.scala:7:14
 );
 
+  wire [7:0][3:0] _GEN = '{4'h6, 4'h5, 4'h4, 4'h3, 4'h0, 4'h0, 4'h2, 4'h1};	// src/main/scala/cpu/Decoder.scala:32:23, :65:19, :79:22, :80:72, :81:72, :82:72, :83:72, :84:72, :85:72
   wire [31:0]     iImmediate = {{20{io_inst[31]}}, io_inst[31:20]};	// src/main/scala/cpu/Decoder.scala:20:{23,28,40,54}
-  wire            _GEN = io_inst[6:0] == 7'h37;	// src/main/scala/cpu/Decoder.scala:16:23, :38:18
-  wire            _GEN_0 = io_inst[6:0] == 7'h17;	// src/main/scala/cpu/Decoder.scala:16:23, :38:18
-  wire            _GEN_1 = io_inst[6:0] == 7'h6F;	// src/main/scala/cpu/Decoder.scala:16:23, :38:18
-  wire            _GEN_2 = io_inst[6:0] == 7'h67;	// src/main/scala/cpu/Decoder.scala:16:23, :38:18
-  wire            _GEN_3 = io_inst[14:12] == 3'h0;	// src/main/scala/cpu/Decoder.scala:17:23, :65:19
-  wire            _GEN_4 = io_inst[6:0] == 7'h63;	// src/main/scala/cpu/Decoder.scala:16:23, :38:18
-  wire            _GEN_5 = io_inst[14:12] == 3'h1;	// src/main/scala/cpu/Decoder.scala:17:23, :79:22
-  wire            _GEN_6 = io_inst[14:12] == 3'h4;	// src/main/scala/cpu/Decoder.scala:17:23, :79:22
-  wire            _GEN_7 = io_inst[14:12] == 3'h5;	// src/main/scala/cpu/Decoder.scala:17:23, :79:22
-  wire            _GEN_8 = io_inst[14:12] == 3'h6;	// src/main/scala/cpu/Decoder.scala:17:23, :79:22
-  wire            _GEN_9 = io_inst[6:0] == 7'h3;	// src/main/scala/cpu/Decoder.scala:16:23, :38:18
-  wire            _GEN_10 = _GEN_1 | _GEN_2 | _GEN_4;	// src/main/scala/cpu/Decoder.scala:30:14, :38:18
-  wire            _GEN_11 = _GEN | _GEN_0;	// src/main/scala/cpu/Decoder.scala:35:20, :38:18
-  wire            _GEN_12 = io_inst[14:12] == 3'h2;	// src/main/scala/cpu/Decoder.scala:17:23, :96:22
-  wire            _GEN_13 = io_inst[6:0] == 7'h23;	// src/main/scala/cpu/Decoder.scala:16:23, :38:18
-  wire            _GEN_14 = io_inst[6:0] == 7'h13;	// src/main/scala/cpu/Decoder.scala:16:23, :38:18
-  wire            _GEN_15 = _GEN_9 | _GEN_13;	// src/main/scala/cpu/Decoder.scala:38:18, :91:25, :108:25
-  wire            _GEN_16 = io_inst[31:25] == 7'h0;	// src/main/scala/cpu/Decoder.scala:18:23, :131:23
-  wire [3:0]      _GEN_17 = {2'h0, _GEN_16, 1'h0};	// src/main/scala/cpu/Decoder.scala:31:20, :131:{23,41}, :133:30
-  wire            _GEN_18 = io_inst[31:25] == 7'h20;	// src/main/scala/cpu/Decoder.scala:18:23, :140:29
-  wire            _GEN_19 = _GEN_16 | _GEN_18;	// src/main/scala/cpu/Decoder.scala:131:23, :137:41, :138:30, :140:{29,47}
-  wire [3:0]      _GEN_20 = _GEN_16 ? 4'h6 : _GEN_18 ? 4'h7 : 4'h0;	// src/main/scala/cpu/Decoder.scala:30:14, :31:20, :131:23, :137:41, :139:30, :140:{29,47}, :142:30
-  wire [7:0][3:0] _GEN_21 =
-    {{4'h9}, {4'h8}, {_GEN_20}, {4'h5}, {4'h4}, {4'h3}, {_GEN_17}, {4'h0}};	// src/main/scala/cpu/Decoder.scala:30:14, :31:20, :65:19, :68:29, :79:22, :96:22, :123:22, :124:69, :125:69, :126:69, :127:69, :128:69, :129:69, :131:41, :133:30, :137:41, :139:30, :140:47
-  wire            _GEN_22 = io_inst[6:0] == 7'h33;	// src/main/scala/cpu/Decoder.scala:16:23, :38:18
-  wire            _GEN_23 = _GEN | _GEN_0 | _GEN_1;	// src/main/scala/cpu/Decoder.scala:30:14, :38:18
-  wire            _GEN_24 = (_GEN_8 | (&(io_inst[14:12]))) & _GEN_16;	// src/main/scala/cpu/Decoder.scala:17:23, :79:22, :131:23, :152:22, :165:45
-  wire [7:0]      _GEN_25 =
-    {{_GEN_24},
-     {_GEN_24},
-     {_GEN_19},
-     {_GEN_16},
-     {_GEN_16},
-     {_GEN_16},
-     {_GEN_16},
-     {_GEN_19}};	// src/main/scala/cpu/Decoder.scala:65:19, :79:22, :131:23, :137:41, :138:30, :140:47, :152:22, :154:41, :157:45, :158:45, :159:45, :162:41, :165:45
-  wire [7:0][3:0] _GEN_26 =
-    {{(&(io_inst[14:12])) & _GEN_16 ? 4'h9 : 4'h0},
-     {{_GEN_16, 3'h0}},
+  wire            _GEN_0 = io_inst[6:0] == 7'h37;	// src/main/scala/cpu/Decoder.scala:16:23, :38:18
+  wire            _GEN_1 = io_inst[6:0] == 7'h17;	// src/main/scala/cpu/Decoder.scala:16:23, :38:18
+  wire            _GEN_2 = io_inst[6:0] == 7'h6F;	// src/main/scala/cpu/Decoder.scala:16:23, :38:18
+  wire            _GEN_3 = io_inst[6:0] == 7'h67;	// src/main/scala/cpu/Decoder.scala:16:23, :38:18
+  wire            _GEN_4 = io_inst[14:12] == 3'h0;	// src/main/scala/cpu/Decoder.scala:17:23, :65:19
+  wire            _GEN_5 = io_inst[6:0] == 7'h63;	// src/main/scala/cpu/Decoder.scala:16:23, :38:18
+  wire            _GEN_6 = io_inst[14:12] == 3'h1;	// src/main/scala/cpu/Decoder.scala:17:23, :79:22
+  wire            _GEN_7 = io_inst[14:12] == 3'h4;	// src/main/scala/cpu/Decoder.scala:17:23, :79:22
+  wire            _GEN_8 = io_inst[14:12] == 3'h5;	// src/main/scala/cpu/Decoder.scala:17:23, :79:22
+  wire            _GEN_9 = io_inst[14:12] == 3'h6;	// src/main/scala/cpu/Decoder.scala:17:23, :79:22
+  wire            _GEN_10 = _GEN_0 | _GEN_1;	// src/main/scala/cpu/Decoder.scala:32:23, :38:18
+  wire            _GEN_11 = io_inst[6:0] == 7'h3;	// src/main/scala/cpu/Decoder.scala:16:23, :38:18
+  wire            _GEN_12 = _GEN_2 | _GEN_3 | _GEN_5;	// src/main/scala/cpu/Decoder.scala:30:14, :38:18
+  wire            _GEN_13 = io_inst[14:12] == 3'h2;	// src/main/scala/cpu/Decoder.scala:17:23, :96:22
+  wire            _GEN_14 = io_inst[6:0] == 7'h23;	// src/main/scala/cpu/Decoder.scala:16:23, :38:18
+  wire            _GEN_15 = io_inst[6:0] == 7'h13;	// src/main/scala/cpu/Decoder.scala:16:23, :38:18
+  wire            _GEN_16 = _GEN_11 | _GEN_14;	// src/main/scala/cpu/Decoder.scala:38:18, :91:25, :108:25
+  wire            _GEN_17 = io_inst[31:25] == 7'h0;	// src/main/scala/cpu/Decoder.scala:18:23, :131:23
+  wire [3:0]      _GEN_18 = {2'h0, _GEN_17, 1'h0};	// src/main/scala/cpu/Decoder.scala:31:20, :131:{23,41}, :133:30
+  wire            _GEN_19 = io_inst[31:25] == 7'h20;	// src/main/scala/cpu/Decoder.scala:18:23, :140:29
+  wire            _GEN_20 = _GEN_17 | _GEN_19;	// src/main/scala/cpu/Decoder.scala:131:23, :137:41, :138:30, :140:{29,47}
+  wire [3:0]      _GEN_21 = _GEN_17 ? 4'h6 : _GEN_19 ? 4'h7 : 4'h0;	// src/main/scala/cpu/Decoder.scala:30:14, :31:20, :131:23, :137:41, :139:30, :140:{29,47}, :142:30
+  wire [7:0][3:0] _GEN_22 =
+    {{4'h9}, {4'h8}, {_GEN_21}, {4'h5}, {4'h4}, {4'h3}, {_GEN_18}, {4'h0}};	// src/main/scala/cpu/Decoder.scala:30:14, :31:20, :65:19, :68:29, :79:22, :96:22, :123:22, :124:69, :125:69, :126:69, :127:69, :128:69, :129:69, :131:41, :133:30, :137:41, :139:30, :140:47
+  wire            _GEN_23 = io_inst[6:0] == 7'h33;	// src/main/scala/cpu/Decoder.scala:16:23, :38:18
+  wire            _GEN_24 = _GEN_0 | _GEN_1 | _GEN_2;	// src/main/scala/cpu/Decoder.scala:30:14, :38:18
+  wire            _GEN_25 = (_GEN_9 | (&(io_inst[14:12]))) & _GEN_17;	// src/main/scala/cpu/Decoder.scala:17:23, :79:22, :131:23, :152:22, :165:45
+  wire [7:0]      _GEN_26 =
+    {{_GEN_25},
+     {_GEN_25},
      {_GEN_20},
-     {_GEN_16 ? 4'h5 : 4'h0},
-     {{1'h0, _GEN_16, 2'h0}},
-     {_GEN_16 ? 4'h3 : 4'h0},
      {_GEN_17},
-     {_GEN_16 ? 4'h0 : {3'h0, _GEN_18}}};	// src/main/scala/cpu/Decoder.scala:17:23, :30:14, :31:20, :65:19, :79:22, :96:22, :123:22, :129:69, :131:{23,41}, :133:30, :137:41, :139:30, :140:{29,47}, :152:22, :154:{41,88}, :155:{48,95}, :157:45, :158:{45,92}, :159:{45,92}, :160:{45,92}, :162:41, :165:{45,92}, :166:{45,92}
+     {_GEN_17},
+     {_GEN_17},
+     {_GEN_17},
+     {_GEN_20}};	// src/main/scala/cpu/Decoder.scala:65:19, :79:22, :131:23, :137:41, :138:30, :140:47, :152:22, :154:41, :157:45, :158:45, :159:45, :162:41, :165:45
+  wire [7:0][3:0] _GEN_27 =
+    {{(&(io_inst[14:12])) & _GEN_17 ? 4'h9 : 4'h0},
+     {{_GEN_17, 3'h0}},
+     {_GEN_21},
+     {_GEN_17 ? 4'h5 : 4'h0},
+     {{1'h0, _GEN_17, 2'h0}},
+     {_GEN_17 ? 4'h3 : 4'h0},
+     {_GEN_18},
+     {_GEN_17 ? 4'h0 : {3'h0, _GEN_19}}};	// src/main/scala/cpu/Decoder.scala:17:23, :30:14, :31:20, :65:19, :79:22, :96:22, :123:22, :129:69, :131:{23,41}, :133:30, :137:41, :139:30, :140:{29,47}, :152:22, :154:{41,88}, :155:{48,95}, :157:45, :158:{45,92}, :159:{45,92}, :160:{45,92}, :162:41, :165:{45,92}, :166:{45,92}
   wire            io_control_legal_0 =
-    _GEN_23
-    | (_GEN_2
-         ? _GEN_3
-         : _GEN_4
-             ? _GEN_3 | _GEN_5 | _GEN_6 | _GEN_7 | _GEN_8 | (&(io_inst[14:12]))
-             : _GEN_9
-                 ? _GEN_3 | _GEN_5 | _GEN_12 | _GEN_6 | _GEN_7
-                 : _GEN_13
-                     ? _GEN_3 | _GEN_5 | _GEN_12
-                     : _GEN_14
-                         ? _GEN_3 | _GEN_12 | io_inst[14:12] == 3'h3 | _GEN_6 | _GEN_8
-                           | (&(io_inst[14:12])) | (_GEN_5 ? _GEN_16 : _GEN_7 & _GEN_19)
-                         : _GEN_22
-                             ? _GEN_25[io_inst[14:12]]
+    _GEN_24
+    | (_GEN_3
+         ? _GEN_4
+         : _GEN_5
+             ? _GEN_4 | _GEN_6 | _GEN_7 | _GEN_8 | _GEN_9 | (&(io_inst[14:12]))
+             : _GEN_11
+                 ? _GEN_4 | _GEN_6 | _GEN_13 | _GEN_7 | _GEN_8
+                 : _GEN_14
+                     ? _GEN_4 | _GEN_6 | _GEN_13
+                     : _GEN_15
+                         ? _GEN_4 | _GEN_13 | io_inst[14:12] == 3'h3 | _GEN_7 | _GEN_9
+                           | (&(io_inst[14:12])) | (_GEN_6 ? _GEN_17 : _GEN_8 & _GEN_20)
+                         : _GEN_23
+                             ? _GEN_26[io_inst[14:12]]
                              : io_inst[6:0] == 7'hF
-                                 ? _GEN_3 & io_inst[19:15] == 5'h0 & io_inst[11:7] == 5'h0
+                                 ? _GEN_4 & io_inst[19:15] == 5'h0 & io_inst[11:7] == 5'h0
                                  : io_inst[6:0] == 7'h73
                                    & (io_inst == 32'h73 | io_inst == 32'h100073));	// src/main/scala/cpu/Decoder.scala:16:23, :17:23, :21:71, :26:20, :30:14, :38:18, :40:24, :49:24, :57:24, :65:{19,28}, :79:22, :80:41, :81:41, :82:41, :83:41, :84:41, :96:22, :97:41, :98:41, :99:41, :100:41, :111:22, :112:41, :113:41, :123:22, :124:41, :125:41, :126:41, :127:41, :128:41, :129:41, :131:{23,41}, :137:41, :138:30, :140:47, :152:22, :154:41, :157:45, :158:45, :159:45, :162:41, :171:{27,37,45,54,63}, :178:{20,39}, :179:26, :181:{26,45}
   assign io_control_legal = io_control_legal_0;	// src/main/scala/cpu/Decoder.scala:6:7, :38:18, :40:24, :49:24, :57:24
   assign io_control_rs1Used =
-    ~_GEN_23 & (_GEN_2 ? _GEN_3 : _GEN_4 | _GEN_9 | _GEN_13 | _GEN_14 | _GEN_22);	// src/main/scala/cpu/Decoder.scala:6:7, :30:14, :38:18, :65:{19,28}, :76:26, :90:26, :106:26, :119:26
+    ~_GEN_24 & (_GEN_3 ? _GEN_4 : _GEN_5 | _GEN_11 | _GEN_14 | _GEN_15 | _GEN_23);	// src/main/scala/cpu/Decoder.scala:6:7, :30:14, :38:18, :65:{19,28}, :76:26, :90:26, :106:26, :119:26
   assign io_control_rs2Used =
-    ~(_GEN | _GEN_0 | _GEN_1 | _GEN_2)
-    & (_GEN_4 | ~_GEN_9 & (_GEN_13 | ~_GEN_14 & _GEN_22));	// src/main/scala/cpu/Decoder.scala:6:7, :30:14, :38:18, :77:26, :107:26
+    ~(_GEN_0 | _GEN_1 | _GEN_2 | _GEN_3)
+    & (_GEN_5 | ~_GEN_11 & (_GEN_14 | ~_GEN_15 & _GEN_23));	// src/main/scala/cpu/Decoder.scala:6:7, :30:14, :38:18, :77:26, :107:26
   assign io_control_aluOp =
-    _GEN
+    _GEN_0
       ? 4'hA
-      : _GEN_0 | _GEN_1 | _GEN_2 | _GEN_4 | _GEN_15
+      : _GEN_1 | _GEN_2 | _GEN_3 | _GEN_5 | _GEN_16
           ? 4'h0
-          : _GEN_14 ? _GEN_21[io_inst[14:12]] : _GEN_22 ? _GEN_26[io_inst[14:12]] : 4'h0;	// src/main/scala/cpu/Decoder.scala:6:7, :17:23, :30:14, :31:20, :38:18, :41:24, :65:19, :79:22, :91:25, :96:22, :108:25, :123:22, :124:69, :125:69, :126:69, :127:69, :128:69, :129:69, :131:41, :137:41, :152:22, :154:41, :157:45, :158:45, :159:45, :160:45, :162:41, :165:45
-  assign io_control_op1Sel = _GEN ? 2'h2 : {1'h0, _GEN_0};	// src/main/scala/cpu/Decoder.scala:6:7, :33:21, :38:18, :42:25, :50:25
-  assign io_control_op2Sel = _GEN_11 | ~_GEN_10 & (_GEN_15 | _GEN_14);	// src/main/scala/cpu/Decoder.scala:6:7, :30:14, :34:21, :35:20, :38:18, :43:25, :51:25, :91:25, :108:25
-  assign io_control_memRead = ~(~io_control_legal_0 | _GEN | _GEN_0 | _GEN_10) & _GEN_9;	// src/main/scala/cpu/Decoder.scala:6:7, :30:14, :38:18, :40:24, :49:24, :57:24, :188:{8,27}, :190:24
+          : _GEN_15 ? _GEN_22[io_inst[14:12]] : _GEN_23 ? _GEN_27[io_inst[14:12]] : 4'h0;	// src/main/scala/cpu/Decoder.scala:6:7, :17:23, :30:14, :31:20, :38:18, :41:24, :65:19, :79:22, :91:25, :96:22, :108:25, :123:22, :124:69, :125:69, :126:69, :127:69, :128:69, :129:69, :131:41, :137:41, :152:22, :154:41, :157:45, :158:45, :159:45, :160:45, :162:41, :165:45
+  assign io_control_op1Sel = _GEN_0 ? 2'h2 : {1'h0, _GEN_1};	// src/main/scala/cpu/Decoder.scala:6:7, :33:21, :38:18, :42:25, :50:25
+  assign io_control_op2Sel = _GEN_10 | ~_GEN_12 & (_GEN_16 | _GEN_15);	// src/main/scala/cpu/Decoder.scala:6:7, :30:14, :32:23, :34:21, :38:18, :43:25, :51:25, :91:25, :108:25
+  assign io_control_branchOp =
+    ~io_control_legal_0 | _GEN_10
+      ? 4'h0
+      : _GEN_2 ? 4'h7 : _GEN_3 ? {_GEN_4, 3'h0} : _GEN_5 ? _GEN[io_inst[14:12]] : 4'h0;	// src/main/scala/cpu/Decoder.scala:6:7, :17:23, :30:14, :32:23, :38:18, :40:24, :49:24, :57:24, :58:27, :65:{19,28}, :68:29, :79:22, :80:72, :81:72, :82:72, :83:72, :84:72, :85:72, :188:{8,27}, :192:25
+  assign io_control_memRead =
+    ~(~io_control_legal_0 | _GEN_0 | _GEN_1 | _GEN_12) & _GEN_11;	// src/main/scala/cpu/Decoder.scala:6:7, :30:14, :38:18, :40:24, :49:24, :57:24, :188:{8,27}, :190:24
   assign io_control_regWrite =
     io_control_legal_0
-    & (_GEN_23 | (_GEN_2 ? _GEN_3 : ~_GEN_4 & (_GEN_9 | ~_GEN_13 & (_GEN_14 | _GEN_22))));	// src/main/scala/cpu/Decoder.scala:6:7, :30:14, :38:18, :40:24, :44:27, :49:24, :52:27, :57:24, :59:27, :65:{19,28}, :93:27, :121:27, :188:27, :189:25
+    & (_GEN_24
+       | (_GEN_3 ? _GEN_4 : ~_GEN_5 & (_GEN_11 | ~_GEN_14 & (_GEN_15 | _GEN_23))));	// src/main/scala/cpu/Decoder.scala:6:7, :30:14, :38:18, :40:24, :44:27, :49:24, :52:27, :57:24, :59:27, :65:{19,28}, :93:27, :121:27, :188:27, :189:25
   assign io_control_wbSel =
-    _GEN_11
+    _GEN_10
       ? 2'h0
-      : _GEN_1 ? 2'h2 : _GEN_2 ? {_GEN_3, 1'h0} : _GEN_4 ? 2'h0 : {1'h0, _GEN_9};	// src/main/scala/cpu/Decoder.scala:6:7, :35:20, :38:18, :42:25, :60:24, :65:{19,28}, :70:26, :94:24
+      : _GEN_2 ? 2'h2 : _GEN_3 ? {_GEN_4, 1'h0} : _GEN_5 ? 2'h0 : {1'h0, _GEN_11};	// src/main/scala/cpu/Decoder.scala:6:7, :32:23, :35:20, :38:18, :42:25, :60:24, :65:{19,28}, :70:26, :94:24
   assign io_immediate =
-    _GEN_11
+    _GEN_10
       ? {io_inst[31:12], 12'h0}
-      : _GEN_1
+      : _GEN_2
           ? {{12{io_inst[31]}}, io_inst[19:12], io_inst[20], io_inst[30:21], 1'h0}
-          : _GEN_2
-              ? (_GEN_3 ? iImmediate : 32'h0)
-              : _GEN_4
+          : _GEN_3
+              ? (_GEN_4 ? iImmediate : 32'h0)
+              : _GEN_5
                   ? {{20{io_inst[31]}}, io_inst[7], io_inst[30:25], io_inst[11:8], 1'h0}
-                  : _GEN_9
+                  : _GEN_11
                       ? iImmediate
-                      : _GEN_13
+                      : _GEN_14
                           ? {{20{io_inst[31]}}, io_inst[31:25], io_inst[11:7]}
-                          : _GEN_14 ? iImmediate : 32'h0;	// src/main/scala/cpu/Decoder.scala:6:7, :18:23, :20:{23,40}, :21:{23,28,71}, :22:{23,67,79,96}, :23:{23,31}, :24:{23,67,84,97}, :29:16, :35:20, :38:18, :45:20, :53:20, :61:20, :65:{19,28}, :71:22, :78:20, :95:20, :110:20, :122:20
+                          : _GEN_15 ? iImmediate : 32'h0;	// src/main/scala/cpu/Decoder.scala:6:7, :18:23, :20:{23,40}, :21:{23,28,71}, :22:{23,67,79,96}, :23:{23,31}, :24:{23,67,84,97}, :29:16, :32:23, :38:18, :45:20, :53:20, :61:20, :65:{19,28}, :71:22, :78:20, :95:20, :110:20, :122:20
   assign io_rs1 = io_inst[19:15];	// src/main/scala/cpu/Decoder.scala:6:7, :26:20
   assign io_rs2 = io_inst[24:20];	// src/main/scala/cpu/Decoder.scala:6:7, :27:20
   assign io_rd = io_inst[11:7];	// src/main/scala/cpu/Decoder.scala:6:7, :21:71

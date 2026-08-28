@@ -19,6 +19,7 @@ module PipelineControl(	// src/main/scala/cpu/PipelineControl.scala:13:7
                io_idExMemRead,	// src/main/scala/cpu/PipelineControl.scala:14:14
   input  [4:0] io_idExRd,	// src/main/scala/cpu/PipelineControl.scala:14:14
   input        io_resetActive,	// src/main/scala/cpu/PipelineControl.scala:14:14
+               io_redirect,	// src/main/scala/cpu/PipelineControl.scala:14:14
   output [1:0] io_forwardRs1,	// src/main/scala/cpu/PipelineControl.scala:14:14
                io_forwardRs2,	// src/main/scala/cpu/PipelineControl.scala:14:14
   output [2:0] io_action	// src/main/scala/cpu/PipelineControl.scala:14:14
@@ -41,9 +42,11 @@ module PipelineControl(	// src/main/scala/cpu/PipelineControl.scala:13:7
   assign io_action =
     io_resetActive
       ? 3'h5
-      : {2'h0,
-         io_idExValid & io_idExMemRead & (|io_idExRd)
-           & (io_idRs1Used & io_idRs1 == io_idExRd | io_idRs2Used
-              & io_idRs2 == io_idExRd)};	// src/main/scala/cpu/PipelineControl.scala:13:7, :57:{40,52}, :58:{40,52}, :59:{35,53,66,74,96}, :61:13, :62:24, :63:15, :64:23, :70:31, :71:15
+      : io_redirect
+          ? 3'h3
+          : {2'h0,
+             io_idExValid & io_idExMemRead & (|io_idExRd)
+               & (io_idRs1Used & io_idRs1 == io_idExRd | io_idRs2Used
+                  & io_idRs2 == io_idExRd)};	// src/main/scala/cpu/PipelineControl.scala:13:7, :57:{40,52}, :58:{40,52}, :59:{35,53,66,74,96}, :61:13, :62:24, :63:15, :64:23, :66:27, :67:15, :68:29, :70:31, :71:15
 endmodule
 

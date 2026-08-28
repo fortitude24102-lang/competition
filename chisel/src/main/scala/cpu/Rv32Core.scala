@@ -124,13 +124,16 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
   control.io.idExValid := idEx.valid
   control.io.idExMemRead := idEx.control.memRead
   control.io.idExRd := idEx.rd
+  val redirectValid = idEx.valid && idEx.control.legal &&
+    idEx.control.branchOp =/= BranchOp.None && execute.io.branchTaken
+
   control.io.resetActive := reset.asBool
   control.io.trap := false.B
-  control.io.redirect := false.B
+  control.io.redirect := redirectValid
   control.io.memoryWait := false.B
 
-  frontend.io.redirectValid := false.B
-  frontend.io.redirectPc := 0.U
+  frontend.io.redirectValid := redirectValid
+  frontend.io.redirectPc := execute.io.branchTarget
   frontend.io.output.ready := control.io.action === PipelineAction.Advance
 
   when(control.io.action === PipelineAction.Reset) {
@@ -157,6 +160,27 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
     exMem.wbSel := idEx.control.wbSel
     exMem.memRead := idEx.control.memRead
     idEx.valid := false.B
+  }.elsewhen(control.io.action === PipelineAction.Redirect) {
+    memWb.valid := exMem.valid
+    memWb.pc := exMem.pc
+    memWb.inst := exMem.inst
+    memWb.legal := exMem.legal
+    memWb.rd := exMem.rd
+    memWb.regWrite := exMem.regWrite
+    memWb.writeData := exMemForwardValue
+
+    exMem.valid := idEx.valid
+    exMem.pc := idEx.pc
+    exMem.inst := idEx.inst
+    exMem.legal := idEx.control.legal
+    exMem.aluResult := execute.io.aluResult
+    exMem.rd := idEx.rd
+    exMem.regWrite := idEx.control.regWrite
+    exMem.wbSel := idEx.control.wbSel
+    exMem.memRead := idEx.control.memRead
+
+    idEx.valid := false.B
+    ifId.valid := false.B
   }.elsewhen(control.io.action === PipelineAction.Advance) {
     memWb.valid := exMem.valid
     memWb.pc := exMem.pc

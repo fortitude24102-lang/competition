@@ -85,6 +85,8 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:49:7
   wire [1:0]  _control_io_forwardRs2;	// src/main/scala/cpu/Rv32Core.scala:62:23
   wire [2:0]  _control_io_action;	// src/main/scala/cpu/Rv32Core.scala:62:23
   wire [31:0] _execute_io_aluResult;	// src/main/scala/cpu/Rv32Core.scala:61:23
+  wire        _execute_io_branchTaken;	// src/main/scala/cpu/Rv32Core.scala:61:23
+  wire [31:0] _execute_io_branchTarget;	// src/main/scala/cpu/Rv32Core.scala:61:23
   wire [31:0] _regFile_io_rs1Data;	// src/main/scala/cpu/Rv32Core.scala:60:23
   wire [31:0] _regFile_io_rs2Data;	// src/main/scala/cpu/Rv32Core.scala:60:23
   wire        _decoder_io_control_legal;	// src/main/scala/cpu/Rv32Core.scala:59:23
@@ -93,6 +95,7 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:49:7
   wire [3:0]  _decoder_io_control_aluOp;	// src/main/scala/cpu/Rv32Core.scala:59:23
   wire [1:0]  _decoder_io_control_op1Sel;	// src/main/scala/cpu/Rv32Core.scala:59:23
   wire        _decoder_io_control_op2Sel;	// src/main/scala/cpu/Rv32Core.scala:59:23
+  wire [3:0]  _decoder_io_control_branchOp;	// src/main/scala/cpu/Rv32Core.scala:59:23
   wire        _decoder_io_control_memRead;	// src/main/scala/cpu/Rv32Core.scala:59:23
   wire        _decoder_io_control_regWrite;	// src/main/scala/cpu/Rv32Core.scala:59:23
   wire [1:0]  _decoder_io_control_wbSel;	// src/main/scala/cpu/Rv32Core.scala:59:23
@@ -115,6 +118,7 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:49:7
   reg  [3:0]  idEx_control_aluOp;	// src/main/scala/cpu/Rv32Core.scala:65:29
   reg  [1:0]  idEx_control_op1Sel;	// src/main/scala/cpu/Rv32Core.scala:65:29
   reg         idEx_control_op2Sel;	// src/main/scala/cpu/Rv32Core.scala:65:29
+  reg  [3:0]  idEx_control_branchOp;	// src/main/scala/cpu/Rv32Core.scala:65:29
   reg         idEx_control_memRead;	// src/main/scala/cpu/Rv32Core.scala:65:29
   reg         idEx_control_regWrite;	// src/main/scala/cpu/Rv32Core.scala:65:29
   reg  [1:0]  idEx_control_wbSel;	// src/main/scala/cpu/Rv32Core.scala:65:29
@@ -143,7 +147,17 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:49:7
   wire        io_commit_valid_0 = memWb_valid & memWb_legal;	// src/main/scala/cpu/Rv32Core.scala:67:30, :84:41
   wire [31:0] exMemForwardValue =
     exMem_wbSel == 2'h2 ? exMem_pc + 32'h4 : exMem_aluResult;	// src/main/scala/cpu/Rv32Core.scala:66:30, :87:{30,43,67}
-  wire        frontend_io_output_ready = _control_io_action == 3'h0;	// src/main/scala/cpu/Rv32Core.scala:62:23, :134:49
+  wire [31:0] forwardedRs1 =
+    _control_io_forwardRs1 == 2'h2
+      ? memWb_writeData
+      : _control_io_forwardRs1 == 2'h1 ? exMemForwardValue : idEx_rs1Value;	// src/main/scala/cpu/Rv32Core.scala:62:23, :65:29, :67:30, :87:30, :88:69
+  wire [31:0] forwardedRs2 =
+    _control_io_forwardRs2 == 2'h2
+      ? memWb_writeData
+      : _control_io_forwardRs2 == 2'h1 ? exMemForwardValue : idEx_rs2Value;	// src/main/scala/cpu/Rv32Core.scala:62:23, :65:29, :67:30, :87:30, :88:69, :92:69
+  wire        redirectValid =
+    idEx_valid & idEx_control_legal & (|idEx_control_branchOp) & _execute_io_branchTaken;	// src/main/scala/cpu/Rv32Core.scala:61:23, :65:29, :127:{34,56}, :128:{27,45}
+  wire        frontend_io_output_ready = _control_io_action == 3'h0;	// src/main/scala/cpu/Rv32Core.scala:62:23, :137:49
   always @(posedge clock) begin	// src/main/scala/cpu/Rv32Core.scala:49:7
     if (reset) begin	// src/main/scala/cpu/Rv32Core.scala:49:7
       ifId_valid <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:64:29
@@ -158,6 +172,7 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:49:7
       idEx_control_aluOp <= 4'h0;	// src/main/scala/cpu/Rv32Core.scala:49:7, :65:29
       idEx_control_op1Sel <= 2'h0;	// src/main/scala/cpu/Rv32Core.scala:65:29
       idEx_control_op2Sel <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:65:29
+      idEx_control_branchOp <= 4'h0;	// src/main/scala/cpu/Rv32Core.scala:49:7, :65:29
       idEx_control_memRead <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:65:29
       idEx_control_regWrite <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:65:29
       idEx_control_wbSel <= 2'h0;	// src/main/scala/cpu/Rv32Core.scala:65:29
@@ -185,24 +200,28 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:49:7
       memWb_writeData <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:67:30
     end
     else begin	// src/main/scala/cpu/Rv32Core.scala:49:7
-      automatic logic _GEN = _control_io_action == 3'h5;	// src/main/scala/cpu/Rv32Core.scala:62:23, :136:26
-      automatic logic _GEN_0 = _control_io_action == 3'h1;	// src/main/scala/cpu/Rv32Core.scala:62:23, :141:32
-      automatic logic _GEN_1 = _GEN_0 | frontend_io_output_ready;	// src/main/scala/cpu/Rv32Core.scala:67:30, :134:49, :141:{32,65}, :142:17, :160:60, :161:17
-      automatic logic _GEN_2 = _GEN | ~_GEN_1;	// src/main/scala/cpu/Rv32Core.scala:67:30, :136:{26,52}, :141:65, :142:17, :160:60, :161:17
-      automatic logic _GEN_3 = _GEN | _GEN_0;	// src/main/scala/cpu/Rv32Core.scala:136:{26,52}, :138:16, :141:{32,65}, :159:16, :160:60
+      automatic logic _GEN = _control_io_action == 3'h5;	// src/main/scala/cpu/Rv32Core.scala:62:23, :139:26
+      automatic logic _GEN_0 = _control_io_action == 3'h1;	// src/main/scala/cpu/Rv32Core.scala:62:23, :144:32
+      automatic logic _GEN_1 = _control_io_action == 3'h3;	// src/main/scala/cpu/Rv32Core.scala:62:23, :163:32
+      automatic logic _GEN_2 = _GEN_0 | _GEN_1 | frontend_io_output_ready;	// src/main/scala/cpu/Rv32Core.scala:67:30, :137:49, :144:{32,65}, :145:17, :163:{32,61}, :164:17, :184:60, :185:17
+      automatic logic _GEN_3 = _GEN | ~_GEN_2;	// src/main/scala/cpu/Rv32Core.scala:67:30, :139:{26,52}, :144:65, :145:17, :163:61, :164:17, :184:60, :185:17
+      automatic logic _GEN_4 = _GEN | _GEN_0 | _GEN_1;	// src/main/scala/cpu/Rv32Core.scala:139:{26,52}, :141:16, :144:{32,65}, :162:16, :163:{32,61}, :182:16, :184:60
       ifId_valid <=
         ~_GEN
-        & (_GEN_0 | ~frontend_io_output_ready ? ifId_valid : _frontend_io_output_valid);	// src/main/scala/cpu/Rv32Core.scala:58:24, :64:29, :65:29, :134:49, :136:{26,52}, :137:16, :140:17, :141:{32,65}, :160:60
-      if (_GEN_3 | ~(frontend_io_output_ready & _frontend_io_output_valid)) begin	// src/main/scala/cpu/Rv32Core.scala:58:24, :64:29, :134:49, :136:52, :138:16, :141:65, :159:16, :160:60, :192:36, :193:15
+        & (_GEN_0
+             ? ifId_valid
+             : ~_GEN_1
+               & (frontend_io_output_ready ? _frontend_io_output_valid : ifId_valid));	// src/main/scala/cpu/Rv32Core.scala:58:24, :64:29, :137:49, :139:{26,52}, :140:16, :143:17, :144:{32,65}, :163:{32,61}, :183:16, :184:60, :215:16
+      if (_GEN_4 | ~(frontend_io_output_ready & _frontend_io_output_valid)) begin	// src/main/scala/cpu/Rv32Core.scala:58:24, :64:29, :137:49, :139:52, :141:16, :144:65, :162:16, :163:61, :182:16, :184:60, :216:36, :217:15
       end
-      else begin	// src/main/scala/cpu/Rv32Core.scala:64:29, :136:52, :141:65, :160:60
+      else begin	// src/main/scala/cpu/Rv32Core.scala:64:29, :139:52, :144:65, :163:61, :184:60
         ifId_pc <= _frontend_io_output_bits_pc;	// src/main/scala/cpu/Rv32Core.scala:58:24, :64:29
         ifId_inst <= _frontend_io_output_bits_inst;	// src/main/scala/cpu/Rv32Core.scala:58:24, :64:29
       end
-      idEx_valid <= ~_GEN_3 & (frontend_io_output_ready ? ifId_valid : idEx_valid);	// src/main/scala/cpu/Rv32Core.scala:64:29, :65:29, :134:49, :136:52, :138:16, :141:65, :159:16, :160:60, :179:16
-      if (_GEN_3 | ~frontend_io_output_ready) begin	// src/main/scala/cpu/Rv32Core.scala:65:29, :134:49, :136:52, :138:16, :141:65, :159:16, :160:60
+      idEx_valid <= ~_GEN_4 & (frontend_io_output_ready ? ifId_valid : idEx_valid);	// src/main/scala/cpu/Rv32Core.scala:64:29, :65:29, :137:49, :139:52, :141:16, :144:65, :162:16, :163:61, :182:16, :184:60, :203:16
+      if (_GEN_4 | ~frontend_io_output_ready) begin	// src/main/scala/cpu/Rv32Core.scala:65:29, :137:49, :139:52, :141:16, :144:65, :162:16, :163:61, :182:16, :184:60
       end
-      else begin	// src/main/scala/cpu/Rv32Core.scala:65:29, :136:52, :141:65, :160:60
+      else begin	// src/main/scala/cpu/Rv32Core.scala:65:29, :139:52, :144:65, :163:61, :184:60
         idEx_pc <= ifId_pc;	// src/main/scala/cpu/Rv32Core.scala:64:29, :65:29
         idEx_inst <= ifId_inst;	// src/main/scala/cpu/Rv32Core.scala:64:29, :65:29
         idEx_control_legal <= _decoder_io_control_legal;	// src/main/scala/cpu/Rv32Core.scala:59:23, :65:29
@@ -211,6 +230,7 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:49:7
         idEx_control_aluOp <= _decoder_io_control_aluOp;	// src/main/scala/cpu/Rv32Core.scala:59:23, :65:29
         idEx_control_op1Sel <= _decoder_io_control_op1Sel;	// src/main/scala/cpu/Rv32Core.scala:59:23, :65:29
         idEx_control_op2Sel <= _decoder_io_control_op2Sel;	// src/main/scala/cpu/Rv32Core.scala:59:23, :65:29
+        idEx_control_branchOp <= _decoder_io_control_branchOp;	// src/main/scala/cpu/Rv32Core.scala:59:23, :65:29
         idEx_control_memRead <= _decoder_io_control_memRead;	// src/main/scala/cpu/Rv32Core.scala:59:23, :65:29
         idEx_control_regWrite <= _decoder_io_control_regWrite;	// src/main/scala/cpu/Rv32Core.scala:59:23, :65:29
         idEx_control_wbSel <= _decoder_io_control_wbSel;	// src/main/scala/cpu/Rv32Core.scala:59:23, :65:29
@@ -221,10 +241,10 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:49:7
         idEx_rs1Value <= _regFile_io_rs1Data;	// src/main/scala/cpu/Rv32Core.scala:60:23, :65:29
         idEx_rs2Value <= _regFile_io_rs2Data;	// src/main/scala/cpu/Rv32Core.scala:60:23, :65:29
       end
-      exMem_valid <= ~_GEN & (_GEN_1 ? idEx_valid : exMem_valid);	// src/main/scala/cpu/Rv32Core.scala:65:29, :66:30, :67:30, :136:{26,52}, :139:17, :140:17, :141:65, :142:17, :150:17, :160:60, :161:17, :169:17
-      if (_GEN_2) begin	// src/main/scala/cpu/Rv32Core.scala:66:30, :67:30, :136:52, :141:65
+      exMem_valid <= ~_GEN & (_GEN_2 ? idEx_valid : exMem_valid);	// src/main/scala/cpu/Rv32Core.scala:65:29, :66:30, :67:30, :139:{26,52}, :142:17, :143:17, :144:65, :145:17, :153:17, :163:61, :164:17, :172:17, :184:60, :185:17, :193:17
+      if (_GEN_3) begin	// src/main/scala/cpu/Rv32Core.scala:66:30, :67:30, :139:52, :144:65
       end
-      else begin	// src/main/scala/cpu/Rv32Core.scala:66:30, :136:52, :141:65
+      else begin	// src/main/scala/cpu/Rv32Core.scala:66:30, :139:52, :144:65
         exMem_pc <= idEx_pc;	// src/main/scala/cpu/Rv32Core.scala:65:29, :66:30
         exMem_inst <= idEx_inst;	// src/main/scala/cpu/Rv32Core.scala:65:29, :66:30
         exMem_legal <= idEx_control_legal;	// src/main/scala/cpu/Rv32Core.scala:65:29, :66:30
@@ -234,10 +254,10 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:49:7
         exMem_wbSel <= idEx_control_wbSel;	// src/main/scala/cpu/Rv32Core.scala:65:29, :66:30
         exMem_memRead <= idEx_control_memRead;	// src/main/scala/cpu/Rv32Core.scala:65:29, :66:30
       end
-      memWb_valid <= ~_GEN & (_GEN_1 ? exMem_valid : memWb_valid);	// src/main/scala/cpu/Rv32Core.scala:66:30, :67:30, :136:{26,52}, :140:17, :141:65, :142:17, :160:60, :161:17
-      if (_GEN_2) begin	// src/main/scala/cpu/Rv32Core.scala:67:30, :136:52, :141:65
+      memWb_valid <= ~_GEN & (_GEN_2 ? exMem_valid : memWb_valid);	// src/main/scala/cpu/Rv32Core.scala:66:30, :67:30, :139:{26,52}, :143:17, :144:65, :145:17, :163:61, :164:17, :184:60, :185:17
+      if (_GEN_3) begin	// src/main/scala/cpu/Rv32Core.scala:67:30, :139:52, :144:65
       end
-      else begin	// src/main/scala/cpu/Rv32Core.scala:67:30, :136:52, :141:65
+      else begin	// src/main/scala/cpu/Rv32Core.scala:67:30, :139:52, :144:65
         memWb_pc <= exMem_pc;	// src/main/scala/cpu/Rv32Core.scala:66:30, :67:30
         memWb_inst <= exMem_inst;	// src/main/scala/cpu/Rv32Core.scala:66:30, :67:30
         memWb_legal <= exMem_legal;	// src/main/scala/cpu/Rv32Core.scala:66:30, :67:30
@@ -272,6 +292,7 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:49:7
         idEx_control_aluOp = _RANDOM[4'h4][10:7];	// src/main/scala/cpu/Rv32Core.scala:49:7, :65:29
         idEx_control_op1Sel = _RANDOM[4'h4][12:11];	// src/main/scala/cpu/Rv32Core.scala:49:7, :65:29
         idEx_control_op2Sel = _RANDOM[4'h4][13];	// src/main/scala/cpu/Rv32Core.scala:49:7, :65:29
+        idEx_control_branchOp = _RANDOM[4'h4][17:14];	// src/main/scala/cpu/Rv32Core.scala:49:7, :65:29
         idEx_control_memRead = _RANDOM[4'h4][18];	// src/main/scala/cpu/Rv32Core.scala:49:7, :65:29
         idEx_control_regWrite = _RANDOM[4'h4][23];	// src/main/scala/cpu/Rv32Core.scala:49:7, :65:29
         idEx_control_wbSel = _RANDOM[4'h4][25:24];	// src/main/scala/cpu/Rv32Core.scala:49:7, :65:29
@@ -313,10 +334,12 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:49:7
     .io_imem_resp_valid      (io_imem_resp_valid),
     .io_imem_resp_bits_rdata (io_imem_resp_bits_rdata),
     .io_imem_resp_bits_error (io_imem_resp_bits_error),
-    .io_output_ready         (frontend_io_output_ready),	// src/main/scala/cpu/Rv32Core.scala:134:49
+    .io_output_ready         (frontend_io_output_ready),	// src/main/scala/cpu/Rv32Core.scala:137:49
     .io_output_valid         (_frontend_io_output_valid),
     .io_output_bits_pc       (_frontend_io_output_bits_pc),
-    .io_output_bits_inst     (_frontend_io_output_bits_inst)
+    .io_output_bits_inst     (_frontend_io_output_bits_inst),
+    .io_redirectValid        (redirectValid),	// src/main/scala/cpu/Rv32Core.scala:127:{34,56}, :128:45
+    .io_redirectPc           (_execute_io_branchTarget)	// src/main/scala/cpu/Rv32Core.scala:61:23
   );	// src/main/scala/cpu/Rv32Core.scala:58:24
   Decoder decoder (	// src/main/scala/cpu/Rv32Core.scala:59:23
     .io_inst             (ifId_inst),	// src/main/scala/cpu/Rv32Core.scala:64:29
@@ -326,6 +349,7 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:49:7
     .io_control_aluOp    (_decoder_io_control_aluOp),
     .io_control_op1Sel   (_decoder_io_control_op1Sel),
     .io_control_op2Sel   (_decoder_io_control_op2Sel),
+    .io_control_branchOp (_decoder_io_control_branchOp),
     .io_control_memRead  (_decoder_io_control_memRead),
     .io_control_regWrite (_decoder_io_control_regWrite),
     .io_control_wbSel    (_decoder_io_control_wbSel),
@@ -349,19 +373,17 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:49:7
     .io_operand1
       (idEx_control_op1Sel == 2'h2
          ? 32'h0
-         : idEx_control_op1Sel == 2'h1
-             ? idEx_pc
-             : _control_io_forwardRs1 == 2'h2
-                 ? memWb_writeData
-                 : _control_io_forwardRs1 == 2'h1 ? exMemForwardValue : idEx_rs1Value),	// src/main/scala/cpu/Rv32Core.scala:62:23, :65:29, :67:30, :87:30, :88:69, :97:70
-    .io_operand2
-      (idEx_control_op2Sel
-         ? idEx_immediate
-         : _control_io_forwardRs2 == 2'h2
-             ? memWb_writeData
-             : _control_io_forwardRs2 == 2'h1 ? exMemForwardValue : idEx_rs2Value),	// src/main/scala/cpu/Rv32Core.scala:62:23, :65:29, :67:30, :87:30, :88:69, :92:69, :101:29
-    .io_aluOp     (idEx_control_aluOp),	// src/main/scala/cpu/Rv32Core.scala:65:29
-    .io_aluResult (_execute_io_aluResult)
+         : idEx_control_op1Sel == 2'h1 ? idEx_pc : forwardedRs1),	// src/main/scala/cpu/Rv32Core.scala:65:29, :88:69, :97:70
+    .io_operand2     (idEx_control_op2Sel ? idEx_immediate : forwardedRs2),	// src/main/scala/cpu/Rv32Core.scala:65:29, :92:69, :101:29
+    .io_rs1Value     (forwardedRs1),	// src/main/scala/cpu/Rv32Core.scala:88:69
+    .io_rs2Value     (forwardedRs2),	// src/main/scala/cpu/Rv32Core.scala:92:69
+    .io_pc           (idEx_pc),	// src/main/scala/cpu/Rv32Core.scala:65:29
+    .io_immediate    (idEx_immediate),	// src/main/scala/cpu/Rv32Core.scala:65:29
+    .io_aluOp        (idEx_control_aluOp),	// src/main/scala/cpu/Rv32Core.scala:65:29
+    .io_branchOp     (idEx_control_branchOp),	// src/main/scala/cpu/Rv32Core.scala:65:29
+    .io_aluResult    (_execute_io_aluResult),
+    .io_branchTaken  (_execute_io_branchTaken),
+    .io_branchTarget (_execute_io_branchTarget)
   );	// src/main/scala/cpu/Rv32Core.scala:61:23
   PipelineControl control (	// src/main/scala/cpu/Rv32Core.scala:62:23
     .io_exRs1            (idEx_rs1),	// src/main/scala/cpu/Rv32Core.scala:65:29
@@ -383,6 +405,7 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:49:7
     .io_idExMemRead      (idEx_control_memRead),	// src/main/scala/cpu/Rv32Core.scala:65:29
     .io_idExRd           (idEx_rd),	// src/main/scala/cpu/Rv32Core.scala:65:29
     .io_resetActive      (reset),
+    .io_redirect         (redirectValid),	// src/main/scala/cpu/Rv32Core.scala:127:{34,56}, :128:45
     .io_forwardRs1       (_control_io_forwardRs1),
     .io_forwardRs2       (_control_io_forwardRs2),
     .io_action           (_control_io_action)
@@ -401,7 +424,7 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:49:7
   assign io_commit_valid = io_commit_valid_0;	// src/main/scala/cpu/Rv32Core.scala:49:7, :84:41
   assign io_commit_pc = memWb_pc;	// src/main/scala/cpu/Rv32Core.scala:49:7, :67:30
   assign io_commit_inst = memWb_inst;	// src/main/scala/cpu/Rv32Core.scala:49:7, :67:30
-  assign io_commit_writeEnable = io_commit_valid_0 & memWb_regWrite & (|memWb_rd);	// src/main/scala/cpu/Rv32Core.scala:49:7, :67:30, :84:41, :202:{55,73,85}
+  assign io_commit_writeEnable = io_commit_valid_0 & memWb_regWrite & (|memWb_rd);	// src/main/scala/cpu/Rv32Core.scala:49:7, :67:30, :84:41, :226:{55,73,85}
   assign io_commit_rd = memWb_rd;	// src/main/scala/cpu/Rv32Core.scala:49:7, :67:30
   assign io_commit_data = memWb_writeData;	// src/main/scala/cpu/Rv32Core.scala:49:7, :67:30
   assign io_trap_valid = 1'h0;	// src/main/scala/cpu/Rv32Core.scala:49:7

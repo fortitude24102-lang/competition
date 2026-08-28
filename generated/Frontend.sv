@@ -56,27 +56,37 @@ module Frontend(	// src/main/scala/cpu/Frontend.scala:12:7
                 io_output_ready,	// src/main/scala/cpu/Frontend.scala:13:14
   output        io_output_valid,	// src/main/scala/cpu/Frontend.scala:13:14
   output [31:0] io_output_bits_pc,	// src/main/scala/cpu/Frontend.scala:13:14
-                io_output_bits_inst	// src/main/scala/cpu/Frontend.scala:13:14
+                io_output_bits_inst,	// src/main/scala/cpu/Frontend.scala:13:14
+  input         io_redirectValid,	// src/main/scala/cpu/Frontend.scala:13:14
+  input  [31:0] io_redirectPc	// src/main/scala/cpu/Frontend.scala:13:14
 );
 
   wire        _queue_io_enq_ready;	// src/main/scala/cpu/Frontend.scala:24:21
   reg  [31:0] nextPc;	// src/main/scala/cpu/Frontend.scala:20:23
   reg         requestPending;	// src/main/scala/cpu/Frontend.scala:21:31
   reg  [31:0] requestPc;	// src/main/scala/cpu/Frontend.scala:22:22
-  wire        io_imem_req_valid_0 = ~requestPending & _queue_io_enq_ready;	// src/main/scala/cpu/Frontend.scala:21:31, :24:21, :29:{24,61}
-  wire        io_imem_resp_ready_0 = requestPending & _queue_io_enq_ready;	// src/main/scala/cpu/Frontend.scala:21:31, :24:21, :40:40
+  reg         dropResponse;	// src/main/scala/cpu/Frontend.scala:23:29
+  wire        io_imem_req_valid_0 =
+    ~requestPending & ~io_redirectValid & _queue_io_enq_ready;	// src/main/scala/cpu/Frontend.scala:21:31, :24:21, :29:{24,40,43,61}
+  wire        io_imem_resp_ready_0 =
+    requestPending & (dropResponse | io_redirectValid | _queue_io_enq_ready);	// src/main/scala/cpu/Frontend.scala:21:31, :23:29, :24:21, :40:{40,57,77}
   always @(posedge clock) begin	// src/main/scala/cpu/Frontend.scala:12:7
     automatic logic _GEN;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-    _GEN = io_imem_req_ready & io_imem_req_valid_0;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/cpu/Frontend.scala:29:61
+    _GEN = io_imem_req_ready & io_imem_req_valid_0;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/cpu/Frontend.scala:29:{40,61}
     if (reset) begin	// src/main/scala/cpu/Frontend.scala:12:7
       nextPc <= 32'h0;	// src/main/scala/cpu/Frontend.scala:20:23
       requestPending <= 1'h0;	// src/main/scala/cpu/Frontend.scala:21:31
+      dropResponse <= 1'h0;	// src/main/scala/cpu/Frontend.scala:21:31, :23:29
     end
     else begin	// src/main/scala/cpu/Frontend.scala:12:7
-      if (_GEN)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
+      automatic logic _GEN_0 = io_imem_resp_ready_0 & io_imem_resp_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/cpu/Frontend.scala:40:40
+      if (io_redirectValid)	// src/main/scala/cpu/Frontend.scala:13:14
+        nextPc <= io_redirectPc;	// src/main/scala/cpu/Frontend.scala:20:23
+      else if (_GEN)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
         nextPc <= nextPc + 32'h4;	// src/main/scala/cpu/Frontend.scala:20:23, :45:22
-      requestPending <=
-        ~(io_imem_resp_ready_0 & io_imem_resp_valid) & (_GEN | requestPending);	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/cpu/Frontend.scala:21:31, :40:40, :42:26, :43:20, :48:27, :49:20
+      requestPending <= ~_GEN_0 & (_GEN | requestPending);	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/cpu/Frontend.scala:21:31, :42:26, :43:20, :48:27, :49:20
+      dropResponse <=
+        io_redirectValid & requestPending & ~_GEN_0 | ~_GEN_0 & dropResponse;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/cpu/Frontend.scala:21:31, :23:29, :42:26, :48:27, :49:20, :50:18, :53:26, :55:{25,28,48}, :56:20
     end
     if (_GEN)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
       requestPc <= nextPc;	// src/main/scala/cpu/Frontend.scala:20:23, :22:22
@@ -97,6 +107,7 @@ module Frontend(	// src/main/scala/cpu/Frontend.scala:12:7
         nextPc = _RANDOM[2'h0];	// src/main/scala/cpu/Frontend.scala:12:7, :20:23
         requestPending = _RANDOM[2'h1][0];	// src/main/scala/cpu/Frontend.scala:12:7, :21:31
         requestPc = {_RANDOM[2'h1][31:1], _RANDOM[2'h2][0]};	// src/main/scala/cpu/Frontend.scala:12:7, :21:31, :22:22
+        dropResponse = _RANDOM[2'h2][1];	// src/main/scala/cpu/Frontend.scala:12:7, :22:22, :23:29
       `endif // RANDOMIZE_REG_INIT
     end // initial
     `ifdef FIRRTL_AFTER_INITIAL	// src/main/scala/cpu/Frontend.scala:12:7
@@ -107,16 +118,18 @@ module Frontend(	// src/main/scala/cpu/Frontend.scala:12:7
     .clock             (clock),
     .reset             (reset),
     .io_enq_ready      (_queue_io_enq_ready),
-    .io_enq_valid      (io_imem_resp_valid & requestPending),	// src/main/scala/cpu/Frontend.scala:21:31, :36:44
+    .io_enq_valid
+      (io_imem_resp_valid & requestPending & ~dropResponse & ~io_redirectValid),	// src/main/scala/cpu/Frontend.scala:21:31, :23:29, :29:43, :36:{44,62,65,79}
     .io_enq_bits_pc    (requestPc),	// src/main/scala/cpu/Frontend.scala:22:22
     .io_enq_bits_inst  (io_imem_resp_bits_rdata),
     .io_enq_bits_error (io_imem_resp_bits_error),
     .io_deq_ready      (io_output_ready),
     .io_deq_valid      (io_output_valid),
     .io_deq_bits_pc    (io_output_bits_pc),
-    .io_deq_bits_inst  (io_output_bits_inst)
+    .io_deq_bits_inst  (io_output_bits_inst),
+    .io_flush          (io_redirectValid)
   );	// src/main/scala/cpu/Frontend.scala:24:21
-  assign io_imem_req_valid = io_imem_req_valid_0;	// src/main/scala/cpu/Frontend.scala:12:7, :29:61
+  assign io_imem_req_valid = io_imem_req_valid_0;	// src/main/scala/cpu/Frontend.scala:12:7, :29:{40,61}
   assign io_imem_req_bits_addr = nextPc;	// src/main/scala/cpu/Frontend.scala:12:7, :20:23
   assign io_imem_resp_ready = io_imem_resp_ready_0;	// src/main/scala/cpu/Frontend.scala:12:7, :40:40
 endmodule

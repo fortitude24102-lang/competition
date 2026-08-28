@@ -395,19 +395,19 @@ git commit -m "feat(cpu): connect the five-stage arithmetic pipeline"
 - Consumes: `Execute.branchTaken/branchTarget` and `Frontend.redirectValid/redirectPc`.
 - Produces: correct JAL/JALR link writes and two-younger-stage flush behavior.
 
-- [ ] **Step 1: Write failing taken/not-taken and wrong-path tests**
+- [x] **Step 1: Write failing taken/not-taken and wrong-path tests**
 
 Use a loop with BEQ/BNE plus JAL and JALR. Place register writes on wrong paths and assert they never commit. Check JAL/JALR write `PC+4` and JALR target bit zero is cleared.
 
-- [ ] **Step 2: Wire redirect and flush**
+- [x] **Step 2: Wire redirect and flush**
 
 Resolve control flow in EX, redirect the frontend on JAL/JALR or a taken conditional branch, and clear IF/ID and ID/EX valid bits. Preserve all older EX/MEM and MEM/WB instructions.
 
-- [ ] **Step 3: Run focused and full tests**
+- [x] **Step 3: Run focused and full tests**
 
 Run the control-flow spec, then all tests.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```powershell
 git add chisel/src/main/scala/cpu/Rv32Core.scala chisel/src/test/scala/cpu/Rv32CoreControlFlowSpec.scala
