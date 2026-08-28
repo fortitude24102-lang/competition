@@ -24,8 +24,13 @@ close $input
 
 synth_design -top SoCTop -part $target_part -mode out_of_context
 create_clock -name soc_clock -period 10.000 [get_ports clock]
+create_clock -name soc_io_virtual -period 10.000
+set data_inputs [get_ports -filter {DIRECTION == IN && NAME != clock}]
+set_input_delay -clock soc_io_virtual 2.000 $data_inputs
+set_output_delay -clock soc_io_virtual 2.000 [all_outputs]
 
 report_utilization -file [file join $report_dir utilization.rpt]
+check_timing -verbose -file [file join $report_dir check_timing.rpt]
 report_timing_summary -delay_type max -max_paths 10 -report_unconstrained \
     -file [file join $report_dir timing_summary.rpt]
 report_timing -delay_type max -max_paths 10 -sort_by group \

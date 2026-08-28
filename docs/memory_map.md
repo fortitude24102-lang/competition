@@ -9,6 +9,8 @@ The address map is frozen for the Demo. Unlisted addresses return a bus error an
 | Accelerator | `0x3000_0000`–`0x3000_0FFF` | MMIO | Video control and status |
 | External memory | `0x8000_0000`–`0xFFFF_FFFF` | R/W | Reserved CoreBus window for a future AXI bridge |
 
+Boot RAM does not define same-address read-during-write behavior. Software must not write a word through the data port while the instruction port reads that word in the same cycle; self-modifying code needs a separately specified synchronization policy.
+
 ## UART registers
 
 | Offset | Name | Access | Definition |

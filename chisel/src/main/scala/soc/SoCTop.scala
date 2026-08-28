@@ -2,7 +2,7 @@ package soc
 
 import chisel3._
 import chisel3.util._
-import cpu.{CommitTrace, CoreBusIO, Rv32Core, TrapTrace}
+import cpu.{CommitTrace, CoreBusIO, CoreBusReq, CoreBusResp, Rv32Core, TrapTrace}
 
 class VideoStreamIO extends Bundle {
   val pixelIn = Input(UInt(24.W))
@@ -40,6 +40,10 @@ class SoCTop(
   private val uart = Module(new MmioUart)
   private val acceleratorRegisters = Module(new AccelRegs)
   private val videoAccelerator = Module(new VideoAccelExt(videoSourcePath))
+  private val externalImemRequest = Module(new Queue(new CoreBusReq, 1, pipe = false, flow = false))
+  private val externalImemResponse = Module(new Queue(new CoreBusResp, 1, pipe = false, flow = false))
+  private val externalDmemRequest = Module(new Queue(new CoreBusReq, 1, pipe = false, flow = false))
+  private val externalDmemResponse = Module(new Queue(new CoreBusResp, 1, pipe = false, flow = false))
 
   interconnect.io.cpuImem <> core.io.imem
   interconnect.io.cpuDmem <> core.io.dmem
@@ -47,8 +51,14 @@ class SoCTop(
   ram.io.dmem <> interconnect.io.ramDmem
   uart.io.bus <> interconnect.io.uart
   acceleratorRegisters.io.bus <> interconnect.io.accelerator
-  io.externalImem <> interconnect.io.externalImem
-  io.externalDmem <> interconnect.io.externalDmem
+  externalImemRequest.io.enq <> interconnect.io.externalImem.req
+  io.externalImem.req <> externalImemRequest.io.deq
+  externalImemResponse.io.enq <> io.externalImem.resp
+  interconnect.io.externalImem.resp <> externalImemResponse.io.deq
+  externalDmemRequest.io.enq <> interconnect.io.externalDmem.req
+  io.externalDmem.req <> externalDmemRequest.io.deq
+  externalDmemResponse.io.enq <> io.externalDmem.resp
+  interconnect.io.externalDmem.resp <> externalDmemResponse.io.deq
 
   io.uartTx <> uart.io.tx
 

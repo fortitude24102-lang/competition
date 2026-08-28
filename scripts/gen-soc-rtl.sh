@@ -9,4 +9,7 @@ export CHISEL_FIRTOOL_CACHE=/mnt/d/Chisel-environment/wsl/firtool-cache
 export SBT_OPTS="-Dsbt.boot.directory=/mnt/d/Chisel-environment/cache/sbt/boot-wsl -Dsbt.global.base=/mnt/d/Chisel-environment/cache/sbt/global-wsl -Dsbt.ivy.home=/mnt/d/Chisel-environment/cache/ivy-wsl"
 
 cd "$project_root/chisel"
-bash /mnt/d/Chisel-environment/sbt/bin/sbt "runMain Generate soc --target-dir ../generated"
+bash /mnt/d/Chisel-environment/sbt/bin/sbt \
+  "runMain Generate soc --target-dir ../generated/soc" \
+  "runMain Generate rv32 --target-dir ../generated"
+cp "$project_root/generated/soc/SoCTop.sv" "$project_root/generated/SoCTop.sv"

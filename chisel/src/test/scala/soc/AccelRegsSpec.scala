@@ -63,6 +63,23 @@ class AccelRegsSpec extends AnyFunSpec with StableChiselSim with Matchers {
         transact(MemoryMap.Accelerator.StatusOffset, write = true, data = 0) shouldBe (BigInt(0), true)
         transact(0x14, write = true, data = 0xffffffffL) shouldBe (BigInt(0), true)
         dut.io.mode.expect(2)
+
+        dut.io.bus.resp.ready.poke(false)
+        dut.io.bus.req.valid.poke(true)
+        dut.io.bus.req.bits.addr.poke(MemoryMap.AccelBase + MemoryMap.Accelerator.ModeOffset)
+        dut.io.bus.req.bits.write.poke(false)
+        dut.io.bus.req.bits.size.poke(2)
+        dut.io.bus.req.bits.wdata.poke(0)
+        dut.io.bus.req.bits.wstrb.poke(0)
+        dut.clock.step()
+        dut.io.bus.req.valid.poke(false)
+        dut.io.bus.resp.valid.expect(true)
+        dut.io.bus.resp.bits.rdata.expect(2)
+        dut.clock.step(3)
+        dut.io.bus.resp.valid.expect(true)
+        dut.io.bus.resp.bits.rdata.expect(2)
+        dut.io.bus.resp.ready.poke(true)
+        dut.clock.step()
       }
     }
   }

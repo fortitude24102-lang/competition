@@ -89,6 +89,23 @@ class DualPortRamSpec extends AnyFunSpec with StableChiselSim with Matchers {
         instructionAccess(0x02)._2 shouldBe true
         dataAccess(0x100)._2 shouldBe true
         dataAccess(0x03, size = 2)._2 shouldBe true
+
+        dut.io.dmem.resp.ready.poke(false)
+        dut.io.dmem.req.valid.poke(true)
+        dut.io.dmem.req.bits.addr.poke(0x00)
+        dut.io.dmem.req.bits.write.poke(false)
+        dut.io.dmem.req.bits.size.poke(2)
+        dut.io.dmem.req.bits.wdata.poke(0)
+        dut.io.dmem.req.bits.wstrb.poke(0)
+        dut.clock.step()
+        dut.io.dmem.req.valid.poke(false)
+        while (!dut.io.dmem.resp.valid.peek().litToBoolean) dut.clock.step()
+        dut.io.dmem.resp.bits.rdata.expect(BigInt("1122aa44", 16))
+        dut.clock.step(3)
+        dut.io.dmem.resp.valid.expect(true)
+        dut.io.dmem.resp.bits.rdata.expect(BigInt("1122aa44", 16))
+        dut.io.dmem.resp.ready.poke(true)
+        dut.clock.step()
       }
     }
   }

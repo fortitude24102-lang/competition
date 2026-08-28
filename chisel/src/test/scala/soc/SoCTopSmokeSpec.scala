@@ -55,8 +55,7 @@ class SoCTopSmokeSpec extends AnyFunSpec with StableChiselSim with Matchers {
           s"${dut.io.accelThreshold.peek().litValue}/" +
           s"${dut.io.accelBypass.peek().litValue}"
         withClue(state) {
-          uartBytes should contain(80)
-          uartBytes should not contain 70
+          uartBytes shouldBe Vector(80)
           trapCause shouldBe Some(3)
         }
         dut.io.accelEnable.expect(true)

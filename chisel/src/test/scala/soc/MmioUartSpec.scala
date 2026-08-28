@@ -54,6 +54,23 @@ class MmioUartSpec extends AnyFunSpec with StableChiselSim with Matchers {
         transact(MemoryMap.Uart.TxDataOffset) shouldBe (BigInt(0), true)
         transact(0x08) shouldBe (BigInt(0), true)
         transact(MemoryMap.Uart.TxDataOffset, write = true, data = 0xff, strobe = 0) shouldBe (BigInt(0), true)
+
+        dut.io.bus.resp.ready.poke(false)
+        dut.io.bus.req.valid.poke(true)
+        dut.io.bus.req.bits.addr.poke(MemoryMap.UartBase + MemoryMap.Uart.StatusOffset)
+        dut.io.bus.req.bits.write.poke(false)
+        dut.io.bus.req.bits.size.poke(2)
+        dut.io.bus.req.bits.wdata.poke(0)
+        dut.io.bus.req.bits.wstrb.poke(0)
+        dut.clock.step()
+        dut.io.bus.req.valid.poke(false)
+        dut.io.bus.resp.valid.expect(true)
+        dut.io.bus.resp.bits.rdata.expect(1)
+        dut.clock.step(3)
+        dut.io.bus.resp.valid.expect(true)
+        dut.io.bus.resp.bits.rdata.expect(1)
+        dut.io.bus.resp.ready.poke(true)
+        dut.clock.step()
       }
     }
   }

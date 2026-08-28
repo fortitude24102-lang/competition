@@ -27,6 +27,7 @@ Write-Host '[PASS] simulation: complete CPU and SoC test suite'
 Assert-LastExitCode 'SoCTop RTL generation'
 
 $generatedDirectory = Join-Path $projectRoot 'generated'
+$socGeneratedDirectory = Join-Path $generatedDirectory 'soc'
 $topFile = Join-Path $generatedDirectory 'SoCTop.sv'
 $topText = Get-Content -LiteralPath $topFile -Raw
 if ($topText -notmatch 'module\s+SoCTop\b') {
@@ -35,8 +36,14 @@ if ($topText -notmatch 'module\s+SoCTop\b') {
 if ($topText -notmatch '\bVideoAccelTop\b') {
     throw 'generated/SoCTop.sv does not instantiate VideoAccelTop'
 }
+$coreText = Get-Content -LiteralPath (Join-Path $generatedDirectory 'Rv32Core.sv') -Raw
+foreach ($port in @('io_imem_req_bits_write', 'io_imem_req_bits_size', 'io_imem_req_bits_wdata', 'io_imem_req_bits_wstrb')) {
+    if ($coreText -notmatch "\b$port\b") {
+        throw "Standalone Rv32Core RTL lost port $port"
+    }
+}
 
-$rtlFiles = Get-ChildItem -LiteralPath $generatedDirectory -Filter *.sv | Sort-Object Name
+$rtlFiles = Get-ChildItem -LiteralPath $socGeneratedDirectory -Filter *.sv | Sort-Object Name
 $externalVideo = Join-Path $projectRoot 'rtl\video\VideoAccelTop.v'
 $allRtl = @($rtlFiles.FullName) + @($externalVideo) |
     ForEach-Object { $_.Replace('\', '/') }
@@ -66,6 +73,11 @@ foreach ($name in $requiredMetrics) {
 }
 if ([double]$metrics['SOC_WNS'] -lt 0) {
     throw "SoCTop timing failed: WNS=$($metrics['SOC_WNS']) ns"
+}
+$timingSummary = Get-Content -LiteralPath (Join-Path $reportDirectory 'timing_summary.rpt') -Raw
+if ($timingSummary -match 'There are [1-9][0-9]* input ports with no input delay specified' -or
+    $timingSummary -match 'There are [1-9][0-9]* output ports with no output delay specified') {
+    throw 'SoCTop timing report contains unconstrained I/O ports'
 }
 Write-Host "[PASS] Vivado: WNS=$($metrics['SOC_WNS']) ns, levels=$($metrics['SOC_LOGIC_LEVELS']), LUT/FF/BRAM/DSP=$($metrics['SOC_LUT'])/$($metrics['SOC_FF'])/$($metrics['SOC_BRAM'])/$($metrics['SOC_DSP'])"
 
