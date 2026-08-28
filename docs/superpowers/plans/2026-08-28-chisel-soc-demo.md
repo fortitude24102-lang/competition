@@ -107,7 +107,7 @@ git commit -m "feat(soc): freeze the demo memory map"
 - Consumes: one `SocBusTargetIO`, `busy: Bool`, and `frameDone: Bool`.
 - Produces: `enable: Bool`, `mode: UInt(2.W)`, `threshold: UInt(8.W)`, and `bypass: Bool`.
 
-- [ ] **Step 1: Write failing register tests**
+- [x] **Step 1: Write failing register tests**
 
 The tests must drive a real request/response handshake and assert:
 
@@ -119,23 +119,23 @@ dut.io.bypass.expect(true)
 
 Then write MODE=2, THRESHOLD=128, BYPASS=0 and read each back. A byte write with `wstrb=0` must not change state; writing STATUS or an unknown offset must return `error=true` without side effects.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run: `sbt "testOnly soc.AccelRegsSpec"`
 
 Expected: compilation fails because `AccelRegs` does not exist.
 
-- [ ] **Step 3: Implement one-request/one-response register behavior**
+- [x] **Step 3: Implement one-request/one-response register behavior**
 
 Use RegInit values from the spec. Accept a request only when no response is pending, compute offset from `req.bits.addr`, update only writable fields and asserted byte lanes, and hold `resp.valid/bits` until `resp.ready`.
 
-- [ ] **Step 4: Run GREEN**
+- [x] **Step 4: Run GREEN**
 
 Run: `sbt "testOnly soc.AccelRegsSpec"`
 
 Expected: reset, read/write, write-strobe, read-only and illegal-offset cases pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add chisel/src/main/scala/soc/AccelRegs.scala chisel/src/test/scala/soc/AccelRegsSpec.scala
