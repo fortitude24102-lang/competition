@@ -358,25 +358,25 @@ git commit -m "feat(cpu): add buffered RV32I frontend"
 - Produces: `class Rv32Core(resetVector: BigInt = 0) extends Module` with `imem`, `dmem`, `commit`, `trap`, and `halted` IO.
 - Consumes: all component interfaces from Tasks 2-7.
 
-- [ ] **Step 1: Write a failing arithmetic program test**
+- [x] **Step 1: Write a failing arithmetic program test**
 
 Load a hand-encoded program containing dependent ADDI/ADD/SUB/shift/compare operations followed by several NOPs. Drive one-cycle instruction responses with `TestMemory`, stop after the expected number of commits, and check architectural register results including EX/MEM and MEM/WB forwarding cases. EBREAK is not used until precise trap behavior exists in Task 11.
 
-- [ ] **Step 2: Connect explicit stage registers**
+- [x] **Step 2: Connect explicit stage registers**
 
 Create focused IF/ID, ID/EX, EX/MEM, and MEM/WB bundles inside `Rv32Core.scala`, each with a `valid` register initialized false. Connect decode, register reads, forwarding, ALU, writeback, and commit. Keep dmem inactive in this task. Add `Rv32Core` as a generation choice in `Generate.scala`.
 
-- [ ] **Step 3: Run tests and generate RTL**
+- [x] **Step 3: Run tests and generate RTL**
 
 Run the arithmetic spec, all Chisel tests, then generate `Rv32Core.sv` under `generated/` using the existing environment.
 
 Expected: arithmetic program reaches EBREAK only after all prior results commit in order.
 
-- [ ] **Step 4: Run the first Vivado checkpoint once**
+- [x] **Step 4: Run the first Vivado checkpoint once**
 
 Run out-of-context synthesis for `Rv32Core` and save the worst timing path and logic-level report under `generated/reports/`. Do not optimize for a target frequency yet; only verify no path crosses multiple pipeline stages and no ready chain spans the core.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add chisel/src/main/scala/cpu/Rv32Core.scala chisel/src/main/scala/Generate.scala chisel/src/test/scala/cpu/TestMemory.scala chisel/src/test/scala/cpu/Rv32CoreArithmeticSpec.scala
