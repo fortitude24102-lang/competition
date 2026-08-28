@@ -535,19 +535,19 @@ git commit -m "test(cpu): run a compiled RV32I program"
 - Produces: one command that runs toolchain smoke, all Chisel tests, compiled program tests, RTL generation, and selected upstream RISC-V `rv32ui` compatibility tests.
 - Produces: a recorded second Vivado timing checkpoint.
 
-- [ ] **Step 1: Add the verification command and expected checks**
+- [x] **Step 1: Add the verification command and expected checks**
 
 The PowerShell script must stop on the first failure and print one line for each completed gate: toolchain, component tests, pipeline tests, program test, RTL generation, architecture tests, and timing report.
 
-- [ ] **Step 2: Run selected upstream RV32I compatibility tests**
+- [x] **Step 2: Run selected upstream RV32I compatibility tests**
 
 Clone `https://github.com/riscv-software-src/riscv-tests.git` at commit `2ebecad997fa58cd9e5724340ba75aa4b59bd1d0` under `D:\Chisel-environment\riscv-tests`. Build and run these `rv32ui` cases through the Chisel test memory: `add`, `addi`, `and`, `andi`, `auipc`, `beq`, `bge`, `bgeu`, `blt`, `bltu`, `bne`, `jal`, `jalr`, `lb`, `lbu`, `lh`, `lhu`, `lui`, `lw`, `or`, `ori`, `sb`, `sh`, `sll`, `slli`, `slt`, `slti`, `sltiu`, `sltu`, `sra`, `srai`, `srl`, `srli`, `sub`, `sw`, `xor`, and `xori`. Keep downloaded sources and build products outside the repository; commit only the adapter and invocation script.
 
-- [ ] **Step 3: Generate RTL and run the second Vivado checkpoint once**
+- [x] **Step 3: Generate RTL and run the second Vivado checkpoint once**
 
 Run `Rv32Core` out-of-context synthesis. Record clock constraint, worst slack, logic levels, and endpoints in `docs/rv32i_core_verification.md`. If a path contains two major 32-bit operations or crosses an unintended ready chain, fix that path and rerun once; do not perform general frequency tuning.
 
-- [ ] **Step 4: Run the complete verification command**
+- [x] **Step 4: Run the complete verification command**
 
 Run:
 
@@ -557,7 +557,7 @@ powershell -ExecutionPolicy Bypass -File scripts/verify-rv32i-core.ps1
 
 Expected: every gate passes and the worktree contains no generated untracked binaries.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add scripts/verify-rv32i-core.ps1 docs/rv32i_core_verification.md
