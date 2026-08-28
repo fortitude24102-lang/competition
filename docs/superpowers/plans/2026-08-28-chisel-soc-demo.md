@@ -189,21 +189,21 @@ git commit -m "feat(soc): add the MMIO UART byte port"
 - Consumes: instruction and data `SocBusTargetIO` requests.
 - Produces: independent one-cycle-later responses; optional `initFile: Option[String]` passed to `loadMemoryFromFileInline`.
 
-- [ ] **Step 1: Write failing RAM tests**
+- [x] **Step 1: Write failing RAM tests**
 
 Instantiate a small 64-word RAM and check instruction reads, data word writes, byte-strobe updates, simultaneous instruction/data reads, instruction writes rejected, and out-of-range addresses returning `error=true`.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run: `sbt "testOnly soc.DualPortRamSpec"`
 
 Expected: compilation fails because `DualPortRam` does not exist.
 
-- [ ] **Step 3: Implement a synthesizable two-port memory**
+- [x] **Step 3: Implement a synthesizable two-port memory**
 
 Use `SyncReadMem(words, Vec(4, UInt(8.W)))`. Keep one pending-response register per port. The instruction port never writes; the data port converts `wdata` and `wstrb` into four byte lanes. Both accepted reads return the addressed 32-bit little-endian word on the next cycle and hold it through response backpressure.
 
-- [ ] **Step 4: Run GREEN and commit**
+- [x] **Step 4: Run GREEN and commit**
 
 Run: `sbt "testOnly soc.DualPortRamSpec"`
 
