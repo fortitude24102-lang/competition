@@ -35,7 +35,7 @@
 - Consumes: `cpu.CoreBusReq`, `cpu.CoreBusResp`, and `cpu.CoreBusIO`.
 - Produces: `SocBusTargetIO`, `MemoryMap.BootRamBase`, `UartBase`, `AccelBase`, `ExternalBase`, register offsets, and hardware/pure-Scala address predicates.
 
-- [ ] **Step 1: Write the failing memory-map test**
+- [x] **Step 1: Write the failing memory-map test**
 
 ```scala
 class MemoryMapSpec extends AnyFunSpec with Matchers {
@@ -52,13 +52,13 @@ class MemoryMapSpec extends AnyFunSpec with Matchers {
 }
 ```
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run: `sbt "testOnly soc.MemoryMapSpec"`
 
 Expected: compilation fails because `MemoryMap` and `MemoryRegion` do not exist.
 
-- [ ] **Step 3: Implement the minimal bus target type and constants**
+- [x] **Step 3: Implement the minimal bus target type and constants**
 
 ```scala
 class SocBusTargetIO extends Bundle {
@@ -78,17 +78,17 @@ object MemoryRegion {
 
 `MemoryMap.regionOf` must implement the exact ranges from the spec. `MemoryMap.isBootRam/isUart/isAccelerator/isExternal` must accept `UInt` and compare only address bounds; address-offset legality remains inside each target.
 
-- [ ] **Step 4: Write the two interface documents**
+- [x] **Step 4: Write the two interface documents**
 
 `docs/memory_map.md` must contain the four address windows, UART and accelerator register tables, access type, reset value, and unmapped-error rule. `docs/accel_if.md` must contain the exact `VideoAccelTop` ports, 24-bit RGB ordering, active-high synchronous reset, and mode definitions.
 
-- [ ] **Step 5: Run GREEN and the existing suite**
+- [x] **Step 5: Run GREEN and the existing suite**
 
 Run: `sbt "testOnly soc.MemoryMapSpec" test`
 
 Expected: `MemoryMapSpec` and all existing tests pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add chisel/src/main/scala/soc/SocBus.scala chisel/src/main/scala/soc/MemoryMap.scala chisel/src/test/scala/soc/MemoryMapSpec.scala docs/memory_map.md docs/accel_if.md
