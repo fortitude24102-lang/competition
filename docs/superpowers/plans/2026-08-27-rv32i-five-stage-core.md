@@ -294,19 +294,19 @@ git commit -m "feat(cpu): format RV32I load and store accesses"
 - Produces: two `ForwardSel` outputs (`Reg`, `ExMem`, `MemWb`), `loadUseStall`, and stage enable/flush decisions.
 - Consumes: valid/write/load flags and rd indices for ID/EX, EX/MEM, MEM/WB plus ID rs usage/indices and global memory wait/redirect/trap signals.
 
-- [ ] **Step 1: Write failing priority tests**
+- [x] **Step 1: Write failing priority tests**
 
 Check EX/MEM forwarding wins over MEM/WB, rd zero never forwards, unused rs fields never stall, a dependent load stalls, and control priority is `reset > trap > redirect > memoryWait > loadUse > advance`.
 
-- [ ] **Step 2: Implement direct comparisons and centralized priority**
+- [x] **Step 2: Implement direct comparisons and centralized priority**
 
 Use exact 5-bit equality comparisons gated by stage valid, register-write, and `rd =/= 0.U`. Do not build a generic pipeline controller; emit only the enables and flushes used by `Rv32Core`.
 
-- [ ] **Step 3: Run focused and full tests**
+- [x] **Step 3: Run focused and full tests**
 
 Run `sbt "testOnly cpu.PipelineControlSpec"`, then all tests.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```powershell
 git add chisel/src/main/scala/cpu/PipelineControl.scala chisel/src/test/scala/cpu/PipelineControlSpec.scala
