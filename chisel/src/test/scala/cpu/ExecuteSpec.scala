@@ -1,9 +1,9 @@
 package cpu
 
-import chisel3.simulator.scalatest.ChiselSim
 import org.scalatest.funspec.AnyFunSpec
+import testutil.StableChiselSim
 
-class ExecuteSpec extends AnyFunSpec with ChiselSim {
+class ExecuteSpec extends AnyFunSpec with StableChiselSim {
   private def defaults(dut: Execute): Unit = {
     dut.io.operand1.poke(0)
     dut.io.operand2.poke(0)

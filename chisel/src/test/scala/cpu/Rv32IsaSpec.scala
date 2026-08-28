@@ -1,10 +1,10 @@
 package cpu
 
-import chisel3.simulator.scalatest.ChiselSim
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import testutil.StableChiselSim
 
-class Rv32IsaSpec extends AnyFunSpec with ChiselSim with Matchers {
+class Rv32IsaSpec extends AnyFunSpec with StableChiselSim with Matchers {
   describe("RV32I definitions") {
     it("uses the architectural trap cause numbers") {
       TrapCause.InstructionAddressMisaligned.litValue shouldBe 0

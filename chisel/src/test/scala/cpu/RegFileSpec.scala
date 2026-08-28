@@ -1,9 +1,9 @@
 package cpu
 
-import chisel3.simulator.scalatest.ChiselSim
 import org.scalatest.funspec.AnyFunSpec
+import testutil.StableChiselSim
 
-class RegFileSpec extends AnyFunSpec with ChiselSim {
+class RegFileSpec extends AnyFunSpec with StableChiselSim {
   describe("RegFile") {
     it("keeps x0 zero and stores other registers") {
       simulate(new RegFile) { dut =>

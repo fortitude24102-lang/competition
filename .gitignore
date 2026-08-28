@@ -5,3 +5,5 @@ chisel/.bsp/
 chisel/.metals/
 generated/filelist.f
 generated/verification/
+chisel/src/test/resources/rv32i/*.bin
+chisel/src/test/resources/rv32i/*.elf

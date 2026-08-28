@@ -1,10 +1,10 @@
 package cpu
 
-import chisel3.simulator.scalatest.ChiselSim
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import testutil.StableChiselSim
 
-class Rv32CoreMemorySpec extends AnyFunSpec with ChiselSim with Matchers {
+class Rv32CoreMemorySpec extends AnyFunSpec with StableChiselSim with Matchers {
   describe("Rv32Core memory pipeline") {
     it("executes byte, halfword, and word accesses with delayed bus handshakes") {
       val instructions = new TestMemory(Seq(

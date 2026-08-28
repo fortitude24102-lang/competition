@@ -1,9 +1,9 @@
 package cpu
 
-import chisel3.simulator.scalatest.ChiselSim
 import org.scalatest.funspec.AnyFunSpec
+import testutil.StableChiselSim
 
-class PipelineControlSpec extends AnyFunSpec with ChiselSim {
+class PipelineControlSpec extends AnyFunSpec with StableChiselSim {
   private def defaults(dut: PipelineControl): Unit = {
     dut.io.exRs1.poke(0)
     dut.io.exRs2.poke(0)

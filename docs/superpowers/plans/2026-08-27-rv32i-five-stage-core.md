@@ -491,11 +491,11 @@ git commit -m "feat(cpu): report precise RV32I traps"
 - Consumes: compiler prefix under `/mnt/d/Chisel-environment/riscv-toolchain/usr/bin`.
 - Produces: raw little-endian instruction/data images and expected signature words.
 
-- [ ] **Step 1: Write a failing compiled-program test**
+- [x] **Step 1: Write a failing compiled-program test**
 
 The assembly program must exercise every RV32I instruction family, write a pass signature to RAM, and end with EBREAK. The Scala test loads the binary into `TestMemory`, runs with deterministic request/response delays, and checks the signature plus final EBREAK trap.
 
-- [ ] **Step 2: Add deterministic build commands**
+- [x] **Step 2: Add deterministic build commands**
 
 ```bash
 prefix=/mnt/d/Chisel-environment/riscv-toolchain/usr/bin/riscv64-unknown-elf-
@@ -509,13 +509,13 @@ prefix=/mnt/d/Chisel-environment/riscv-toolchain/usr/bin/riscv64-unknown-elf-
 
 Keep generated ELF/bin files ignored; rebuild them before the program test.
 
-- [ ] **Step 3: Run program and full tests**
+- [x] **Step 3: Run program and full tests**
 
 Run the build script, `sbt "testOnly cpu.Rv32ProgramSpec"`, then all tests.
 
 Expected: program signature passes and the last event is an EBREAK trap.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```powershell
 git add .gitignore scripts/build-rv32i-tests.sh chisel/src/test/resources/rv32i chisel/src/test/scala/cpu/Rv32ProgramSpec.scala

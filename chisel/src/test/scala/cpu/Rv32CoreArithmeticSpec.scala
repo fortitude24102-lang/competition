@@ -1,10 +1,10 @@
 package cpu
 
-import chisel3.simulator.scalatest.ChiselSim
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import testutil.StableChiselSim
 
-class Rv32CoreArithmeticSpec extends AnyFunSpec with ChiselSim with Matchers {
+class Rv32CoreArithmeticSpec extends AnyFunSpec with StableChiselSim with Matchers {
   describe("Rv32Core arithmetic pipeline") {
     it("commits dependent ALU instructions with EX/MEM and MEM/WB forwarding") {
       val memory = new TestMemory(Seq(

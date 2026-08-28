@@ -1,9 +1,9 @@
 package soc
 
-import chisel3.simulator.scalatest.ChiselSim
 import org.scalatest.funspec.AnyFunSpec
+import testutil.StableChiselSim
 
-class RegDemoSpec extends AnyFunSpec with ChiselSim {
+class RegDemoSpec extends AnyFunSpec with StableChiselSim {
   describe("RegDemo") {
     it("resets the stored value to zero") {
       simulate(new RegDemo) { dut =>

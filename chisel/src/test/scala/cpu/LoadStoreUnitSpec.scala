@@ -1,9 +1,9 @@
 package cpu
 
-import chisel3.simulator.scalatest.ChiselSim
 import org.scalatest.funspec.AnyFunSpec
+import testutil.StableChiselSim
 
-class LoadStoreUnitSpec extends AnyFunSpec with ChiselSim {
+class LoadStoreUnitSpec extends AnyFunSpec with StableChiselSim {
   private def defaults(dut: LoadStoreUnit): Unit = {
     dut.io.addr.poke(0)
     dut.io.memWidth.poke(MemWidth.Byte)

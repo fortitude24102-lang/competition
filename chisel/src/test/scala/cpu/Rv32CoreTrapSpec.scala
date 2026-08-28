@@ -1,10 +1,10 @@
 package cpu
 
-import chisel3.simulator.scalatest.ChiselSim
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import testutil.StableChiselSim
 
-class Rv32CoreTrapSpec extends AnyFunSpec with ChiselSim with Matchers {
+class Rv32CoreTrapSpec extends AnyFunSpec with StableChiselSim with Matchers {
   private case class TrapEvent(cause: Int, pc: BigInt, inst: BigInt)
   private case class RunResult(
     traps: Vector[TrapEvent],

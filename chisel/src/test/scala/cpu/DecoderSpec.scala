@@ -1,9 +1,9 @@
 package cpu
 
-import chisel3.simulator.scalatest.ChiselSim
 import org.scalatest.funspec.AnyFunSpec
+import testutil.StableChiselSim
 
-class DecoderSpec extends AnyFunSpec with ChiselSim {
+class DecoderSpec extends AnyFunSpec with StableChiselSim {
   private def check(dut: Decoder, inst: BigInt)(body: => Unit): Unit = {
     dut.io.inst.poke(inst)
     body

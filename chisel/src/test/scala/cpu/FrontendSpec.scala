@@ -1,9 +1,9 @@
 package cpu
 
-import chisel3.simulator.scalatest.ChiselSim
 import org.scalatest.funspec.AnyFunSpec
+import testutil.StableChiselSim
 
-class FrontendSpec extends AnyFunSpec with ChiselSim {
+class FrontendSpec extends AnyFunSpec with StableChiselSim {
   private def defaults(dut: Frontend): Unit = {
     dut.io.imem.req.ready.poke(false)
     dut.io.imem.resp.valid.poke(false)
