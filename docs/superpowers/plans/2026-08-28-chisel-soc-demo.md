@@ -348,19 +348,19 @@ git commit -m "feat(soc): assemble the RV32I demo SoC"
 - Consumes: `Generate soc --target-dir ../generated` and `rtl/video/VideoAccelTop.v`.
 - Produces: one PowerShell command that builds the program, runs all tests, regenerates RTL, lints all sources, runs the single SoC Vivado OOC checkpoint, and checks repository hygiene.
 
-- [ ] **Step 1: Add a failing generator/verification gate**
+- [x] **Step 1: Add a failing generator/verification gate**
 
 `scripts/verify-soc.ps1` must fail unless `generated/SoCTop.sv` contains module `SoCTop`, contains an instance of `VideoAccelTop`, all Chisel tests pass, Verilator resolves the external Verilog module, and Vivado reports non-negative WNS at 100 MHz.
 
-- [ ] **Step 2: Extend the generator minimally**
+- [x] **Step 2: Extend the generator minimally**
 
 `Generate.scala` must select `SoCTop` only when the first argument is `soc`; existing `rv32` and default Blink behavior must remain unchanged.
 
-- [ ] **Step 3: Document the exact build and integration flow**
+- [x] **Step 3: Document the exact build and integration flow**
 
 `docs/chisel_build.md` records versions, clean generation command, required Vivado source order, and the future AXI bridge boundary. `docs/integration_fix.md` records the current fixed interface, expected software readback chain, and the absence of board-level XDC/C/video-physical files as explicit Day 11～14 prerequisites.
 
-- [ ] **Step 4: Run the complete verification command**
+- [x] **Step 4: Run the complete verification command**
 
 Run:
 
@@ -370,11 +370,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-soc.ps1
 
 Expected gates: environment, program build, component tests, interconnect tests, SoCTop program, RTL generation, external Verilog lint, Vivado timing, and repository hygiene all pass.
 
-- [ ] **Step 5: Inspect the only SoC Vivado checkpoint**
+- [x] **Step 5: Inspect the only SoC Vivado checkpoint**
 
 Record clock, WNS, logic levels, startpoint, endpoint and LUT/FF/BRAM/DSP in `docs/chisel_build.md`. If the worst internal path contains two major 32-bit operations or an unintended full ready chain, fix only that path and rerun once; otherwise do not tune frequency.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add chisel/src/main/scala/Generate.scala scripts/gen-soc-rtl.ps1 scripts/verify-soc.ps1 scripts/vivado-soc.tcl docs/chisel_build.md docs/integration_fix.md generated/SoCTop.sv generated/reports/soc-demo

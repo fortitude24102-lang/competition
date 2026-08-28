@@ -49,10 +49,6 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:57:7
                 io_imem_req_ready,	// src/main/scala/cpu/Rv32Core.scala:58:14
   output        io_imem_req_valid,	// src/main/scala/cpu/Rv32Core.scala:58:14
   output [31:0] io_imem_req_bits_addr,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output        io_imem_req_bits_write,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output [1:0]  io_imem_req_bits_size,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output [31:0] io_imem_req_bits_wdata,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output [3:0]  io_imem_req_bits_wstrb,	// src/main/scala/cpu/Rv32Core.scala:58:14
   output        io_imem_resp_ready,	// src/main/scala/cpu/Rv32Core.scala:58:14
   input         io_imem_resp_valid,	// src/main/scala/cpu/Rv32Core.scala:58:14
   input  [31:0] io_imem_resp_bits_rdata,	// src/main/scala/cpu/Rv32Core.scala:58:14
@@ -215,15 +211,15 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:57:7
       idEx_control_rs1Used <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
       idEx_control_rs2Used <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
       idEx_control_aluOp <= 4'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_control_op1Sel <= 2'h0;	// <stdin>:923:5, src/main/scala/cpu/Rv32Core.scala:74:29
+      idEx_control_op1Sel <= 2'h0;	// <stdin>:958:5, src/main/scala/cpu/Rv32Core.scala:74:29
       idEx_control_op2Sel <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
       idEx_control_branchOp <= 4'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
       idEx_control_memRead <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
       idEx_control_memWrite <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_control_memWidth <= 2'h0;	// <stdin>:923:5, src/main/scala/cpu/Rv32Core.scala:74:29
+      idEx_control_memWidth <= 2'h0;	// <stdin>:958:5, src/main/scala/cpu/Rv32Core.scala:74:29
       idEx_control_memUnsigned <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
       idEx_control_regWrite <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_control_wbSel <= 2'h0;	// <stdin>:923:5, src/main/scala/cpu/Rv32Core.scala:74:29
+      idEx_control_wbSel <= 2'h0;	// <stdin>:958:5, src/main/scala/cpu/Rv32Core.scala:74:29
       idEx_immediate <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
       idEx_rs1 <= 5'h0;	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
       idEx_rs2 <= 5'h0;	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
@@ -239,10 +235,10 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:57:7
       exMem_aluResult <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
       exMem_rd <= 5'h0;	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
       exMem_regWrite <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
-      exMem_wbSel <= 2'h0;	// <stdin>:923:5, src/main/scala/cpu/Rv32Core.scala:75:30
+      exMem_wbSel <= 2'h0;	// <stdin>:958:5, src/main/scala/cpu/Rv32Core.scala:75:30
       exMem_memRead <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
       exMem_memWrite <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
-      exMem_memWidth <= 2'h0;	// <stdin>:923:5, src/main/scala/cpu/Rv32Core.scala:75:30
+      exMem_memWidth <= 2'h0;	// <stdin>:958:5, src/main/scala/cpu/Rv32Core.scala:75:30
       exMem_memUnsigned <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
       exMem_storeData <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
       exMem_exceptionValid <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
@@ -532,10 +528,6 @@ module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:57:7
     .io_action           (_control_io_action)
   );	// src/main/scala/cpu/Rv32Core.scala:71:23
   assign io_imem_req_valid = _frontend_io_imem_req_valid & ~haltedReg;	// src/main/scala/cpu/Rv32Core.scala:57:7, :66:24, :78:34, :80:{51,54}
-  assign io_imem_req_bits_write = 1'h0;	// src/main/scala/cpu/Rv32Core.scala:57:7
-  assign io_imem_req_bits_size = 2'h2;	// src/main/scala/cpu/Rv32Core.scala:57:7
-  assign io_imem_req_bits_wdata = 32'h0;	// src/main/scala/cpu/Rv32Core.scala:57:7
-  assign io_imem_req_bits_wstrb = 4'h0;	// src/main/scala/cpu/Rv32Core.scala:57:7
   assign io_imem_resp_ready = _frontend_io_imem_resp_ready & ~haltedReg;	// src/main/scala/cpu/Rv32Core.scala:57:7, :66:24, :78:34, :80:54, :85:53
   assign io_dmem_req_valid = io_dmem_req_valid_0;	// src/main/scala/cpu/Rv32Core.scala:57:7, :104:{40,68}
   assign io_dmem_req_bits_addr = exMem_aluResult;	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30

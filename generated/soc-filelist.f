@@ -1,0 +1,17 @@
+D:/ZYNQ/smallproject/generated/AccelRegs.sv
+D:/ZYNQ/smallproject/generated/Blink.sv
+D:/ZYNQ/smallproject/generated/Decoder.sv
+D:/ZYNQ/smallproject/generated/DualPortRam.sv
+D:/ZYNQ/smallproject/generated/Execute.sv
+D:/ZYNQ/smallproject/generated/Frontend.sv
+D:/ZYNQ/smallproject/generated/LoadStoreUnit.sv
+D:/ZYNQ/smallproject/generated/memory_16384x32.sv
+D:/ZYNQ/smallproject/generated/MmioUart.sv
+D:/ZYNQ/smallproject/generated/PipelineControl.sv
+D:/ZYNQ/smallproject/generated/Queue2_FetchPacket.sv
+D:/ZYNQ/smallproject/generated/ram_2x65.sv
+D:/ZYNQ/smallproject/generated/RegFile.sv
+D:/ZYNQ/smallproject/generated/Rv32Core.sv
+D:/ZYNQ/smallproject/generated/SoCInterconnect.sv
+D:/ZYNQ/smallproject/generated/SoCTop.sv
+D:/ZYNQ/smallproject/rtl/video/VideoAccelTop.v
