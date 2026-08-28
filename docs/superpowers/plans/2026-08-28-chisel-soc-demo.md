@@ -224,21 +224,21 @@ git commit -m "feat(soc): add dual-port boot RAM"
 - Consumes: `cpuImem` and `cpuDmem` as `Flipped(new CoreBusIO)` slave-facing ports.
 - Produces: master `CoreBusIO` ports `ramImem`, `ramDmem`, `uart`, `accelerator`, `externalImem`, and `externalDmem`.
 
-- [ ] **Step 1: Write failing routing tests**
+- [x] **Step 1: Write failing routing tests**
 
 Test each base and end address. Hold a selected target response under CPU backpressure while changing other target inputs and assert the response remains from the accepted target. Verify instruction access to UART/Accelerator and data access to an unmapped hole produce local error responses without issuing downstream requests. Verify `0x8000_0000` routes to the external ports.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run: `sbt "testOnly soc.SoCInterconnectSpec"`
 
 Expected: compilation fails because `SoCInterconnect` does not exist.
 
-- [ ] **Step 3: Implement fixed-priority target selection**
+- [x] **Step 3: Implement fixed-priority target selection**
 
 Use one target register per CPU port. Drive all downstream request valids false by default, route only the selected request, and lock the selection from request handshake through response handshake. Generate a registered local error response for illegal regions. Do not connect any target `ready` signal combinationally into a different target.
 
-- [ ] **Step 4: Run GREEN and commit**
+- [x] **Step 4: Run GREEN and commit**
 
 Run: `sbt "testOnly soc.SoCInterconnectSpec"`
 
