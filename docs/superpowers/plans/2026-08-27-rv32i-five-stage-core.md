@@ -325,19 +325,19 @@ git commit -m "feat(cpu): control forwarding stalls and flushes"
 - Consumes: `CoreBusIO` instruction port, `redirectValid`, `redirectPc`, and downstream dequeue readiness.
 - Produces: fetched `pc`, `inst`, and fetch error in program order.
 
-- [ ] **Step 1: Write failing backpressure and redirect tests**
+- [x] **Step 1: Write failing backpressure and redirect tests**
 
 Test sequential addresses 0/4/8, one outstanding request, queue backpressure, redirect with no pending response, and redirect after an old request handshake but before its response. The stale response must be accepted and dropped; the next visible instruction must use the redirected PC.
 
-- [ ] **Step 2: Implement PC, pending, dropResponse, and a depth-2 Queue**
+- [x] **Step 2: Implement PC, pending, dropResponse, and a depth-2 Queue**
 
 Set a pending bit on request fire and clear it on response fire. Instantiate Chisel `Queue` with depth 2 and `hasFlush = true`. On redirect, drive its flush input and set `dropResponse` only when an old request is pending. Do not issue the redirected request until that response has been consumed.
 
-- [ ] **Step 3: Run focused and full tests**
+- [x] **Step 3: Run focused and full tests**
 
 Run `sbt "testOnly cpu.FrontendSpec"`, then all tests.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```powershell
 git add chisel/src/main/scala/cpu/Frontend.scala chisel/src/test/scala/cpu/FrontendSpec.scala
