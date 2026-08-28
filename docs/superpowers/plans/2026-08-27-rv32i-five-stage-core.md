@@ -458,19 +458,19 @@ git commit -m "feat(cpu): execute RV32I memory operations"
 - Produces: `TrapTrace(valid, cause, pc, inst)` and sticky `halted` until reset.
 - Produces: normal `CommitTrace(valid, pc, inst, writeEnable, rd, data)` only for non-trapping instructions.
 
-- [ ] **Step 1: Write failing trap tests**
+- [x] **Step 1: Write failing trap tests**
 
 Cover illegal instruction, EBREAK, ECALL, instruction access error, load/store bus error, misaligned branch target, and misaligned half/word memory access. Assert the trap reports the oldest faulting instruction, no younger instruction commits, and no misaligned store request fires.
 
-- [ ] **Step 2: Implement oldest-event priority and halt**
+- [x] **Step 2: Implement oldest-event priority and halt**
 
 Carry exception metadata with each stage. Before applying redirect or normal writes, choose the oldest valid exception among MEM, EX, ID, and IF. Suppress register/memory side effects for that instruction, flush younger stages, pulse `trap.valid`, and set `halted` until reset.
 
-- [ ] **Step 3: Run focused and full tests**
+- [x] **Step 3: Run focused and full tests**
 
 Run the trap spec, then all Chisel tests.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```powershell
 git add chisel/src/main/scala/cpu/Rv32Core.scala chisel/src/test/scala/cpu/Rv32CoreTrapSpec.scala

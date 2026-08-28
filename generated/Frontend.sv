@@ -57,6 +57,7 @@ module Frontend(	// src/main/scala/cpu/Frontend.scala:12:7
   output        io_output_valid,	// src/main/scala/cpu/Frontend.scala:13:14
   output [31:0] io_output_bits_pc,	// src/main/scala/cpu/Frontend.scala:13:14
                 io_output_bits_inst,	// src/main/scala/cpu/Frontend.scala:13:14
+  output        io_output_bits_error,	// src/main/scala/cpu/Frontend.scala:13:14
   input         io_redirectValid,	// src/main/scala/cpu/Frontend.scala:13:14
   input  [31:0] io_redirectPc	// src/main/scala/cpu/Frontend.scala:13:14
 );
@@ -127,6 +128,7 @@ module Frontend(	// src/main/scala/cpu/Frontend.scala:12:7
     .io_deq_valid      (io_output_valid),
     .io_deq_bits_pc    (io_output_bits_pc),
     .io_deq_bits_inst  (io_output_bits_inst),
+    .io_deq_bits_error (io_output_bits_error),
     .io_flush          (io_redirectValid)
   );	// src/main/scala/cpu/Frontend.scala:24:21
   assign io_imem_req_valid = io_imem_req_valid_0;	// src/main/scala/cpu/Frontend.scala:12:7, :29:{40,61}

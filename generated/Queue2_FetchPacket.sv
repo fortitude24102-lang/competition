@@ -55,10 +55,11 @@ module Queue2_FetchPacket(	// src/main/scala/chisel3/util/Queue.scala:60:7
   output        io_deq_valid,	// src/main/scala/chisel3/util/Queue.scala:72:14
   output [31:0] io_deq_bits_pc,	// src/main/scala/chisel3/util/Queue.scala:72:14
                 io_deq_bits_inst,	// src/main/scala/chisel3/util/Queue.scala:72:14
+  output        io_deq_bits_error,	// src/main/scala/chisel3/util/Queue.scala:72:14
   input         io_flush	// src/main/scala/chisel3/util/Queue.scala:72:14
 );
 
-  wire [63:0] _ram_ext_R0_data;	// src/main/scala/chisel3/util/Queue.scala:73:91
+  wire [64:0] _ram_ext_R0_data;	// src/main/scala/chisel3/util/Queue.scala:73:91
   reg         enq_ptr_value;	// src/main/scala/chisel3/util/Counter.scala:61:40
   reg         deq_ptr_value;	// src/main/scala/chisel3/util/Counter.scala:61:40
   reg         maybe_full;	// src/main/scala/chisel3/util/Queue.scala:76:27
@@ -99,7 +100,7 @@ module Queue2_FetchPacket(	// src/main/scala/chisel3/util/Queue.scala:60:7
       `FIRRTL_AFTER_INITIAL	// src/main/scala/chisel3/util/Queue.scala:60:7
     `endif // FIRRTL_AFTER_INITIAL
   `endif // ENABLE_INITIAL_REG_
-  ram_2x64 ram_ext (	// src/main/scala/chisel3/util/Queue.scala:73:91
+  ram_2x65 ram_ext (	// src/main/scala/chisel3/util/Queue.scala:73:91
     .R0_addr (deq_ptr_value),	// src/main/scala/chisel3/util/Counter.scala:61:40
     .R0_en   (1'h1),	// src/main/scala/chisel3/util/Queue.scala:60:7
     .R0_clk  (clock),
@@ -107,11 +108,12 @@ module Queue2_FetchPacket(	// src/main/scala/chisel3/util/Queue.scala:60:7
     .W0_addr (enq_ptr_value),	// src/main/scala/chisel3/util/Counter.scala:61:40
     .W0_en   (do_enq),	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
     .W0_clk  (clock),
-    .W0_data ({io_enq_bits_pc, io_enq_bits_inst})	// src/main/scala/chisel3/util/Queue.scala:73:91
+    .W0_data ({io_enq_bits_pc, io_enq_bits_inst, io_enq_bits_error})	// src/main/scala/chisel3/util/Queue.scala:73:91
   );	// src/main/scala/chisel3/util/Queue.scala:73:91
   assign io_enq_ready = ~full;	// src/main/scala/chisel3/util/Queue.scala:60:7, :79:24, :103:19
   assign io_deq_valid = ~empty;	// src/main/scala/chisel3/util/Queue.scala:60:7, :78:25, :102:19
-  assign io_deq_bits_pc = _ram_ext_R0_data[63:32];	// src/main/scala/chisel3/util/Queue.scala:60:7, :73:91
-  assign io_deq_bits_inst = _ram_ext_R0_data[31:0];	// src/main/scala/chisel3/util/Queue.scala:60:7, :73:91
+  assign io_deq_bits_pc = _ram_ext_R0_data[64:33];	// src/main/scala/chisel3/util/Queue.scala:60:7, :73:91
+  assign io_deq_bits_inst = _ram_ext_R0_data[32:1];	// src/main/scala/chisel3/util/Queue.scala:60:7, :73:91
+  assign io_deq_bits_error = _ram_ext_R0_data[0];	// src/main/scala/chisel3/util/Queue.scala:60:7, :73:91
 endmodule
 

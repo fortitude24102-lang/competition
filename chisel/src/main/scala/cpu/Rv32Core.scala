@@ -22,6 +22,8 @@ private class IdExStage extends Bundle {
   val rd = UInt(5.W)
   val rs1Value = UInt(32.W)
   val rs2Value = UInt(32.W)
+  val exceptionValid = Bool()
+  val exceptionCause = UInt(4.W)
 }
 
 private class ExMemStage extends Bundle {
@@ -38,6 +40,8 @@ private class ExMemStage extends Bundle {
   val memWidth = MemWidth()
   val memUnsigned = Bool()
   val storeData = UInt(32.W)
+  val exceptionValid = Bool()
+  val exceptionCause = UInt(4.W)
 }
 
 private class MemWbStage extends Bundle {
@@ -71,13 +75,14 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
   private val exMem = RegInit(0.U.asTypeOf(new ExMemStage))
   private val memWb = RegInit(0.U.asTypeOf(new MemWbStage))
   private val memoryRequestSent = RegInit(false.B)
+  private val haltedReg = RegInit(false.B)
 
-  io.imem.req.valid := frontend.io.imem.req.valid
+  io.imem.req.valid := frontend.io.imem.req.valid && !haltedReg
   io.imem.req.bits := frontend.io.imem.req.bits
-  frontend.io.imem.req.ready := io.imem.req.ready
-  frontend.io.imem.resp.valid := io.imem.resp.valid
+  frontend.io.imem.req.ready := io.imem.req.ready && !haltedReg
+  frontend.io.imem.resp.valid := io.imem.resp.valid && !haltedReg
   frontend.io.imem.resp.bits := io.imem.resp.bits
-  io.imem.resp.ready := frontend.io.imem.resp.ready
+  io.imem.resp.ready := frontend.io.imem.resp.ready && !haltedReg
 
   loadStore.io.addr := exMem.aluResult
   loadStore.io.memWidth := exMem.memWidth
@@ -85,9 +90,16 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
   loadStore.io.storeData := exMem.storeData
   loadStore.io.responseData := io.dmem.resp.bits.rdata
 
-  val memoryOperation = exMem.valid && exMem.legal && (exMem.memRead || exMem.memWrite)
+  val memoryOperation = exMem.valid && exMem.legal && !exMem.exceptionValid && (exMem.memRead || exMem.memWrite)
   val memoryResponseValid = memoryRequestSent && io.dmem.resp.valid
   val memoryWait = memoryOperation && !loadStore.io.misaligned && !memoryResponseValid
+  val memoryMisaligned = memoryOperation && loadStore.io.misaligned
+  val memoryBusError = memoryOperation && memoryResponseValid && io.dmem.resp.bits.error
+  val trapEvent = exMem.valid && (exMem.exceptionValid || memoryMisaligned || memoryBusError)
+  val trapCause = Mux(exMem.exceptionValid, exMem.exceptionCause,
+    Mux(memoryMisaligned,
+      Mux(exMem.memWrite, TrapCause.StoreAddressMisaligned, TrapCause.LoadAddressMisaligned),
+      Mux(exMem.memWrite, TrapCause.StoreAccessFault, TrapCause.LoadAccessFault)))
 
   io.dmem.req.valid := memoryOperation && !loadStore.io.misaligned && !memoryRequestSent
   io.dmem.req.bits.addr := exMem.aluResult
@@ -149,14 +161,26 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
   control.io.idRs1Used := ifId.valid && decoder.io.control.rs1Used
   control.io.idRs2Used := ifId.valid && decoder.io.control.rs2Used
   control.io.idExValid := idEx.valid
-  control.io.idExMemRead := idEx.control.memRead
+  control.io.idExMemRead := idEx.control.memRead && !idEx.exceptionValid
   control.io.idExRd := idEx.rd
-  val redirectRequest = idEx.valid && idEx.control.legal &&
+  val redirectRequest = idEx.valid && !idEx.exceptionValid && idEx.control.legal &&
     idEx.control.branchOp =/= BranchOp.None && execute.io.branchTaken
-  val redirectValid = redirectRequest && !memoryWait
+  val branchTargetMisaligned = redirectRequest && execute.io.branchTarget(1, 0).orR
+  val redirectValid = redirectRequest && !branchTargetMisaligned && !memoryWait && !trapEvent
+  val exStageExceptionValid = idEx.exceptionValid || branchTargetMisaligned
+  val exStageExceptionCause = Mux(idEx.exceptionValid, idEx.exceptionCause,
+    TrapCause.InstructionAddressMisaligned)
+
+  val decodeExceptionValid = ifId.fetchError || !decoder.io.control.legal ||
+    decoder.io.control.ebreak || decoder.io.control.ecall
+  val decodeExceptionCause = MuxCase(TrapCause.IllegalInstruction, Seq(
+    ifId.fetchError -> TrapCause.InstructionAccessFault,
+    decoder.io.control.ebreak -> TrapCause.Breakpoint,
+    decoder.io.control.ecall -> TrapCause.EnvironmentCall
+  ))
 
   control.io.resetActive := reset.asBool
-  control.io.trap := false.B
+  control.io.trap := trapEvent || haltedReg
   control.io.redirect := redirectValid
   control.io.memoryWait := memoryWait
 
@@ -171,6 +195,17 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
     idEx.valid := false.B
     exMem.valid := false.B
     memWb.valid := false.B
+    memoryRequestSent := false.B
+    haltedReg := false.B
+  }.elsewhen(control.io.action === PipelineAction.Trap) {
+    ifId.valid := false.B
+    idEx.valid := false.B
+    exMem.valid := false.B
+    memWb.valid := false.B
+    memoryRequestSent := false.B
+    when(trapEvent) {
+      haltedReg := true.B
+    }
   }.elsewhen(control.io.action === PipelineAction.MemoryWait) {
     memWb.valid := false.B
   }.elsewhen(control.io.action === PipelineAction.LoadUseStall) {
@@ -195,6 +230,8 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
     exMem.memWidth := idEx.control.memWidth
     exMem.memUnsigned := idEx.control.memUnsigned
     exMem.storeData := forwardedRs2
+    exMem.exceptionValid := exStageExceptionValid
+    exMem.exceptionCause := exStageExceptionCause
     idEx.valid := false.B
   }.elsewhen(control.io.action === PipelineAction.Redirect) {
     memWb.valid := exMem.valid
@@ -218,6 +255,8 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
     exMem.memWidth := idEx.control.memWidth
     exMem.memUnsigned := idEx.control.memUnsigned
     exMem.storeData := forwardedRs2
+    exMem.exceptionValid := exStageExceptionValid
+    exMem.exceptionCause := exStageExceptionCause
 
     idEx.valid := false.B
     ifId.valid := false.B
@@ -243,6 +282,8 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
     exMem.memWidth := idEx.control.memWidth
     exMem.memUnsigned := idEx.control.memUnsigned
     exMem.storeData := forwardedRs2
+    exMem.exceptionValid := exStageExceptionValid
+    exMem.exceptionCause := exStageExceptionCause
 
     idEx.valid := ifId.valid
     idEx.pc := ifId.pc
@@ -255,6 +296,8 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
     idEx.rd := decoder.io.rd
     idEx.rs1Value := regFile.io.rs1Data
     idEx.rs2Value := regFile.io.rs2Data
+    idEx.exceptionValid := decodeExceptionValid
+    idEx.exceptionCause := decodeExceptionCause
 
     ifId.valid := frontend.io.output.valid
     when(frontend.io.output.valid) {
@@ -264,13 +307,16 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
     }
   }
 
-  io.commit.valid := memWb.valid && memWb.legal
+  io.commit.valid := memWb.valid && memWb.legal && !haltedReg
   io.commit.pc := memWb.pc
   io.commit.inst := memWb.inst
   io.commit.writeEnable := memWb.valid && memWb.legal && memWb.regWrite && memWb.rd =/= 0.U
   io.commit.rd := memWb.rd
   io.commit.data := memWb.writeData
 
-  io.trap := 0.U.asTypeOf(new TrapTrace)
-  io.halted := false.B
+  io.trap.valid := trapEvent && !haltedReg && !reset.asBool
+  io.trap.cause := trapCause
+  io.trap.pc := exMem.pc
+  io.trap.inst := exMem.inst
+  io.halted := haltedReg
 }
