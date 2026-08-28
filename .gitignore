@@ -8,3 +8,6 @@ generated/verification/
 generated/reports/*/vivado.log
 chisel/src/test/resources/rv32i/*.bin
 chisel/src/test/resources/rv32i/*.elf
+chisel/src/test/resources/soc/*.bin
+chisel/src/test/resources/soc/*.elf
+chisel/src/test/resources/soc/*.hex

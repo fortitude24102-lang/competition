@@ -301,29 +301,29 @@ git commit -m "feat(ext): integrate the video accelerator module"
 - Consumes: the existing `Rv32Core`, all Tasks 2～6 modules, and an optional RAM init file.
 - Produces: video stream IO, UART `Decoupled(UInt(8.W))`, external instruction/data `CoreBusIO`, commit/trap/halted debug outputs.
 
-- [ ] **Step 1: Write the smoke program and failing test**
+- [x] **Step 1: Write the smoke program and failing test**
 
 The RV32I assembly program must write CTRL=1, MODE=2, THRESHOLD=128, BYPASS=0; read MODE and THRESHOLD back and branch to fail if wrong; write ASCII `P` to UART TXDATA; then execute EBREAK. Failure writes ASCII `F` before EBREAK.
 
 The test must build/load the binary into Boot RAM, keep both external buses responding with errors, keep UART ready, and assert the observed UART byte is `P`, video control outputs are 1/2/128/0, and the final trap cause is 3.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run: `bash scripts/build-soc-smoke.sh && sbt "testOnly soc.SoCTopSmokeSpec"`
 
 Expected: compilation fails because `SoCTop` does not exist.
 
-- [ ] **Step 3: Implement the minimal SoC top**
+- [x] **Step 3: Implement the minimal SoC top**
 
 Instantiate core, interconnect, RAM, UART, AccelRegs and VideoAccelExt. Connect every Decoupled channel explicitly, pass commit/trap/halted through unchanged, and expose both external CoreBus master ports without adding AXI signals.
 
-- [ ] **Step 4: Run GREEN and the complete Chisel suite**
+- [x] **Step 4: Run GREEN and the complete Chisel suite**
 
 Run: `bash scripts/build-soc-smoke.sh && sbt "testOnly soc.SoCTopSmokeSpec" test`
 
 Expected: software writes the MMIO controls, UART emits `P`, EBREAK traps, and all CPU tests remain green.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add chisel/src/main/scala/soc/SoCTop.scala chisel/src/test/resources/soc chisel/src/test/scala/soc/SoCTopSmokeSpec.scala scripts/build-soc-smoke.sh
