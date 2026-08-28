@@ -34,6 +34,10 @@ private class ExMemStage extends Bundle {
   val regWrite = Bool()
   val wbSel = WbSel()
   val memRead = Bool()
+  val memWrite = Bool()
+  val memWidth = MemWidth()
+  val memUnsigned = Bool()
+  val storeData = UInt(32.W)
 }
 
 private class MemWbStage extends Bundle {
@@ -59,12 +63,14 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
   val decoder = Module(new Decoder)
   val regFile = Module(new RegFile)
   val execute = Module(new Execute)
+  val loadStore = Module(new LoadStoreUnit)
   val control = Module(new PipelineControl)
 
   private val ifId = RegInit(0.U.asTypeOf(new IfIdStage))
   private val idEx = RegInit(0.U.asTypeOf(new IdExStage))
   private val exMem = RegInit(0.U.asTypeOf(new ExMemStage))
   private val memWb = RegInit(0.U.asTypeOf(new MemWbStage))
+  private val memoryRequestSent = RegInit(false.B)
 
   io.imem.req.valid := frontend.io.imem.req.valid
   io.imem.req.bits := frontend.io.imem.req.bits
@@ -73,9 +79,30 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
   frontend.io.imem.resp.bits := io.imem.resp.bits
   io.imem.resp.ready := frontend.io.imem.resp.ready
 
-  io.dmem.req.valid := false.B
-  io.dmem.req.bits := 0.U.asTypeOf(new CoreBusReq)
-  io.dmem.resp.ready := false.B
+  loadStore.io.addr := exMem.aluResult
+  loadStore.io.memWidth := exMem.memWidth
+  loadStore.io.unsignedLoad := exMem.memUnsigned
+  loadStore.io.storeData := exMem.storeData
+  loadStore.io.responseData := io.dmem.resp.bits.rdata
+
+  val memoryOperation = exMem.valid && exMem.legal && (exMem.memRead || exMem.memWrite)
+  val memoryResponseValid = memoryRequestSent && io.dmem.resp.valid
+  val memoryWait = memoryOperation && !loadStore.io.misaligned && !memoryResponseValid
+
+  io.dmem.req.valid := memoryOperation && !loadStore.io.misaligned && !memoryRequestSent
+  io.dmem.req.bits.addr := exMem.aluResult
+  io.dmem.req.bits.write := exMem.memWrite
+  io.dmem.req.bits.size := exMem.memWidth.asUInt
+  io.dmem.req.bits.wdata := Mux(exMem.memWrite, loadStore.io.wdata, 0.U)
+  io.dmem.req.bits.wstrb := Mux(exMem.memWrite, loadStore.io.wstrb, 0.U)
+  io.dmem.resp.ready := memoryOperation && memoryRequestSent
+
+  when(io.dmem.req.fire) {
+    memoryRequestSent := true.B
+  }
+  when(io.dmem.resp.fire) {
+    memoryRequestSent := false.B
+  }
 
   decoder.io.inst := ifId.inst
   regFile.io.rs1 := decoder.io.rs1
@@ -124,22 +151,27 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
   control.io.idExValid := idEx.valid
   control.io.idExMemRead := idEx.control.memRead
   control.io.idExRd := idEx.rd
-  val redirectValid = idEx.valid && idEx.control.legal &&
+  val redirectRequest = idEx.valid && idEx.control.legal &&
     idEx.control.branchOp =/= BranchOp.None && execute.io.branchTaken
+  val redirectValid = redirectRequest && !memoryWait
 
   control.io.resetActive := reset.asBool
   control.io.trap := false.B
   control.io.redirect := redirectValid
-  control.io.memoryWait := false.B
+  control.io.memoryWait := memoryWait
 
   frontend.io.redirectValid := redirectValid
   frontend.io.redirectPc := execute.io.branchTarget
   frontend.io.output.ready := control.io.action === PipelineAction.Advance
 
+  val exMemWriteData = Mux(exMem.memRead, loadStore.io.loadData, exMemForwardValue)
+
   when(control.io.action === PipelineAction.Reset) {
     ifId.valid := false.B
     idEx.valid := false.B
     exMem.valid := false.B
+    memWb.valid := false.B
+  }.elsewhen(control.io.action === PipelineAction.MemoryWait) {
     memWb.valid := false.B
   }.elsewhen(control.io.action === PipelineAction.LoadUseStall) {
     memWb.valid := exMem.valid
@@ -148,7 +180,7 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
     memWb.legal := exMem.legal
     memWb.rd := exMem.rd
     memWb.regWrite := exMem.regWrite
-    memWb.writeData := exMemForwardValue
+    memWb.writeData := exMemWriteData
 
     exMem.valid := idEx.valid
     exMem.pc := idEx.pc
@@ -159,6 +191,10 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
     exMem.regWrite := idEx.control.regWrite
     exMem.wbSel := idEx.control.wbSel
     exMem.memRead := idEx.control.memRead
+    exMem.memWrite := idEx.control.memWrite
+    exMem.memWidth := idEx.control.memWidth
+    exMem.memUnsigned := idEx.control.memUnsigned
+    exMem.storeData := forwardedRs2
     idEx.valid := false.B
   }.elsewhen(control.io.action === PipelineAction.Redirect) {
     memWb.valid := exMem.valid
@@ -167,7 +203,7 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
     memWb.legal := exMem.legal
     memWb.rd := exMem.rd
     memWb.regWrite := exMem.regWrite
-    memWb.writeData := exMemForwardValue
+    memWb.writeData := exMemWriteData
 
     exMem.valid := idEx.valid
     exMem.pc := idEx.pc
@@ -178,6 +214,10 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
     exMem.regWrite := idEx.control.regWrite
     exMem.wbSel := idEx.control.wbSel
     exMem.memRead := idEx.control.memRead
+    exMem.memWrite := idEx.control.memWrite
+    exMem.memWidth := idEx.control.memWidth
+    exMem.memUnsigned := idEx.control.memUnsigned
+    exMem.storeData := forwardedRs2
 
     idEx.valid := false.B
     ifId.valid := false.B
@@ -188,7 +228,7 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
     memWb.legal := exMem.legal
     memWb.rd := exMem.rd
     memWb.regWrite := exMem.regWrite
-    memWb.writeData := exMemForwardValue
+    memWb.writeData := exMemWriteData
 
     exMem.valid := idEx.valid
     exMem.pc := idEx.pc
@@ -199,6 +239,10 @@ class Rv32Core(resetVector: BigInt = 0) extends Module {
     exMem.regWrite := idEx.control.regWrite
     exMem.wbSel := idEx.control.wbSel
     exMem.memRead := idEx.control.memRead
+    exMem.memWrite := idEx.control.memWrite
+    exMem.memWidth := idEx.control.memWidth
+    exMem.memUnsigned := idEx.control.memUnsigned
+    exMem.storeData := forwardedRs2
 
     idEx.valid := ifId.valid
     idEx.pc := ifId.pc

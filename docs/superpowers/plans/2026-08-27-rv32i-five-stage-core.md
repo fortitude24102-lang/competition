@@ -427,19 +427,19 @@ git commit -m "feat(cpu): execute RV32I branches and jumps"
 - Consumes: LSU formatting and `dmem` request/response.
 - Produces: one-outstanding load/store behavior, store response checking, and memory-wait pipeline hold.
 
-- [ ] **Step 1: Write failing memory and backpressure tests**
+- [x] **Step 1: Write failing memory and backpressure tests**
 
 Test LB/LBU/LH/LHU/LW and SB/SH/SW at legal offsets, a dependent load-use sequence, store-data forwarding, request-ready delays, response delays, and exactly one request for each stalled instruction.
 
-- [ ] **Step 2: Implement pending transaction state**
+- [x] **Step 2: Implement pending transaction state**
 
 Issue dmem only from a valid EX/MEM memory operation. Latch request completion, keep the memory instruction stable until response fire, and block younger stages without changing older committed state. Format load data before MEM/WB. Require a response for stores and suppress repeated requests while pending.
 
-- [ ] **Step 3: Run focused and full tests**
+- [x] **Step 3: Run focused and full tests**
 
 Run the memory spec, then all tests.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```powershell
 git add chisel/src/main/scala/cpu/Rv32Core.scala chisel/src/test/scala/cpu/TestMemory.scala chisel/src/test/scala/cpu/Rv32CoreMemorySpec.scala
