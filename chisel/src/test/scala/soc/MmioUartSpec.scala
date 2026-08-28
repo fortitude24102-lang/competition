@@ -1,0 +1,60 @@
+package soc
+
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import testutil.StableChiselSim
+
+class MmioUartSpec extends AnyFunSpec with StableChiselSim with Matchers {
+  describe("MmioUart") {
+    it("buffers exactly one transmit byte and reports backpressure") {
+      simulate(new MmioUart) { dut =>
+        dut.io.bus.req.valid.poke(false)
+        dut.io.bus.resp.ready.poke(true)
+        dut.io.tx.ready.poke(false)
+
+        def transact(
+          offset: BigInt,
+          write: Boolean = false,
+          data: BigInt = 0,
+          strobe: Int = 0xf
+        ): (BigInt, Boolean) = {
+          dut.io.bus.req.valid.poke(true)
+          dut.io.bus.req.bits.addr.poke(MemoryMap.UartBase + offset)
+          dut.io.bus.req.bits.write.poke(write)
+          dut.io.bus.req.bits.size.poke(2)
+          dut.io.bus.req.bits.wdata.poke(data)
+          dut.io.bus.req.bits.wstrb.poke(strobe)
+          while (!dut.io.bus.req.ready.peek().litToBoolean) dut.clock.step()
+          dut.clock.step()
+          dut.io.bus.req.valid.poke(false)
+          while (!dut.io.bus.resp.valid.peek().litToBoolean) dut.clock.step()
+          val result = dut.io.bus.resp.bits.rdata.peek().litValue ->
+            dut.io.bus.resp.bits.error.peek().litToBoolean
+          dut.clock.step()
+          result
+        }
+
+        transact(MemoryMap.Uart.StatusOffset) shouldBe (BigInt(1), false)
+        transact(MemoryMap.Uart.TxDataOffset, write = true, data = 0xa5) shouldBe (BigInt(0), false)
+        dut.io.tx.valid.expect(true)
+        dut.io.tx.bits.expect(0xa5)
+        dut.clock.step(3)
+        dut.io.tx.valid.expect(true)
+        dut.io.tx.bits.expect(0xa5)
+        transact(MemoryMap.Uart.StatusOffset) shouldBe (BigInt(0), false)
+
+        transact(MemoryMap.Uart.TxDataOffset, write = true, data = 0x5a) shouldBe (BigInt(0), true)
+        dut.io.tx.bits.expect(0xa5)
+
+        dut.io.tx.ready.poke(true)
+        dut.clock.step()
+        dut.io.tx.valid.expect(false)
+        transact(MemoryMap.Uart.StatusOffset) shouldBe (BigInt(1), false)
+
+        transact(MemoryMap.Uart.TxDataOffset) shouldBe (BigInt(0), true)
+        transact(0x08) shouldBe (BigInt(0), true)
+        transact(MemoryMap.Uart.TxDataOffset, write = true, data = 0xff, strobe = 0) shouldBe (BigInt(0), true)
+      }
+    }
+  }
+}

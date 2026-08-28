@@ -154,21 +154,21 @@ git commit -m "feat(soc): add accelerator control registers"
 - Consumes: one `SocBusTargetIO` and downstream `tx.ready`.
 - Produces: `tx: Decoupled(UInt(8.W))`; STATUS bit0 mirrors whether a new byte can be accepted.
 
-- [ ] **Step 1: Write failing UART tests**
+- [x] **Step 1: Write failing UART tests**
 
 Test that a TXDATA write captures the low byte and holds `tx.valid/bits` during downstream backpressure, releases it exactly once on handshake, and does not accept a second TXDATA write while occupied. STATUS must report ready before the write and not-ready while a byte is pending. Reads of TXDATA and unknown offsets return `error=true`.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run: `sbt "testOnly soc.MmioUartSpec"`
 
 Expected: compilation fails because `MmioUart` does not exist.
 
-- [ ] **Step 3: Implement the one-byte transmit buffer**
+- [x] **Step 3: Implement the one-byte transmit buffer**
 
 Use one `Reg(UInt(8.W))` and one valid bit. A legal TXDATA write requires `wstrb(0)` and an empty buffer; the bus write response is independent of the later tx handshake. STATUS is always readable. Reject unsupported sizes, reads, offsets, or a write while full with `error=true`.
 
-- [ ] **Step 4: Run GREEN and commit**
+- [x] **Step 4: Run GREEN and commit**
 
 Run: `sbt "testOnly soc.MmioUartSpec"`
 
