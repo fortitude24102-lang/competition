@@ -261,21 +261,21 @@ git commit -m "feat(soc): route the CPU system bus"
 - Consumes: clock, active-high synchronous reset, `pixel_in[23:0]`, `pixel_in_valid`, `mode[1:0]`, `threshold[7:0]`, and `bypass`.
 - Produces: `pixel_out[23:0]`, `pixel_out_valid`, `busy`, and one-cycle `frame_done` when a valid pixel is accepted.
 
-- [ ] **Step 1: Write the external-module test first**
+- [x] **Step 1: Write the external-module test first**
 
 The test must compile the real `rtl/video/VideoAccelTop.v`, send RGB `0x336699`, and assert: bypass returns the same pixel; gray returns equal R/G/B bytes; threshold returns all-zero below threshold and all-one above threshold; valid is delayed by exactly one clock.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run: `sbt "testOnly soc.VideoAccelExtSpec"`
 
 Expected: compilation/elaboration fails because the wrapper and Verilog module do not exist.
 
-- [ ] **Step 3: Implement the stable port wrapper and minimal Verilog**
+- [x] **Step 3: Implement the stable port wrapper and minimal Verilog**
 
 Declare `class VideoAccelExt(sourcePath: String) extends ExtModule`, declare every port explicitly, and call the Chisel 7 API `addPath(sourcePath)` in its body. The test instantiates it with `../rtl/video/VideoAccelTop.v`. `VideoAccelTop.v` must be one registered stage; gray may use `(R + G + B) / 3`, threshold compares the gray byte, mode 0/bypass selects input, mode 1 selects gray, mode 2 selects threshold.
 
-- [ ] **Step 4: Run GREEN, lint, document, and commit**
+- [x] **Step 4: Run GREEN, lint, document, and commit**
 
 Run: `sbt "testOnly soc.VideoAccelExtSpec"`
 
