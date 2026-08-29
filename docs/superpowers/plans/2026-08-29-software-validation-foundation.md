@@ -236,7 +236,7 @@ git commit -m "build(sw): include C validation in SoC gate"
 - Consumes: Tasks 1-4
 - Produces: a clean, independently reviewable software branch
 
-- [ ] **Step 1: Confirm branch isolation and products**
+- [x] **Step 1: Confirm branch isolation and products**
 
 Run:
 
