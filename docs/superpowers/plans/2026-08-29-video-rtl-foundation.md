@@ -30,7 +30,7 @@
 - Consumes: frozen `VideoAccelTop` ports from `rtl/video/VideoAccelTop.v`
 - Produces: root-level command `powershell -File scripts/test-video-rtl.ps1` returning zero only when every RTL assertion passes
 
-- [ ] **Step 1: Add the runner before the testbench exists**
+- [x] **Step 1: Add the runner before the testbench exists**
 
 `scripts/test-video-rtl.sh` must derive `project_root`, create a directory with `mktemp -d`, install a cleanup trap, and run:
 
@@ -44,7 +44,7 @@ verilator --binary --timing --top-module tb_video_accel_top \
 
 `scripts/test-video-rtl.ps1` must translate the project root to `/mnt/<drive>/...`, invoke the shell script through `wsl.exe -d Ubuntu`, and throw on a nonzero exit code.
 
-- [ ] **Step 2: Run the entry point and confirm the missing-test failure**
+- [x] **Step 2: Run the entry point and confirm the missing-test failure**
 
 Run:
 
@@ -54,7 +54,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\test-video-rtl.ps1
 
 Expected: FAIL because `tb/tb_video_accel_top.sv` does not exist.
 
-- [ ] **Step 3: Add the self-checking testbench**
+- [x] **Step 3: Add the self-checking testbench**
 
 Create a 10 ns clock and a `tick` task that samples one time unit after the rising edge. Use `$fatal(1, ...)` for mismatches and cover these exact transactions:
 
@@ -70,7 +70,7 @@ valid=0 on the following tick -> valid/busy/frame_done return to zero
 
 End with `$display("PASS: VideoAccelTop standalone regression"); $finish;`.
 
-- [ ] **Step 4: Run the standalone regression**
+- [x] **Step 4: Run the standalone regression**
 
 Run:
 
@@ -80,7 +80,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\test-video-rtl.ps1
 
 Expected: `PASS: VideoAccelTop standalone regression` and exit code 0.
 
-- [ ] **Step 5: Commit the standalone regression**
+- [x] **Step 5: Commit the standalone regression**
 
 ```powershell
 git add scripts/test-video-rtl.sh scripts/test-video-rtl.ps1 tb/tb_video_accel_top.sv
