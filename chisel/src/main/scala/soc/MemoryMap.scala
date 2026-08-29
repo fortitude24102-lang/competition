@@ -32,6 +32,13 @@ object MemoryMap {
     val ModeOffset: BigInt = 0x08
     val ThresholdOffset: BigInt = 0x0c
     val BypassOffset: BigInt = 0x10
+    val PerfControlOffset: BigInt = 0x14
+    val CycleCountOffset: BigInt = 0x18
+    val InputCountOffset: BigInt = 0x1c
+    val OutputCountOffset: BigInt = 0x20
+    val FrameCountOffset: BigInt = 0x24
+    val StallCountOffset: BigInt = 0x28
+    val BusyCyclesOffset: BigInt = 0x2c
   }
 
   private def contains(address: BigInt, base: BigInt, bytes: BigInt): Boolean =

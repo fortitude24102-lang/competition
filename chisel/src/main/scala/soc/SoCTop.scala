@@ -83,6 +83,9 @@ class SoCTop(
 
   acceleratorRegisters.io.busy := videoAccelerator.busy
   acceleratorRegisters.io.frameDone := videoAccelerator.frame_done
+  acceleratorRegisters.io.inputAccepted := io.video.input.fire
+  acceleratorRegisters.io.outputAccepted := io.video.output.fire
+  acceleratorRegisters.io.outputStalled := io.video.output.valid && !io.video.output.ready
   io.accelEnable := acceleratorRegisters.io.enable
   io.accelMode := acceleratorRegisters.io.mode
   io.accelThreshold := acceleratorRegisters.io.threshold

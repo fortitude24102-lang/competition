@@ -27,6 +27,13 @@ class MemoryMapSpec extends AnyFunSpec with Matchers {
       MemoryMap.Accelerator.ModeOffset shouldBe BigInt(0x08)
       MemoryMap.Accelerator.ThresholdOffset shouldBe BigInt(0x0c)
       MemoryMap.Accelerator.BypassOffset shouldBe BigInt(0x10)
+      MemoryMap.Accelerator.PerfControlOffset shouldBe BigInt(0x14)
+      MemoryMap.Accelerator.CycleCountOffset shouldBe BigInt(0x18)
+      MemoryMap.Accelerator.InputCountOffset shouldBe BigInt(0x1c)
+      MemoryMap.Accelerator.OutputCountOffset shouldBe BigInt(0x20)
+      MemoryMap.Accelerator.FrameCountOffset shouldBe BigInt(0x24)
+      MemoryMap.Accelerator.StallCountOffset shouldBe BigInt(0x28)
+      MemoryMap.Accelerator.BusyCyclesOffset shouldBe BigInt(0x2c)
     }
   }
 }

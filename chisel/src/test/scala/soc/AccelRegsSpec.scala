@@ -12,6 +12,9 @@ class AccelRegsSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.bus.resp.ready.poke(true)
         dut.io.busy.poke(false)
         dut.io.frameDone.poke(false)
+        dut.io.inputAccepted.poke(false)
+        dut.io.outputAccepted.poke(false)
+        dut.io.outputStalled.poke(false)
 
         def transact(
           offset: BigInt,
@@ -61,8 +64,44 @@ class AccelRegsSpec extends AnyFunSpec with StableChiselSim with Matchers {
         transact(MemoryMap.Accelerator.ModeOffset, write = true, data = 1, strobe = 0) shouldBe (BigInt(0), false)
         dut.io.mode.expect(2)
         transact(MemoryMap.Accelerator.StatusOffset, write = true, data = 0) shouldBe (BigInt(0), true)
-        transact(0x14, write = true, data = 0xffffffffL) shouldBe (BigInt(0), true)
+        transact(0x30, write = true, data = 0xffffffffL) shouldBe (BigInt(0), true)
         dut.io.mode.expect(2)
+
+        dut.io.busy.poke(false)
+        dut.io.frameDone.poke(false)
+        transact(MemoryMap.Accelerator.PerfControlOffset, write = true, data = 1) shouldBe (BigInt(0), false)
+        dut.io.inputAccepted.poke(true)
+        dut.io.outputStalled.poke(true)
+        dut.io.busy.poke(true)
+        dut.clock.step()
+        dut.io.outputAccepted.poke(true)
+        dut.io.frameDone.poke(true)
+        dut.clock.step()
+        dut.io.inputAccepted.poke(false)
+        dut.io.outputAccepted.poke(false)
+        dut.io.outputStalled.poke(false)
+        dut.io.frameDone.poke(false)
+        dut.clock.step()
+        dut.io.busy.poke(false)
+
+        transact(MemoryMap.Accelerator.InputCountOffset)._1 shouldBe BigInt(2)
+        transact(MemoryMap.Accelerator.OutputCountOffset)._1 shouldBe BigInt(1)
+        transact(MemoryMap.Accelerator.FrameCountOffset)._1 shouldBe BigInt(1)
+        transact(MemoryMap.Accelerator.StallCountOffset)._1 shouldBe BigInt(2)
+        transact(MemoryMap.Accelerator.BusyCyclesOffset)._1 shouldBe BigInt(3)
+        transact(MemoryMap.Accelerator.CycleCountOffset)._1 should be > BigInt(0)
+
+        transact(MemoryMap.Accelerator.PerfControlOffset, write = true, data = 1) shouldBe (BigInt(0), false)
+        Seq(
+          MemoryMap.Accelerator.InputCountOffset,
+          MemoryMap.Accelerator.OutputCountOffset,
+          MemoryMap.Accelerator.FrameCountOffset,
+          MemoryMap.Accelerator.StallCountOffset,
+          MemoryMap.Accelerator.BusyCyclesOffset
+        ).foreach { offset =>
+          transact(offset)._1 shouldBe BigInt(0)
+          transact(offset, write = true, data = 1) shouldBe (BigInt(0), true)
+        }
 
         dut.io.bus.resp.ready.poke(false)
         dut.io.bus.req.valid.poke(true)

@@ -44,3 +44,31 @@ uint32_t accel_read_threshold(void) {
 uint32_t accel_read_bypass(void) {
   return mmio_read32(accel_register(ACCEL_BYPASS_OFFSET)) & 1u;
 }
+
+void accel_perf_clear(void) {
+  mmio_write32(accel_register(ACCEL_PERF_CTRL_OFFSET), 1u);
+}
+
+uint32_t accel_read_cycle_count(void) {
+  return mmio_read32(accel_register(ACCEL_CYCLE_COUNT_OFFSET));
+}
+
+uint32_t accel_read_input_count(void) {
+  return mmio_read32(accel_register(ACCEL_INPUT_COUNT_OFFSET));
+}
+
+uint32_t accel_read_output_count(void) {
+  return mmio_read32(accel_register(ACCEL_OUTPUT_COUNT_OFFSET));
+}
+
+uint32_t accel_read_frame_count(void) {
+  return mmio_read32(accel_register(ACCEL_FRAME_COUNT_OFFSET));
+}
+
+uint32_t accel_read_stall_count(void) {
+  return mmio_read32(accel_register(ACCEL_STALL_COUNT_OFFSET));
+}
+
+uint32_t accel_read_busy_cycles(void) {
+  return mmio_read32(accel_register(ACCEL_BUSY_CYCLES_OFFSET));
+}

@@ -34,6 +34,14 @@ int main(void) {
   ok &= accel_read_threshold() == 128;
   ok &= accel_read_bypass() == 0;
 
+  accel_perf_clear();
+  ok &= accel_read_cycle_count() > 0u;
+  ok &= accel_read_input_count() == 0u;
+  ok &= accel_read_output_count() == 0u;
+  ok &= accel_read_frame_count() == 0u;
+  ok &= accel_read_stall_count() == 0u;
+  ok &= accel_read_busy_cycles() == 0u;
+
 #ifdef FORCE_FAILURE
   ok = 0;
 #endif
