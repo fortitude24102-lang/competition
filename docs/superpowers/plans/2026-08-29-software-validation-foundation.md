@@ -246,3 +246,28 @@ git log --oneline -5
 ```
 
 Expected: branch `codex/software-validation-foundation`, clean worktree, no `tb/tb_video_accel_top.sv`, and ignored `sw/build` products.
+
+---
+
+### Task 6: Code-review follow-up
+
+**Files:**
+- Modify: `sw/start.S`
+- Modify: `sw/link.ld`
+- Modify: `sw/tests/driver_test.c`
+- Modify: `scripts/build-software-test.sh`
+- Modify: `chisel/src/test/scala/soc/SoftwareDriverSpec.scala`
+
+**Interfaces:**
+- Consumes: the existing C driver test flow
+- Produces: standard zero-initialized `.bss` semantics and an exercised UART `F` failure report
+
+- [x] **Step 1: Add a failing `.bss` clear check**
+
+- [x] **Step 2: Clear `.bss` before `main` and pass the focused test**
+
+- [x] **Step 3: Add a failing negative-image simulation case**
+
+- [x] **Step 4: Build the forced-failure image and pass both simulation cases**
+
+- [x] **Step 5: Commit the review fixes**

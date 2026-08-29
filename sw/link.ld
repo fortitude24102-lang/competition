@@ -18,8 +18,11 @@ SECTIONS
   .data : ALIGN(4) { *(.data*) } > ram
   .bss : ALIGN(4)
   {
+    __bss_start = .;
     *(.bss*)
     *(COMMON)
+    . = ALIGN(4);
+    __bss_end = .;
   } > ram
 
   _stack_top = ORIGIN(ram) + LENGTH(ram);
