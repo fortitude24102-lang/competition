@@ -19,6 +19,10 @@ $wslProjectRoot = "/mnt/$drive$pathWithoutDrive"
 Assert-LastExitCode 'standalone video RTL regression'
 Write-Host '[PASS] standalone video RTL regression'
 
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $projectRoot 'scripts\build-software-test.ps1')
+Assert-LastExitCode 'C software validation image'
+Write-Host '[PASS] C software validation image built'
+
 & wsl.exe -d Ubuntu -- bash "$wslProjectRoot/scripts/build-soc-smoke.sh"
 Assert-LastExitCode 'SoC smoke program build'
 Write-Host '[PASS] software: RV32I SoC smoke image rebuilt'

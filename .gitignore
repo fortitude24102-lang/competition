@@ -12,3 +12,4 @@ chisel/src/test/resources/soc/*.bin
 chisel/src/test/resources/soc/*.elf
 chisel/src/test/resources/soc/*.hex
 .worktrees/
+sw/build/
