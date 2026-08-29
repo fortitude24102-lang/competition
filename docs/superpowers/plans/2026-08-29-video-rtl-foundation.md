@@ -98,7 +98,7 @@ git commit -m "test(video): add standalone RTL regression"
 - Consumes: `scripts/test-video-rtl.ps1`
 - Produces: the existing `verify-soc.ps1` gate failing before Chisel/Vivado when external video RTL behavior is wrong
 
-- [ ] **Step 1: Prove the current gate does not call the new regression**
+- [x] **Step 1: Prove the current gate does not call the new regression**
 
 Run:
 
@@ -108,7 +108,7 @@ Select-String -Path scripts\verify-soc.ps1 -Pattern 'test-video-rtl'
 
 Expected: no match.
 
-- [ ] **Step 2: Invoke the PowerShell wrapper before the Chisel test suite**
+- [x] **Step 2: Invoke the PowerShell wrapper before the Chisel test suite**
 
 Add:
 
@@ -118,7 +118,7 @@ Assert-LastExitCode 'standalone video RTL regression'
 Write-Host '[PASS] standalone video RTL regression'
 ```
 
-- [ ] **Step 3: Run the standalone gate and the existing ExtModule test**
+- [x] **Step 3: Run the standalone gate and the existing ExtModule test**
 
 Run:
 
@@ -129,7 +129,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\test-chisel.ps1 -Tes
 
 Expected: both pass. If `test-chisel.ps1` has no `-TestOnly` parameter, run the established sbt command through WSL with `testOnly soc.VideoAccelExtSpec`.
 
-- [ ] **Step 4: Check the handwritten diff and commit**
+- [x] **Step 4: Check the handwritten diff and commit**
 
 ```powershell
 git diff --check -- scripts/verify-soc.ps1 scripts/test-video-rtl.ps1 scripts/test-video-rtl.sh tb/tb_video_accel_top.sv
