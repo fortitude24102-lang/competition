@@ -1,17 +1,17 @@
 Copyright 1986-2019 Xilinx, Inc. All Rights Reserved.
----------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2019.2 (win64) Build 2708876 Wed Nov  6 21:40:23 MST 2019
-| Date         : Fri Aug 28 23:07:40 2026
+| Date         : Sun Aug 30 00:08:23 2026
 | Host         : LAPTOP-C1GK89UB running 64-bit major release  (build 9200)
-| Command      : report_timing -delay_type max -max_paths 10 -sort_by group -file D:/ZYNQ/smallproject/generated/reports/soc-demo/timing_paths.rpt
+| Command      : report_timing -delay_type max -max_paths 10 -sort_by group -file D:/ZYNQ/smallproject/.worktrees/portable-contest-platform/generated/reports/soc-demo/timing_paths.rpt
 | Design       : SoCTop
 | Device       : 7z015-clg485
 | Speed File   : -2  PRODUCTION 1.11 2014-09-11
----------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Timing Report
 
-Slack (MET) :             0.779ns  (required time - arrival time)
+Slack (MET) :             0.773ns  (required time - arrival time)
   Source:                 core/idEx_rs1_reg[2]/C
                             (rising edge-triggered cell FDRE clocked by soc_clock  {rise@0.000ns fall@5.000ns period=10.000ns})
   Destination:            externalImemRequest/ram_reg[39]/R
@@ -19,7 +19,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
   Path Group:             soc_clock
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (soc_clock rise@10.000ns - soc_clock rise@0.000ns)
-  Data Path Delay:        8.694ns  (logic 2.581ns (29.687%)  route 6.113ns (70.313%))
+  Data Path Delay:        8.700ns  (logic 2.581ns (29.667%)  route 6.119ns (70.333%))
   Logic Levels:           14  (CARRY4=3 LUT2=1 LUT4=2 LUT5=2 LUT6=6)
   Clock Path Skew:        -0.039ns (DCD - SCD + CPR)
     Destination Clock Delay (DCD):    0.748ns = ( 10.748 - 10.000 ) 
@@ -36,7 +36,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          (clock soc_clock rise edge)
                                                       0.000     0.000 r  
                                                       0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    core/clock
+                         net (fo=2268, unset)         0.787     0.787    core/clock
                          FDRE                                         r  core/idEx_rs1_reg[2]/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.397     1.184 r  core/idEx_rs1_reg[2]/Q
@@ -49,47 +49,47 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          net (fo=31, unplaced)        0.652     4.155    core/frontend/queue/ram_ext/nextPc[31]_i_19_n_0
                          LUT6 (Prop_lut6_I1_O)        0.105     4.260 r  core/frontend/queue/ram_ext/nextPc[3]_i_4/O
                          net (fo=16, unplaced)        0.836     5.096    core/frontend/queue/ram_ext/memWb_writeData_reg[3]
-                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_101/O
-                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_101_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_102/O
+                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_102_n_0
                          CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_63/CO[3]
-                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_63_n_0
+                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_64/CO[3]
+                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_64_n_0
                          CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_27/CO[3]
-                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_27_n_0
+                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_28/CO[3]
+                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_28_n_0
                          CARRY4 (Prop_carry4_CI_CO[2])
-                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_11/CO[2]
+                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_12/CO[2]
                          net (fo=1, unplaced)         0.349     6.313    core/frontend/queue/ram_ext/execute/data0
-                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_7/O
-                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
-                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_6/O
-                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_6_n_0
-                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_5/O
-                         net (fo=3, unplaced)         0.365     7.815    core/frontend/queue/p_18_in
-                         LUT6 (Prop_lut6_I4_O)        0.105     7.920 r  core/frontend/queue/ram[70]_i_3/O
-                         net (fo=1, unplaced)         0.347     8.267    core/frontend/queue/ram[70]_i_3_n_0
-                         LUT6 (Prop_lut6_I2_O)        0.105     8.372 r  core/frontend/queue/ram[70]_i_2/O
-                         net (fo=34, unplaced)        0.420     8.792    externalImemRequest/maybe_full0
-                         LUT2 (Prop_lut2_I1_O)        0.105     8.897 r  externalImemRequest/ram[70]_i_1/O
-                         net (fo=30, unplaced)        0.584     9.481    externalImemRequest/ram[70]_i_1_n_0
+                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_8/O
+                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_8_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_7/O
+                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
+                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_6/O
+                         net (fo=4, unplaced)         0.371     7.821    core/frontend/queue/idEx_valid_reg
+                         LUT6 (Prop_lut6_I4_O)        0.105     7.926 r  core/frontend/queue/ram[70]_i_3/O
+                         net (fo=1, unplaced)         0.347     8.273    core/frontend/queue/ram[70]_i_3_n_0
+                         LUT6 (Prop_lut6_I2_O)        0.105     8.378 r  core/frontend/queue/ram[70]_i_2/O
+                         net (fo=35, unplaced)        0.420     8.798    externalImemRequest/maybe_full0
+                         LUT2 (Prop_lut2_I1_O)        0.105     8.903 r  externalImemRequest/ram[70]_i_1/O
+                         net (fo=31, unplaced)        0.584     9.487    externalImemRequest/ram[70]_i_1_n_0
                          FDRE                                         r  externalImemRequest/ram_reg[39]/R
   -------------------------------------------------------------------    -------------------
 
                          (clock soc_clock rise edge)
                                                      10.000    10.000 r  
                                                       0.000    10.000 r  clock (IN)
-                         net (fo=2032, unset)         0.748    10.748    externalImemRequest/clock
+                         net (fo=2268, unset)         0.748    10.748    externalImemRequest/clock
                          FDRE                                         r  externalImemRequest/ram_reg[39]/C
                          clock pessimism              0.000    10.748    
                          clock uncertainty           -0.035    10.712    
                          FDRE (Setup_fdre_C_R)       -0.452    10.260    externalImemRequest/ram_reg[39]
   -------------------------------------------------------------------
                          required time                         10.260    
-                         arrival time                          -9.481    
+                         arrival time                          -9.487    
   -------------------------------------------------------------------
-                         slack                                  0.779    
+                         slack                                  0.773    
 
-Slack (MET) :             0.779ns  (required time - arrival time)
+Slack (MET) :             0.773ns  (required time - arrival time)
   Source:                 core/idEx_rs1_reg[2]/C
                             (rising edge-triggered cell FDRE clocked by soc_clock  {rise@0.000ns fall@5.000ns period=10.000ns})
   Destination:            externalImemRequest/ram_reg[40]/R
@@ -97,7 +97,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
   Path Group:             soc_clock
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (soc_clock rise@10.000ns - soc_clock rise@0.000ns)
-  Data Path Delay:        8.694ns  (logic 2.581ns (29.687%)  route 6.113ns (70.313%))
+  Data Path Delay:        8.700ns  (logic 2.581ns (29.667%)  route 6.119ns (70.333%))
   Logic Levels:           14  (CARRY4=3 LUT2=1 LUT4=2 LUT5=2 LUT6=6)
   Clock Path Skew:        -0.039ns (DCD - SCD + CPR)
     Destination Clock Delay (DCD):    0.748ns = ( 10.748 - 10.000 ) 
@@ -114,7 +114,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          (clock soc_clock rise edge)
                                                       0.000     0.000 r  
                                                       0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    core/clock
+                         net (fo=2268, unset)         0.787     0.787    core/clock
                          FDRE                                         r  core/idEx_rs1_reg[2]/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.397     1.184 r  core/idEx_rs1_reg[2]/Q
@@ -127,47 +127,47 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          net (fo=31, unplaced)        0.652     4.155    core/frontend/queue/ram_ext/nextPc[31]_i_19_n_0
                          LUT6 (Prop_lut6_I1_O)        0.105     4.260 r  core/frontend/queue/ram_ext/nextPc[3]_i_4/O
                          net (fo=16, unplaced)        0.836     5.096    core/frontend/queue/ram_ext/memWb_writeData_reg[3]
-                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_101/O
-                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_101_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_102/O
+                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_102_n_0
                          CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_63/CO[3]
-                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_63_n_0
+                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_64/CO[3]
+                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_64_n_0
                          CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_27/CO[3]
-                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_27_n_0
+                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_28/CO[3]
+                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_28_n_0
                          CARRY4 (Prop_carry4_CI_CO[2])
-                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_11/CO[2]
+                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_12/CO[2]
                          net (fo=1, unplaced)         0.349     6.313    core/frontend/queue/ram_ext/execute/data0
-                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_7/O
-                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
-                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_6/O
-                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_6_n_0
-                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_5/O
-                         net (fo=3, unplaced)         0.365     7.815    core/frontend/queue/p_18_in
-                         LUT6 (Prop_lut6_I4_O)        0.105     7.920 r  core/frontend/queue/ram[70]_i_3/O
-                         net (fo=1, unplaced)         0.347     8.267    core/frontend/queue/ram[70]_i_3_n_0
-                         LUT6 (Prop_lut6_I2_O)        0.105     8.372 r  core/frontend/queue/ram[70]_i_2/O
-                         net (fo=34, unplaced)        0.420     8.792    externalImemRequest/maybe_full0
-                         LUT2 (Prop_lut2_I1_O)        0.105     8.897 r  externalImemRequest/ram[70]_i_1/O
-                         net (fo=30, unplaced)        0.584     9.481    externalImemRequest/ram[70]_i_1_n_0
+                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_8/O
+                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_8_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_7/O
+                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
+                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_6/O
+                         net (fo=4, unplaced)         0.371     7.821    core/frontend/queue/idEx_valid_reg
+                         LUT6 (Prop_lut6_I4_O)        0.105     7.926 r  core/frontend/queue/ram[70]_i_3/O
+                         net (fo=1, unplaced)         0.347     8.273    core/frontend/queue/ram[70]_i_3_n_0
+                         LUT6 (Prop_lut6_I2_O)        0.105     8.378 r  core/frontend/queue/ram[70]_i_2/O
+                         net (fo=35, unplaced)        0.420     8.798    externalImemRequest/maybe_full0
+                         LUT2 (Prop_lut2_I1_O)        0.105     8.903 r  externalImemRequest/ram[70]_i_1/O
+                         net (fo=31, unplaced)        0.584     9.487    externalImemRequest/ram[70]_i_1_n_0
                          FDRE                                         r  externalImemRequest/ram_reg[40]/R
   -------------------------------------------------------------------    -------------------
 
                          (clock soc_clock rise edge)
                                                      10.000    10.000 r  
                                                       0.000    10.000 r  clock (IN)
-                         net (fo=2032, unset)         0.748    10.748    externalImemRequest/clock
+                         net (fo=2268, unset)         0.748    10.748    externalImemRequest/clock
                          FDRE                                         r  externalImemRequest/ram_reg[40]/C
                          clock pessimism              0.000    10.748    
                          clock uncertainty           -0.035    10.712    
                          FDRE (Setup_fdre_C_R)       -0.452    10.260    externalImemRequest/ram_reg[40]
   -------------------------------------------------------------------
                          required time                         10.260    
-                         arrival time                          -9.481    
+                         arrival time                          -9.487    
   -------------------------------------------------------------------
-                         slack                                  0.779    
+                         slack                                  0.773    
 
-Slack (MET) :             0.779ns  (required time - arrival time)
+Slack (MET) :             0.773ns  (required time - arrival time)
   Source:                 core/idEx_rs1_reg[2]/C
                             (rising edge-triggered cell FDRE clocked by soc_clock  {rise@0.000ns fall@5.000ns period=10.000ns})
   Destination:            externalImemRequest/ram_reg[41]/R
@@ -175,7 +175,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
   Path Group:             soc_clock
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (soc_clock rise@10.000ns - soc_clock rise@0.000ns)
-  Data Path Delay:        8.694ns  (logic 2.581ns (29.687%)  route 6.113ns (70.313%))
+  Data Path Delay:        8.700ns  (logic 2.581ns (29.667%)  route 6.119ns (70.333%))
   Logic Levels:           14  (CARRY4=3 LUT2=1 LUT4=2 LUT5=2 LUT6=6)
   Clock Path Skew:        -0.039ns (DCD - SCD + CPR)
     Destination Clock Delay (DCD):    0.748ns = ( 10.748 - 10.000 ) 
@@ -192,7 +192,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          (clock soc_clock rise edge)
                                                       0.000     0.000 r  
                                                       0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    core/clock
+                         net (fo=2268, unset)         0.787     0.787    core/clock
                          FDRE                                         r  core/idEx_rs1_reg[2]/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.397     1.184 r  core/idEx_rs1_reg[2]/Q
@@ -205,47 +205,47 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          net (fo=31, unplaced)        0.652     4.155    core/frontend/queue/ram_ext/nextPc[31]_i_19_n_0
                          LUT6 (Prop_lut6_I1_O)        0.105     4.260 r  core/frontend/queue/ram_ext/nextPc[3]_i_4/O
                          net (fo=16, unplaced)        0.836     5.096    core/frontend/queue/ram_ext/memWb_writeData_reg[3]
-                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_101/O
-                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_101_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_102/O
+                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_102_n_0
                          CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_63/CO[3]
-                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_63_n_0
+                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_64/CO[3]
+                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_64_n_0
                          CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_27/CO[3]
-                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_27_n_0
+                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_28/CO[3]
+                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_28_n_0
                          CARRY4 (Prop_carry4_CI_CO[2])
-                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_11/CO[2]
+                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_12/CO[2]
                          net (fo=1, unplaced)         0.349     6.313    core/frontend/queue/ram_ext/execute/data0
-                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_7/O
-                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
-                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_6/O
-                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_6_n_0
-                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_5/O
-                         net (fo=3, unplaced)         0.365     7.815    core/frontend/queue/p_18_in
-                         LUT6 (Prop_lut6_I4_O)        0.105     7.920 r  core/frontend/queue/ram[70]_i_3/O
-                         net (fo=1, unplaced)         0.347     8.267    core/frontend/queue/ram[70]_i_3_n_0
-                         LUT6 (Prop_lut6_I2_O)        0.105     8.372 r  core/frontend/queue/ram[70]_i_2/O
-                         net (fo=34, unplaced)        0.420     8.792    externalImemRequest/maybe_full0
-                         LUT2 (Prop_lut2_I1_O)        0.105     8.897 r  externalImemRequest/ram[70]_i_1/O
-                         net (fo=30, unplaced)        0.584     9.481    externalImemRequest/ram[70]_i_1_n_0
+                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_8/O
+                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_8_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_7/O
+                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
+                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_6/O
+                         net (fo=4, unplaced)         0.371     7.821    core/frontend/queue/idEx_valid_reg
+                         LUT6 (Prop_lut6_I4_O)        0.105     7.926 r  core/frontend/queue/ram[70]_i_3/O
+                         net (fo=1, unplaced)         0.347     8.273    core/frontend/queue/ram[70]_i_3_n_0
+                         LUT6 (Prop_lut6_I2_O)        0.105     8.378 r  core/frontend/queue/ram[70]_i_2/O
+                         net (fo=35, unplaced)        0.420     8.798    externalImemRequest/maybe_full0
+                         LUT2 (Prop_lut2_I1_O)        0.105     8.903 r  externalImemRequest/ram[70]_i_1/O
+                         net (fo=31, unplaced)        0.584     9.487    externalImemRequest/ram[70]_i_1_n_0
                          FDRE                                         r  externalImemRequest/ram_reg[41]/R
   -------------------------------------------------------------------    -------------------
 
                          (clock soc_clock rise edge)
                                                      10.000    10.000 r  
                                                       0.000    10.000 r  clock (IN)
-                         net (fo=2032, unset)         0.748    10.748    externalImemRequest/clock
+                         net (fo=2268, unset)         0.748    10.748    externalImemRequest/clock
                          FDRE                                         r  externalImemRequest/ram_reg[41]/C
                          clock pessimism              0.000    10.748    
                          clock uncertainty           -0.035    10.712    
                          FDRE (Setup_fdre_C_R)       -0.452    10.260    externalImemRequest/ram_reg[41]
   -------------------------------------------------------------------
                          required time                         10.260    
-                         arrival time                          -9.481    
+                         arrival time                          -9.487    
   -------------------------------------------------------------------
-                         slack                                  0.779    
+                         slack                                  0.773    
 
-Slack (MET) :             0.779ns  (required time - arrival time)
+Slack (MET) :             0.773ns  (required time - arrival time)
   Source:                 core/idEx_rs1_reg[2]/C
                             (rising edge-triggered cell FDRE clocked by soc_clock  {rise@0.000ns fall@5.000ns period=10.000ns})
   Destination:            externalImemRequest/ram_reg[42]/R
@@ -253,7 +253,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
   Path Group:             soc_clock
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (soc_clock rise@10.000ns - soc_clock rise@0.000ns)
-  Data Path Delay:        8.694ns  (logic 2.581ns (29.687%)  route 6.113ns (70.313%))
+  Data Path Delay:        8.700ns  (logic 2.581ns (29.667%)  route 6.119ns (70.333%))
   Logic Levels:           14  (CARRY4=3 LUT2=1 LUT4=2 LUT5=2 LUT6=6)
   Clock Path Skew:        -0.039ns (DCD - SCD + CPR)
     Destination Clock Delay (DCD):    0.748ns = ( 10.748 - 10.000 ) 
@@ -270,7 +270,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          (clock soc_clock rise edge)
                                                       0.000     0.000 r  
                                                       0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    core/clock
+                         net (fo=2268, unset)         0.787     0.787    core/clock
                          FDRE                                         r  core/idEx_rs1_reg[2]/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.397     1.184 r  core/idEx_rs1_reg[2]/Q
@@ -283,47 +283,47 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          net (fo=31, unplaced)        0.652     4.155    core/frontend/queue/ram_ext/nextPc[31]_i_19_n_0
                          LUT6 (Prop_lut6_I1_O)        0.105     4.260 r  core/frontend/queue/ram_ext/nextPc[3]_i_4/O
                          net (fo=16, unplaced)        0.836     5.096    core/frontend/queue/ram_ext/memWb_writeData_reg[3]
-                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_101/O
-                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_101_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_102/O
+                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_102_n_0
                          CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_63/CO[3]
-                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_63_n_0
+                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_64/CO[3]
+                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_64_n_0
                          CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_27/CO[3]
-                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_27_n_0
+                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_28/CO[3]
+                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_28_n_0
                          CARRY4 (Prop_carry4_CI_CO[2])
-                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_11/CO[2]
+                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_12/CO[2]
                          net (fo=1, unplaced)         0.349     6.313    core/frontend/queue/ram_ext/execute/data0
-                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_7/O
-                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
-                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_6/O
-                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_6_n_0
-                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_5/O
-                         net (fo=3, unplaced)         0.365     7.815    core/frontend/queue/p_18_in
-                         LUT6 (Prop_lut6_I4_O)        0.105     7.920 r  core/frontend/queue/ram[70]_i_3/O
-                         net (fo=1, unplaced)         0.347     8.267    core/frontend/queue/ram[70]_i_3_n_0
-                         LUT6 (Prop_lut6_I2_O)        0.105     8.372 r  core/frontend/queue/ram[70]_i_2/O
-                         net (fo=34, unplaced)        0.420     8.792    externalImemRequest/maybe_full0
-                         LUT2 (Prop_lut2_I1_O)        0.105     8.897 r  externalImemRequest/ram[70]_i_1/O
-                         net (fo=30, unplaced)        0.584     9.481    externalImemRequest/ram[70]_i_1_n_0
+                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_8/O
+                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_8_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_7/O
+                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
+                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_6/O
+                         net (fo=4, unplaced)         0.371     7.821    core/frontend/queue/idEx_valid_reg
+                         LUT6 (Prop_lut6_I4_O)        0.105     7.926 r  core/frontend/queue/ram[70]_i_3/O
+                         net (fo=1, unplaced)         0.347     8.273    core/frontend/queue/ram[70]_i_3_n_0
+                         LUT6 (Prop_lut6_I2_O)        0.105     8.378 r  core/frontend/queue/ram[70]_i_2/O
+                         net (fo=35, unplaced)        0.420     8.798    externalImemRequest/maybe_full0
+                         LUT2 (Prop_lut2_I1_O)        0.105     8.903 r  externalImemRequest/ram[70]_i_1/O
+                         net (fo=31, unplaced)        0.584     9.487    externalImemRequest/ram[70]_i_1_n_0
                          FDRE                                         r  externalImemRequest/ram_reg[42]/R
   -------------------------------------------------------------------    -------------------
 
                          (clock soc_clock rise edge)
                                                      10.000    10.000 r  
                                                       0.000    10.000 r  clock (IN)
-                         net (fo=2032, unset)         0.748    10.748    externalImemRequest/clock
+                         net (fo=2268, unset)         0.748    10.748    externalImemRequest/clock
                          FDRE                                         r  externalImemRequest/ram_reg[42]/C
                          clock pessimism              0.000    10.748    
                          clock uncertainty           -0.035    10.712    
                          FDRE (Setup_fdre_C_R)       -0.452    10.260    externalImemRequest/ram_reg[42]
   -------------------------------------------------------------------
                          required time                         10.260    
-                         arrival time                          -9.481    
+                         arrival time                          -9.487    
   -------------------------------------------------------------------
-                         slack                                  0.779    
+                         slack                                  0.773    
 
-Slack (MET) :             0.779ns  (required time - arrival time)
+Slack (MET) :             0.773ns  (required time - arrival time)
   Source:                 core/idEx_rs1_reg[2]/C
                             (rising edge-triggered cell FDRE clocked by soc_clock  {rise@0.000ns fall@5.000ns period=10.000ns})
   Destination:            externalImemRequest/ram_reg[43]/R
@@ -331,7 +331,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
   Path Group:             soc_clock
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (soc_clock rise@10.000ns - soc_clock rise@0.000ns)
-  Data Path Delay:        8.694ns  (logic 2.581ns (29.687%)  route 6.113ns (70.313%))
+  Data Path Delay:        8.700ns  (logic 2.581ns (29.667%)  route 6.119ns (70.333%))
   Logic Levels:           14  (CARRY4=3 LUT2=1 LUT4=2 LUT5=2 LUT6=6)
   Clock Path Skew:        -0.039ns (DCD - SCD + CPR)
     Destination Clock Delay (DCD):    0.748ns = ( 10.748 - 10.000 ) 
@@ -348,7 +348,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          (clock soc_clock rise edge)
                                                       0.000     0.000 r  
                                                       0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    core/clock
+                         net (fo=2268, unset)         0.787     0.787    core/clock
                          FDRE                                         r  core/idEx_rs1_reg[2]/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.397     1.184 r  core/idEx_rs1_reg[2]/Q
@@ -361,47 +361,47 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          net (fo=31, unplaced)        0.652     4.155    core/frontend/queue/ram_ext/nextPc[31]_i_19_n_0
                          LUT6 (Prop_lut6_I1_O)        0.105     4.260 r  core/frontend/queue/ram_ext/nextPc[3]_i_4/O
                          net (fo=16, unplaced)        0.836     5.096    core/frontend/queue/ram_ext/memWb_writeData_reg[3]
-                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_101/O
-                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_101_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_102/O
+                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_102_n_0
                          CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_63/CO[3]
-                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_63_n_0
+                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_64/CO[3]
+                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_64_n_0
                          CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_27/CO[3]
-                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_27_n_0
+                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_28/CO[3]
+                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_28_n_0
                          CARRY4 (Prop_carry4_CI_CO[2])
-                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_11/CO[2]
+                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_12/CO[2]
                          net (fo=1, unplaced)         0.349     6.313    core/frontend/queue/ram_ext/execute/data0
-                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_7/O
-                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
-                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_6/O
-                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_6_n_0
-                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_5/O
-                         net (fo=3, unplaced)         0.365     7.815    core/frontend/queue/p_18_in
-                         LUT6 (Prop_lut6_I4_O)        0.105     7.920 r  core/frontend/queue/ram[70]_i_3/O
-                         net (fo=1, unplaced)         0.347     8.267    core/frontend/queue/ram[70]_i_3_n_0
-                         LUT6 (Prop_lut6_I2_O)        0.105     8.372 r  core/frontend/queue/ram[70]_i_2/O
-                         net (fo=34, unplaced)        0.420     8.792    externalImemRequest/maybe_full0
-                         LUT2 (Prop_lut2_I1_O)        0.105     8.897 r  externalImemRequest/ram[70]_i_1/O
-                         net (fo=30, unplaced)        0.584     9.481    externalImemRequest/ram[70]_i_1_n_0
+                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_8/O
+                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_8_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_7/O
+                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
+                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_6/O
+                         net (fo=4, unplaced)         0.371     7.821    core/frontend/queue/idEx_valid_reg
+                         LUT6 (Prop_lut6_I4_O)        0.105     7.926 r  core/frontend/queue/ram[70]_i_3/O
+                         net (fo=1, unplaced)         0.347     8.273    core/frontend/queue/ram[70]_i_3_n_0
+                         LUT6 (Prop_lut6_I2_O)        0.105     8.378 r  core/frontend/queue/ram[70]_i_2/O
+                         net (fo=35, unplaced)        0.420     8.798    externalImemRequest/maybe_full0
+                         LUT2 (Prop_lut2_I1_O)        0.105     8.903 r  externalImemRequest/ram[70]_i_1/O
+                         net (fo=31, unplaced)        0.584     9.487    externalImemRequest/ram[70]_i_1_n_0
                          FDRE                                         r  externalImemRequest/ram_reg[43]/R
   -------------------------------------------------------------------    -------------------
 
                          (clock soc_clock rise edge)
                                                      10.000    10.000 r  
                                                       0.000    10.000 r  clock (IN)
-                         net (fo=2032, unset)         0.748    10.748    externalImemRequest/clock
+                         net (fo=2268, unset)         0.748    10.748    externalImemRequest/clock
                          FDRE                                         r  externalImemRequest/ram_reg[43]/C
                          clock pessimism              0.000    10.748    
                          clock uncertainty           -0.035    10.712    
                          FDRE (Setup_fdre_C_R)       -0.452    10.260    externalImemRequest/ram_reg[43]
   -------------------------------------------------------------------
                          required time                         10.260    
-                         arrival time                          -9.481    
+                         arrival time                          -9.487    
   -------------------------------------------------------------------
-                         slack                                  0.779    
+                         slack                                  0.773    
 
-Slack (MET) :             0.779ns  (required time - arrival time)
+Slack (MET) :             0.773ns  (required time - arrival time)
   Source:                 core/idEx_rs1_reg[2]/C
                             (rising edge-triggered cell FDRE clocked by soc_clock  {rise@0.000ns fall@5.000ns period=10.000ns})
   Destination:            externalImemRequest/ram_reg[44]/R
@@ -409,7 +409,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
   Path Group:             soc_clock
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (soc_clock rise@10.000ns - soc_clock rise@0.000ns)
-  Data Path Delay:        8.694ns  (logic 2.581ns (29.687%)  route 6.113ns (70.313%))
+  Data Path Delay:        8.700ns  (logic 2.581ns (29.667%)  route 6.119ns (70.333%))
   Logic Levels:           14  (CARRY4=3 LUT2=1 LUT4=2 LUT5=2 LUT6=6)
   Clock Path Skew:        -0.039ns (DCD - SCD + CPR)
     Destination Clock Delay (DCD):    0.748ns = ( 10.748 - 10.000 ) 
@@ -426,7 +426,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          (clock soc_clock rise edge)
                                                       0.000     0.000 r  
                                                       0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    core/clock
+                         net (fo=2268, unset)         0.787     0.787    core/clock
                          FDRE                                         r  core/idEx_rs1_reg[2]/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.397     1.184 r  core/idEx_rs1_reg[2]/Q
@@ -439,47 +439,47 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          net (fo=31, unplaced)        0.652     4.155    core/frontend/queue/ram_ext/nextPc[31]_i_19_n_0
                          LUT6 (Prop_lut6_I1_O)        0.105     4.260 r  core/frontend/queue/ram_ext/nextPc[3]_i_4/O
                          net (fo=16, unplaced)        0.836     5.096    core/frontend/queue/ram_ext/memWb_writeData_reg[3]
-                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_101/O
-                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_101_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_102/O
+                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_102_n_0
                          CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_63/CO[3]
-                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_63_n_0
+                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_64/CO[3]
+                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_64_n_0
                          CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_27/CO[3]
-                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_27_n_0
+                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_28/CO[3]
+                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_28_n_0
                          CARRY4 (Prop_carry4_CI_CO[2])
-                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_11/CO[2]
+                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_12/CO[2]
                          net (fo=1, unplaced)         0.349     6.313    core/frontend/queue/ram_ext/execute/data0
-                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_7/O
-                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
-                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_6/O
-                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_6_n_0
-                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_5/O
-                         net (fo=3, unplaced)         0.365     7.815    core/frontend/queue/p_18_in
-                         LUT6 (Prop_lut6_I4_O)        0.105     7.920 r  core/frontend/queue/ram[70]_i_3/O
-                         net (fo=1, unplaced)         0.347     8.267    core/frontend/queue/ram[70]_i_3_n_0
-                         LUT6 (Prop_lut6_I2_O)        0.105     8.372 r  core/frontend/queue/ram[70]_i_2/O
-                         net (fo=34, unplaced)        0.420     8.792    externalImemRequest/maybe_full0
-                         LUT2 (Prop_lut2_I1_O)        0.105     8.897 r  externalImemRequest/ram[70]_i_1/O
-                         net (fo=30, unplaced)        0.584     9.481    externalImemRequest/ram[70]_i_1_n_0
+                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_8/O
+                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_8_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_7/O
+                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
+                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_6/O
+                         net (fo=4, unplaced)         0.371     7.821    core/frontend/queue/idEx_valid_reg
+                         LUT6 (Prop_lut6_I4_O)        0.105     7.926 r  core/frontend/queue/ram[70]_i_3/O
+                         net (fo=1, unplaced)         0.347     8.273    core/frontend/queue/ram[70]_i_3_n_0
+                         LUT6 (Prop_lut6_I2_O)        0.105     8.378 r  core/frontend/queue/ram[70]_i_2/O
+                         net (fo=35, unplaced)        0.420     8.798    externalImemRequest/maybe_full0
+                         LUT2 (Prop_lut2_I1_O)        0.105     8.903 r  externalImemRequest/ram[70]_i_1/O
+                         net (fo=31, unplaced)        0.584     9.487    externalImemRequest/ram[70]_i_1_n_0
                          FDRE                                         r  externalImemRequest/ram_reg[44]/R
   -------------------------------------------------------------------    -------------------
 
                          (clock soc_clock rise edge)
                                                      10.000    10.000 r  
                                                       0.000    10.000 r  clock (IN)
-                         net (fo=2032, unset)         0.748    10.748    externalImemRequest/clock
+                         net (fo=2268, unset)         0.748    10.748    externalImemRequest/clock
                          FDRE                                         r  externalImemRequest/ram_reg[44]/C
                          clock pessimism              0.000    10.748    
                          clock uncertainty           -0.035    10.712    
                          FDRE (Setup_fdre_C_R)       -0.452    10.260    externalImemRequest/ram_reg[44]
   -------------------------------------------------------------------
                          required time                         10.260    
-                         arrival time                          -9.481    
+                         arrival time                          -9.487    
   -------------------------------------------------------------------
-                         slack                                  0.779    
+                         slack                                  0.773    
 
-Slack (MET) :             0.779ns  (required time - arrival time)
+Slack (MET) :             0.773ns  (required time - arrival time)
   Source:                 core/idEx_rs1_reg[2]/C
                             (rising edge-triggered cell FDRE clocked by soc_clock  {rise@0.000ns fall@5.000ns period=10.000ns})
   Destination:            externalImemRequest/ram_reg[45]/R
@@ -487,7 +487,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
   Path Group:             soc_clock
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (soc_clock rise@10.000ns - soc_clock rise@0.000ns)
-  Data Path Delay:        8.694ns  (logic 2.581ns (29.687%)  route 6.113ns (70.313%))
+  Data Path Delay:        8.700ns  (logic 2.581ns (29.667%)  route 6.119ns (70.333%))
   Logic Levels:           14  (CARRY4=3 LUT2=1 LUT4=2 LUT5=2 LUT6=6)
   Clock Path Skew:        -0.039ns (DCD - SCD + CPR)
     Destination Clock Delay (DCD):    0.748ns = ( 10.748 - 10.000 ) 
@@ -504,7 +504,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          (clock soc_clock rise edge)
                                                       0.000     0.000 r  
                                                       0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    core/clock
+                         net (fo=2268, unset)         0.787     0.787    core/clock
                          FDRE                                         r  core/idEx_rs1_reg[2]/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.397     1.184 r  core/idEx_rs1_reg[2]/Q
@@ -517,47 +517,47 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          net (fo=31, unplaced)        0.652     4.155    core/frontend/queue/ram_ext/nextPc[31]_i_19_n_0
                          LUT6 (Prop_lut6_I1_O)        0.105     4.260 r  core/frontend/queue/ram_ext/nextPc[3]_i_4/O
                          net (fo=16, unplaced)        0.836     5.096    core/frontend/queue/ram_ext/memWb_writeData_reg[3]
-                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_101/O
-                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_101_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_102/O
+                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_102_n_0
                          CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_63/CO[3]
-                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_63_n_0
+                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_64/CO[3]
+                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_64_n_0
                          CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_27/CO[3]
-                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_27_n_0
+                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_28/CO[3]
+                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_28_n_0
                          CARRY4 (Prop_carry4_CI_CO[2])
-                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_11/CO[2]
+                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_12/CO[2]
                          net (fo=1, unplaced)         0.349     6.313    core/frontend/queue/ram_ext/execute/data0
-                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_7/O
-                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
-                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_6/O
-                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_6_n_0
-                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_5/O
-                         net (fo=3, unplaced)         0.365     7.815    core/frontend/queue/p_18_in
-                         LUT6 (Prop_lut6_I4_O)        0.105     7.920 r  core/frontend/queue/ram[70]_i_3/O
-                         net (fo=1, unplaced)         0.347     8.267    core/frontend/queue/ram[70]_i_3_n_0
-                         LUT6 (Prop_lut6_I2_O)        0.105     8.372 r  core/frontend/queue/ram[70]_i_2/O
-                         net (fo=34, unplaced)        0.420     8.792    externalImemRequest/maybe_full0
-                         LUT2 (Prop_lut2_I1_O)        0.105     8.897 r  externalImemRequest/ram[70]_i_1/O
-                         net (fo=30, unplaced)        0.584     9.481    externalImemRequest/ram[70]_i_1_n_0
+                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_8/O
+                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_8_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_7/O
+                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
+                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_6/O
+                         net (fo=4, unplaced)         0.371     7.821    core/frontend/queue/idEx_valid_reg
+                         LUT6 (Prop_lut6_I4_O)        0.105     7.926 r  core/frontend/queue/ram[70]_i_3/O
+                         net (fo=1, unplaced)         0.347     8.273    core/frontend/queue/ram[70]_i_3_n_0
+                         LUT6 (Prop_lut6_I2_O)        0.105     8.378 r  core/frontend/queue/ram[70]_i_2/O
+                         net (fo=35, unplaced)        0.420     8.798    externalImemRequest/maybe_full0
+                         LUT2 (Prop_lut2_I1_O)        0.105     8.903 r  externalImemRequest/ram[70]_i_1/O
+                         net (fo=31, unplaced)        0.584     9.487    externalImemRequest/ram[70]_i_1_n_0
                          FDRE                                         r  externalImemRequest/ram_reg[45]/R
   -------------------------------------------------------------------    -------------------
 
                          (clock soc_clock rise edge)
                                                      10.000    10.000 r  
                                                       0.000    10.000 r  clock (IN)
-                         net (fo=2032, unset)         0.748    10.748    externalImemRequest/clock
+                         net (fo=2268, unset)         0.748    10.748    externalImemRequest/clock
                          FDRE                                         r  externalImemRequest/ram_reg[45]/C
                          clock pessimism              0.000    10.748    
                          clock uncertainty           -0.035    10.712    
                          FDRE (Setup_fdre_C_R)       -0.452    10.260    externalImemRequest/ram_reg[45]
   -------------------------------------------------------------------
                          required time                         10.260    
-                         arrival time                          -9.481    
+                         arrival time                          -9.487    
   -------------------------------------------------------------------
-                         slack                                  0.779    
+                         slack                                  0.773    
 
-Slack (MET) :             0.779ns  (required time - arrival time)
+Slack (MET) :             0.773ns  (required time - arrival time)
   Source:                 core/idEx_rs1_reg[2]/C
                             (rising edge-triggered cell FDRE clocked by soc_clock  {rise@0.000ns fall@5.000ns period=10.000ns})
   Destination:            externalImemRequest/ram_reg[46]/R
@@ -565,7 +565,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
   Path Group:             soc_clock
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (soc_clock rise@10.000ns - soc_clock rise@0.000ns)
-  Data Path Delay:        8.694ns  (logic 2.581ns (29.687%)  route 6.113ns (70.313%))
+  Data Path Delay:        8.700ns  (logic 2.581ns (29.667%)  route 6.119ns (70.333%))
   Logic Levels:           14  (CARRY4=3 LUT2=1 LUT4=2 LUT5=2 LUT6=6)
   Clock Path Skew:        -0.039ns (DCD - SCD + CPR)
     Destination Clock Delay (DCD):    0.748ns = ( 10.748 - 10.000 ) 
@@ -582,7 +582,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          (clock soc_clock rise edge)
                                                       0.000     0.000 r  
                                                       0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    core/clock
+                         net (fo=2268, unset)         0.787     0.787    core/clock
                          FDRE                                         r  core/idEx_rs1_reg[2]/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.397     1.184 r  core/idEx_rs1_reg[2]/Q
@@ -595,47 +595,47 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          net (fo=31, unplaced)        0.652     4.155    core/frontend/queue/ram_ext/nextPc[31]_i_19_n_0
                          LUT6 (Prop_lut6_I1_O)        0.105     4.260 r  core/frontend/queue/ram_ext/nextPc[3]_i_4/O
                          net (fo=16, unplaced)        0.836     5.096    core/frontend/queue/ram_ext/memWb_writeData_reg[3]
-                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_101/O
-                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_101_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_102/O
+                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_102_n_0
                          CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_63/CO[3]
-                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_63_n_0
+                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_64/CO[3]
+                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_64_n_0
                          CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_27/CO[3]
-                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_27_n_0
+                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_28/CO[3]
+                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_28_n_0
                          CARRY4 (Prop_carry4_CI_CO[2])
-                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_11/CO[2]
+                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_12/CO[2]
                          net (fo=1, unplaced)         0.349     6.313    core/frontend/queue/ram_ext/execute/data0
-                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_7/O
-                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
-                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_6/O
-                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_6_n_0
-                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_5/O
-                         net (fo=3, unplaced)         0.365     7.815    core/frontend/queue/p_18_in
-                         LUT6 (Prop_lut6_I4_O)        0.105     7.920 r  core/frontend/queue/ram[70]_i_3/O
-                         net (fo=1, unplaced)         0.347     8.267    core/frontend/queue/ram[70]_i_3_n_0
-                         LUT6 (Prop_lut6_I2_O)        0.105     8.372 r  core/frontend/queue/ram[70]_i_2/O
-                         net (fo=34, unplaced)        0.420     8.792    externalImemRequest/maybe_full0
-                         LUT2 (Prop_lut2_I1_O)        0.105     8.897 r  externalImemRequest/ram[70]_i_1/O
-                         net (fo=30, unplaced)        0.584     9.481    externalImemRequest/ram[70]_i_1_n_0
+                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_8/O
+                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_8_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_7/O
+                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
+                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_6/O
+                         net (fo=4, unplaced)         0.371     7.821    core/frontend/queue/idEx_valid_reg
+                         LUT6 (Prop_lut6_I4_O)        0.105     7.926 r  core/frontend/queue/ram[70]_i_3/O
+                         net (fo=1, unplaced)         0.347     8.273    core/frontend/queue/ram[70]_i_3_n_0
+                         LUT6 (Prop_lut6_I2_O)        0.105     8.378 r  core/frontend/queue/ram[70]_i_2/O
+                         net (fo=35, unplaced)        0.420     8.798    externalImemRequest/maybe_full0
+                         LUT2 (Prop_lut2_I1_O)        0.105     8.903 r  externalImemRequest/ram[70]_i_1/O
+                         net (fo=31, unplaced)        0.584     9.487    externalImemRequest/ram[70]_i_1_n_0
                          FDRE                                         r  externalImemRequest/ram_reg[46]/R
   -------------------------------------------------------------------    -------------------
 
                          (clock soc_clock rise edge)
                                                      10.000    10.000 r  
                                                       0.000    10.000 r  clock (IN)
-                         net (fo=2032, unset)         0.748    10.748    externalImemRequest/clock
+                         net (fo=2268, unset)         0.748    10.748    externalImemRequest/clock
                          FDRE                                         r  externalImemRequest/ram_reg[46]/C
                          clock pessimism              0.000    10.748    
                          clock uncertainty           -0.035    10.712    
                          FDRE (Setup_fdre_C_R)       -0.452    10.260    externalImemRequest/ram_reg[46]
   -------------------------------------------------------------------
                          required time                         10.260    
-                         arrival time                          -9.481    
+                         arrival time                          -9.487    
   -------------------------------------------------------------------
-                         slack                                  0.779    
+                         slack                                  0.773    
 
-Slack (MET) :             0.779ns  (required time - arrival time)
+Slack (MET) :             0.773ns  (required time - arrival time)
   Source:                 core/idEx_rs1_reg[2]/C
                             (rising edge-triggered cell FDRE clocked by soc_clock  {rise@0.000ns fall@5.000ns period=10.000ns})
   Destination:            externalImemRequest/ram_reg[47]/R
@@ -643,7 +643,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
   Path Group:             soc_clock
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (soc_clock rise@10.000ns - soc_clock rise@0.000ns)
-  Data Path Delay:        8.694ns  (logic 2.581ns (29.687%)  route 6.113ns (70.313%))
+  Data Path Delay:        8.700ns  (logic 2.581ns (29.667%)  route 6.119ns (70.333%))
   Logic Levels:           14  (CARRY4=3 LUT2=1 LUT4=2 LUT5=2 LUT6=6)
   Clock Path Skew:        -0.039ns (DCD - SCD + CPR)
     Destination Clock Delay (DCD):    0.748ns = ( 10.748 - 10.000 ) 
@@ -660,7 +660,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          (clock soc_clock rise edge)
                                                       0.000     0.000 r  
                                                       0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    core/clock
+                         net (fo=2268, unset)         0.787     0.787    core/clock
                          FDRE                                         r  core/idEx_rs1_reg[2]/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.397     1.184 r  core/idEx_rs1_reg[2]/Q
@@ -673,47 +673,47 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          net (fo=31, unplaced)        0.652     4.155    core/frontend/queue/ram_ext/nextPc[31]_i_19_n_0
                          LUT6 (Prop_lut6_I1_O)        0.105     4.260 r  core/frontend/queue/ram_ext/nextPc[3]_i_4/O
                          net (fo=16, unplaced)        0.836     5.096    core/frontend/queue/ram_ext/memWb_writeData_reg[3]
-                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_101/O
-                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_101_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_102/O
+                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_102_n_0
                          CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_63/CO[3]
-                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_63_n_0
+                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_64/CO[3]
+                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_64_n_0
                          CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_27/CO[3]
-                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_27_n_0
+                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_28/CO[3]
+                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_28_n_0
                          CARRY4 (Prop_carry4_CI_CO[2])
-                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_11/CO[2]
+                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_12/CO[2]
                          net (fo=1, unplaced)         0.349     6.313    core/frontend/queue/ram_ext/execute/data0
-                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_7/O
-                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
-                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_6/O
-                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_6_n_0
-                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_5/O
-                         net (fo=3, unplaced)         0.365     7.815    core/frontend/queue/p_18_in
-                         LUT6 (Prop_lut6_I4_O)        0.105     7.920 r  core/frontend/queue/ram[70]_i_3/O
-                         net (fo=1, unplaced)         0.347     8.267    core/frontend/queue/ram[70]_i_3_n_0
-                         LUT6 (Prop_lut6_I2_O)        0.105     8.372 r  core/frontend/queue/ram[70]_i_2/O
-                         net (fo=34, unplaced)        0.420     8.792    externalImemRequest/maybe_full0
-                         LUT2 (Prop_lut2_I1_O)        0.105     8.897 r  externalImemRequest/ram[70]_i_1/O
-                         net (fo=30, unplaced)        0.584     9.481    externalImemRequest/ram[70]_i_1_n_0
+                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_8/O
+                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_8_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_7/O
+                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
+                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_6/O
+                         net (fo=4, unplaced)         0.371     7.821    core/frontend/queue/idEx_valid_reg
+                         LUT6 (Prop_lut6_I4_O)        0.105     7.926 r  core/frontend/queue/ram[70]_i_3/O
+                         net (fo=1, unplaced)         0.347     8.273    core/frontend/queue/ram[70]_i_3_n_0
+                         LUT6 (Prop_lut6_I2_O)        0.105     8.378 r  core/frontend/queue/ram[70]_i_2/O
+                         net (fo=35, unplaced)        0.420     8.798    externalImemRequest/maybe_full0
+                         LUT2 (Prop_lut2_I1_O)        0.105     8.903 r  externalImemRequest/ram[70]_i_1/O
+                         net (fo=31, unplaced)        0.584     9.487    externalImemRequest/ram[70]_i_1_n_0
                          FDRE                                         r  externalImemRequest/ram_reg[47]/R
   -------------------------------------------------------------------    -------------------
 
                          (clock soc_clock rise edge)
                                                      10.000    10.000 r  
                                                       0.000    10.000 r  clock (IN)
-                         net (fo=2032, unset)         0.748    10.748    externalImemRequest/clock
+                         net (fo=2268, unset)         0.748    10.748    externalImemRequest/clock
                          FDRE                                         r  externalImemRequest/ram_reg[47]/C
                          clock pessimism              0.000    10.748    
                          clock uncertainty           -0.035    10.712    
                          FDRE (Setup_fdre_C_R)       -0.452    10.260    externalImemRequest/ram_reg[47]
   -------------------------------------------------------------------
                          required time                         10.260    
-                         arrival time                          -9.481    
+                         arrival time                          -9.487    
   -------------------------------------------------------------------
-                         slack                                  0.779    
+                         slack                                  0.773    
 
-Slack (MET) :             0.779ns  (required time - arrival time)
+Slack (MET) :             0.773ns  (required time - arrival time)
   Source:                 core/idEx_rs1_reg[2]/C
                             (rising edge-triggered cell FDRE clocked by soc_clock  {rise@0.000ns fall@5.000ns period=10.000ns})
   Destination:            externalImemRequest/ram_reg[48]/R
@@ -721,7 +721,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
   Path Group:             soc_clock
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            10.000ns  (soc_clock rise@10.000ns - soc_clock rise@0.000ns)
-  Data Path Delay:        8.694ns  (logic 2.581ns (29.687%)  route 6.113ns (70.313%))
+  Data Path Delay:        8.700ns  (logic 2.581ns (29.667%)  route 6.119ns (70.333%))
   Logic Levels:           14  (CARRY4=3 LUT2=1 LUT4=2 LUT5=2 LUT6=6)
   Clock Path Skew:        -0.039ns (DCD - SCD + CPR)
     Destination Clock Delay (DCD):    0.748ns = ( 10.748 - 10.000 ) 
@@ -738,7 +738,7 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          (clock soc_clock rise edge)
                                                       0.000     0.000 r  
                                                       0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    core/clock
+                         net (fo=2268, unset)         0.787     0.787    core/clock
                          FDRE                                         r  core/idEx_rs1_reg[2]/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.397     1.184 r  core/idEx_rs1_reg[2]/Q
@@ -751,47 +751,47 @@ Slack (MET) :             0.779ns  (required time - arrival time)
                          net (fo=31, unplaced)        0.652     4.155    core/frontend/queue/ram_ext/nextPc[31]_i_19_n_0
                          LUT6 (Prop_lut6_I1_O)        0.105     4.260 r  core/frontend/queue/ram_ext/nextPc[3]_i_4/O
                          net (fo=16, unplaced)        0.836     5.096    core/frontend/queue/ram_ext/memWb_writeData_reg[3]
-                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_101/O
-                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_101_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     5.201 r  core/frontend/queue/ram_ext/ram[70]_i_102/O
+                         net (fo=1, unplaced)         0.000     5.201    core/frontend/queue/ram_ext/ram[70]_i_102_n_0
                          CARRY4 (Prop_carry4_S[1]_CO[3])
-                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_63/CO[3]
-                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_63_n_0
+                                                      0.444     5.645 r  core/frontend/queue/ram_ext/ram_reg[70]_i_64/CO[3]
+                         net (fo=1, unplaced)         0.008     5.653    core/frontend/queue/ram_ext/ram_reg[70]_i_64_n_0
                          CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_27/CO[3]
-                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_27_n_0
+                                                      0.100     5.753 r  core/frontend/queue/ram_ext/ram_reg[70]_i_28/CO[3]
+                         net (fo=1, unplaced)         0.000     5.753    core/frontend/queue/ram_ext/ram_reg[70]_i_28_n_0
                          CARRY4 (Prop_carry4_CI_CO[2])
-                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_11/CO[2]
+                                                      0.211     5.964 f  core/frontend/queue/ram_ext/ram_reg[70]_i_12/CO[2]
                          net (fo=1, unplaced)         0.349     6.313    core/frontend/queue/ram_ext/execute/data0
-                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_7/O
-                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
-                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_6/O
-                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_6_n_0
-                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_5/O
-                         net (fo=3, unplaced)         0.365     7.815    core/frontend/queue/p_18_in
-                         LUT6 (Prop_lut6_I4_O)        0.105     7.920 r  core/frontend/queue/ram[70]_i_3/O
-                         net (fo=1, unplaced)         0.347     8.267    core/frontend/queue/ram[70]_i_3_n_0
-                         LUT6 (Prop_lut6_I2_O)        0.105     8.372 r  core/frontend/queue/ram[70]_i_2/O
-                         net (fo=34, unplaced)        0.420     8.792    externalImemRequest/maybe_full0
-                         LUT2 (Prop_lut2_I1_O)        0.105     8.897 r  externalImemRequest/ram[70]_i_1/O
-                         net (fo=30, unplaced)        0.584     9.481    externalImemRequest/ram[70]_i_1_n_0
+                         LUT5 (Prop_lut5_I4_O)        0.252     6.565 f  core/frontend/queue/ram_ext/ram[70]_i_8/O
+                         net (fo=1, unplaced)         0.328     6.893    core/frontend/queue/ram_ext/ram[70]_i_8_n_0
+                         LUT6 (Prop_lut6_I0_O)        0.105     6.998 r  core/frontend/queue/ram_ext/ram[70]_i_7/O
+                         net (fo=1, unplaced)         0.347     7.345    core/frontend/queue/ram_ext/ram[70]_i_7_n_0
+                         LUT4 (Prop_lut4_I3_O)        0.105     7.450 f  core/frontend/queue/ram_ext/ram[70]_i_6/O
+                         net (fo=4, unplaced)         0.371     7.821    core/frontend/queue/idEx_valid_reg
+                         LUT6 (Prop_lut6_I4_O)        0.105     7.926 r  core/frontend/queue/ram[70]_i_3/O
+                         net (fo=1, unplaced)         0.347     8.273    core/frontend/queue/ram[70]_i_3_n_0
+                         LUT6 (Prop_lut6_I2_O)        0.105     8.378 r  core/frontend/queue/ram[70]_i_2/O
+                         net (fo=35, unplaced)        0.420     8.798    externalImemRequest/maybe_full0
+                         LUT2 (Prop_lut2_I1_O)        0.105     8.903 r  externalImemRequest/ram[70]_i_1/O
+                         net (fo=31, unplaced)        0.584     9.487    externalImemRequest/ram[70]_i_1_n_0
                          FDRE                                         r  externalImemRequest/ram_reg[48]/R
   -------------------------------------------------------------------    -------------------
 
                          (clock soc_clock rise edge)
                                                      10.000    10.000 r  
                                                       0.000    10.000 r  clock (IN)
-                         net (fo=2032, unset)         0.748    10.748    externalImemRequest/clock
+                         net (fo=2268, unset)         0.748    10.748    externalImemRequest/clock
                          FDRE                                         r  externalImemRequest/ram_reg[48]/C
                          clock pessimism              0.000    10.748    
                          clock uncertainty           -0.035    10.712    
                          FDRE (Setup_fdre_C_R)       -0.452    10.260    externalImemRequest/ram_reg[48]
   -------------------------------------------------------------------
                          required time                         10.260    
-                         arrival time                          -9.481    
+                         arrival time                          -9.487    
   -------------------------------------------------------------------
-                         slack                                  0.779    
+                         slack                                  0.773    
 
-Slack (MET) :             3.061ns  (required time - arrival time)
+Slack (MET) :             3.036ns  (required time - arrival time)
   Source:                 interconnect_0/dmemTarget_reg[1]/C
                             (rising edge-triggered cell FDRE clocked by soc_clock  {rise@0.000ns fall@5.000ns period=10.000ns})
   Destination:            io_trap_valid
@@ -799,8 +799,8 @@ Slack (MET) :             3.061ns  (required time - arrival time)
   Path Group:             soc_io_virtual
   Path Type:              Max at Slow Process Corner
   Requirement:            10.000ns  (soc_io_virtual rise@10.000ns - soc_clock rise@0.000ns)
-  Data Path Delay:        4.127ns  (logic 1.049ns (25.418%)  route 3.078ns (74.582%))
-  Logic Levels:           5  (LUT3=2 LUT6=3)
+  Data Path Delay:        4.152ns  (logic 1.049ns (25.265%)  route 3.103ns (74.735%))
+  Logic Levels:           5  (LUT3=2 LUT5=1 LUT6=2)
   Output Delay:           2.000ns
   Clock Path Skew:        -0.787ns (DCD - SCD + CPR)
     Destination Clock Delay (DCD):    0.000ns = ( 10.000 - 10.000 ) 
@@ -818,21 +818,21 @@ Slack (MET) :             3.061ns  (required time - arrival time)
                          (clock soc_clock rise edge)
                                                       0.000     0.000 r  
                                                       0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    interconnect_0/clock
+                         net (fo=2268, unset)         0.787     0.787    interconnect_0/clock
                          FDRE                                         r  interconnect_0/dmemTarget_reg[1]/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.397     1.184 r  interconnect_0/dmemTarget_reg[1]/Q
-                         net (fo=42, unplaced)        0.857     2.041    interconnect_0/dmemTarget_reg[1]_0
-                         LUT6 (Prop_lut6_I0_O)        0.232     2.273 f  interconnect_0/io_trap_valid_INST_0_i_7/O
-                         net (fo=1, unplaced)         0.347     2.620    interconnect_0/io_trap_valid_INST_0_i_7_n_0
-                         LUT6 (Prop_lut6_I0_O)        0.105     2.725 r  interconnect_0/io_trap_valid_INST_0_i_4/O
-                         net (fo=3, unplaced)         0.365     3.090    interconnect_0/_interconnect_io_cpuDmem_resp_valid
-                         LUT6 (Prop_lut6_I2_O)        0.105     3.195 r  interconnect_0/io_trap_valid_INST_0_i_2/O
-                         net (fo=1, unplaced)         0.347     3.542    core/frontend/queue/ram_ext/haltedReg_reg
-                         LUT3 (Prop_lut3_I1_O)        0.105     3.647 r  core/frontend/queue/ram_ext/io_trap_valid_INST_0_i_1/O
-                         net (fo=5, unplaced)         0.375     4.022    core/trapEvent
-                         LUT3 (Prop_lut3_I0_O)        0.105     4.127 r  core/io_trap_valid_INST_0/O
-                         net (fo=0)                   0.787     4.914    io_trap_valid
+                         net (fo=50, unplaced)        0.861     2.045    interconnect_0/dmemTarget_reg[1]_0
+                         LUT6 (Prop_lut6_I0_O)        0.232     2.277 r  interconnect_0/dmemActive_i_3/O
+                         net (fo=1, unplaced)         0.347     2.624    interconnect_0/dmemActive_i_3_n_0
+                         LUT5 (Prop_lut5_I0_O)        0.105     2.729 r  interconnect_0/dmemActive_i_2/O
+                         net (fo=4, unplaced)         0.371     3.100    interconnect_0/io_cpuDmem_resp_valid_00
+                         LUT3 (Prop_lut3_I2_O)        0.105     3.205 r  interconnect_0/io_trap_valid_INST_0_i_3/O
+                         net (fo=2, unplaced)         0.358     3.563    core/frontend/queue/ram_ext/p_20_in
+                         LUT6 (Prop_lut6_I2_O)        0.105     3.668 r  core/frontend/queue/ram_ext/io_trap_valid_INST_0_i_1/O
+                         net (fo=6, unplaced)         0.379     4.047    core/trapEvent
+                         LUT3 (Prop_lut3_I0_O)        0.105     4.152 r  core/io_trap_valid_INST_0/O
+                         net (fo=0)                   0.787     4.939    io_trap_valid
                                                                       r  io_trap_valid (OUT)
   -------------------------------------------------------------------    -------------------
 
@@ -845,11 +845,11 @@ Slack (MET) :             3.061ns  (required time - arrival time)
                          output delay                -2.000     7.975    
   -------------------------------------------------------------------
                          required time                          7.975    
-                         arrival time                          -4.914    
+                         arrival time                          -4.939    
   -------------------------------------------------------------------
-                         slack                                  3.061    
+                         slack                                  3.036    
 
-Slack (MET) :             4.100ns  (required time - arrival time)
+Slack (MET) :             4.084ns  (required time - arrival time)
   Source:                 core/exMem_memRead_reg/C
                             (rising edge-triggered cell FDRE clocked by soc_clock  {rise@0.000ns fall@5.000ns period=10.000ns})
   Destination:            io_trap_cause[0]
@@ -857,7 +857,7 @@ Slack (MET) :             4.100ns  (required time - arrival time)
   Path Group:             soc_io_virtual
   Path Type:              Max at Slow Process Corner
   Requirement:            10.000ns  (soc_io_virtual rise@10.000ns - soc_clock rise@0.000ns)
-  Data Path Delay:        3.088ns  (logic 0.839ns (27.170%)  route 2.249ns (72.830%))
+  Data Path Delay:        3.104ns  (logic 0.852ns (27.448%)  route 2.252ns (72.552%))
   Logic Levels:           3  (LUT3=1 LUT5=2)
   Output Delay:           2.000ns
   Clock Path Skew:        -0.787ns (DCD - SCD + CPR)
@@ -876,17 +876,17 @@ Slack (MET) :             4.100ns  (required time - arrival time)
                          (clock soc_clock rise edge)
                                                       0.000     0.000 r  
                                                       0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    core/clock
+                         net (fo=2268, unset)         0.787     0.787    core/clock
                          FDRE                                         r  core/exMem_memRead_reg/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.397     1.184 f  core/exMem_memRead_reg/Q
                          net (fo=34, unplaced)        0.730     1.914    core/exMem_memRead
-                         LUT5 (Prop_lut5_I0_O)        0.232     2.146 f  core/io_trap_cause[0]_INST_0_i_2/O
-                         net (fo=8, unplaced)         0.385     2.531    core/p_21_in
-                         LUT5 (Prop_lut5_I0_O)        0.105     2.636 f  core/io_trap_cause[0]_INST_0_i_1/O
-                         net (fo=1, unplaced)         0.347     2.983    core/memoryMisaligned
-                         LUT3 (Prop_lut3_I2_O)        0.105     3.088 r  core/io_trap_cause[0]_INST_0/O
-                         net (fo=0)                   0.787     3.875    io_trap_cause[0]
+                         LUT5 (Prop_lut5_I0_O)        0.245     2.159 f  core/io_trap_valid_INST_0_i_5/O
+                         net (fo=9, unplaced)         0.388     2.547    core/p_21_in
+                         LUT5 (Prop_lut5_I0_O)        0.105     2.652 f  core/io_trap_cause[0]_INST_0_i_1/O
+                         net (fo=1, unplaced)         0.347     2.999    core/memoryMisaligned
+                         LUT3 (Prop_lut3_I2_O)        0.105     3.104 r  core/io_trap_cause[0]_INST_0/O
+                         net (fo=0)                   0.787     3.891    io_trap_cause[0]
                                                                       r  io_trap_cause[0] (OUT)
   -------------------------------------------------------------------    -------------------
 
@@ -899,9 +899,50 @@ Slack (MET) :             4.100ns  (required time - arrival time)
                          output delay                -2.000     7.975    
   -------------------------------------------------------------------
                          required time                          7.975    
-                         arrival time                          -3.875    
+                         arrival time                          -3.891    
   -------------------------------------------------------------------
-                         slack                                  4.100    
+                         slack                                  4.084    
+
+Slack (MET) :             4.296ns  (required time - arrival time)
+  Source:                 io_video_output_ready
+                            (input port clocked by soc_io_virtual  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            io_video_input_ready
+                            (output port clocked by soc_io_virtual  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             soc_io_virtual
+  Path Type:              Max at Slow Process Corner
+  Requirement:            10.000ns  (soc_io_virtual rise@10.000ns - soc_io_virtual rise@0.000ns)
+  Data Path Delay:        1.679ns  (logic 0.105ns (6.254%)  route 1.574ns (93.746%))
+  Logic Levels:           1  (LUT3=1)
+  Input Delay:            2.000ns
+  Output Delay:           2.000ns
+  Clock Uncertainty:      0.025ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock soc_io_virtual rise edge)
+                                                      0.000     0.000 r  
+                         ideal clock network latency
+                                                      0.000     0.000    
+                         input delay                  2.000     2.000    
+                                                      0.000     2.000 r  io_video_output_ready (IN)
+                         net (fo=6, unset)            0.787     2.787    acceleratorRegisters/io_video_output_ready
+                         LUT3 (Prop_lut3_I2_O)        0.105     2.892 r  acceleratorRegisters/io_video_input_ready_INST_0/O
+                         net (fo=0)                   0.787     3.679    io_video_input_ready
+                                                                      r  io_video_input_ready (OUT)
+  -------------------------------------------------------------------    -------------------
+
+                         (clock soc_io_virtual rise edge)
+                                                     10.000    10.000 r  
+                         ideal clock network latency
+                                                      0.000    10.000    
+                         clock pessimism              0.000    10.000    
+                         clock uncertainty           -0.025     9.975    
+                         output delay                -2.000     7.975    
+  -------------------------------------------------------------------
+                         required time                          7.975    
+                         arrival time                          -3.679    
+  -------------------------------------------------------------------
+                         slack                                  4.296    
 
 Slack (MET) :             4.637ns  (required time - arrival time)
   Source:                 core/memWb_legal_reg/C
@@ -930,7 +971,7 @@ Slack (MET) :             4.637ns  (required time - arrival time)
                          (clock soc_clock rise edge)
                                                       0.000     0.000 r  
                                                       0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    core/clock
+                         net (fo=2268, unset)         0.787     0.787    core/clock
                          FDRE                                         r  core/memWb_legal_reg/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.397     1.184 r  core/memWb_legal_reg/Q
@@ -982,7 +1023,7 @@ Slack (MET) :             5.142ns  (required time - arrival time)
                          (clock soc_clock rise edge)
                                                       0.000     0.000 r  
                                                       0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    core/clock
+                         net (fo=2268, unset)         0.787     0.787    core/clock
                          FDRE                                         r  core/exMem_exceptionCause_reg[1]/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.397     1.184 r  core/exMem_exceptionCause_reg[1]/Q
@@ -1032,7 +1073,7 @@ Slack (MET) :             5.162ns  (required time - arrival time)
                          (clock soc_clock rise edge)
                                                       0.000     0.000 r  
                                                       0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    core/clock
+                         net (fo=2268, unset)         0.787     0.787    core/clock
                          FDRE                                         r  core/memWb_legal_reg/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.397     1.184 r  core/memWb_legal_reg/Q
@@ -1082,7 +1123,7 @@ Slack (MET) :             5.378ns  (required time - arrival time)
                          (clock soc_clock rise edge)
                                                       0.000     0.000 r  
                                                       0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    core/clock
+                         net (fo=2268, unset)         0.787     0.787    core/clock
                          FDRE                                         r  core/exMem_exceptionValid_reg/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.397     1.184 r  core/exMem_exceptionValid_reg/Q
@@ -1132,7 +1173,7 @@ Slack (MET) :             5.500ns  (required time - arrival time)
                          (clock soc_clock rise edge)
                                                       0.000     0.000 r  
                                                       0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    core/clock
+                         net (fo=2268, unset)         0.787     0.787    core/clock
                          FDRE                                         r  core/exMem_exceptionValid_reg/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.397     1.184 f  core/exMem_exceptionValid_reg/Q
@@ -1154,6 +1195,56 @@ Slack (MET) :             5.500ns  (required time - arrival time)
                          arrival time                          -2.475    
   -------------------------------------------------------------------
                          slack                                  5.500    
+
+Slack (MET) :             5.504ns  (required time - arrival time)
+  Source:                 uart/rxValid_reg/C
+                            (rising edge-triggered cell FDRE clocked by soc_clock  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Destination:            io_uartRx_ready
+                            (output port clocked by soc_io_virtual  {rise@0.000ns fall@5.000ns period=10.000ns})
+  Path Group:             soc_io_virtual
+  Path Type:              Max at Slow Process Corner
+  Requirement:            10.000ns  (soc_io_virtual rise@10.000ns - soc_clock rise@0.000ns)
+  Data Path Delay:        1.684ns  (logic 0.629ns (37.352%)  route 1.055ns (62.648%))
+  Logic Levels:           1  (LUT1=1)
+  Output Delay:           2.000ns
+  Clock Path Skew:        -0.787ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.000ns = ( 10.000 - 10.000 ) 
+    Source Clock Delay      (SCD):    0.787ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.025ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.050ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+  Clock Domain Crossing:  Inter clock paths are considered valid unless explicitly excluded by timing constraints such as set_clock_groups or set_false_path.
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock soc_clock rise edge)
+                                                      0.000     0.000 r  
+                                                      0.000     0.000 r  clock (IN)
+                         net (fo=2268, unset)         0.787     0.787    uart/clock
+                         FDRE                                         r  uart/rxValid_reg/C
+  -------------------------------------------------------------------    -------------------
+                         FDRE (Prop_fdre_C_Q)         0.397     1.184 f  uart/rxValid_reg/Q
+                         net (fo=5, unplaced)         0.268     1.452    uart/rxValid
+                         LUT1 (Prop_lut1_I0_O)        0.232     1.684 r  uart/io_uartRx_ready_INST_0/O
+                         net (fo=0)                   0.787     2.471    io_uartRx_ready
+                                                                      r  io_uartRx_ready (OUT)
+  -------------------------------------------------------------------    -------------------
+
+                         (clock soc_io_virtual rise edge)
+                                                     10.000    10.000 r  
+                         ideal clock network latency
+                                                      0.000    10.000    
+                         clock pessimism              0.000    10.000    
+                         clock uncertainty           -0.025     9.975    
+                         output delay                -2.000     7.975    
+  -------------------------------------------------------------------
+                         required time                          7.975    
+                         arrival time                          -2.471    
+  -------------------------------------------------------------------
+                         slack                                  5.504    
 
 Slack (MET) :             5.508ns  (required time - arrival time)
   Source:                 externalDmemResponse/maybe_full_reg/C
@@ -1182,7 +1273,7 @@ Slack (MET) :             5.508ns  (required time - arrival time)
                          (clock soc_clock rise edge)
                                                       0.000     0.000 r  
                                                       0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    externalDmemResponse/clock
+                         net (fo=2268, unset)         0.787     0.787    externalDmemResponse/clock
                          FDRE                                         r  externalDmemResponse/maybe_full_reg/C
   -------------------------------------------------------------------    -------------------
                          FDRE (Prop_fdre_C_Q)         0.397     1.184 f  externalDmemResponse/maybe_full_reg/Q
@@ -1204,104 +1295,6 @@ Slack (MET) :             5.508ns  (required time - arrival time)
                          arrival time                          -2.467    
   -------------------------------------------------------------------
                          slack                                  5.508    
-
-Slack (MET) :             5.508ns  (required time - arrival time)
-  Source:                 externalImemResponse/maybe_full_reg/C
-                            (rising edge-triggered cell FDRE clocked by soc_clock  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            io_externalImem_resp_ready
-                            (output port clocked by soc_io_virtual  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Path Group:             soc_io_virtual
-  Path Type:              Max at Slow Process Corner
-  Requirement:            10.000ns  (soc_io_virtual rise@10.000ns - soc_clock rise@0.000ns)
-  Data Path Delay:        1.680ns  (logic 0.629ns (37.440%)  route 1.051ns (62.560%))
-  Logic Levels:           1  (LUT1=1)
-  Output Delay:           2.000ns
-  Clock Path Skew:        -0.787ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.000ns = ( 10.000 - 10.000 ) 
-    Source Clock Delay      (SCD):    0.787ns
-    Clock Pessimism Removal (CPR):    0.000ns
-  Clock Uncertainty:      0.025ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
-    Total System Jitter     (TSJ):    0.050ns
-    Total Input Jitter      (TIJ):    0.000ns
-    Discrete Jitter          (DJ):    0.000ns
-    Phase Error              (PE):    0.000ns
-  Clock Domain Crossing:  Inter clock paths are considered valid unless explicitly excluded by timing constraints such as set_clock_groups or set_false_path.
-
-    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
-  -------------------------------------------------------------------    -------------------
-                         (clock soc_clock rise edge)
-                                                      0.000     0.000 r  
-                                                      0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    externalImemResponse/clock
-                         FDRE                                         r  externalImemResponse/maybe_full_reg/C
-  -------------------------------------------------------------------    -------------------
-                         FDRE (Prop_fdre_C_Q)         0.397     1.184 f  externalImemResponse/maybe_full_reg/Q
-                         net (fo=4, unplaced)         0.264     1.448    externalImemResponse/_externalImemResponse_io_deq_valid
-                         LUT1 (Prop_lut1_I0_O)        0.232     1.680 r  externalImemResponse/io_externalImem_resp_ready_INST_0/O
-                         net (fo=0)                   0.787     2.467    io_externalImem_resp_ready
-                                                                      r  io_externalImem_resp_ready (OUT)
-  -------------------------------------------------------------------    -------------------
-
-                         (clock soc_io_virtual rise edge)
-                                                     10.000    10.000 r  
-                         ideal clock network latency
-                                                      0.000    10.000    
-                         clock pessimism              0.000    10.000    
-                         clock uncertainty           -0.025     9.975    
-                         output delay                -2.000     7.975    
-  -------------------------------------------------------------------
-                         required time                          7.975    
-                         arrival time                          -2.467    
-  -------------------------------------------------------------------
-                         slack                                  5.508    
-
-Slack (MET) :             6.004ns  (required time - arrival time)
-  Source:                 acceleratorRegisters/bypassReg_reg/C
-                            (rising edge-triggered cell FDSE clocked by soc_clock  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Destination:            io_accelBypass
-                            (output port clocked by soc_io_virtual  {rise@0.000ns fall@5.000ns period=10.000ns})
-  Path Group:             soc_io_virtual
-  Path Type:              Max at Slow Process Corner
-  Requirement:            10.000ns  (soc_io_virtual rise@10.000ns - soc_clock rise@0.000ns)
-  Data Path Delay:        1.184ns  (logic 0.397ns (33.530%)  route 0.787ns (66.470%))
-  Logic Levels:           0  
-  Output Delay:           2.000ns
-  Clock Path Skew:        -0.787ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.000ns = ( 10.000 - 10.000 ) 
-    Source Clock Delay      (SCD):    0.787ns
-    Clock Pessimism Removal (CPR):    0.000ns
-  Clock Uncertainty:      0.025ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
-    Total System Jitter     (TSJ):    0.050ns
-    Total Input Jitter      (TIJ):    0.000ns
-    Discrete Jitter          (DJ):    0.000ns
-    Phase Error              (PE):    0.000ns
-  Clock Domain Crossing:  Inter clock paths are considered valid unless explicitly excluded by timing constraints such as set_clock_groups or set_false_path.
-
-    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
-  -------------------------------------------------------------------    -------------------
-                         (clock soc_clock rise edge)
-                                                      0.000     0.000 r  
-                                                      0.000     0.000 r  clock (IN)
-                         net (fo=2032, unset)         0.787     0.787    acceleratorRegisters/clock
-                         FDSE                                         r  acceleratorRegisters/bypassReg_reg/C
-  -------------------------------------------------------------------    -------------------
-                         FDSE (Prop_fdse_C_Q)         0.397     1.184 r  acceleratorRegisters/bypassReg_reg/Q
-                         net (fo=26, unset)           0.787     1.971    io_accelBypass
-                                                                      r  io_accelBypass (OUT)
-  -------------------------------------------------------------------    -------------------
-
-                         (clock soc_io_virtual rise edge)
-                                                     10.000    10.000 r  
-                         ideal clock network latency
-                                                      0.000    10.000    
-                         clock pessimism              0.000    10.000    
-                         clock uncertainty           -0.025     9.975    
-                         output delay                -2.000     7.975    
-  -------------------------------------------------------------------
-                         required time                          7.975    
-                         arrival time                          -1.971    
-  -------------------------------------------------------------------
-                         slack                                  6.004    
 
 
 

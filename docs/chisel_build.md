@@ -18,7 +18,16 @@
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-soc.ps1
 ```
 
-脚本依次重建裸机镜像、运行完整 Chisel/Verilator 测试、生成 SystemVerilog、联合检查外部视频 Verilog，并且只调用一次 Vivado 做 100 MHz OOC 综合。
+脚本依次运行独立视频 RTL 回归，重建驱动测试和交互式 CLI 裸机镜像，运行完整 Chisel/Verilator 测试，生成 SystemVerilog，联合检查外部视频 Verilog，并且只调用一次 Vivado 做 100 MHz OOC 综合。
+
+日常修改先使用不调用 Vivado 的聚焦入口：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\test-video-rtl.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build-software-test.ps1
+```
+
+`sw/build/cli.hex` 是 UART RX 命令行镜像，支持 `help/status/mode/threshold/bypass/enable/perf`。生成物位于忽略目录，不进入 Git。
 
 只重新生成 RTL：
 
@@ -34,21 +43,23 @@ SoC 的实际层次化生成目录是 `generated/soc/`，并复制入口文件�
 
 ## 100 MHz OOC 检查点
 
-2026-08-28 的 Vivado 2019.2 OOC 实测结果：
+2026-08-30 的 Vivado 2019.2 OOC 实测结果：
 
 - 时钟：100 MHz（10.000 ns）
 - 顶层接口预算：输入、输出各 2.000 ns；`check_timing` 未报告未约束的顶层 I/O
-- WNS：`+0.779 ns`
-- 数据路径延迟：`8.694 ns`，其中逻辑 `2.581 ns`、未布局布线估算 `6.113 ns`
+- WNS：`+0.773 ns`
+- 数据路径延迟：`8.700 ns`，其中逻辑 `2.581 ns`、未布局布线估算 `6.119 ns`
 - 逻辑级数：14（3 个 CARRY4 与 11 个 LUT）
 - 最差路径：`core/idEx_rs1_reg[2]/C` → `externalImemRequest/ram_reg[39]/R`
-- 原语计数：2298 LUT、1913 FF、16 RAMB36E1、0 DSP
-- `report_utilization` 口径：2140 Slice LUT、1913 Slice Register、16 Block RAM Tile、0 DSP
+- 原语计数：2479 LUT、2149 FF、16 RAMB36E1、0 DSP
+- `report_utilization` 口径：2299 Slice LUT、2149 Slice Register、16 Block RAM Tile、0 DSP
 
-外部指令、数据 CoreBus 的请求与响应方向均放置一项深度为 1、无 flow/pipe 旁路的寄存缓冲，切断 AXI 适配器将来可能引入的组合 `ready` 链。当前最差路径终止于外部指令请求缓冲，不跨越顶层接口；同时满足 100 MHz 且有 0.779 ns 余量，因此按 Demo 计划不再为频率做架构改动。OOC 报告中路径延迟约 70% 来自未布局布线估算，后续板级实现仍需用真实布局布线结果重新确认。
+外部指令、数据 CoreBus 的请求与响应方向均放置一项深度为 1、无 flow/pipe 旁路的寄存缓冲，切断 AXI 适配器将来可能引入的组合 `ready` 链。当前最差路径终止于外部指令请求缓冲，不跨越顶层接口；同时满足 100 MHz 且有 0.773 ns 余量，因此按 Demo 计划不再为频率做架构改动。OOC 报告中路径延迟约 70% 来自未布局布线估算，后续板级实现仍需用真实布局布线结果重新确认。
 
 报告位于 `generated/reports/soc-demo/`，包括时序、约束完整性、利用率和 `SoCTop_ooc.dcp`。
 
 ## AXI 扩展边界
 
 当前 `0x8000_0000`～`0xffff_ffff` 经寄存缓冲从 `externalImem`、`externalDmem` 两个稳定 `CoreBusIO` 主端口导出。后续新增独立 `CoreBusAxiBridge`，在桥内完成两端口仲裁以及 AXI AR/R、AW/W/B 通道状态机；本里程碑没有放置不完整的 AXI 协议信号或空状态机。
+
+加速器数据面使用带 `startOfFrame/endOfLine/endOfFrame` 的 `ready/valid` 流。未来 AXI4-Stream 适配器放在 `SoCTop` 外，不改变算法模块、CPU 或 MMIO 寄存器。UART RX 顶层口接收的是已经解码的字节；波特率、串行采样和管脚约束同样属于板级包装层。

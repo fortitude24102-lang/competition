@@ -23,6 +23,14 @@ Write-Host '[PASS] standalone video RTL regression'
 Assert-LastExitCode 'C software validation image'
 Write-Host '[PASS] C software validation image built'
 
+foreach ($image in @('driver_test.hex', 'driver_test_fail.hex', 'cli.hex')) {
+    $imagePath = Join-Path $projectRoot "sw\build\$image"
+    if (-not (Test-Path -LiteralPath $imagePath -PathType Leaf)) {
+        throw "Software build did not produce $imagePath"
+    }
+}
+Write-Host '[PASS] software: driver and interactive CLI images are present'
+
 & wsl.exe -d Ubuntu -- bash "$wslProjectRoot/scripts/build-soc-smoke.sh"
 Assert-LastExitCode 'SoC smoke program build'
 Write-Host '[PASS] software: RV32I SoC smoke image rebuilt'
@@ -90,7 +98,7 @@ if ($timingSummary -match 'There are [1-9][0-9]* input ports with no input delay
 Write-Host "[PASS] Vivado: WNS=$($metrics['SOC_WNS']) ns, levels=$($metrics['SOC_LOGIC_LEVELS']), LUT/FF/BRAM/DSP=$($metrics['SOC_LUT'])/$($metrics['SOC_FF'])/$($metrics['SOC_BRAM'])/$($metrics['SOC_DSP'])"
 
 $binaryLeaks = git -C $projectRoot status --short --untracked-files=all |
-    Where-Object { $_ -match 'chisel/src/test/resources/.*\.(bin|elf|hex)$' }
+    Where-Object { $_ -match '(chisel/src/test/resources|sw/build)/.*\.(bin|elf|hex|map)$' }
 if ($binaryLeaks) {
     throw "Generated test images are visible to Git: $($binaryLeaks -join ', ')"
 }

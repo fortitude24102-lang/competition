@@ -131,7 +131,7 @@ module SoCInterconnect(	// src/main/scala/soc/SoCInterconnect.scala:6:7
   wire [2:0]  imemDecoded =
     io_cpuImem_req_bits_addr < 32'h10000
       ? 3'h1
-      : io_cpuImem_req_bits_addr[31] ? 3'h4 : 3'h7;	// src/main/scala/soc/MemoryMap.scala:41:40, :54:49, src/main/scala/soc/SoCInterconnect.scala:56:40, :57:55, :58:17, :59:62, :60:17
+      : io_cpuImem_req_bits_addr[31] ? 3'h4 : 3'h7;	// src/main/scala/soc/MemoryMap.scala:49:40, :62:49, src/main/scala/soc/SoCInterconnect.scala:56:40, :57:55, :58:17, :59:62, :60:17
   wire        _GEN = imemDecoded == 3'h1;	// src/main/scala/soc/SoCInterconnect.scala:57:55, :58:17, :59:62, :69:56
   wire [31:0] io_ramImem_req_bits_addr_0 = imemActive ? 32'h0 : io_cpuImem_req_bits_addr;	// src/main/scala/soc/SoCInterconnect.scala:37:21, :43:21, :54:35, :68:21
   wire [1:0]  io_ramImem_req_bits_size_0 = {~imemActive, 1'h0};	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :54:35, :68:{8,21}
@@ -154,7 +154,7 @@ module SoCInterconnect(	// src/main/scala/soc/SoCInterconnect.scala:6:7
           : io_cpuDmem_req_bits_addr > 32'h2FFFFFFF
             & io_cpuDmem_req_bits_addr < 32'h30001000
               ? 3'h3
-              : io_cpuDmem_req_bits_addr[31] ? 3'h4 : 3'h7;	// src/main/scala/soc/MemoryMap.scala:41:{13,29,40}, :54:49, src/main/scala/soc/SoCInterconnect.scala:56:40, :58:17, :60:17, :97:40, :98:55, :99:17, :100:58, :101:17, :102:65, :103:17, :104:62, :105:17
+              : io_cpuDmem_req_bits_addr[31] ? 3'h4 : 3'h7;	// src/main/scala/soc/MemoryMap.scala:49:{13,29,40}, :62:49, src/main/scala/soc/SoCInterconnect.scala:56:40, :58:17, :60:17, :97:40, :98:55, :99:17, :100:58, :101:17, :102:65, :103:17, :104:62, :105:17
   wire        _GEN_3 = dmemDecoded == 3'h1;	// src/main/scala/soc/SoCInterconnect.scala:58:17, :98:55, :99:17, :100:58, :114:56
   wire [31:0] io_uart_req_bits_addr_0 = dmemActive ? 32'h0 : io_cpuDmem_req_bits_addr;	// src/main/scala/soc/SoCInterconnect.scala:37:21, :43:21, :95:35, :113:21
   wire        io_uart_req_bits_write_0 = ~dmemActive & io_cpuDmem_req_bits_write;	// src/main/scala/soc/SoCInterconnect.scala:37:21, :43:21, :95:35, :113:{8,21}

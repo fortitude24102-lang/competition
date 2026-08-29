@@ -59,72 +59,109 @@ module AccelRegs(	// src/main/scala/soc/AccelRegs.scala:6:7
   output        io_bus_resp_bits_error,	// src/main/scala/soc/AccelRegs.scala:7:14
   input         io_busy,	// src/main/scala/soc/AccelRegs.scala:7:14
                 io_frameDone,	// src/main/scala/soc/AccelRegs.scala:7:14
+                io_inputAccepted,	// src/main/scala/soc/AccelRegs.scala:7:14
+                io_outputAccepted,	// src/main/scala/soc/AccelRegs.scala:7:14
+                io_outputStalled,	// src/main/scala/soc/AccelRegs.scala:7:14
   output        io_enable,	// src/main/scala/soc/AccelRegs.scala:7:14
   output [1:0]  io_mode,	// src/main/scala/soc/AccelRegs.scala:7:14
   output [7:0]  io_threshold,	// src/main/scala/soc/AccelRegs.scala:7:14
   output        io_bypass	// src/main/scala/soc/AccelRegs.scala:7:14
 );
 
-  reg        enableReg;	// src/main/scala/soc/AccelRegs.scala:17:34
-  reg [1:0]  modeReg;	// src/main/scala/soc/AccelRegs.scala:18:32
-  reg [7:0]  thresholdReg;	// src/main/scala/soc/AccelRegs.scala:19:37
-  reg        bypassReg;	// src/main/scala/soc/AccelRegs.scala:20:34
-  reg        responseValid;	// src/main/scala/soc/AccelRegs.scala:21:38
-  reg [31:0] responseData;	// src/main/scala/soc/AccelRegs.scala:22:37
-  reg        responseError;	// src/main/scala/soc/AccelRegs.scala:23:38
+  reg         enableReg;	// src/main/scala/soc/AccelRegs.scala:20:34
+  reg  [1:0]  modeReg;	// src/main/scala/soc/AccelRegs.scala:21:32
+  reg  [7:0]  thresholdReg;	// src/main/scala/soc/AccelRegs.scala:22:37
+  reg         bypassReg;	// src/main/scala/soc/AccelRegs.scala:23:34
+  reg  [31:0] cycleCount;	// src/main/scala/soc/AccelRegs.scala:24:35
+  reg  [31:0] inputCount;	// src/main/scala/soc/AccelRegs.scala:25:35
+  reg  [31:0] outputCount;	// src/main/scala/soc/AccelRegs.scala:26:36
+  reg  [31:0] frameCount;	// src/main/scala/soc/AccelRegs.scala:27:35
+  reg  [31:0] stallCount;	// src/main/scala/soc/AccelRegs.scala:28:35
+  reg  [31:0] busyCycles;	// src/main/scala/soc/AccelRegs.scala:29:35
+  reg         responseValid;	// src/main/scala/soc/AccelRegs.scala:30:38
+  reg  [31:0] responseData;	// src/main/scala/soc/AccelRegs.scala:31:37
+  reg         responseError;	// src/main/scala/soc/AccelRegs.scala:32:38
+  wire        _GEN = ~responseValid & io_bus_req_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/AccelRegs.scala:30:38, :39:23
+  wire        legalWord =
+    io_bus_req_bits_size == 2'h2 & io_bus_req_bits_addr[1:0] == 2'h0;	// src/main/scala/soc/AccelRegs.scala:21:32, :68:{42,50,73,80}
+  wire        _GEN_0 = io_bus_req_bits_addr[11:0] == 12'h0;	// src/main/scala/soc/AccelRegs.scala:67:38, :73:20
+  wire        _GEN_1 = io_bus_req_bits_addr[11:0] == 12'h4;	// src/main/scala/soc/AccelRegs.scala:67:38, :73:20
+  wire        _GEN_2 = io_bus_req_bits_addr[11:0] == 12'h8;	// src/main/scala/soc/AccelRegs.scala:67:38, :73:20
+  wire        _GEN_3 = io_bus_req_bits_addr[11:0] == 12'hC;	// src/main/scala/soc/AccelRegs.scala:67:38, :73:20
+  wire        _GEN_4 = io_bus_req_bits_addr[11:0] == 12'h10;	// src/main/scala/soc/AccelRegs.scala:67:38, :73:20
+  wire        _GEN_5 = io_bus_req_bits_addr[11:0] == 12'h14;	// src/main/scala/soc/AccelRegs.scala:67:38, :73:20
+  wire        _GEN_6 = _GEN_2 | _GEN_3 | _GEN_4;	// src/main/scala/soc/AccelRegs.scala:73:20, :86:18, :91:18, :96:18
+  wire        writable = _GEN_0 | ~_GEN_1 & (_GEN_6 | _GEN_5);	// src/main/scala/soc/AccelRegs.scala:71:31, :73:20, :77:18, :86:18, :91:18, :96:18
+  wire        _GEN_7 =
+    io_bus_req_bits_write & writable & legalWord & io_bus_req_bits_wstrb[0];	// src/main/scala/soc/AccelRegs.scala:68:50, :73:20, :77:18, :134:{32,44,57,81}
+  wire        _GEN_8 = _GEN & _GEN_7;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/AccelRegs.scala:21:32, :66:25, :134:{32,44,57,86}, :135:22
+  wire        clearPerformanceCounters =
+    _GEN_8 & ~(_GEN_0 | _GEN_6) & _GEN_5 & io_bus_req_bits_wdata[0];	// src/main/scala/soc/AccelRegs.scala:21:32, :44:53, :66:25, :73:20, :86:18, :91:18, :96:18, :134:86, :135:22, :149:{36,60}
   always @(posedge clock) begin	// src/main/scala/soc/AccelRegs.scala:6:7
     if (reset) begin	// src/main/scala/soc/AccelRegs.scala:6:7
-      enableReg <= 1'h0;	// src/main/scala/soc/AccelRegs.scala:6:7, :17:34
-      modeReg <= 2'h0;	// src/main/scala/soc/AccelRegs.scala:6:7, :18:32
-      thresholdReg <= 8'h80;	// src/main/scala/soc/AccelRegs.scala:19:37
-      bypassReg <= 1'h1;	// src/main/scala/soc/AccelRegs.scala:6:7, :20:34
-      responseValid <= 1'h0;	// src/main/scala/soc/AccelRegs.scala:6:7, :21:38
-      responseData <= 32'h0;	// src/main/scala/soc/AccelRegs.scala:22:37
-      responseError <= 1'h0;	// src/main/scala/soc/AccelRegs.scala:6:7, :23:38
+      enableReg <= 1'h0;	// src/main/scala/soc/AccelRegs.scala:20:34
+      modeReg <= 2'h0;	// src/main/scala/soc/AccelRegs.scala:21:32
+      thresholdReg <= 8'h80;	// src/main/scala/soc/AccelRegs.scala:22:37
+      bypassReg <= 1'h1;	// src/main/scala/soc/AccelRegs.scala:23:34
+      cycleCount <= 32'h0;	// src/main/scala/soc/AccelRegs.scala:24:35
+      inputCount <= 32'h0;	// src/main/scala/soc/AccelRegs.scala:25:35
+      outputCount <= 32'h0;	// src/main/scala/soc/AccelRegs.scala:26:36
+      frameCount <= 32'h0;	// src/main/scala/soc/AccelRegs.scala:27:35
+      stallCount <= 32'h0;	// src/main/scala/soc/AccelRegs.scala:28:35
+      busyCycles <= 32'h0;	// src/main/scala/soc/AccelRegs.scala:29:35
+      responseValid <= 1'h0;	// src/main/scala/soc/AccelRegs.scala:20:34, :30:38
+      responseData <= 32'h0;	// src/main/scala/soc/AccelRegs.scala:31:37
+      responseError <= 1'h0;	// src/main/scala/soc/AccelRegs.scala:20:34, :32:38
     end
     else begin	// src/main/scala/soc/AccelRegs.scala:6:7
-      automatic logic _GEN;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-      automatic logic legalWord;	// src/main/scala/soc/AccelRegs.scala:41:50
-      automatic logic _GEN_0;	// src/main/scala/soc/AccelRegs.scala:46:20
-      automatic logic _GEN_1;	// src/main/scala/soc/AccelRegs.scala:46:20
-      automatic logic _GEN_2;	// src/main/scala/soc/AccelRegs.scala:46:20
-      automatic logic _GEN_3;	// src/main/scala/soc/AccelRegs.scala:46:20
-      automatic logic _GEN_4;	// src/main/scala/soc/AccelRegs.scala:46:20
-      automatic logic _GEN_5;	// src/main/scala/soc/AccelRegs.scala:46:20, :58:18, :63:18
-      automatic logic writable;	// src/main/scala/soc/AccelRegs.scala:46:20, :50:18
-      automatic logic _GEN_6;	// src/main/scala/soc/AccelRegs.scala:78:{32,44,57}
-      automatic logic _GEN_7;	// src/main/scala/soc/AccelRegs.scala:18:32, :39:25, :78:86, :79:22
-      _GEN = ~responseValid & io_bus_req_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/AccelRegs.scala:21:38, :30:23
-      legalWord = io_bus_req_bits_size == 2'h2 & io_bus_req_bits_addr[1:0] == 2'h0;	// src/main/scala/soc/AccelRegs.scala:6:7, :41:{42,50,73,80}
-      _GEN_0 = io_bus_req_bits_addr[11:0] == 12'h0;	// src/main/scala/soc/AccelRegs.scala:40:38, :46:20
-      _GEN_1 = io_bus_req_bits_addr[11:0] == 12'h4;	// src/main/scala/soc/AccelRegs.scala:40:38, :46:20
-      _GEN_2 = io_bus_req_bits_addr[11:0] == 12'h8;	// src/main/scala/soc/AccelRegs.scala:40:38, :46:20
-      _GEN_3 = io_bus_req_bits_addr[11:0] == 12'hC;	// src/main/scala/soc/AccelRegs.scala:40:38, :46:20
-      _GEN_4 = io_bus_req_bits_addr[11:0] == 12'h10;	// src/main/scala/soc/AccelRegs.scala:40:38, :46:20
-      _GEN_5 = _GEN_2 | _GEN_3;	// src/main/scala/soc/AccelRegs.scala:46:20, :58:18, :63:18
-      writable = _GEN_0 | ~_GEN_1 & (_GEN_5 | _GEN_4);	// src/main/scala/soc/AccelRegs.scala:44:31, :46:20, :50:18, :58:18, :59:18, :63:18, :64:18
-      _GEN_6 = io_bus_req_bits_write & writable & legalWord & io_bus_req_bits_wstrb[0];	// src/main/scala/soc/AccelRegs.scala:41:50, :46:20, :50:18, :78:{32,44,57,81}
-      _GEN_7 = _GEN & _GEN_6;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/AccelRegs.scala:18:32, :39:25, :78:{32,44,57,86}, :79:22
-      if (_GEN & _GEN_6 & _GEN_0)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/AccelRegs.scala:17:34, :39:25, :46:20, :78:{32,44,57,86}, :79:22, :81:21
-        enableReg <= io_bus_req_bits_wdata[0];	// src/main/scala/soc/AccelRegs.scala:17:34, :81:45
-      if (~_GEN_7 | _GEN_0 | ~_GEN_2) begin	// src/main/scala/soc/AccelRegs.scala:18:32, :39:25, :46:20, :78:86, :79:22
+      if (_GEN & _GEN_7 & _GEN_0)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/AccelRegs.scala:20:34, :66:25, :73:20, :134:{32,44,57,86}, :135:22, :137:21
+        enableReg <= io_bus_req_bits_wdata[0];	// src/main/scala/soc/AccelRegs.scala:20:34, :137:45
+      if (~_GEN_8 | _GEN_0 | ~_GEN_2) begin	// src/main/scala/soc/AccelRegs.scala:21:32, :66:25, :73:20, :134:86, :135:22
       end
-      else	// src/main/scala/soc/AccelRegs.scala:18:32, :39:25, :78:86, :79:22
-        modeReg <= io_bus_req_bits_wdata[1:0];	// src/main/scala/soc/AccelRegs.scala:18:32, :84:43
-      if (~_GEN_7 | _GEN_0 | _GEN_2 | ~_GEN_3) begin	// src/main/scala/soc/AccelRegs.scala:18:32, :19:37, :39:25, :46:20, :78:86, :79:22
+      else	// src/main/scala/soc/AccelRegs.scala:21:32, :66:25, :134:86, :135:22
+        modeReg <= io_bus_req_bits_wdata[1:0];	// src/main/scala/soc/AccelRegs.scala:21:32, :140:43
+      if (~_GEN_8 | _GEN_0 | _GEN_2 | ~_GEN_3) begin	// src/main/scala/soc/AccelRegs.scala:21:32, :22:37, :66:25, :73:20, :134:86, :135:22
       end
-      else	// src/main/scala/soc/AccelRegs.scala:19:37, :39:25, :78:86, :79:22
-        thresholdReg <= io_bus_req_bits_wdata[7:0];	// src/main/scala/soc/AccelRegs.scala:19:37, :87:48
-      if (~_GEN_7 | _GEN_0 | _GEN_5 | ~_GEN_4) begin	// src/main/scala/soc/AccelRegs.scala:18:32, :20:34, :39:25, :46:20, :58:18, :63:18, :78:86, :79:22
+      else	// src/main/scala/soc/AccelRegs.scala:22:37, :66:25, :134:86, :135:22
+        thresholdReg <= io_bus_req_bits_wdata[7:0];	// src/main/scala/soc/AccelRegs.scala:22:37, :143:48
+      if (~_GEN_8 | _GEN_0 | _GEN_2 | _GEN_3 | ~_GEN_4) begin	// src/main/scala/soc/AccelRegs.scala:21:32, :23:34, :66:25, :73:20, :134:86, :135:22
       end
-      else	// src/main/scala/soc/AccelRegs.scala:20:34, :39:25, :78:86, :79:22
-        bypassReg <= io_bus_req_bits_wdata[0];	// src/main/scala/soc/AccelRegs.scala:20:34, :90:45
-      responseValid <= _GEN | ~(io_bus_resp_ready & responseValid) & responseValid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/AccelRegs.scala:21:38, :35:26, :36:19, :39:25, :74:19
+      else	// src/main/scala/soc/AccelRegs.scala:23:34, :66:25, :134:86, :135:22
+        bypassReg <= io_bus_req_bits_wdata[0];	// src/main/scala/soc/AccelRegs.scala:23:34, :146:45
+      cycleCount <= clearPerformanceCounters ? 32'h0 : cycleCount + 32'h1;	// src/main/scala/soc/AccelRegs.scala:24:35, :44:53, :46:34, :47:16, :54:{16,30}, :66:25, :134:86, :135:22, :149:36
+      if (clearPerformanceCounters) begin	// src/main/scala/soc/AccelRegs.scala:44:53, :66:25, :134:86, :135:22, :149:36
+        inputCount <= 32'h0;	// src/main/scala/soc/AccelRegs.scala:25:35
+        outputCount <= 32'h0;	// src/main/scala/soc/AccelRegs.scala:26:36
+        frameCount <= 32'h0;	// src/main/scala/soc/AccelRegs.scala:27:35
+        stallCount <= 32'h0;	// src/main/scala/soc/AccelRegs.scala:28:35
+        busyCycles <= 32'h0;	// src/main/scala/soc/AccelRegs.scala:29:35
+      end
+      else begin	// src/main/scala/soc/AccelRegs.scala:44:53, :66:25, :134:86, :135:22, :149:36
+        if (io_inputAccepted)	// src/main/scala/soc/AccelRegs.scala:7:14
+          inputCount <= inputCount + 32'h1;	// src/main/scala/soc/AccelRegs.scala:25:35, :55:55
+        if (io_outputAccepted)	// src/main/scala/soc/AccelRegs.scala:7:14
+          outputCount <= outputCount + 32'h1;	// src/main/scala/soc/AccelRegs.scala:26:36, :56:58
+        if (io_frameDone)	// src/main/scala/soc/AccelRegs.scala:7:14
+          frameCount <= frameCount + 32'h1;	// src/main/scala/soc/AccelRegs.scala:27:35, :57:51
+        if (io_outputStalled)	// src/main/scala/soc/AccelRegs.scala:7:14
+          stallCount <= stallCount + 32'h1;	// src/main/scala/soc/AccelRegs.scala:28:35, :58:55
+        if (io_busy)	// src/main/scala/soc/AccelRegs.scala:7:14
+          busyCycles <= busyCycles + 32'h1;	// src/main/scala/soc/AccelRegs.scala:29:35, :59:46
+      end
+      responseValid <= _GEN | ~(io_bus_resp_ready & responseValid) & responseValid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/AccelRegs.scala:30:38, :62:26, :63:19, :66:25, :130:19
       if (_GEN) begin	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-        automatic logic accessError;	// src/main/scala/soc/AccelRegs.scala:73:34
-        accessError =
+        automatic logic _GEN_9 = io_bus_req_bits_addr[11:0] == 12'h18;	// src/main/scala/soc/AccelRegs.scala:67:38, :73:20
+        automatic logic _GEN_10 = io_bus_req_bits_addr[11:0] == 12'h1C;	// src/main/scala/soc/AccelRegs.scala:67:38, :73:20
+        automatic logic _GEN_11 = io_bus_req_bits_addr[11:0] == 12'h20;	// src/main/scala/soc/AccelRegs.scala:67:38, :73:20
+        automatic logic _GEN_12 = io_bus_req_bits_addr[11:0] == 12'h24;	// src/main/scala/soc/AccelRegs.scala:67:38, :73:20
+        automatic logic _GEN_13 = io_bus_req_bits_addr[11:0] == 12'h28;	// src/main/scala/soc/AccelRegs.scala:67:38, :73:20
+        automatic logic _GEN_14 = io_bus_req_bits_addr[11:0] == 12'h2C;	// src/main/scala/soc/AccelRegs.scala:67:38, :73:20
+        automatic logic accessError =
           ~legalWord
-          | (io_bus_req_bits_write ? ~writable : ~(_GEN_0 | _GEN_1 | _GEN_5 | _GEN_4));	// src/main/scala/soc/AccelRegs.scala:41:50, :46:20, :49:18, :50:18, :54:18, :58:18, :63:18, :73:{23,34,40,64,75}
+          | (io_bus_req_bits_write
+               ? ~writable
+               : ~(_GEN_0 | _GEN_1 | _GEN_2 | _GEN_3 | _GEN_4 | _GEN_5 | _GEN_9 | _GEN_10
+                   | _GEN_11 | _GEN_12 | _GEN_13 | _GEN_14));	// src/main/scala/soc/AccelRegs.scala:68:50, :73:20, :76:18, :77:18, :81:18, :85:18, :90:18, :95:18, :100:18, :105:18, :109:18, :113:18, :117:18, :121:18, :129:{23,34,40,64,75}
         responseData <=
           io_bus_req_bits_write | accessError
             ? 32'h0
@@ -136,8 +173,22 @@ module AccelRegs(	// src/main/scala/soc/AccelRegs.scala:6:7
                         ? {30'h0, modeReg}
                         : _GEN_3
                             ? {24'h0, thresholdReg}
-                            : _GEN_4 ? {31'h0, bypassReg} : 32'h0;	// src/main/scala/soc/AccelRegs.scala:17:34, :18:32, :19:37, :20:34, :22:37, :42:31, :46:20, :48:18, :53:{18,24}, :57:18, :62:18, :67:18, :73:34, :75:{24,47}
-        responseError <= accessError;	// src/main/scala/soc/AccelRegs.scala:23:38, :73:34
+                            : _GEN_4
+                                ? {31'h0, bypassReg}
+                                : _GEN_5
+                                    ? 32'h0
+                                    : _GEN_9
+                                        ? cycleCount
+                                        : _GEN_10
+                                            ? inputCount
+                                            : _GEN_11
+                                                ? outputCount
+                                                : _GEN_12
+                                                    ? frameCount
+                                                    : _GEN_13
+                                                        ? stallCount
+                                                        : _GEN_14 ? busyCycles : 32'h0;	// src/main/scala/soc/AccelRegs.scala:20:34, :21:32, :22:37, :23:34, :24:35, :25:35, :26:36, :27:35, :28:35, :29:35, :31:37, :69:31, :73:20, :75:18, :80:{18,24}, :84:18, :89:18, :94:18, :99:18, :104:18, :108:18, :112:18, :116:18, :120:18, :124:18, :129:34, :131:{24,47}
+        responseError <= accessError;	// src/main/scala/soc/AccelRegs.scala:32:38, :129:34
       end
     end
   end // always @(posedge)
@@ -146,34 +197,40 @@ module AccelRegs(	// src/main/scala/soc/AccelRegs.scala:6:7
       `FIRRTL_BEFORE_INITIAL	// src/main/scala/soc/AccelRegs.scala:6:7
     `endif // FIRRTL_BEFORE_INITIAL
     initial begin	// src/main/scala/soc/AccelRegs.scala:6:7
-      automatic logic [31:0] _RANDOM[0:1];	// src/main/scala/soc/AccelRegs.scala:6:7
+      automatic logic [31:0] _RANDOM[0:7];	// src/main/scala/soc/AccelRegs.scala:6:7
       `ifdef INIT_RANDOM_PROLOG_	// src/main/scala/soc/AccelRegs.scala:6:7
         `INIT_RANDOM_PROLOG_	// src/main/scala/soc/AccelRegs.scala:6:7
       `endif // INIT_RANDOM_PROLOG_
       `ifdef RANDOMIZE_REG_INIT	// src/main/scala/soc/AccelRegs.scala:6:7
-        for (logic [1:0] i = 2'h0; i < 2'h2; i += 2'h1) begin
-          _RANDOM[i[0]] = `RANDOM;	// src/main/scala/soc/AccelRegs.scala:6:7
+        for (logic [3:0] i = 4'h0; i < 4'h8; i += 4'h1) begin
+          _RANDOM[i[2:0]] = `RANDOM;	// src/main/scala/soc/AccelRegs.scala:6:7
         end	// src/main/scala/soc/AccelRegs.scala:6:7
-        enableReg = _RANDOM[1'h0][0];	// src/main/scala/soc/AccelRegs.scala:6:7, :17:34
-        modeReg = _RANDOM[1'h0][2:1];	// src/main/scala/soc/AccelRegs.scala:6:7, :17:34, :18:32
-        thresholdReg = _RANDOM[1'h0][10:3];	// src/main/scala/soc/AccelRegs.scala:6:7, :17:34, :19:37
-        bypassReg = _RANDOM[1'h0][11];	// src/main/scala/soc/AccelRegs.scala:6:7, :17:34, :20:34
-        responseValid = _RANDOM[1'h0][12];	// src/main/scala/soc/AccelRegs.scala:6:7, :17:34, :21:38
-        responseData = {_RANDOM[1'h0][31:13], _RANDOM[1'h1][12:0]};	// src/main/scala/soc/AccelRegs.scala:6:7, :17:34, :22:37
-        responseError = _RANDOM[1'h1][13];	// src/main/scala/soc/AccelRegs.scala:6:7, :22:37, :23:38
+        enableReg = _RANDOM[3'h0][0];	// src/main/scala/soc/AccelRegs.scala:6:7, :20:34
+        modeReg = _RANDOM[3'h0][2:1];	// src/main/scala/soc/AccelRegs.scala:6:7, :20:34, :21:32
+        thresholdReg = _RANDOM[3'h0][10:3];	// src/main/scala/soc/AccelRegs.scala:6:7, :20:34, :22:37
+        bypassReg = _RANDOM[3'h0][11];	// src/main/scala/soc/AccelRegs.scala:6:7, :20:34, :23:34
+        cycleCount = {_RANDOM[3'h0][31:12], _RANDOM[3'h1][11:0]};	// src/main/scala/soc/AccelRegs.scala:6:7, :20:34, :24:35
+        inputCount = {_RANDOM[3'h1][31:12], _RANDOM[3'h2][11:0]};	// src/main/scala/soc/AccelRegs.scala:6:7, :24:35, :25:35
+        outputCount = {_RANDOM[3'h2][31:12], _RANDOM[3'h3][11:0]};	// src/main/scala/soc/AccelRegs.scala:6:7, :25:35, :26:36
+        frameCount = {_RANDOM[3'h3][31:12], _RANDOM[3'h4][11:0]};	// src/main/scala/soc/AccelRegs.scala:6:7, :26:36, :27:35
+        stallCount = {_RANDOM[3'h4][31:12], _RANDOM[3'h5][11:0]};	// src/main/scala/soc/AccelRegs.scala:6:7, :27:35, :28:35
+        busyCycles = {_RANDOM[3'h5][31:12], _RANDOM[3'h6][11:0]};	// src/main/scala/soc/AccelRegs.scala:6:7, :28:35, :29:35
+        responseValid = _RANDOM[3'h6][12];	// src/main/scala/soc/AccelRegs.scala:6:7, :29:35, :30:38
+        responseData = {_RANDOM[3'h6][31:13], _RANDOM[3'h7][12:0]};	// src/main/scala/soc/AccelRegs.scala:6:7, :29:35, :31:37
+        responseError = _RANDOM[3'h7][13];	// src/main/scala/soc/AccelRegs.scala:6:7, :31:37, :32:38
       `endif // RANDOMIZE_REG_INIT
     end // initial
     `ifdef FIRRTL_AFTER_INITIAL	// src/main/scala/soc/AccelRegs.scala:6:7
       `FIRRTL_AFTER_INITIAL	// src/main/scala/soc/AccelRegs.scala:6:7
     `endif // FIRRTL_AFTER_INITIAL
   `endif // ENABLE_INITIAL_REG_
-  assign io_bus_req_ready = ~responseValid;	// src/main/scala/soc/AccelRegs.scala:6:7, :21:38, :30:23
-  assign io_bus_resp_valid = responseValid;	// src/main/scala/soc/AccelRegs.scala:6:7, :21:38
-  assign io_bus_resp_bits_rdata = responseData;	// src/main/scala/soc/AccelRegs.scala:6:7, :22:37
-  assign io_bus_resp_bits_error = responseError;	// src/main/scala/soc/AccelRegs.scala:6:7, :23:38
-  assign io_enable = enableReg;	// src/main/scala/soc/AccelRegs.scala:6:7, :17:34
-  assign io_mode = modeReg;	// src/main/scala/soc/AccelRegs.scala:6:7, :18:32
-  assign io_threshold = thresholdReg;	// src/main/scala/soc/AccelRegs.scala:6:7, :19:37
-  assign io_bypass = bypassReg;	// src/main/scala/soc/AccelRegs.scala:6:7, :20:34
+  assign io_bus_req_ready = ~responseValid;	// src/main/scala/soc/AccelRegs.scala:6:7, :30:38, :39:23
+  assign io_bus_resp_valid = responseValid;	// src/main/scala/soc/AccelRegs.scala:6:7, :30:38
+  assign io_bus_resp_bits_rdata = responseData;	// src/main/scala/soc/AccelRegs.scala:6:7, :31:37
+  assign io_bus_resp_bits_error = responseError;	// src/main/scala/soc/AccelRegs.scala:6:7, :32:38
+  assign io_enable = enableReg;	// src/main/scala/soc/AccelRegs.scala:6:7, :20:34
+  assign io_mode = modeReg;	// src/main/scala/soc/AccelRegs.scala:6:7, :21:32
+  assign io_threshold = thresholdReg;	// src/main/scala/soc/AccelRegs.scala:6:7, :22:37
+  assign io_bypass = bypassReg;	// src/main/scala/soc/AccelRegs.scala:6:7, :23:34
 endmodule
 

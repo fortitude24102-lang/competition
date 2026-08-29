@@ -59,42 +59,61 @@ module MmioUart(	// src/main/scala/soc/MmioUart.scala:6:7
   output        io_bus_resp_bits_error,	// src/main/scala/soc/MmioUart.scala:7:14
   input         io_tx_ready,	// src/main/scala/soc/MmioUart.scala:7:14
   output        io_tx_valid,	// src/main/scala/soc/MmioUart.scala:7:14
-  output [7:0]  io_tx_bits	// src/main/scala/soc/MmioUart.scala:7:14
+  output [7:0]  io_tx_bits,	// src/main/scala/soc/MmioUart.scala:7:14
+  output        io_rx_ready,	// src/main/scala/soc/MmioUart.scala:7:14
+  input         io_rx_valid,	// src/main/scala/soc/MmioUart.scala:7:14
+  input  [7:0]  io_rx_bits	// src/main/scala/soc/MmioUart.scala:7:14
 );
 
-  reg [7:0]  txData;	// src/main/scala/soc/MmioUart.scala:12:31
-  reg        txValid;	// src/main/scala/soc/MmioUart.scala:13:32
-  reg        responseValid;	// src/main/scala/soc/MmioUart.scala:14:38
-  reg [31:0] responseData;	// src/main/scala/soc/MmioUart.scala:15:37
-  reg        responseError;	// src/main/scala/soc/MmioUart.scala:16:38
+  reg [7:0]  txData;	// src/main/scala/soc/MmioUart.scala:13:31
+  reg        txValid;	// src/main/scala/soc/MmioUart.scala:14:32
+  reg [7:0]  rxData;	// src/main/scala/soc/MmioUart.scala:15:31
+  reg        rxValid;	// src/main/scala/soc/MmioUart.scala:16:32
+  reg        responseValid;	// src/main/scala/soc/MmioUart.scala:17:38
+  reg [31:0] responseData;	// src/main/scala/soc/MmioUart.scala:18:37
+  reg        responseError;	// src/main/scala/soc/MmioUart.scala:19:38
   always @(posedge clock) begin	// src/main/scala/soc/MmioUart.scala:6:7
     if (reset) begin	// src/main/scala/soc/MmioUart.scala:6:7
-      txData <= 8'h0;	// src/main/scala/soc/MmioUart.scala:12:31
-      txValid <= 1'h0;	// src/main/scala/soc/MmioUart.scala:6:7, :13:32
-      responseValid <= 1'h0;	// src/main/scala/soc/MmioUart.scala:6:7, :14:38
-      responseData <= 32'h0;	// src/main/scala/soc/MmioUart.scala:15:37
-      responseError <= 1'h0;	// src/main/scala/soc/MmioUart.scala:6:7, :16:38
+      txData <= 8'h0;	// src/main/scala/soc/MmioUart.scala:13:31
+      txValid <= 1'h0;	// src/main/scala/soc/MmioUart.scala:6:7, :14:32
+      rxData <= 8'h0;	// src/main/scala/soc/MmioUart.scala:15:31
+      rxValid <= 1'h0;	// src/main/scala/soc/MmioUart.scala:6:7, :16:32
+      responseValid <= 1'h0;	// src/main/scala/soc/MmioUart.scala:6:7, :17:38
+      responseData <= 32'h0;	// src/main/scala/soc/MmioUart.scala:18:37
+      responseError <= 1'h0;	// src/main/scala/soc/MmioUart.scala:6:7, :19:38
     end
     else begin	// src/main/scala/soc/MmioUart.scala:6:7
       automatic logic _GEN;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-      automatic logic legalWord;	// src/main/scala/soc/MmioUart.scala:35:50
-      automatic logic txWrite;	// src/main/scala/soc/MmioUart.scala:37:{41,85}, :38:32
-      automatic logic _GEN_0;	// src/main/scala/soc/MmioUart.scala:12:31, :33:25, :45:{18,32}, :46:14
-      _GEN = ~responseValid & io_bus_req_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/MmioUart.scala:14:38, :24:23
-      legalWord = io_bus_req_bits_size == 2'h2 & io_bus_req_bits_addr[1:0] == 2'h0;	// src/main/scala/soc/MmioUart.scala:6:7, :35:{42,50,73,80}
+      automatic logic _GEN_0;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
+      automatic logic legalWord;	// src/main/scala/soc/MmioUart.scala:44:50
+      automatic logic rxRead;	// src/main/scala/soc/MmioUart.scala:46:{41,85}
+      automatic logic txWrite;	// src/main/scala/soc/MmioUart.scala:47:{41,85}, :48:32
+      automatic logic _responseData_T_3;	// src/main/scala/soc/MmioUart.scala:53:18
+      automatic logic _GEN_1;	// src/main/scala/soc/MmioUart.scala:13:31, :42:25, :56:{18,32}, :57:14
+      _GEN = ~rxValid & io_rx_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/MmioUart.scala:16:32, :27:18
+      _GEN_0 = ~responseValid & io_bus_req_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/MmioUart.scala:17:38, :33:23
+      legalWord = io_bus_req_bits_size == 2'h2 & io_bus_req_bits_addr[1:0] == 2'h0;	// src/main/scala/soc/MmioUart.scala:6:7, :44:{42,50,73,80}
+      rxRead = ~io_bus_req_bits_write & io_bus_req_bits_addr[11:0] == 12'h8 & rxValid;	// src/main/scala/soc/MmioUart.scala:16:32, :43:38, :45:22, :46:{41,51,85}
       txWrite =
         io_bus_req_bits_write & io_bus_req_bits_addr[11:0] == 12'h0
-        & io_bus_req_bits_wstrb[0] & ~txValid;	// src/main/scala/soc/MmioUart.scala:13:32, :34:38, :37:{41,51,85}, :38:{28,32,35}
-      _GEN_0 = _GEN & txWrite & legalWord;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/MmioUart.scala:12:31, :33:25, :35:50, :37:{41,85}, :38:32, :45:{18,32}, :46:14
-      if (_GEN_0)	// src/main/scala/soc/MmioUart.scala:12:31, :33:25, :45:{18,32}, :46:14
-        txData <= io_bus_req_bits_wdata[7:0];	// src/main/scala/soc/MmioUart.scala:12:31, :46:38
-      txValid <= _GEN_0 | ~(io_tx_ready & txValid) & txValid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/MmioUart.scala:12:31, :13:32, :20:20, :21:13, :33:25, :45:{18,32}, :46:14, :47:15
-      responseValid <= _GEN | ~(io_bus_resp_ready & responseValid) & responseValid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/MmioUart.scala:14:38, :29:26, :30:19, :33:25, :41:19
-      if (_GEN) begin	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
+        & io_bus_req_bits_wstrb[0] & ~txValid;	// src/main/scala/soc/MmioUart.scala:14:32, :43:38, :47:{41,51,85}, :48:{28,32,35}
+      _responseData_T_3 = rxRead & legalWord;	// src/main/scala/soc/MmioUart.scala:44:50, :46:{41,85}, :53:18
+      _GEN_1 = _GEN_0 & txWrite & legalWord;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/MmioUart.scala:13:31, :42:25, :44:50, :47:{41,85}, :48:32, :56:{18,32}, :57:14
+      if (_GEN_1)	// src/main/scala/soc/MmioUart.scala:13:31, :42:25, :56:{18,32}, :57:14
+        txData <= io_bus_req_bits_wdata[7:0];	// src/main/scala/soc/MmioUart.scala:13:31, :57:38
+      txValid <= _GEN_1 | ~(io_tx_ready & txValid) & txValid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/MmioUart.scala:13:31, :14:32, :23:20, :24:13, :42:25, :56:{18,32}, :57:14, :58:15
+      if (_GEN)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
+        rxData <= io_rx_bits;	// src/main/scala/soc/MmioUart.scala:15:31
+      rxValid <= ~(_GEN_0 & _responseData_T_3) & (_GEN | rxValid);	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/MmioUart.scala:16:32, :28:20, :30:13, :42:25, :53:18, :60:31, :61:15
+      responseValid <= _GEN_0 | ~(io_bus_resp_ready & responseValid) & responseValid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/MmioUart.scala:17:38, :38:26, :39:19, :42:25, :51:19
+      if (_GEN_0) begin	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
         automatic logic statusRead =
-          ~io_bus_req_bits_write & io_bus_req_bits_addr[11:0] == 12'h4;	// src/main/scala/soc/MmioUart.scala:34:38, :36:{22,45,55}
-        responseData <= {31'h0, statusRead & legalWord & ~txValid};	// src/main/scala/soc/MmioUart.scala:13:32, :15:37, :35:50, :36:45, :38:35, :42:{18,24,36}
-        responseError <= ~legalWord | ~(statusRead | txWrite);	// src/main/scala/soc/MmioUart.scala:16:38, :35:50, :36:45, :37:{41,85}, :38:32, :39:{23,34,37,50}
+          ~io_bus_req_bits_write & io_bus_req_bits_addr[11:0] == 12'h4;	// src/main/scala/soc/MmioUart.scala:43:38, :45:{22,45,55}
+        responseData <=
+          statusRead & legalWord
+            ? {30'h0, rxValid, ~txValid}
+            : {24'h0, _responseData_T_3 ? rxData : 8'h0};	// src/main/scala/soc/MmioUart.scala:14:32, :15:31, :16:32, :18:37, :44:50, :45:45, :48:35, :52:{24,36,53}, :53:{10,18}
+        responseError <= ~legalWord | ~(statusRead | rxRead | txWrite);	// src/main/scala/soc/MmioUart.scala:19:38, :44:50, :45:45, :46:{41,85}, :47:{41,85}, :48:32, :49:{23,34,37,50,60}
       end
     end
   end // always @(posedge)
@@ -111,22 +130,25 @@ module MmioUart(	// src/main/scala/soc/MmioUart.scala:6:7
         for (logic [1:0] i = 2'h0; i < 2'h2; i += 2'h1) begin
           _RANDOM[i[0]] = `RANDOM;	// src/main/scala/soc/MmioUart.scala:6:7
         end	// src/main/scala/soc/MmioUart.scala:6:7
-        txData = _RANDOM[1'h0][7:0];	// src/main/scala/soc/MmioUart.scala:6:7, :12:31
-        txValid = _RANDOM[1'h0][8];	// src/main/scala/soc/MmioUart.scala:6:7, :12:31, :13:32
-        responseValid = _RANDOM[1'h0][9];	// src/main/scala/soc/MmioUart.scala:6:7, :12:31, :14:38
-        responseData = {_RANDOM[1'h0][31:10], _RANDOM[1'h1][9:0]};	// src/main/scala/soc/MmioUart.scala:6:7, :12:31, :15:37
-        responseError = _RANDOM[1'h1][10];	// src/main/scala/soc/MmioUart.scala:6:7, :15:37, :16:38
+        txData = _RANDOM[1'h0][7:0];	// src/main/scala/soc/MmioUart.scala:6:7, :13:31
+        txValid = _RANDOM[1'h0][8];	// src/main/scala/soc/MmioUart.scala:6:7, :13:31, :14:32
+        rxData = _RANDOM[1'h0][16:9];	// src/main/scala/soc/MmioUart.scala:6:7, :13:31, :15:31
+        rxValid = _RANDOM[1'h0][17];	// src/main/scala/soc/MmioUart.scala:6:7, :13:31, :16:32
+        responseValid = _RANDOM[1'h0][18];	// src/main/scala/soc/MmioUart.scala:6:7, :13:31, :17:38
+        responseData = {_RANDOM[1'h0][31:19], _RANDOM[1'h1][18:0]};	// src/main/scala/soc/MmioUart.scala:6:7, :13:31, :18:37
+        responseError = _RANDOM[1'h1][19];	// src/main/scala/soc/MmioUart.scala:6:7, :18:37, :19:38
       `endif // RANDOMIZE_REG_INIT
     end // initial
     `ifdef FIRRTL_AFTER_INITIAL	// src/main/scala/soc/MmioUart.scala:6:7
       `FIRRTL_AFTER_INITIAL	// src/main/scala/soc/MmioUart.scala:6:7
     `endif // FIRRTL_AFTER_INITIAL
   `endif // ENABLE_INITIAL_REG_
-  assign io_bus_req_ready = ~responseValid;	// src/main/scala/soc/MmioUart.scala:6:7, :14:38, :24:23
-  assign io_bus_resp_valid = responseValid;	// src/main/scala/soc/MmioUart.scala:6:7, :14:38
-  assign io_bus_resp_bits_rdata = responseData;	// src/main/scala/soc/MmioUart.scala:6:7, :15:37
-  assign io_bus_resp_bits_error = responseError;	// src/main/scala/soc/MmioUart.scala:6:7, :16:38
-  assign io_tx_valid = txValid;	// src/main/scala/soc/MmioUart.scala:6:7, :13:32
-  assign io_tx_bits = txData;	// src/main/scala/soc/MmioUart.scala:6:7, :12:31
+  assign io_bus_req_ready = ~responseValid;	// src/main/scala/soc/MmioUart.scala:6:7, :17:38, :33:23
+  assign io_bus_resp_valid = responseValid;	// src/main/scala/soc/MmioUart.scala:6:7, :17:38
+  assign io_bus_resp_bits_rdata = responseData;	// src/main/scala/soc/MmioUart.scala:6:7, :18:37
+  assign io_bus_resp_bits_error = responseError;	// src/main/scala/soc/MmioUart.scala:6:7, :19:38
+  assign io_tx_valid = txValid;	// src/main/scala/soc/MmioUart.scala:6:7, :14:32
+  assign io_tx_bits = txData;	// src/main/scala/soc/MmioUart.scala:6:7, :13:31
+  assign io_rx_ready = ~rxValid;	// src/main/scala/soc/MmioUart.scala:6:7, :16:32, :27:18
 endmodule
 

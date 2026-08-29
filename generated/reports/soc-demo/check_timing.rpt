@@ -1,13 +1,13 @@
 Copyright 1986-2019 Xilinx, Inc. All Rights Reserved.
---------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2019.2 (win64) Build 2708876 Wed Nov  6 21:40:23 MST 2019
-| Date         : Fri Aug 28 23:07:40 2026
+| Date         : Sun Aug 30 00:08:23 2026
 | Host         : LAPTOP-C1GK89UB running 64-bit major release  (build 9200)
-| Command      : check_timing -verbose -file D:/ZYNQ/smallproject/generated/reports/soc-demo/check_timing.rpt
+| Command      : check_timing -verbose -file D:/ZYNQ/smallproject/.worktrees/portable-contest-platform/generated/reports/soc-demo/check_timing.rpt
 | Design       : SoCTop
 | Device       : 7z015-clg485
 | Speed File   : -2  PRODUCTION 1.11 2014-09-11
---------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 check_timing report

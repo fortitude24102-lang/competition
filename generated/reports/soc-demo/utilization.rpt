@@ -1,13 +1,13 @@
 Copyright 1986-2019 Xilinx, Inc. All Rights Reserved.
-----------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2019.2 (win64) Build 2708876 Wed Nov  6 21:40:23 MST 2019
-| Date         : Fri Aug 28 23:07:33 2026
+| Date         : Sun Aug 30 00:08:15 2026
 | Host         : LAPTOP-C1GK89UB running 64-bit major release  (build 9200)
-| Command      : report_utilization -file D:/ZYNQ/smallproject/generated/reports/soc-demo/utilization.rpt
+| Command      : report_utilization -file D:/ZYNQ/smallproject/.worktrees/portable-contest-platform/generated/reports/soc-demo/utilization.rpt
 | Design       : SoCTop
 | Device       : 7z015clg485-2
 | Design State : Synthesized
-----------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------
 
 Utilization Design Information
 
@@ -30,13 +30,13 @@ Table of Contents
 +----------------------------+------+-------+-----------+-------+
 |          Site Type         | Used | Fixed | Available | Util% |
 +----------------------------+------+-------+-----------+-------+
-| Slice LUTs*                | 2140 |     0 |     46200 |  4.63 |
-|   LUT as Logic             | 2096 |     0 |     46200 |  4.54 |
+| Slice LUTs*                | 2299 |     0 |     46200 |  4.98 |
+|   LUT as Logic             | 2255 |     0 |     46200 |  4.88 |
 |   LUT as Memory            |   44 |     0 |     14400 |  0.31 |
 |     LUT as Distributed RAM |   44 |     0 |           |       |
 |     LUT as Shift Register  |    0 |     0 |           |       |
-| Slice Registers            | 1913 |     0 |     92400 |  2.07 |
-|   Register as Flip Flop    | 1913 |     0 |     92400 |  2.07 |
+| Slice Registers            | 2149 |     0 |     92400 |  2.33 |
+|   Register as Flip Flop    | 2149 |     0 |     92400 |  2.33 |
 |   Register as Latch        |    0 |     0 |     92400 |  0.00 |
 | F7 Muxes                   |  288 |     0 |     23100 |  1.25 |
 | F8 Muxes                   |  128 |     0 |     11550 |  1.11 |
@@ -59,7 +59,7 @@ Table of Contents
 | 0     |          Yes |           - |          Set |
 | 0     |          Yes |           - |        Reset |
 | 2     |          Yes |         Set |            - |
-| 1911  |          Yes |       Reset |            - |
+| 2147  |          Yes |       Reset |            - |
 +-------+--------------+-------------+--------------+
 
 
@@ -153,19 +153,19 @@ Table of Contents
 +----------+------+---------------------+
 | Ref Name | Used | Functional Category |
 +----------+------+---------------------+
-| FDRE     | 1911 |        Flop & Latch |
-| LUT6     | 1448 |                 LUT |
-| LUT5     |  292 |                 LUT |
+| FDRE     | 2147 |        Flop & Latch |
+| LUT6     | 1550 |                 LUT |
+| LUT5     |  299 |                 LUT |
 | MUXF7    |  288 |               MuxFx |
-| LUT4     |  240 |                 LUT |
-| LUT3     |  169 |                 LUT |
-| LUT2     |  143 |                 LUT |
+| LUT4     |  267 |                 LUT |
+| LUT3     |  176 |                 LUT |
+| LUT2     |  174 |                 LUT |
 | MUXF8    |  128 |               MuxFx |
-| CARRY4   |   70 |          CarryLogic |
+| CARRY4   |  118 |          CarryLogic |
 | RAMD32   |   66 |  Distributed Memory |
 | RAMS32   |   22 |  Distributed Memory |
 | RAMB36E1 |   16 |        Block Memory |
-| LUT1     |    6 |                 LUT |
+| LUT1     |   13 |                 LUT |
 | FDSE     |    2 |        Flop & Latch |
 +----------+------+---------------------+
 
