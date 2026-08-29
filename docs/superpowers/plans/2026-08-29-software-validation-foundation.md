@@ -30,11 +30,11 @@
 - Consumes: `SoCTop`, `sw/build/driver_test.hex`, UART byte stream, trap trace
 - Produces: ScalaTest `soc.SoftwareDriverSpec` requiring UART `P`, EBREAK cause 3, enable 1, mode 2, threshold 128, bypass 0
 
-- [ ] **Step 1: Ignore generated software products**
+- [x] **Step 1: Ignore generated software products**
 
 Add `sw/build/` to `.gitignore`.
 
-- [ ] **Step 2: Write `SoftwareDriverSpec`**
+- [x] **Step 2: Write `SoftwareDriverSpec`**
 
 Copy only the test harness pattern from `SoCTopSmokeSpec`. Load:
 
@@ -53,7 +53,7 @@ dut.io.accelThreshold.expect(128)
 dut.io.accelBypass.expect(false)
 ```
 
-- [ ] **Step 3: Run the focused test and confirm missing-image failure**
+- [x] **Step 3: Run the focused test and confirm missing-image failure**
 
 Run through the existing WSL/sbt environment:
 
@@ -63,7 +63,7 @@ sbt "testOnly soc.SoftwareDriverSpec"
 
 Expected: FAIL because `sw/build/driver_test.hex` does not exist.
 
-- [ ] **Step 4: Commit the failing test**
+- [x] **Step 4: Commit the failing test**
 
 ```powershell
 git add .gitignore chisel/src/test/scala/soc/SoftwareDriverSpec.scala
