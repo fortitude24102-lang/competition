@@ -16,8 +16,12 @@ class SoftwareDriverSpec extends AnyFunSpec with StableChiselSim with Matchers {
       ramInitFile = Some(ramImage),
       videoSourcePath = "../rtl/video/VideoAccelTop.v"
     ), settings = settings) { dut =>
-      dut.io.video.pixelIn.poke(0)
-      dut.io.video.pixelInValid.poke(false)
+      dut.io.video.input.valid.poke(false)
+      dut.io.video.input.bits.data.poke(0)
+      dut.io.video.input.bits.startOfFrame.poke(false)
+      dut.io.video.input.bits.endOfLine.poke(false)
+      dut.io.video.input.bits.endOfFrame.poke(false)
+      dut.io.video.output.ready.poke(true)
       dut.io.uartTx.ready.poke(true)
 
       Seq(dut.io.externalImem, dut.io.externalDmem).foreach { bus =>

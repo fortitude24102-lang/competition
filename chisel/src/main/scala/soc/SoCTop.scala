@@ -5,10 +5,8 @@ import chisel3.util._
 import cpu.{CommitTrace, CoreBusIO, CoreBusReq, CoreBusResp, Rv32Core, TrapTrace}
 
 class VideoStreamIO extends Bundle {
-  val pixelIn = Input(UInt(24.W))
-  val pixelInValid = Input(Bool())
-  val pixelOut = Output(UInt(24.W))
-  val pixelOutValid = Output(Bool())
+  val input = Flipped(Decoupled(new StreamBeat(24)))
+  val output = Decoupled(new StreamBeat(24))
   val busy = Output(Bool())
   val frameDone = Output(Bool())
 }
@@ -64,14 +62,22 @@ class SoCTop(
 
   videoAccelerator.clock := clock
   videoAccelerator.reset := reset.asBool
-  videoAccelerator.pixel_in := io.video.pixelIn
-  videoAccelerator.pixel_in_valid := io.video.pixelInValid
+  videoAccelerator.pixel_in := io.video.input.bits.data
+  videoAccelerator.pixel_in_valid := io.video.input.valid
+  io.video.input.ready := videoAccelerator.pixel_in_ready
+  videoAccelerator.pixel_in_start_of_frame := io.video.input.bits.startOfFrame
+  videoAccelerator.pixel_in_end_of_line := io.video.input.bits.endOfLine
+  videoAccelerator.pixel_in_end_of_frame := io.video.input.bits.endOfFrame
   videoAccelerator.enable := acceleratorRegisters.io.enable
   videoAccelerator.mode := acceleratorRegisters.io.mode
   videoAccelerator.threshold := acceleratorRegisters.io.threshold
   videoAccelerator.bypass := acceleratorRegisters.io.bypass
-  io.video.pixelOut := videoAccelerator.pixel_out
-  io.video.pixelOutValid := videoAccelerator.pixel_out_valid
+  io.video.output.bits.data := videoAccelerator.pixel_out
+  io.video.output.valid := videoAccelerator.pixel_out_valid
+  videoAccelerator.pixel_out_ready := io.video.output.ready
+  io.video.output.bits.startOfFrame := videoAccelerator.pixel_out_start_of_frame
+  io.video.output.bits.endOfLine := videoAccelerator.pixel_out_end_of_line
+  io.video.output.bits.endOfFrame := videoAccelerator.pixel_out_end_of_frame
   io.video.busy := videoAccelerator.busy
   io.video.frameDone := videoAccelerator.frame_done
 

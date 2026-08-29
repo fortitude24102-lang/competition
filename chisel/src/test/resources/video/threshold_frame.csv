@@ -1,0 +1,5 @@
+pixel,sof,eol,eof,expected
+336699,1,0,0,000000
+ffffff,0,1,0,ffffff
+000000,0,0,0,000000
+c0c0c0,0,1,1,ffffff
