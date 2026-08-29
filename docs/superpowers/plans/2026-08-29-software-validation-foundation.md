@@ -138,11 +138,11 @@ git commit -m "feat(sw): add accelerator MMIO driver"
 - Consumes: Task 2 driver API, UART TXDATA `0x1000_0000`, UART STATUS `0x1000_0004`
 - Produces: ignored `sw/build/driver_test.elf`, `.bin`, and `.hex`
 
-- [ ] **Step 1: Add startup and linker layout**
+- [x] **Step 1: Add startup and linker layout**
 
 `start.S` places `_start` in `.text.init`, loads `sp` from `_stack_top`, calls `main`, then executes EBREAK. `link.ld` maps text/rodata/data/bss into RAM at `0x0000_0000` with length 64 KiB and defines `_stack_top` at the RAM end.
 
-- [ ] **Step 2: Write the automatic C readback test**
+- [x] **Step 2: Write the automatic C readback test**
 
 The test must:
 
@@ -161,11 +161,11 @@ uart_putc(ok ? 'P' : 'F');
 
 `uart_putc` polls STATUS bit 0 before writing TXDATA. `main` returns after exactly one report byte.
 
-- [ ] **Step 3: Add reproducible build scripts**
+- [x] **Step 3: Add reproducible build scripts**
 
 The shell script derives `project_root`, uses `${RISCV_TOOLCHAIN_HOME:-/mnt/d/Chisel-environment/riscv-toolchain}`, creates `sw/build`, compiles with `-Os -Wall -Wextra -Werror -fno-builtin`, and converts ELF to BIN and little-endian word HEX. The PowerShell wrapper translates the current project path and invokes the shell script through Ubuntu WSL.
 
-- [ ] **Step 4: Build and inspect the image**
+- [x] **Step 4: Build and inspect the image**
 
 Run:
 
@@ -175,13 +175,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build-software-test.
 
 Expected: all three products exist and `driver_test.hex` is nonempty.
 
-- [ ] **Step 5: Run the C software simulation test**
+- [x] **Step 5: Run the C software simulation test**
 
 Run `testOnly soc.SoftwareDriverSpec` through the established WSL/sbt environment.
 
 Expected: PASS with exactly UART `P` and EBREAK cause 3.
 
-- [ ] **Step 6: Commit the executable software test**
+- [x] **Step 6: Commit the executable software test**
 
 ```powershell
 git add sw/start.S sw/link.ld sw/tests/driver_test.c scripts/build-software-test.sh scripts/build-software-test.ps1
