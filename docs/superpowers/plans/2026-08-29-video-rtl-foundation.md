@@ -148,11 +148,11 @@ git commit -m "build(video): gate SoC verification on RTL test"
 - Consumes: Tasks 1-2
 - Produces: a clean, independently reviewable video branch
 
-- [ ] **Step 1: Run focused verification without Vivado**
+- [x] **Step 1: Run focused verification without Vivado**
 
 Run the standalone RTL regression and `soc.VideoAccelExtSpec`; both must pass.
 
-- [ ] **Step 2: Confirm branch isolation**
+- [x] **Step 2: Confirm branch isolation**
 
 Run:
 
