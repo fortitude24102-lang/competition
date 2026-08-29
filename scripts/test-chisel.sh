@@ -10,5 +10,8 @@ export CHISEL_FIRTOOL_CACHE=/mnt/d/Chisel-environment/wsl/firtool-cache
 export SBT_OPTS="-Dsbt.boot.directory=/mnt/d/Chisel-environment/cache/sbt/boot-wsl -Dsbt.global.base=/mnt/d/Chisel-environment/cache/sbt/global-wsl -Dsbt.ivy.home=/mnt/d/Chisel-environment/cache/ivy-wsl"
 unset CHISEL_FIRTOOL_PATH
 
+bash "$project_root/scripts/build-rv32i-tests.sh"
+bash "$project_root/scripts/build-soc-smoke.sh"
+
 cd "$project_root/chisel"
 exec bash /mnt/d/Chisel-environment/sbt/bin/sbt test
