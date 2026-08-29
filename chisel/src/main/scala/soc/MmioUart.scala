@@ -7,10 +7,13 @@ class MmioUart extends Module {
   val io = IO(new Bundle {
     val bus = new SocBusTargetIO
     val tx = Decoupled(UInt(8.W))
+    val rx = Flipped(Decoupled(UInt(8.W)))
   })
 
   private val txData = RegInit(0.U(8.W))
   private val txValid = RegInit(false.B)
+  private val rxData = RegInit(0.U(8.W))
+  private val rxValid = RegInit(false.B)
   private val responseValid = RegInit(false.B)
   private val responseData = RegInit(0.U(32.W))
   private val responseError = RegInit(false.B)
@@ -19,6 +22,12 @@ class MmioUart extends Module {
   io.tx.bits := txData
   when(io.tx.fire) {
     txValid := false.B
+  }
+
+  io.rx.ready := !rxValid
+  when(io.rx.fire) {
+    rxData := io.rx.bits
+    rxValid := true.B
   }
 
   io.bus.req.ready := !responseValid
@@ -34,17 +43,22 @@ class MmioUart extends Module {
     val offset = io.bus.req.bits.addr(11, 0)
     val legalWord = io.bus.req.bits.size === 2.U && io.bus.req.bits.addr(1, 0) === 0.U
     val statusRead = !io.bus.req.bits.write && offset === MemoryMap.Uart.StatusOffset.U
+    val rxRead = !io.bus.req.bits.write && offset === MemoryMap.Uart.RxDataOffset.U && rxValid
     val txWrite = io.bus.req.bits.write && offset === MemoryMap.Uart.TxDataOffset.U &&
       io.bus.req.bits.wstrb(0) && !txValid
-    val accessError = !legalWord || !(statusRead || txWrite)
+    val accessError = !legalWord || !(statusRead || rxRead || txWrite)
 
     responseValid := true.B
-    responseData := Mux(statusRead && legalWord, !txValid, 0.U)
+    responseData := Mux(statusRead && legalWord, Cat(0.U(30.W), rxValid, !txValid),
+      Mux(rxRead && legalWord, rxData, 0.U))
     responseError := accessError
 
     when(txWrite && legalWord) {
       txData := io.bus.req.bits.wdata(7, 0)
       txValid := true.B
+    }
+    when(rxRead && legalWord) {
+      rxValid := false.B
     }
   }
 }

@@ -5,7 +5,7 @@ The address map is frozen for the Demo. Unlisted addresses return a bus error an
 | Region | Address range | Access | Reset/use |
 |---|---:|---|---|
 | Boot RAM | `0x0000_0000`–`0x0000_FFFF` | R/W, instruction read | 64 KiB program and data memory |
-| UART | `0x1000_0000`–`0x1000_0FFF` | MMIO | Transmit-byte interface |
+| UART | `0x1000_0000`–`0x1000_0FFF` | MMIO | Decoded-byte transmit and receive interface |
 | Accelerator | `0x3000_0000`–`0x3000_0FFF` | MMIO | Video control and status |
 | External memory | `0x8000_0000`–`0xFFFF_FFFF` | R/W | Reserved CoreBus window for a future AXI bridge |
 
@@ -16,7 +16,8 @@ Boot RAM does not define same-address read-during-write behavior. Software must 
 | Offset | Name | Access | Definition |
 |---:|---|---|---|
 | `0x00` | TXDATA | W | Low 8 bits enqueue one byte |
-| `0x04` | STATUS | R | bit0 `txReady` |
+| `0x04` | STATUS | R | bit0 `txReady`, bit1 `rxValid` |
+| `0x08` | RXDATA | R | low 8 bits consume one buffered byte; empty read errors |
 
 ## Accelerator registers
 

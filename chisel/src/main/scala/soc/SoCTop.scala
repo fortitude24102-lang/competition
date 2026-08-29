@@ -19,6 +19,7 @@ class SoCTop(
   val io = IO(new Bundle {
     val video = new VideoStreamIO
     val uartTx = Decoupled(UInt(8.W))
+    val uartRx = Flipped(Decoupled(UInt(8.W)))
     val externalImem = new CoreBusIO
     val externalDmem = new CoreBusIO
 
@@ -59,6 +60,7 @@ class SoCTop(
   interconnect.io.externalDmem.resp <> externalDmemResponse.io.deq
 
   io.uartTx <> uart.io.tx
+  uart.io.rx <> io.uartRx
 
   videoAccelerator.clock := clock
   videoAccelerator.reset := reset.asBool

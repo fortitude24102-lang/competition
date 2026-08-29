@@ -10,7 +10,8 @@ mkdir -p "$output_dir"
 
 build_image() {
   local name=$1
-  shift
+  local main_source=$2
+  shift 2
   "${compiler_prefix}gcc" \
     -march=rv32i -mabi=ilp32 -ffreestanding -nostdlib -Os \
     -Wall -Wextra -Werror -fno-builtin -msmall-data-limit=0 \
@@ -20,7 +21,9 @@ build_image() {
     "$@" -o "$output_dir/$name.elf" \
     "$project_root/sw/start.S" \
     "$project_root/sw/drivers/accel_driver.c" \
-    "$project_root/sw/tests/driver_test.c"
+    "$project_root/sw/bsp/uart.c" \
+    "$main_source" \
+    -lgcc
   "${compiler_prefix}objcopy" -O binary \
     "$output_dir/$name.elf" "$output_dir/$name.bin"
   od -An -v -tx4 -w4 "$output_dir/$name.bin" | sed 's/^ *//' > "$output_dir/$name.hex"
@@ -29,6 +32,7 @@ build_image() {
   test -s "$output_dir/$name.hex"
 }
 
-build_image driver_test
-build_image driver_test_fail -DFORCE_FAILURE
+build_image driver_test "$project_root/sw/tests/driver_test.c"
+build_image driver_test_fail "$project_root/sw/tests/driver_test.c" -DFORCE_FAILURE
+build_image cli "$project_root/sw/apps/cli.c"
 echo "Built C validation images in $output_dir"

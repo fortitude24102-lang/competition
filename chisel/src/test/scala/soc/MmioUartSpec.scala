@@ -11,6 +11,8 @@ class MmioUartSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.bus.req.valid.poke(false)
         dut.io.bus.resp.ready.poke(true)
         dut.io.tx.ready.poke(false)
+        dut.io.rx.valid.poke(false)
+        dut.io.rx.bits.poke(0)
 
         def transact(
           offset: BigInt,
@@ -52,8 +54,26 @@ class MmioUartSpec extends AnyFunSpec with StableChiselSim with Matchers {
         transact(MemoryMap.Uart.StatusOffset) shouldBe (BigInt(1), false)
 
         transact(MemoryMap.Uart.TxDataOffset) shouldBe (BigInt(0), true)
-        transact(0x08) shouldBe (BigInt(0), true)
+        transact(0x0c) shouldBe (BigInt(0), true)
         transact(MemoryMap.Uart.TxDataOffset, write = true, data = 0xff, strobe = 0) shouldBe (BigInt(0), true)
+
+        dut.io.rx.bits.poke(0x41)
+        dut.io.rx.valid.poke(true)
+        dut.io.rx.ready.expect(true)
+        dut.clock.step()
+        dut.io.rx.valid.poke(false)
+        dut.io.rx.ready.expect(false)
+        transact(MemoryMap.Uart.StatusOffset) shouldBe (BigInt(3), false)
+
+        dut.io.rx.bits.poke(0x42)
+        dut.io.rx.valid.poke(true)
+        dut.clock.step(2)
+        dut.io.rx.ready.expect(false)
+        dut.io.rx.valid.poke(false)
+        transact(MemoryMap.Uart.RxDataOffset) shouldBe (BigInt(0x41), false)
+        dut.io.rx.ready.expect(true)
+        transact(MemoryMap.Uart.StatusOffset) shouldBe (BigInt(1), false)
+        transact(MemoryMap.Uart.RxDataOffset) shouldBe (BigInt(0), true)
 
         dut.io.bus.resp.ready.poke(false)
         dut.io.bus.req.valid.poke(true)

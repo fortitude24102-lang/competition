@@ -24,6 +24,7 @@ object MemoryMap {
   object Uart {
     val TxDataOffset: BigInt = 0x00
     val StatusOffset: BigInt = 0x04
+    val RxDataOffset: BigInt = 0x08
   }
 
   object Accelerator {

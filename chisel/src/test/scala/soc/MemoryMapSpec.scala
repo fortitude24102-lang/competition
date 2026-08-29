@@ -22,6 +22,7 @@ class MemoryMapSpec extends AnyFunSpec with Matchers {
     it("publishes the frozen peripheral register offsets") {
       MemoryMap.Uart.TxDataOffset shouldBe BigInt(0x00)
       MemoryMap.Uart.StatusOffset shouldBe BigInt(0x04)
+      MemoryMap.Uart.RxDataOffset shouldBe BigInt(0x08)
       MemoryMap.Accelerator.ControlOffset shouldBe BigInt(0x00)
       MemoryMap.Accelerator.StatusOffset shouldBe BigInt(0x04)
       MemoryMap.Accelerator.ModeOffset shouldBe BigInt(0x08)

@@ -22,6 +22,8 @@ class SoCTopSmokeSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.video.input.bits.endOfFrame.poke(false)
         dut.io.video.output.ready.poke(true)
         dut.io.uartTx.ready.poke(true)
+        dut.io.uartRx.valid.poke(false)
+        dut.io.uartRx.bits.poke(0)
 
         Seq(dut.io.externalImem, dut.io.externalDmem).foreach { bus =>
           bus.req.ready.poke(true)
