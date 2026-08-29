@@ -199,11 +199,11 @@ git commit -m "test(sw): run C driver on the RV32I SoC"
 - Consumes: `scripts/build-software-test.ps1` and `soc.SoftwareDriverSpec`
 - Produces: normal SoC verification rebuilding the C image before running ScalaTest
 
-- [ ] **Step 1: Confirm the current gate does not build the C image**
+- [x] **Step 1: Confirm the current gate does not build the C image**
 
 Run `Select-String -Path scripts\verify-soc.ps1 -Pattern 'build-software-test'` and expect no match.
 
-- [ ] **Step 2: Call the C build before Chisel tests**
+- [x] **Step 2: Call the C build before Chisel tests**
 
 Add:
 
@@ -213,11 +213,11 @@ Assert-LastExitCode 'C software validation image'
 Write-Host '[PASS] C software validation image built'
 ```
 
-- [ ] **Step 3: Run focused branch verification**
+- [x] **Step 3: Run focused branch verification**
 
 Run the C build and `testOnly soc.SoftwareDriverSpec`. Do not invoke Vivado for this branch-only check.
 
-- [ ] **Step 4: Check the handwritten diff and commit**
+- [x] **Step 4: Check the handwritten diff and commit**
 
 ```powershell
 git diff --check -- .gitignore chisel/src/test/scala/soc/SoftwareDriverSpec.scala sw scripts/build-software-test.sh scripts/build-software-test.ps1 scripts/verify-soc.ps1

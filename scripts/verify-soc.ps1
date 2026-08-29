@@ -15,6 +15,10 @@ $drive = $projectRoot.Substring(0, 1).ToLowerInvariant()
 $pathWithoutDrive = $projectRoot.Substring(2).Replace('\', '/')
 $wslProjectRoot = "/mnt/$drive$pathWithoutDrive"
 
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $projectRoot 'scripts\build-software-test.ps1')
+Assert-LastExitCode 'C software validation image'
+Write-Host '[PASS] C software validation image built'
+
 & wsl.exe -d Ubuntu -- bash "$wslProjectRoot/scripts/build-soc-smoke.sh"
 Assert-LastExitCode 'SoC smoke program build'
 Write-Host '[PASS] software: RV32I SoC smoke image rebuilt'
