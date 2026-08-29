@@ -83,7 +83,7 @@ git commit -m "test(sw): specify C driver readback flow"
 - Consumes: frozen addresses from `docs/memory_map.md`
 - Produces: `mmio_read32`, `mmio_write32`, `accel_set_enable`, `accel_set_mode`, `accel_set_threshold`, `accel_set_bypass`, `accel_get_status`, and readback getters
 
-- [ ] **Step 1: Add volatile 32-bit MMIO primitives**
+- [x] **Step 1: Add volatile 32-bit MMIO primitives**
 
 `sw/bsp/mmio.h` must contain only:
 
@@ -97,15 +97,15 @@ static inline uint32_t mmio_read32(uintptr_t address) {
 }
 ```
 
-- [ ] **Step 2: Define the driver API and constants once**
+- [x] **Step 2: Define the driver API and constants once**
 
 In `accel_driver.h`, define base `0x30000000u`, offsets `0x00/0x04/0x08/0x0c/0x10`, and modes 0/1/2. Declare setters, `uint32_t accel_get_status(void)`, and readback getters for CTRL/MODE/THRESHOLD/BYPASS.
 
-- [ ] **Step 3: Implement direct driver operations**
+- [x] **Step 3: Implement direct driver operations**
 
 Use `mmio_write32`/`mmio_read32`. `accel_set_mode(uint32_t mode)` returns `-1` for values greater than threshold mode and does not write; otherwise it writes and returns 0. Threshold accepts `uint8_t`; boolean controls write 0 or 1.
 
-- [ ] **Step 4: Compile the driver alone for RV32I**
+- [x] **Step 4: Compile the driver alone for RV32I**
 
 Run:
 
@@ -116,7 +116,7 @@ riscv64-unknown-elf-gcc -march=rv32i -mabi=ilp32 -ffreestanding -nostdlib \
 
 Expected: exit code 0 and no implicit declaration or type warnings.
 
-- [ ] **Step 5: Commit the driver**
+- [x] **Step 5: Commit the driver**
 
 ```powershell
 git add sw/bsp/mmio.h sw/drivers/accel_driver.h sw/drivers/accel_driver.c
