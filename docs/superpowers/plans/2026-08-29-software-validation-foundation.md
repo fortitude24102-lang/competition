@@ -252,6 +252,7 @@ Expected: branch `codex/software-validation-foundation`, clean worktree, no `tb/
 ### Task 6: Code-review follow-up
 
 **Files:**
+- Create: `.gitattributes`
 - Modify: `sw/start.S`
 - Modify: `sw/link.ld`
 - Modify: `sw/tests/driver_test.c`
@@ -271,3 +272,7 @@ Expected: branch `codex/software-validation-foundation`, clean worktree, no `tb/
 - [x] **Step 4: Build the forced-failure image and pass both simulation cases**
 
 - [x] **Step 5: Commit the review fixes**
+
+- [x] **Step 6: Force LF line endings for WSL shell scripts**
+
+- [x] **Step 7: Rebuild ignored smoke images before the full Chisel suite**
