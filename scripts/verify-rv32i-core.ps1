@@ -4,6 +4,9 @@ $ErrorActionPreference = 'Stop'
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 . (Join-Path $PSScriptRoot 'chisel-env.ps1')
+$drive = $projectRoot.Substring(0, 1).ToLowerInvariant()
+$pathWithoutDrive = $projectRoot.Substring(2).Replace('\', '/')
+$wslProjectRoot = "/mnt/$drive$pathWithoutDrive"
 
 function Assert-LastExitCode([string]$gate) {
     if ($LASTEXITCODE -ne 0) {
@@ -16,15 +19,15 @@ function Assert-LastExitCode([string]$gate) {
 Assert-LastExitCode 'RV32I toolchain check'
 Write-Host '[PASS] toolchain: RV32I/ILP32 compiler is available'
 
-& wsl.exe -d Ubuntu -- bash /mnt/d/ZYNQ/smallproject/scripts/build-rv32i-tests.sh
+& wsl.exe -d Ubuntu -- bash "$wslProjectRoot/scripts/build-rv32i-tests.sh"
 Assert-LastExitCode 'compiled smoke program build'
 Write-Host '[PASS] program build: smoke.bin rebuilt'
 
-& wsl.exe -d Ubuntu -- bash /mnt/d/ZYNQ/smallproject/scripts/build-rv32ui-tests.sh
+& wsl.exe -d Ubuntu -- bash "$wslProjectRoot/scripts/build-rv32ui-tests.sh"
 Assert-LastExitCode 'upstream rv32ui build'
 Write-Host '[PASS] architecture build: 37 selected rv32ui binaries rebuilt'
 
-& wsl.exe -d Ubuntu -- bash /mnt/d/ZYNQ/smallproject/scripts/test-chisel.sh
+& wsl.exe -d Ubuntu -- bash "$wslProjectRoot/scripts/test-chisel.sh"
 Assert-LastExitCode 'Chisel test suite'
 Write-Host '[PASS] component tests: decoder, execute, LSU, frontend, register file, and control'
 Write-Host '[PASS] pipeline tests: arithmetic, control flow, memory latency, and precise traps'
@@ -37,9 +40,10 @@ export PATH=/mnt/d/Chisel-environment/wsl/java17-root/usr/lib/jvm/java-17-openjd
 export COURSIER_CACHE=/mnt/d/Chisel-environment/cache/coursier
 export CHISEL_FIRTOOL_CACHE=/mnt/d/Chisel-environment/wsl/firtool-cache
 export SBT_OPTS="-Dsbt.boot.directory=/mnt/d/Chisel-environment/cache/sbt/boot-wsl -Dsbt.global.base=/mnt/d/Chisel-environment/cache/sbt/global-wsl -Dsbt.ivy.home=/mnt/d/Chisel-environment/cache/ivy-wsl"
-cd /mnt/d/ZYNQ/smallproject/chisel
+cd __PROJECT_ROOT__/chisel
 bash /mnt/d/Chisel-environment/sbt/bin/sbt "runMain Generate rv32 --target-dir ../generated"
 '@
+$generateCommand = $generateCommand.Replace('__PROJECT_ROOT__', $wslProjectRoot)
 & wsl.exe -d Ubuntu -- bash -lc $generateCommand
 Assert-LastExitCode 'Rv32Core RTL generation'
 

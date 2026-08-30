@@ -1,8 +1,12 @@
 $ErrorActionPreference = 'Stop'
 
 $toolchainHome = 'D:\Chisel-environment\riscv-toolchain'
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$drive = $projectRoot.Substring(0, 1).ToLowerInvariant()
+$pathWithoutDrive = $projectRoot.Substring(2).Replace('\', '/')
+$wslProjectRoot = "/mnt/$drive$pathWithoutDrive"
 
-& wsl.exe -d Ubuntu -- bash /mnt/d/ZYNQ/smallproject/scripts/setup-riscv-toolchain.sh
+& wsl.exe -d Ubuntu -- bash "$wslProjectRoot/scripts/setup-riscv-toolchain.sh"
 if ($LASTEXITCODE -ne 0) {
     throw "RISC-V toolchain setup failed with exit code $LASTEXITCODE"
 }

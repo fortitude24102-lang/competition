@@ -3,6 +3,7 @@ param()
 $ErrorActionPreference = 'Stop'
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+Set-Location -LiteralPath $projectRoot
 . (Join-Path $PSScriptRoot 'chisel-env.ps1')
 
 function Assert-LastExitCode([string]$gate) {
@@ -61,8 +62,14 @@ foreach ($port in @('io_imem_req_bits_write', 'io_imem_req_bits_size', 'io_imem_
 
 $rtlFiles = Get-ChildItem -LiteralPath $socGeneratedDirectory -Filter *.sv | Sort-Object Name
 $externalVideo = Join-Path $projectRoot 'rtl\video\VideoAccelTop.v'
+$projectPrefix = $projectRoot.TrimEnd('\') + '\'
 $allRtl = @($rtlFiles.FullName) + @($externalVideo) |
-    ForEach-Object { $_.Replace('\', '/') }
+    ForEach-Object {
+        if (-not $_.StartsWith($projectPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "RTL file is outside the project root: $_"
+        }
+        $_.Substring($projectPrefix.Length).Replace('\', '/')
+    }
 $fileList = Join-Path $generatedDirectory 'soc-filelist.f'
 $allRtl | Set-Content -LiteralPath $fileList -Encoding ascii
 
