@@ -181,6 +181,22 @@ class Decoder extends Module {
       }.elsewhen(io.inst === "h00100073".U) {
         io.control.legal := true.B
         io.control.ebreak := true.B
+      }.elsewhen(io.inst === "h30200073".U) {
+        io.control.legal := true.B
+        io.control.mret := true.B
+      }.otherwise {
+        switch(funct3) {
+          is("b001".U) { io.control.legal := true.B; io.control.csrOp := CsrOp.Write }
+          is("b010".U) { io.control.legal := true.B; io.control.csrOp := CsrOp.Set }
+          is("b011".U) { io.control.legal := true.B; io.control.csrOp := CsrOp.Clear }
+          is("b101".U) { io.control.legal := true.B; io.control.csrOp := CsrOp.Write; io.control.csrImmediate := true.B }
+          is("b110".U) { io.control.legal := true.B; io.control.csrOp := CsrOp.Set; io.control.csrImmediate := true.B }
+          is("b111".U) { io.control.legal := true.B; io.control.csrOp := CsrOp.Clear; io.control.csrImmediate := true.B }
+        }
+        when(io.control.legal) {
+          io.control.rs1Used := !io.control.csrImmediate && io.rs1 =/= 0.U
+          io.control.regWrite := true.B
+        }
       }
     }
   }

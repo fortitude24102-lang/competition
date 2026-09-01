@@ -120,12 +120,59 @@ class DecoderSpec extends AnyFunSpec with StableChiselSim {
           dut.io.control.legal.expect(true)
           dut.io.control.ebreak.expect(true)
         }
+        check(dut, BigInt("30200073", 16)) {
+          dut.io.control.legal.expect(true)
+          dut.io.control.mret.expect(true)
+        }
+      }
+    }
+
+    it("decodes every Zicsr register and immediate operation") {
+      simulate(new Decoder) { dut =>
+        val registerOps = Seq(
+          BigInt("305111f3", 16) -> CsrOp.Write,
+          BigInt("305121f3", 16) -> CsrOp.Set,
+          BigInt("305131f3", 16) -> CsrOp.Clear
+        )
+        registerOps.foreach { case (inst, operation) =>
+          check(dut, inst) {
+            dut.io.control.legal.expect(true)
+            dut.io.control.csrOp.expect(operation)
+            dut.io.control.csrImmediate.expect(false)
+            dut.io.control.rs1Used.expect(true)
+            dut.io.control.regWrite.expect(true)
+            dut.io.rs1.expect(2)
+            dut.io.rd.expect(3)
+          }
+        }
+
+        val immediateOps = Seq(
+          BigInt("3052d1f3", 16) -> CsrOp.Write,
+          BigInt("3052e1f3", 16) -> CsrOp.Set,
+          BigInt("3052f1f3", 16) -> CsrOp.Clear
+        )
+        immediateOps.foreach { case (inst, operation) =>
+          check(dut, inst) {
+            dut.io.control.legal.expect(true)
+            dut.io.control.csrOp.expect(operation)
+            dut.io.control.csrImmediate.expect(true)
+            dut.io.control.rs1Used.expect(false)
+            dut.io.control.regWrite.expect(true)
+            dut.io.rs1.expect(5)
+            dut.io.rd.expect(3)
+          }
+        }
       }
     }
 
     it("rejects illegal and reserved encodings without side effects") {
       simulate(new Decoder) { dut =>
-        Seq(BigInt("ffffffff", 16), BigInt("402091b3", 16), BigInt("02011093", 16)).foreach { inst =>
+        Seq(
+          BigInt("ffffffff", 16),
+          BigInt("402091b3", 16),
+          BigInt("02011093", 16),
+          BigInt("00200073", 16)
+        ).foreach { inst =>
           check(dut, inst) {
             dut.io.control.legal.expect(false)
             dut.io.control.regWrite.expect(false)

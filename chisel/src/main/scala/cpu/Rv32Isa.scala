@@ -26,6 +26,10 @@ object MemWidth extends ChiselEnum {
   val Byte, Half, Word = Value
 }
 
+object CsrOp extends ChiselEnum {
+  val None, Write, Set, Clear = Value
+}
+
 object TrapCause {
   val InstructionAddressMisaligned = 0.U(4.W)
   val InstructionAccessFault = 1.U(4.W)
@@ -55,4 +59,7 @@ class DecodedControl extends Bundle {
   val fence = Bool()
   val ecall = Bool()
   val ebreak = Bool()
+  val csrOp = CsrOp()
+  val csrImmediate = Bool()
+  val mret = Bool()
 }
