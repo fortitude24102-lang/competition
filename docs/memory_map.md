@@ -24,6 +24,8 @@ Boot RAM does not define same-address read-during-write behavior. Software must 
 
 The timer interrupt is asserted while unsigned `mtime >= mtimecmp`. RV32 software reads a coherent time value by reading high, low, then high again and retrying if the high words differ.
 
+Timer accesses must be aligned 32-bit words. Writes are legal only for MTIMECMP_LO and MTIMECMP_HI and require all four byte strobes; invalid offsets, writes to MTIME, partial writes, and mis-sized accesses return an error without changing the comparison value.
+
 ## GPIO registers
 
 | Offset | Name | Access | Definition | Reset |

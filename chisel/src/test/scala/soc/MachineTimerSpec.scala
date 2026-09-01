@@ -60,7 +60,9 @@ class MachineTimerSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.interrupt.expect(false)
         transact(MemoryMap.Timer.MtimeLowOffset, write = true, data = 0) shouldBe (BigInt(0), true)
         transact(MemoryMap.Timer.MtimecmpLowOffset, write = true, data = 0, strobe = 0x3) shouldBe (BigInt(0), true)
+        transact(MemoryMap.Timer.MtimecmpLowOffset) shouldBe (deadline, false)
         transact(MemoryMap.Timer.MtimecmpLowOffset, write = true, data = 0, size = 1) shouldBe (BigInt(0), true)
+        transact(MemoryMap.Timer.MtimecmpLowOffset) shouldBe (deadline, false)
         transact(0x00) shouldBe (BigInt(0), true)
 
         dut.io.bus.resp.ready.poke(false)
@@ -79,6 +81,31 @@ class MachineTimerSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.bus.resp.bits.rdata.expect(0xffffffffL)
         dut.io.bus.resp.ready.poke(true)
         dut.clock.step()
+      }
+    }
+
+    it("asserts the interrupt on the exact mtime equals mtimecmp cycle") {
+      simulate(new MachineTimer) { dut =>
+        dut.io.bus.req.valid.poke(false)
+        dut.io.bus.resp.ready.poke(true)
+
+        dut.io.bus.req.valid.poke(true)
+        dut.io.bus.req.bits.addr.poke(MemoryMap.TimerBase + MemoryMap.Timer.MtimecmpLowOffset)
+        dut.io.bus.req.bits.write.poke(true)
+        dut.io.bus.req.bits.size.poke(2)
+        dut.io.bus.req.bits.wdata.poke(3)
+        dut.io.bus.req.bits.wstrb.poke(0xf)
+        dut.clock.step()
+        dut.io.bus.req.valid.poke(false)
+        dut.io.interrupt.expect(false)
+        dut.clock.step()
+
+        dut.io.bus.req.valid.poke(true)
+        dut.io.bus.req.bits.addr.poke(MemoryMap.TimerBase + MemoryMap.Timer.MtimecmpHighOffset)
+        dut.io.bus.req.bits.wdata.poke(0)
+        dut.clock.step()
+        dut.io.bus.req.valid.poke(false)
+        dut.io.interrupt.expect(true)
       }
     }
   }
