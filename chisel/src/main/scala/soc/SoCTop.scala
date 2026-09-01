@@ -20,6 +20,9 @@ class SoCTop(
     val video = new VideoStreamIO
     val uartTx = Decoupled(UInt(8.W))
     val uartRx = Flipped(Decoupled(UInt(8.W)))
+    val gpioInput = Input(UInt(8.W))
+    val gpioOutput = Output(UInt(8.W))
+    val timerInterrupt = Output(Bool())
     val externalImem = new CoreBusIO
     val externalDmem = new CoreBusIO
 
@@ -36,7 +39,9 @@ class SoCTop(
   private val core = Module(new Rv32Core(MemoryMap.BootRamBase))
   private val interconnect = Module(new SoCInterconnect)
   private val ram = Module(new DualPortRam(ramWords, ramInitFile))
+  private val timer = Module(new MachineTimer)
   private val uart = Module(new MmioUart)
+  private val gpio = Module(new Gpio)
   private val acceleratorRegisters = Module(new AccelRegs)
   private val videoAccelerator = Module(new VideoAccelExt(videoSourcePath))
   private val externalImemRequest = Module(new Queue(new CoreBusReq, 1, pipe = false, flow = false))
@@ -48,7 +53,9 @@ class SoCTop(
   interconnect.io.cpuDmem <> core.io.dmem
   ram.io.imem <> interconnect.io.ramImem
   ram.io.dmem <> interconnect.io.ramDmem
+  timer.io.bus <> interconnect.io.timer
   uart.io.bus <> interconnect.io.uart
+  gpio.io.bus <> interconnect.io.gpio
   acceleratorRegisters.io.bus <> interconnect.io.accelerator
   externalImemRequest.io.enq <> interconnect.io.externalImem.req
   io.externalImem.req <> externalImemRequest.io.deq
@@ -61,6 +68,9 @@ class SoCTop(
 
   io.uartTx <> uart.io.tx
   uart.io.rx <> io.uartRx
+  gpio.io.input := io.gpioInput
+  io.gpioOutput := gpio.io.output
+  io.timerInterrupt := timer.io.interrupt
 
   videoAccelerator.clock := clock
   videoAccelerator.reset := reset.asBool

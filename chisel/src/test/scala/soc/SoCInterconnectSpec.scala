@@ -12,7 +12,9 @@ class SoCInterconnectSpec extends AnyFunSpec with StableChiselSim with Matchers 
         val targets = Seq(
           dut.io.ramImem,
           dut.io.ramDmem,
+          dut.io.timer,
           dut.io.uart,
+          dut.io.gpio,
           dut.io.accelerator,
           dut.io.externalImem,
           dut.io.externalDmem
@@ -73,8 +75,12 @@ class SoCInterconnectSpec extends AnyFunSpec with StableChiselSim with Matchers 
 
         exchange(dut.io.cpuDmem, dut.io.ramDmem, MemoryMap.BootRamBase + 4, 0x33333333)
         exchange(dut.io.cpuDmem, dut.io.ramDmem, MemoryMap.BootRamBase + MemoryMap.BootRamBytes - 1, 0x33333334)
+        exchange(dut.io.cpuDmem, dut.io.timer, MemoryMap.TimerBase, 0x34343434)
+        exchange(dut.io.cpuDmem, dut.io.timer, MemoryMap.TimerBase + MemoryMap.TimerBytes - 1, 0x34343435)
         exchange(dut.io.cpuDmem, dut.io.uart, MemoryMap.UartBase, 0x44444444)
         exchange(dut.io.cpuDmem, dut.io.uart, MemoryMap.UartBase + MemoryMap.UartBytes - 1, 0x44444445)
+        exchange(dut.io.cpuDmem, dut.io.gpio, MemoryMap.GpioBase, 0x45454545)
+        exchange(dut.io.cpuDmem, dut.io.gpio, MemoryMap.GpioBase + MemoryMap.GpioBytes - 1, 0x45454546)
         exchange(dut.io.cpuDmem, dut.io.accelerator, MemoryMap.AccelBase, 0x55555555)
         exchange(dut.io.cpuDmem, dut.io.accelerator, MemoryMap.AccelBase + MemoryMap.AccelBytes - 1, 0x55555556)
         exchange(dut.io.cpuDmem, dut.io.externalDmem, MemoryMap.ExternalBase, 0x66666666)

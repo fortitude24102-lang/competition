@@ -15,6 +15,7 @@ class SoCTopSmokeSpec extends AnyFunSpec with StableChiselSim with Matchers {
         ramInitFile = Some(ramImage),
         videoSourcePath = "../rtl/video/VideoAccelTop.v"
       ), settings = settings) { dut =>
+        dut.io.gpioInput.poke(0)
         dut.io.video.input.valid.poke(false)
         dut.io.video.input.bits.data.poke(0)
         dut.io.video.input.bits.startOfFrame.poke(false)

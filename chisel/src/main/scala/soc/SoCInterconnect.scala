@@ -10,23 +10,29 @@ class SoCInterconnect extends Module {
 
     val ramImem = new CoreBusIO
     val ramDmem = new CoreBusIO
+    val timer = new CoreBusIO
     val uart = new CoreBusIO
+    val gpio = new CoreBusIO
     val accelerator = new CoreBusIO
     val externalImem = new CoreBusIO
     val externalDmem = new CoreBusIO
   })
 
-  private val targetNone = 0.U(3.W)
-  private val targetRam = 1.U(3.W)
-  private val targetUart = 2.U(3.W)
-  private val targetAccelerator = 3.U(3.W)
-  private val targetExternal = 4.U(3.W)
-  private val targetError = 7.U(3.W)
+  private val targetNone = 0.U(4.W)
+  private val targetRam = 1.U(4.W)
+  private val targetTimer = 2.U(4.W)
+  private val targetUart = 3.U(4.W)
+  private val targetGpio = 4.U(4.W)
+  private val targetAccelerator = 5.U(4.W)
+  private val targetExternal = 6.U(4.W)
+  private val targetError = 15.U(4.W)
 
   private val masters = Seq(
     io.ramImem,
     io.ramDmem,
+    io.timer,
     io.uart,
+    io.gpio,
     io.accelerator,
     io.externalImem,
     io.externalDmem
@@ -97,8 +103,12 @@ class SoCInterconnect extends Module {
   private val dmemDecoded = WireDefault(targetError)
   when(MemoryMap.isBootRam(io.cpuDmem.req.bits.addr)) {
     dmemDecoded := targetRam
+  }.elsewhen(MemoryMap.isTimer(io.cpuDmem.req.bits.addr)) {
+    dmemDecoded := targetTimer
   }.elsewhen(MemoryMap.isUart(io.cpuDmem.req.bits.addr)) {
     dmemDecoded := targetUart
+  }.elsewhen(MemoryMap.isGpio(io.cpuDmem.req.bits.addr)) {
+    dmemDecoded := targetGpio
   }.elsewhen(MemoryMap.isAccelerator(io.cpuDmem.req.bits.addr)) {
     dmemDecoded := targetAccelerator
   }.elsewhen(MemoryMap.isExternal(io.cpuDmem.req.bits.addr)) {
@@ -112,13 +122,19 @@ class SoCInterconnect extends Module {
 
   when(!dmemActive) {
     connectRequest(io.cpuDmem, io.ramDmem, dmemDecoded === targetRam)
+    connectRequest(io.cpuDmem, io.timer, dmemDecoded === targetTimer)
     connectRequest(io.cpuDmem, io.uart, dmemDecoded === targetUart)
+    connectRequest(io.cpuDmem, io.gpio, dmemDecoded === targetGpio)
     connectRequest(io.cpuDmem, io.accelerator, dmemDecoded === targetAccelerator)
     connectRequest(io.cpuDmem, io.externalDmem, dmemDecoded === targetExternal)
     when(dmemDecoded === targetRam) {
       io.cpuDmem.req.ready := io.ramDmem.req.ready
+    }.elsewhen(dmemDecoded === targetTimer) {
+      io.cpuDmem.req.ready := io.timer.req.ready
     }.elsewhen(dmemDecoded === targetUart) {
       io.cpuDmem.req.ready := io.uart.req.ready
+    }.elsewhen(dmemDecoded === targetGpio) {
+      io.cpuDmem.req.ready := io.gpio.req.ready
     }.elsewhen(dmemDecoded === targetAccelerator) {
       io.cpuDmem.req.ready := io.accelerator.req.ready
     }.elsewhen(dmemDecoded === targetExternal) {
@@ -133,7 +149,9 @@ class SoCInterconnect extends Module {
     }
   }.otherwise {
     routeResponse(io.cpuDmem, io.ramDmem, dmemTarget === targetRam)
+    routeResponse(io.cpuDmem, io.timer, dmemTarget === targetTimer)
     routeResponse(io.cpuDmem, io.uart, dmemTarget === targetUart)
+    routeResponse(io.cpuDmem, io.gpio, dmemTarget === targetGpio)
     routeResponse(io.cpuDmem, io.accelerator, dmemTarget === targetAccelerator)
     routeResponse(io.cpuDmem, io.externalDmem, dmemTarget === targetExternal)
     when(dmemTarget === targetError) {
