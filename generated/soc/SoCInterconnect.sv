@@ -83,6 +83,17 @@ module SoCInterconnect(	// src/main/scala/soc/SoCInterconnect.scala:6:7
   input         io_ramDmem_resp_valid,	// src/main/scala/soc/SoCInterconnect.scala:7:14
   input  [31:0] io_ramDmem_resp_bits_rdata,	// src/main/scala/soc/SoCInterconnect.scala:7:14
   input         io_ramDmem_resp_bits_error,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+                io_timer_req_ready,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  output        io_timer_req_valid,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  output [31:0] io_timer_req_bits_addr,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  output        io_timer_req_bits_write,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  output [1:0]  io_timer_req_bits_size,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  output [31:0] io_timer_req_bits_wdata,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  output [3:0]  io_timer_req_bits_wstrb,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  output        io_timer_resp_ready,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  input         io_timer_resp_valid,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  input  [31:0] io_timer_resp_bits_rdata,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  input         io_timer_resp_bits_error,	// src/main/scala/soc/SoCInterconnect.scala:7:14
                 io_uart_req_ready,	// src/main/scala/soc/SoCInterconnect.scala:7:14
   output        io_uart_req_valid,	// src/main/scala/soc/SoCInterconnect.scala:7:14
   output [31:0] io_uart_req_bits_addr,	// src/main/scala/soc/SoCInterconnect.scala:7:14
@@ -94,6 +105,17 @@ module SoCInterconnect(	// src/main/scala/soc/SoCInterconnect.scala:6:7
   input         io_uart_resp_valid,	// src/main/scala/soc/SoCInterconnect.scala:7:14
   input  [31:0] io_uart_resp_bits_rdata,	// src/main/scala/soc/SoCInterconnect.scala:7:14
   input         io_uart_resp_bits_error,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+                io_gpio_req_ready,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  output        io_gpio_req_valid,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  output [31:0] io_gpio_req_bits_addr,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  output        io_gpio_req_bits_write,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  output [1:0]  io_gpio_req_bits_size,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  output [31:0] io_gpio_req_bits_wdata,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  output [3:0]  io_gpio_req_bits_wstrb,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  output        io_gpio_resp_ready,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  input         io_gpio_resp_valid,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  input  [31:0] io_gpio_resp_bits_rdata,	// src/main/scala/soc/SoCInterconnect.scala:7:14
+  input         io_gpio_resp_bits_error,	// src/main/scala/soc/SoCInterconnect.scala:7:14
                 io_accelerator_req_ready,	// src/main/scala/soc/SoCInterconnect.scala:7:14
   output        io_accelerator_req_valid,	// src/main/scala/soc/SoCInterconnect.scala:7:14
   output [31:0] io_accelerator_req_bits_addr,	// src/main/scala/soc/SoCInterconnect.scala:7:14
@@ -126,94 +148,115 @@ module SoCInterconnect(	// src/main/scala/soc/SoCInterconnect.scala:6:7
   input         io_externalDmem_resp_bits_error	// src/main/scala/soc/SoCInterconnect.scala:7:14
 );
 
-  reg         imemActive;	// src/main/scala/soc/SoCInterconnect.scala:54:35
-  reg  [2:0]  imemTarget;	// src/main/scala/soc/SoCInterconnect.scala:55:35
-  wire [2:0]  imemDecoded =
+  reg         imemActive;	// src/main/scala/soc/SoCInterconnect.scala:60:35
+  reg  [3:0]  imemTarget;	// src/main/scala/soc/SoCInterconnect.scala:61:35
+  wire [3:0]  imemDecoded =
     io_cpuImem_req_bits_addr < 32'h10000
-      ? 3'h1
-      : io_cpuImem_req_bits_addr[31] ? 3'h4 : 3'h7;	// src/main/scala/soc/MemoryMap.scala:49:40, :62:49, src/main/scala/soc/SoCInterconnect.scala:56:40, :57:55, :58:17, :59:62, :60:17
-  wire        _GEN = imemDecoded == 3'h1;	// src/main/scala/soc/SoCInterconnect.scala:57:55, :58:17, :59:62, :69:56
-  wire [31:0] io_ramImem_req_bits_addr_0 = imemActive ? 32'h0 : io_cpuImem_req_bits_addr;	// src/main/scala/soc/SoCInterconnect.scala:37:21, :43:21, :54:35, :68:21
-  wire [1:0]  io_ramImem_req_bits_size_0 = {~imemActive, 1'h0};	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :54:35, :68:{8,21}
-  wire        _GEN_0 = imemDecoded == 3'h4;	// src/main/scala/soc/SoCInterconnect.scala:57:55, :58:17, :59:62, :60:17, :70:61
+      ? 4'h1
+      : io_cpuImem_req_bits_addr[31] ? 4'h6 : 4'hF;	// src/main/scala/soc/MemoryMap.scala:67:40, :84:49, src/main/scala/soc/SoCInterconnect.scala:62:40, :63:55, :64:17, :65:62, :66:17
+  wire        _GEN = imemDecoded == 4'h1;	// src/main/scala/soc/SoCInterconnect.scala:63:55, :64:17, :65:62, :75:56
+  wire [31:0] io_ramImem_req_bits_addr_0 = imemActive ? 32'h0 : io_cpuImem_req_bits_addr;	// src/main/scala/soc/SoCInterconnect.scala:43:21, :49:21, :60:35, :74:21
+  wire [1:0]  io_ramImem_req_bits_size_0 = {~imemActive, 1'h0};	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :60:35, :74:{8,21}
+  wire        _GEN_0 = imemDecoded == 4'h6;	// src/main/scala/soc/SoCInterconnect.scala:63:55, :64:17, :65:62, :66:17, :76:61
   wire        io_cpuImem_req_ready_0 =
-    ~imemActive & (_GEN ? io_ramImem_req_ready : ~_GEN_0 | io_externalImem_req_ready);	// src/main/scala/soc/SoCInterconnect.scala:54:35, :63:24, :68:{8,21}, :69:56, :70:61, :71:37, :72:28, :73:48, :74:28, :76:28
-  wire        _GEN_1 = imemTarget == 3'h1;	// src/main/scala/soc/SoCInterconnect.scala:55:35, :58:17, :84:54
-  wire        _GEN_2 = imemTarget == 3'h4;	// src/main/scala/soc/SoCInterconnect.scala:55:35, :60:17, :85:59
+    ~imemActive & (_GEN ? io_ramImem_req_ready : ~_GEN_0 | io_externalImem_req_ready);	// src/main/scala/soc/SoCInterconnect.scala:60:35, :69:24, :74:{8,21}, :75:56, :76:61, :77:37, :78:28, :79:48, :80:28, :82:28
+  wire        _GEN_1 = imemTarget == 4'h1;	// src/main/scala/soc/SoCInterconnect.scala:61:35, :64:17, :90:54
+  wire        _GEN_2 = imemTarget == 4'h6;	// src/main/scala/soc/SoCInterconnect.scala:61:35, :66:17, :91:59
   wire        io_cpuImem_resp_valid_0 =
     imemActive
     & ((&imemTarget)
-       | (_GEN_2 ? io_externalImem_resp_valid : _GEN_1 & io_ramImem_resp_valid));	// src/main/scala/soc/SoCInterconnect.scala:47:18, :48:22, :54:35, :55:35, :64:25, :68:21, :84:54, :85:59, :86:{21,38}, :87:29
-  reg         dmemActive;	// src/main/scala/soc/SoCInterconnect.scala:95:35
-  reg  [2:0]  dmemTarget;	// src/main/scala/soc/SoCInterconnect.scala:96:35
-  wire [2:0]  dmemDecoded =
+       | (_GEN_2 ? io_externalImem_resp_valid : _GEN_1 & io_ramImem_resp_valid));	// src/main/scala/soc/SoCInterconnect.scala:53:18, :54:22, :60:35, :61:35, :70:25, :74:21, :90:54, :91:59, :92:{21,38}, :93:29
+  reg         dmemActive;	// src/main/scala/soc/SoCInterconnect.scala:101:35
+  reg  [3:0]  dmemTarget;	// src/main/scala/soc/SoCInterconnect.scala:102:35
+  wire [3:0]  dmemDecoded =
     io_cpuDmem_req_bits_addr < 32'h10000
-      ? 3'h1
-      : (|(io_cpuDmem_req_bits_addr[31:28])) & io_cpuDmem_req_bits_addr < 32'h10001000
-          ? 3'h2
-          : io_cpuDmem_req_bits_addr > 32'h2FFFFFFF
-            & io_cpuDmem_req_bits_addr < 32'h30001000
-              ? 3'h3
-              : io_cpuDmem_req_bits_addr[31] ? 3'h4 : 3'h7;	// src/main/scala/soc/MemoryMap.scala:49:{13,29,40}, :62:49, src/main/scala/soc/SoCInterconnect.scala:56:40, :58:17, :60:17, :97:40, :98:55, :99:17, :100:58, :101:17, :102:65, :103:17, :104:62, :105:17
-  wire        _GEN_3 = dmemDecoded == 3'h1;	// src/main/scala/soc/SoCInterconnect.scala:58:17, :98:55, :99:17, :100:58, :114:56
-  wire [31:0] io_uart_req_bits_addr_0 = dmemActive ? 32'h0 : io_cpuDmem_req_bits_addr;	// src/main/scala/soc/SoCInterconnect.scala:37:21, :43:21, :95:35, :113:21
-  wire        io_uart_req_bits_write_0 = ~dmemActive & io_cpuDmem_req_bits_write;	// src/main/scala/soc/SoCInterconnect.scala:37:21, :43:21, :95:35, :113:{8,21}
-  wire [1:0]  io_uart_req_bits_size_0 = dmemActive ? 2'h0 : io_cpuDmem_req_bits_size;	// src/main/scala/soc/SoCInterconnect.scala:37:21, :43:21, :95:35, :113:21
-  wire [31:0] io_uart_req_bits_wdata_0 = dmemActive ? 32'h0 : io_cpuDmem_req_bits_wdata;	// src/main/scala/soc/SoCInterconnect.scala:37:21, :43:21, :95:35, :113:21
-  wire [3:0]  io_uart_req_bits_wstrb_0 = dmemActive ? 4'h0 : io_cpuDmem_req_bits_wstrb;	// src/main/scala/soc/SoCInterconnect.scala:37:21, :43:21, :95:35, :113:21
-  wire        _GEN_4 = dmemDecoded == 3'h2;	// src/main/scala/soc/SoCInterconnect.scala:98:55, :99:17, :100:58, :101:17, :115:53
-  wire        _GEN_5 = dmemDecoded == 3'h3;	// src/main/scala/soc/SoCInterconnect.scala:98:55, :99:17, :100:58, :103:17, :116:60
-  wire        _GEN_6 = dmemDecoded == 3'h4;	// src/main/scala/soc/SoCInterconnect.scala:60:17, :98:55, :99:17, :100:58, :117:61
+      ? 4'h1
+      : (|(io_cpuDmem_req_bits_addr[31:25])) & io_cpuDmem_req_bits_addr < 32'h2010000
+          ? 4'h2
+          : (|(io_cpuDmem_req_bits_addr[31:28])) & io_cpuDmem_req_bits_addr < 32'h10001000
+              ? 4'h3
+              : io_cpuDmem_req_bits_addr > 32'h10000FFF
+                & io_cpuDmem_req_bits_addr < 32'h10002000
+                  ? 4'h4
+                  : io_cpuDmem_req_bits_addr > 32'h2FFFFFFF
+                    & io_cpuDmem_req_bits_addr < 32'h30001000
+                      ? 4'h5
+                      : io_cpuDmem_req_bits_addr[31] ? 4'h6 : 4'hF;	// src/main/scala/soc/MemoryMap.scala:67:{13,29,40}, :84:49, src/main/scala/soc/SoCInterconnect.scala:62:40, :64:17, :66:17, :103:40, :104:55, :105:17, :106:59, :107:17, :108:58, :109:17, :110:58, :111:17, :112:65, :113:17, :114:62, :115:17
+  wire        _GEN_3 = dmemDecoded == 4'h1;	// src/main/scala/soc/SoCInterconnect.scala:64:17, :104:55, :105:17, :106:59, :124:56
+  wire [31:0] io_gpio_req_bits_addr_0 = dmemActive ? 32'h0 : io_cpuDmem_req_bits_addr;	// src/main/scala/soc/SoCInterconnect.scala:43:21, :49:21, :101:35, :123:21
+  wire        io_gpio_req_bits_write_0 = ~dmemActive & io_cpuDmem_req_bits_write;	// src/main/scala/soc/SoCInterconnect.scala:43:21, :49:21, :101:35, :123:{8,21}
+  wire [1:0]  io_gpio_req_bits_size_0 = dmemActive ? 2'h0 : io_cpuDmem_req_bits_size;	// src/main/scala/soc/SoCInterconnect.scala:43:21, :49:21, :101:35, :123:21
+  wire [31:0] io_gpio_req_bits_wdata_0 = dmemActive ? 32'h0 : io_cpuDmem_req_bits_wdata;	// src/main/scala/soc/SoCInterconnect.scala:43:21, :49:21, :101:35, :123:21
+  wire [3:0]  io_gpio_req_bits_wstrb_0 = dmemActive ? 4'h0 : io_cpuDmem_req_bits_wstrb;	// src/main/scala/soc/SoCInterconnect.scala:43:21, :49:21, :101:35, :123:21
+  wire        _GEN_4 = dmemDecoded == 4'h2;	// src/main/scala/soc/SoCInterconnect.scala:104:55, :105:17, :106:59, :107:17, :125:54
+  wire        _GEN_5 = dmemDecoded == 4'h3;	// src/main/scala/soc/SoCInterconnect.scala:104:55, :105:17, :106:59, :109:17, :126:53
+  wire        _GEN_6 = dmemDecoded == 4'h4;	// src/main/scala/soc/SoCInterconnect.scala:104:55, :105:17, :106:59, :111:17, :127:53
+  wire        _GEN_7 = dmemDecoded == 4'h5;	// src/main/scala/soc/SoCInterconnect.scala:104:55, :105:17, :106:59, :113:17, :128:60
+  wire        _GEN_8 = dmemDecoded == 4'h6;	// src/main/scala/soc/SoCInterconnect.scala:66:17, :104:55, :105:17, :106:59, :129:61
   wire        io_cpuDmem_req_ready_0 =
     ~dmemActive
     & (_GEN_3
          ? io_ramDmem_req_ready
          : _GEN_4
-             ? io_uart_req_ready
-             : _GEN_5 ? io_accelerator_req_ready : ~_GEN_6 | io_externalDmem_req_ready);	// src/main/scala/soc/SoCInterconnect.scala:95:35, :108:24, :113:{8,21}, :114:56, :115:53, :116:60, :117:61, :118:37, :119:28, :120:44, :121:28, :122:51, :123:28, :124:48, :125:28, :127:28
-  wire        _GEN_7 = dmemTarget == 3'h1;	// src/main/scala/soc/SoCInterconnect.scala:58:17, :96:35, :135:54
-  wire        _GEN_8 = dmemTarget == 3'h2;	// src/main/scala/soc/SoCInterconnect.scala:96:35, :101:17, :136:51
-  wire        _GEN_9 = dmemTarget == 3'h3;	// src/main/scala/soc/SoCInterconnect.scala:96:35, :103:17, :137:58
-  wire        _GEN_10 = dmemTarget == 3'h4;	// src/main/scala/soc/SoCInterconnect.scala:60:17, :96:35, :138:59
+             ? io_timer_req_ready
+             : _GEN_5
+                 ? io_uart_req_ready
+                 : _GEN_6
+                     ? io_gpio_req_ready
+                     : _GEN_7
+                         ? io_accelerator_req_ready
+                         : ~_GEN_8 | io_externalDmem_req_ready);	// src/main/scala/soc/SoCInterconnect.scala:101:35, :118:24, :123:{8,21}, :124:56, :125:54, :126:53, :127:53, :128:60, :129:61, :130:37, :131:28, :132:45, :133:28, :134:44, :135:28, :136:44, :137:28, :138:51, :139:28, :140:48, :141:28, :143:28
+  wire        _GEN_9 = dmemTarget == 4'h1;	// src/main/scala/soc/SoCInterconnect.scala:64:17, :102:35, :151:54
+  wire        _GEN_10 = dmemTarget == 4'h2;	// src/main/scala/soc/SoCInterconnect.scala:102:35, :107:17, :152:52
+  wire        _GEN_11 = dmemTarget == 4'h3;	// src/main/scala/soc/SoCInterconnect.scala:102:35, :109:17, :153:51
+  wire        _GEN_12 = dmemTarget == 4'h4;	// src/main/scala/soc/SoCInterconnect.scala:102:35, :111:17, :154:51
+  wire        _GEN_13 = dmemTarget == 4'h5;	// src/main/scala/soc/SoCInterconnect.scala:102:35, :113:17, :155:58
+  wire        _GEN_14 = dmemTarget == 4'h6;	// src/main/scala/soc/SoCInterconnect.scala:66:17, :102:35, :156:59
   wire        io_cpuDmem_resp_valid_0 =
     dmemActive
     & ((&dmemTarget)
-       | (_GEN_10
+       | (_GEN_14
             ? io_externalDmem_resp_valid
-            : _GEN_9
+            : _GEN_13
                 ? io_accelerator_resp_valid
-                : _GEN_8 ? io_uart_resp_valid : _GEN_7 & io_ramDmem_resp_valid));	// src/main/scala/soc/SoCInterconnect.scala:47:18, :48:22, :95:35, :96:35, :109:25, :113:21, :135:54, :136:51, :137:58, :138:59, :139:{21,38}, :140:29
+                : _GEN_12
+                    ? io_gpio_resp_valid
+                    : _GEN_11
+                        ? io_uart_resp_valid
+                        : _GEN_10
+                            ? io_timer_resp_valid
+                            : _GEN_9 & io_ramDmem_resp_valid));	// src/main/scala/soc/SoCInterconnect.scala:53:18, :54:22, :101:35, :102:35, :119:25, :123:21, :151:54, :152:52, :153:51, :154:51, :155:58, :156:59, :157:{21,38}, :158:29
   always @(posedge clock) begin	// src/main/scala/soc/SoCInterconnect.scala:6:7
     if (reset) begin	// src/main/scala/soc/SoCInterconnect.scala:6:7
-      imemActive <= 1'h0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :54:35
-      imemTarget <= 3'h0;	// src/main/scala/soc/SoCInterconnect.scala:55:35
-      dmemActive <= 1'h0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :95:35
-      dmemTarget <= 3'h0;	// src/main/scala/soc/SoCInterconnect.scala:55:35, :96:35
+      imemActive <= 1'h0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :60:35
+      imemTarget <= 4'h0;	// src/main/scala/soc/SoCInterconnect.scala:61:35
+      dmemActive <= 1'h0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :101:35
+      dmemTarget <= 4'h0;	// src/main/scala/soc/SoCInterconnect.scala:102:35
     end
     else begin	// src/main/scala/soc/SoCInterconnect.scala:6:7
-      if (imemActive) begin	// src/main/scala/soc/SoCInterconnect.scala:54:35
-        automatic logic _GEN_11 = io_cpuImem_resp_ready & io_cpuImem_resp_valid_0;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCInterconnect.scala:64:25, :68:21, :86:38
-        imemActive <= ~_GEN_11;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCInterconnect.scala:54:35, :89:32, :90:18
-        if (_GEN_11)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-          imemTarget <= 3'h0;	// src/main/scala/soc/SoCInterconnect.scala:55:35
+      if (imemActive) begin	// src/main/scala/soc/SoCInterconnect.scala:60:35
+        automatic logic _GEN_15 = io_cpuImem_resp_ready & io_cpuImem_resp_valid_0;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCInterconnect.scala:70:25, :74:21, :92:38
+        imemActive <= ~_GEN_15;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCInterconnect.scala:60:35, :95:32, :96:18
+        if (_GEN_15)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
+          imemTarget <= 4'h0;	// src/main/scala/soc/SoCInterconnect.scala:61:35
       end
-      else begin	// src/main/scala/soc/SoCInterconnect.scala:54:35
-        automatic logic _GEN_12 = io_cpuImem_req_ready_0 & io_cpuImem_req_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCInterconnect.scala:63:24, :68:21, :71:37
-        imemActive <= _GEN_12;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCInterconnect.scala:54:35
-        if (_GEN_12)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-          imemTarget <= imemDecoded;	// src/main/scala/soc/SoCInterconnect.scala:55:35, :57:55, :58:17, :59:62
+      else begin	// src/main/scala/soc/SoCInterconnect.scala:60:35
+        automatic logic _GEN_16 = io_cpuImem_req_ready_0 & io_cpuImem_req_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCInterconnect.scala:69:24, :74:21, :77:37
+        imemActive <= _GEN_16;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCInterconnect.scala:60:35
+        if (_GEN_16)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
+          imemTarget <= imemDecoded;	// src/main/scala/soc/SoCInterconnect.scala:61:35, :63:55, :64:17, :65:62
       end
-      if (dmemActive) begin	// src/main/scala/soc/SoCInterconnect.scala:95:35
-        automatic logic _GEN_13 = io_cpuDmem_resp_ready & io_cpuDmem_resp_valid_0;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCInterconnect.scala:109:25, :113:21, :139:38
-        dmemActive <= ~_GEN_13;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCInterconnect.scala:95:35, :142:32, :143:18
-        if (_GEN_13)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-          dmemTarget <= 3'h0;	// src/main/scala/soc/SoCInterconnect.scala:55:35, :96:35
+      if (dmemActive) begin	// src/main/scala/soc/SoCInterconnect.scala:101:35
+        automatic logic _GEN_17 = io_cpuDmem_resp_ready & io_cpuDmem_resp_valid_0;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCInterconnect.scala:119:25, :123:21, :157:38
+        dmemActive <= ~_GEN_17;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCInterconnect.scala:101:35, :160:32, :161:18
+        if (_GEN_17)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
+          dmemTarget <= 4'h0;	// src/main/scala/soc/SoCInterconnect.scala:102:35
       end
-      else begin	// src/main/scala/soc/SoCInterconnect.scala:95:35
-        automatic logic _GEN_14 = io_cpuDmem_req_ready_0 & io_cpuDmem_req_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCInterconnect.scala:108:24, :113:21, :118:37
-        dmemActive <= _GEN_14;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCInterconnect.scala:95:35
-        if (_GEN_14)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-          dmemTarget <= dmemDecoded;	// src/main/scala/soc/SoCInterconnect.scala:96:35, :98:55, :99:17, :100:58
+      else begin	// src/main/scala/soc/SoCInterconnect.scala:101:35
+        automatic logic _GEN_18 = io_cpuDmem_req_ready_0 & io_cpuDmem_req_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCInterconnect.scala:118:24, :123:21, :130:37
+        dmemActive <= _GEN_18;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCInterconnect.scala:101:35
+        if (_GEN_18)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
+          dmemTarget <= dmemDecoded;	// src/main/scala/soc/SoCInterconnect.scala:102:35, :104:55, :105:17, :106:59
       end
     end
   end // always @(posedge)
@@ -228,81 +271,105 @@ module SoCInterconnect(	// src/main/scala/soc/SoCInterconnect.scala:6:7
       `endif // INIT_RANDOM_PROLOG_
       `ifdef RANDOMIZE_REG_INIT	// src/main/scala/soc/SoCInterconnect.scala:6:7
         _RANDOM[/*Zero width*/ 1'b0] = `RANDOM;	// src/main/scala/soc/SoCInterconnect.scala:6:7
-        imemActive = _RANDOM[/*Zero width*/ 1'b0][0];	// src/main/scala/soc/SoCInterconnect.scala:6:7, :54:35
-        imemTarget = _RANDOM[/*Zero width*/ 1'b0][3:1];	// src/main/scala/soc/SoCInterconnect.scala:6:7, :54:35, :55:35
-        dmemActive = _RANDOM[/*Zero width*/ 1'b0][4];	// src/main/scala/soc/SoCInterconnect.scala:6:7, :54:35, :95:35
-        dmemTarget = _RANDOM[/*Zero width*/ 1'b0][7:5];	// src/main/scala/soc/SoCInterconnect.scala:6:7, :54:35, :96:35
+        imemActive = _RANDOM[/*Zero width*/ 1'b0][0];	// src/main/scala/soc/SoCInterconnect.scala:6:7, :60:35
+        imemTarget = _RANDOM[/*Zero width*/ 1'b0][4:1];	// src/main/scala/soc/SoCInterconnect.scala:6:7, :60:35, :61:35
+        dmemActive = _RANDOM[/*Zero width*/ 1'b0][5];	// src/main/scala/soc/SoCInterconnect.scala:6:7, :60:35, :101:35
+        dmemTarget = _RANDOM[/*Zero width*/ 1'b0][9:6];	// src/main/scala/soc/SoCInterconnect.scala:6:7, :60:35, :102:35
       `endif // RANDOMIZE_REG_INIT
     end // initial
     `ifdef FIRRTL_AFTER_INITIAL	// src/main/scala/soc/SoCInterconnect.scala:6:7
       `FIRRTL_AFTER_INITIAL	// src/main/scala/soc/SoCInterconnect.scala:6:7
     `endif // FIRRTL_AFTER_INITIAL
   `endif // ENABLE_INITIAL_REG_
-  assign io_cpuImem_req_ready = io_cpuImem_req_ready_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :63:24, :68:21, :71:37
-  assign io_cpuImem_resp_valid = io_cpuImem_resp_valid_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :64:25, :68:21, :86:38
+  assign io_cpuImem_req_ready = io_cpuImem_req_ready_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :69:24, :74:21, :77:37
+  assign io_cpuImem_resp_valid = io_cpuImem_resp_valid_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :70:25, :74:21, :92:38
   assign io_cpuImem_resp_bits_rdata =
     imemActive
       ? (_GEN_2
            ? io_externalImem_resp_bits_rdata
            : _GEN_1 ? io_ramImem_resp_bits_rdata : 32'h0)
-      : 32'h0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :47:18, :49:21, :54:35, :65:30, :68:21, :84:54, :85:59
+      : 32'h0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :53:18, :55:21, :60:35, :71:30, :74:21, :90:54, :91:59
   assign io_cpuImem_resp_bits_error =
     ~imemActive
-    | (_GEN_2 ? io_externalImem_resp_bits_error : ~_GEN_1 | io_ramImem_resp_bits_error);	// src/main/scala/soc/SoCInterconnect.scala:6:7, :47:18, :49:21, :54:35, :66:30, :68:{8,21}, :84:54, :85:59
-  assign io_cpuDmem_req_ready = io_cpuDmem_req_ready_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :108:24, :113:21, :118:37
-  assign io_cpuDmem_resp_valid = io_cpuDmem_resp_valid_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :109:25, :113:21, :139:38
+    | (_GEN_2 ? io_externalImem_resp_bits_error : ~_GEN_1 | io_ramImem_resp_bits_error);	// src/main/scala/soc/SoCInterconnect.scala:6:7, :53:18, :55:21, :60:35, :72:30, :74:{8,21}, :90:54, :91:59
+  assign io_cpuDmem_req_ready = io_cpuDmem_req_ready_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :118:24, :123:21, :130:37
+  assign io_cpuDmem_resp_valid = io_cpuDmem_resp_valid_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :119:25, :123:21, :157:38
   assign io_cpuDmem_resp_bits_rdata =
     dmemActive
-      ? (_GEN_10
+      ? (_GEN_14
            ? io_externalDmem_resp_bits_rdata
-           : _GEN_9
+           : _GEN_13
                ? io_accelerator_resp_bits_rdata
-               : _GEN_8
-                   ? io_uart_resp_bits_rdata
-                   : _GEN_7 ? io_ramDmem_resp_bits_rdata : 32'h0)
-      : 32'h0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :47:18, :49:21, :95:35, :110:30, :113:21, :135:54, :136:51, :137:58, :138:59
+               : _GEN_12
+                   ? io_gpio_resp_bits_rdata
+                   : _GEN_11
+                       ? io_uart_resp_bits_rdata
+                       : _GEN_10
+                           ? io_timer_resp_bits_rdata
+                           : _GEN_9 ? io_ramDmem_resp_bits_rdata : 32'h0)
+      : 32'h0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :53:18, :55:21, :101:35, :120:30, :123:21, :151:54, :152:52, :153:51, :154:51, :155:58, :156:59
   assign io_cpuDmem_resp_bits_error =
     ~dmemActive
-    | (_GEN_10
+    | (_GEN_14
          ? io_externalDmem_resp_bits_error
-         : _GEN_9
+         : _GEN_13
              ? io_accelerator_resp_bits_error
-             : _GEN_8 ? io_uart_resp_bits_error : ~_GEN_7 | io_ramDmem_resp_bits_error);	// src/main/scala/soc/SoCInterconnect.scala:6:7, :47:18, :49:21, :95:35, :111:30, :113:{8,21}, :135:54, :136:51, :137:58, :138:59
-  assign io_ramImem_req_valid = ~imemActive & io_cpuImem_req_valid & _GEN;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :36:22, :42:{22,39}, :54:35, :68:{8,21}, :69:56
-  assign io_ramImem_req_bits_addr = io_ramImem_req_bits_addr_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :68:21
-  assign io_ramImem_req_bits_size = io_ramImem_req_bits_size_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :68:21
-  assign io_ramImem_resp_ready = imemActive & _GEN_1 & io_cpuImem_resp_ready;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :38:23, :47:18, :50:25, :54:35, :68:21, :84:54
-  assign io_ramDmem_req_valid = ~dmemActive & io_cpuDmem_req_valid & _GEN_3;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :36:22, :42:{22,39}, :95:35, :113:{8,21}, :114:56
-  assign io_ramDmem_req_bits_addr = io_uart_req_bits_addr_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_ramDmem_req_bits_write = io_uart_req_bits_write_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_ramDmem_req_bits_size = io_uart_req_bits_size_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_ramDmem_req_bits_wdata = io_uart_req_bits_wdata_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_ramDmem_req_bits_wstrb = io_uart_req_bits_wstrb_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_ramDmem_resp_ready = dmemActive & _GEN_7 & io_cpuDmem_resp_ready;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :38:23, :47:18, :50:25, :95:35, :113:21, :135:54
-  assign io_uart_req_valid = ~dmemActive & io_cpuDmem_req_valid & _GEN_4;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :36:22, :42:{22,39}, :95:35, :113:{8,21}, :115:53
-  assign io_uart_req_bits_addr = io_uart_req_bits_addr_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_uart_req_bits_write = io_uart_req_bits_write_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_uart_req_bits_size = io_uart_req_bits_size_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_uart_req_bits_wdata = io_uart_req_bits_wdata_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_uart_req_bits_wstrb = io_uart_req_bits_wstrb_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_uart_resp_ready = dmemActive & _GEN_8 & io_cpuDmem_resp_ready;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :38:23, :47:18, :50:25, :95:35, :113:21, :136:51
-  assign io_accelerator_req_valid = ~dmemActive & io_cpuDmem_req_valid & _GEN_5;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :36:22, :42:{22,39}, :95:35, :113:{8,21}, :116:60
-  assign io_accelerator_req_bits_addr = io_uart_req_bits_addr_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_accelerator_req_bits_write = io_uart_req_bits_write_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_accelerator_req_bits_size = io_uart_req_bits_size_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_accelerator_req_bits_wdata = io_uart_req_bits_wdata_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_accelerator_req_bits_wstrb = io_uart_req_bits_wstrb_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_accelerator_resp_ready = dmemActive & _GEN_9 & io_cpuDmem_resp_ready;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :38:23, :47:18, :50:25, :95:35, :113:21, :137:58
-  assign io_externalImem_req_valid = ~imemActive & io_cpuImem_req_valid & _GEN_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :36:22, :42:{22,39}, :54:35, :68:{8,21}, :70:61
-  assign io_externalImem_req_bits_addr = io_ramImem_req_bits_addr_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :68:21
-  assign io_externalImem_req_bits_size = io_ramImem_req_bits_size_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :68:21
-  assign io_externalImem_resp_ready = imemActive & _GEN_2 & io_cpuImem_resp_ready;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :38:23, :47:18, :50:25, :54:35, :68:21, :85:59
-  assign io_externalDmem_req_valid = ~dmemActive & io_cpuDmem_req_valid & _GEN_6;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :36:22, :42:{22,39}, :95:35, :113:{8,21}, :117:61
-  assign io_externalDmem_req_bits_addr = io_uart_req_bits_addr_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_externalDmem_req_bits_write = io_uart_req_bits_write_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_externalDmem_req_bits_size = io_uart_req_bits_size_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_externalDmem_req_bits_wdata = io_uart_req_bits_wdata_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_externalDmem_req_bits_wstrb = io_uart_req_bits_wstrb_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :37:21, :43:21, :113:21
-  assign io_externalDmem_resp_ready = dmemActive & _GEN_10 & io_cpuDmem_resp_ready;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :38:23, :47:18, :50:25, :95:35, :113:21, :138:59
+             : _GEN_12
+                 ? io_gpio_resp_bits_error
+                 : _GEN_11
+                     ? io_uart_resp_bits_error
+                     : _GEN_10
+                         ? io_timer_resp_bits_error
+                         : ~_GEN_9 | io_ramDmem_resp_bits_error);	// src/main/scala/soc/SoCInterconnect.scala:6:7, :53:18, :55:21, :101:35, :121:30, :123:{8,21}, :151:54, :152:52, :153:51, :154:51, :155:58, :156:59
+  assign io_ramImem_req_valid = ~imemActive & io_cpuImem_req_valid & _GEN;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :42:22, :48:{22,39}, :60:35, :74:{8,21}, :75:56
+  assign io_ramImem_req_bits_addr = io_ramImem_req_bits_addr_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :74:21
+  assign io_ramImem_req_bits_size = io_ramImem_req_bits_size_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :74:21
+  assign io_ramImem_resp_ready = imemActive & _GEN_1 & io_cpuImem_resp_ready;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :44:23, :53:18, :56:25, :60:35, :74:21, :90:54
+  assign io_ramDmem_req_valid = ~dmemActive & io_cpuDmem_req_valid & _GEN_3;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :42:22, :48:{22,39}, :101:35, :123:{8,21}, :124:56
+  assign io_ramDmem_req_bits_addr = io_gpio_req_bits_addr_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_ramDmem_req_bits_write = io_gpio_req_bits_write_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_ramDmem_req_bits_size = io_gpio_req_bits_size_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_ramDmem_req_bits_wdata = io_gpio_req_bits_wdata_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_ramDmem_req_bits_wstrb = io_gpio_req_bits_wstrb_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_ramDmem_resp_ready = dmemActive & _GEN_9 & io_cpuDmem_resp_ready;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :44:23, :53:18, :56:25, :101:35, :123:21, :151:54
+  assign io_timer_req_valid = ~dmemActive & io_cpuDmem_req_valid & _GEN_4;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :42:22, :48:{22,39}, :101:35, :123:{8,21}, :125:54
+  assign io_timer_req_bits_addr = io_gpio_req_bits_addr_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_timer_req_bits_write = io_gpio_req_bits_write_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_timer_req_bits_size = io_gpio_req_bits_size_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_timer_req_bits_wdata = io_gpio_req_bits_wdata_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_timer_req_bits_wstrb = io_gpio_req_bits_wstrb_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_timer_resp_ready = dmemActive & _GEN_10 & io_cpuDmem_resp_ready;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :44:23, :53:18, :56:25, :101:35, :123:21, :152:52
+  assign io_uart_req_valid = ~dmemActive & io_cpuDmem_req_valid & _GEN_5;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :42:22, :48:{22,39}, :101:35, :123:{8,21}, :126:53
+  assign io_uart_req_bits_addr = io_gpio_req_bits_addr_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_uart_req_bits_write = io_gpio_req_bits_write_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_uart_req_bits_size = io_gpio_req_bits_size_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_uart_req_bits_wdata = io_gpio_req_bits_wdata_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_uart_req_bits_wstrb = io_gpio_req_bits_wstrb_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_uart_resp_ready = dmemActive & _GEN_11 & io_cpuDmem_resp_ready;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :44:23, :53:18, :56:25, :101:35, :123:21, :153:51
+  assign io_gpio_req_valid = ~dmemActive & io_cpuDmem_req_valid & _GEN_6;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :42:22, :48:{22,39}, :101:35, :123:{8,21}, :127:53
+  assign io_gpio_req_bits_addr = io_gpio_req_bits_addr_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_gpio_req_bits_write = io_gpio_req_bits_write_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_gpio_req_bits_size = io_gpio_req_bits_size_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_gpio_req_bits_wdata = io_gpio_req_bits_wdata_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_gpio_req_bits_wstrb = io_gpio_req_bits_wstrb_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_gpio_resp_ready = dmemActive & _GEN_12 & io_cpuDmem_resp_ready;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :44:23, :53:18, :56:25, :101:35, :123:21, :154:51
+  assign io_accelerator_req_valid = ~dmemActive & io_cpuDmem_req_valid & _GEN_7;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :42:22, :48:{22,39}, :101:35, :123:{8,21}, :128:60
+  assign io_accelerator_req_bits_addr = io_gpio_req_bits_addr_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_accelerator_req_bits_write = io_gpio_req_bits_write_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_accelerator_req_bits_size = io_gpio_req_bits_size_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_accelerator_req_bits_wdata = io_gpio_req_bits_wdata_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_accelerator_req_bits_wstrb = io_gpio_req_bits_wstrb_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_accelerator_resp_ready = dmemActive & _GEN_13 & io_cpuDmem_resp_ready;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :44:23, :53:18, :56:25, :101:35, :123:21, :155:58
+  assign io_externalImem_req_valid = ~imemActive & io_cpuImem_req_valid & _GEN_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :42:22, :48:{22,39}, :60:35, :74:{8,21}, :76:61
+  assign io_externalImem_req_bits_addr = io_ramImem_req_bits_addr_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :74:21
+  assign io_externalImem_req_bits_size = io_ramImem_req_bits_size_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :74:21
+  assign io_externalImem_resp_ready = imemActive & _GEN_2 & io_cpuImem_resp_ready;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :44:23, :53:18, :56:25, :60:35, :74:21, :91:59
+  assign io_externalDmem_req_valid = ~dmemActive & io_cpuDmem_req_valid & _GEN_8;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :42:22, :48:{22,39}, :101:35, :123:{8,21}, :129:61
+  assign io_externalDmem_req_bits_addr = io_gpio_req_bits_addr_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_externalDmem_req_bits_write = io_gpio_req_bits_write_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_externalDmem_req_bits_size = io_gpio_req_bits_size_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_externalDmem_req_bits_wdata = io_gpio_req_bits_wdata_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_externalDmem_req_bits_wstrb = io_gpio_req_bits_wstrb_0;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :43:21, :49:21, :123:21
+  assign io_externalDmem_resp_ready = dmemActive & _GEN_14 & io_cpuDmem_resp_ready;	// src/main/scala/soc/SoCInterconnect.scala:6:7, :44:23, :53:18, :56:25, :101:35, :123:21, :156:59
 endmodule
 

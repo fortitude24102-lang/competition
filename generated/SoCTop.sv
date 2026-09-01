@@ -22,6 +22,9 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
   output        io_uartRx_ready,	// src/main/scala/soc/SoCTop.scala:19:14
   input         io_uartRx_valid,	// src/main/scala/soc/SoCTop.scala:19:14
   input  [7:0]  io_uartRx_bits,	// src/main/scala/soc/SoCTop.scala:19:14
+                io_gpioInput,	// src/main/scala/soc/SoCTop.scala:19:14
+  output [7:0]  io_gpioOutput,	// src/main/scala/soc/SoCTop.scala:19:14
+  output        io_timerInterrupt,	// src/main/scala/soc/SoCTop.scala:19:14
   input         io_externalImem_req_ready,	// src/main/scala/soc/SoCTop.scala:19:14
   output        io_externalImem_req_valid,	// src/main/scala/soc/SoCTop.scala:19:14
   output [31:0] io_externalImem_req_bits_addr,	// src/main/scala/soc/SoCTop.scala:19:14
@@ -61,103 +64,125 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
   output        io_halted	// src/main/scala/soc/SoCTop.scala:19:14
 );
 
-  wire        _externalDmemResponse_io_deq_valid;	// src/main/scala/soc/SoCTop.scala:45:44
-  wire [31:0] _externalDmemResponse_io_deq_bits_rdata;	// src/main/scala/soc/SoCTop.scala:45:44
-  wire        _externalDmemResponse_io_deq_bits_error;	// src/main/scala/soc/SoCTop.scala:45:44
-  wire        _externalDmemRequest_io_enq_ready;	// src/main/scala/soc/SoCTop.scala:44:43
-  wire        _externalImemResponse_io_deq_valid;	// src/main/scala/soc/SoCTop.scala:43:44
-  wire [31:0] _externalImemResponse_io_deq_bits_rdata;	// src/main/scala/soc/SoCTop.scala:43:44
-  wire        _externalImemResponse_io_deq_bits_error;	// src/main/scala/soc/SoCTop.scala:43:44
-  wire        _externalImemRequest_io_enq_ready;	// src/main/scala/soc/SoCTop.scala:42:43
-  wire        _videoAccelerator_pixel_in_ready;	// src/main/scala/soc/SoCTop.scala:41:40
-  wire        _videoAccelerator_pixel_out_valid;	// src/main/scala/soc/SoCTop.scala:41:40
-  wire        _videoAccelerator_busy;	// src/main/scala/soc/SoCTop.scala:41:40
-  wire        _videoAccelerator_frame_done;	// src/main/scala/soc/SoCTop.scala:41:40
-  wire        _acceleratorRegisters_io_bus_req_ready;	// src/main/scala/soc/SoCTop.scala:40:44
-  wire        _acceleratorRegisters_io_bus_resp_valid;	// src/main/scala/soc/SoCTop.scala:40:44
-  wire [31:0] _acceleratorRegisters_io_bus_resp_bits_rdata;	// src/main/scala/soc/SoCTop.scala:40:44
-  wire        _acceleratorRegisters_io_bus_resp_bits_error;	// src/main/scala/soc/SoCTop.scala:40:44
-  wire        _acceleratorRegisters_io_enable;	// src/main/scala/soc/SoCTop.scala:40:44
-  wire [1:0]  _acceleratorRegisters_io_mode;	// src/main/scala/soc/SoCTop.scala:40:44
-  wire [7:0]  _acceleratorRegisters_io_threshold;	// src/main/scala/soc/SoCTop.scala:40:44
-  wire        _acceleratorRegisters_io_bypass;	// src/main/scala/soc/SoCTop.scala:40:44
-  wire        _uart_io_bus_req_ready;	// src/main/scala/soc/SoCTop.scala:39:28
-  wire        _uart_io_bus_resp_valid;	// src/main/scala/soc/SoCTop.scala:39:28
-  wire [31:0] _uart_io_bus_resp_bits_rdata;	// src/main/scala/soc/SoCTop.scala:39:28
-  wire        _uart_io_bus_resp_bits_error;	// src/main/scala/soc/SoCTop.scala:39:28
-  wire        _ram_io_imem_req_ready;	// src/main/scala/soc/SoCTop.scala:38:27
-  wire        _ram_io_imem_resp_valid;	// src/main/scala/soc/SoCTop.scala:38:27
-  wire [31:0] _ram_io_imem_resp_bits_rdata;	// src/main/scala/soc/SoCTop.scala:38:27
-  wire        _ram_io_imem_resp_bits_error;	// src/main/scala/soc/SoCTop.scala:38:27
-  wire        _ram_io_dmem_req_ready;	// src/main/scala/soc/SoCTop.scala:38:27
-  wire        _ram_io_dmem_resp_valid;	// src/main/scala/soc/SoCTop.scala:38:27
-  wire [31:0] _ram_io_dmem_resp_bits_rdata;	// src/main/scala/soc/SoCTop.scala:38:27
-  wire        _ram_io_dmem_resp_bits_error;	// src/main/scala/soc/SoCTop.scala:38:27
-  wire        _interconnect_io_cpuImem_req_ready;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_cpuImem_resp_valid;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [31:0] _interconnect_io_cpuImem_resp_bits_rdata;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_cpuImem_resp_bits_error;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_cpuDmem_req_ready;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_cpuDmem_resp_valid;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [31:0] _interconnect_io_cpuDmem_resp_bits_rdata;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_cpuDmem_resp_bits_error;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_ramImem_req_valid;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [31:0] _interconnect_io_ramImem_req_bits_addr;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [1:0]  _interconnect_io_ramImem_req_bits_size;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_ramImem_resp_ready;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_ramDmem_req_valid;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [31:0] _interconnect_io_ramDmem_req_bits_addr;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_ramDmem_req_bits_write;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [1:0]  _interconnect_io_ramDmem_req_bits_size;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [31:0] _interconnect_io_ramDmem_req_bits_wdata;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [3:0]  _interconnect_io_ramDmem_req_bits_wstrb;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_ramDmem_resp_ready;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_uart_req_valid;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [31:0] _interconnect_io_uart_req_bits_addr;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_uart_req_bits_write;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [1:0]  _interconnect_io_uart_req_bits_size;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [31:0] _interconnect_io_uart_req_bits_wdata;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [3:0]  _interconnect_io_uart_req_bits_wstrb;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_uart_resp_ready;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_accelerator_req_valid;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [31:0] _interconnect_io_accelerator_req_bits_addr;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_accelerator_req_bits_write;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [1:0]  _interconnect_io_accelerator_req_bits_size;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [31:0] _interconnect_io_accelerator_req_bits_wdata;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [3:0]  _interconnect_io_accelerator_req_bits_wstrb;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_accelerator_resp_ready;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_externalImem_req_valid;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [31:0] _interconnect_io_externalImem_req_bits_addr;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [1:0]  _interconnect_io_externalImem_req_bits_size;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_externalImem_resp_ready;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_externalDmem_req_valid;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [31:0] _interconnect_io_externalDmem_req_bits_addr;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_externalDmem_req_bits_write;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [1:0]  _interconnect_io_externalDmem_req_bits_size;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [31:0] _interconnect_io_externalDmem_req_bits_wdata;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire [3:0]  _interconnect_io_externalDmem_req_bits_wstrb;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _interconnect_io_externalDmem_resp_ready;	// src/main/scala/soc/SoCTop.scala:37:36
-  wire        _core_io_imem_req_valid;	// src/main/scala/soc/SoCTop.scala:36:28
-  wire [31:0] _core_io_imem_req_bits_addr;	// src/main/scala/soc/SoCTop.scala:36:28
-  wire        _core_io_imem_resp_ready;	// src/main/scala/soc/SoCTop.scala:36:28
-  wire        _core_io_dmem_req_valid;	// src/main/scala/soc/SoCTop.scala:36:28
-  wire [31:0] _core_io_dmem_req_bits_addr;	// src/main/scala/soc/SoCTop.scala:36:28
-  wire        _core_io_dmem_req_bits_write;	// src/main/scala/soc/SoCTop.scala:36:28
-  wire [1:0]  _core_io_dmem_req_bits_size;	// src/main/scala/soc/SoCTop.scala:36:28
-  wire [31:0] _core_io_dmem_req_bits_wdata;	// src/main/scala/soc/SoCTop.scala:36:28
-  wire [3:0]  _core_io_dmem_req_bits_wstrb;	// src/main/scala/soc/SoCTop.scala:36:28
-  wire        _core_io_dmem_resp_ready;	// src/main/scala/soc/SoCTop.scala:36:28
-  Rv32Core core (	// src/main/scala/soc/SoCTop.scala:36:28
+  wire        _externalDmemResponse_io_deq_valid;	// src/main/scala/soc/SoCTop.scala:50:44
+  wire [31:0] _externalDmemResponse_io_deq_bits_rdata;	// src/main/scala/soc/SoCTop.scala:50:44
+  wire        _externalDmemResponse_io_deq_bits_error;	// src/main/scala/soc/SoCTop.scala:50:44
+  wire        _externalDmemRequest_io_enq_ready;	// src/main/scala/soc/SoCTop.scala:49:43
+  wire        _externalImemResponse_io_deq_valid;	// src/main/scala/soc/SoCTop.scala:48:44
+  wire [31:0] _externalImemResponse_io_deq_bits_rdata;	// src/main/scala/soc/SoCTop.scala:48:44
+  wire        _externalImemResponse_io_deq_bits_error;	// src/main/scala/soc/SoCTop.scala:48:44
+  wire        _externalImemRequest_io_enq_ready;	// src/main/scala/soc/SoCTop.scala:47:43
+  wire        _videoAccelerator_pixel_in_ready;	// src/main/scala/soc/SoCTop.scala:46:40
+  wire        _videoAccelerator_pixel_out_valid;	// src/main/scala/soc/SoCTop.scala:46:40
+  wire        _videoAccelerator_busy;	// src/main/scala/soc/SoCTop.scala:46:40
+  wire        _videoAccelerator_frame_done;	// src/main/scala/soc/SoCTop.scala:46:40
+  wire        _acceleratorRegisters_io_bus_req_ready;	// src/main/scala/soc/SoCTop.scala:45:44
+  wire        _acceleratorRegisters_io_bus_resp_valid;	// src/main/scala/soc/SoCTop.scala:45:44
+  wire [31:0] _acceleratorRegisters_io_bus_resp_bits_rdata;	// src/main/scala/soc/SoCTop.scala:45:44
+  wire        _acceleratorRegisters_io_bus_resp_bits_error;	// src/main/scala/soc/SoCTop.scala:45:44
+  wire        _acceleratorRegisters_io_enable;	// src/main/scala/soc/SoCTop.scala:45:44
+  wire [1:0]  _acceleratorRegisters_io_mode;	// src/main/scala/soc/SoCTop.scala:45:44
+  wire [7:0]  _acceleratorRegisters_io_threshold;	// src/main/scala/soc/SoCTop.scala:45:44
+  wire        _acceleratorRegisters_io_bypass;	// src/main/scala/soc/SoCTop.scala:45:44
+  wire        _gpio_io_bus_req_ready;	// src/main/scala/soc/SoCTop.scala:44:28
+  wire        _gpio_io_bus_resp_valid;	// src/main/scala/soc/SoCTop.scala:44:28
+  wire [31:0] _gpio_io_bus_resp_bits_rdata;	// src/main/scala/soc/SoCTop.scala:44:28
+  wire        _gpio_io_bus_resp_bits_error;	// src/main/scala/soc/SoCTop.scala:44:28
+  wire        _uart_io_bus_req_ready;	// src/main/scala/soc/SoCTop.scala:43:28
+  wire        _uart_io_bus_resp_valid;	// src/main/scala/soc/SoCTop.scala:43:28
+  wire [31:0] _uart_io_bus_resp_bits_rdata;	// src/main/scala/soc/SoCTop.scala:43:28
+  wire        _uart_io_bus_resp_bits_error;	// src/main/scala/soc/SoCTop.scala:43:28
+  wire        _timer_io_bus_req_ready;	// src/main/scala/soc/SoCTop.scala:42:29
+  wire        _timer_io_bus_resp_valid;	// src/main/scala/soc/SoCTop.scala:42:29
+  wire [31:0] _timer_io_bus_resp_bits_rdata;	// src/main/scala/soc/SoCTop.scala:42:29
+  wire        _timer_io_bus_resp_bits_error;	// src/main/scala/soc/SoCTop.scala:42:29
+  wire        _ram_io_imem_req_ready;	// src/main/scala/soc/SoCTop.scala:41:27
+  wire        _ram_io_imem_resp_valid;	// src/main/scala/soc/SoCTop.scala:41:27
+  wire [31:0] _ram_io_imem_resp_bits_rdata;	// src/main/scala/soc/SoCTop.scala:41:27
+  wire        _ram_io_imem_resp_bits_error;	// src/main/scala/soc/SoCTop.scala:41:27
+  wire        _ram_io_dmem_req_ready;	// src/main/scala/soc/SoCTop.scala:41:27
+  wire        _ram_io_dmem_resp_valid;	// src/main/scala/soc/SoCTop.scala:41:27
+  wire [31:0] _ram_io_dmem_resp_bits_rdata;	// src/main/scala/soc/SoCTop.scala:41:27
+  wire        _ram_io_dmem_resp_bits_error;	// src/main/scala/soc/SoCTop.scala:41:27
+  wire        _interconnect_io_cpuImem_req_ready;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_cpuImem_resp_valid;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [31:0] _interconnect_io_cpuImem_resp_bits_rdata;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_cpuImem_resp_bits_error;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_cpuDmem_req_ready;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_cpuDmem_resp_valid;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [31:0] _interconnect_io_cpuDmem_resp_bits_rdata;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_cpuDmem_resp_bits_error;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_ramImem_req_valid;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [31:0] _interconnect_io_ramImem_req_bits_addr;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [1:0]  _interconnect_io_ramImem_req_bits_size;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_ramImem_resp_ready;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_ramDmem_req_valid;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [31:0] _interconnect_io_ramDmem_req_bits_addr;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_ramDmem_req_bits_write;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [1:0]  _interconnect_io_ramDmem_req_bits_size;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [31:0] _interconnect_io_ramDmem_req_bits_wdata;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [3:0]  _interconnect_io_ramDmem_req_bits_wstrb;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_ramDmem_resp_ready;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_timer_req_valid;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [31:0] _interconnect_io_timer_req_bits_addr;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_timer_req_bits_write;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [1:0]  _interconnect_io_timer_req_bits_size;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [31:0] _interconnect_io_timer_req_bits_wdata;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [3:0]  _interconnect_io_timer_req_bits_wstrb;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_timer_resp_ready;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_uart_req_valid;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [31:0] _interconnect_io_uart_req_bits_addr;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_uart_req_bits_write;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [1:0]  _interconnect_io_uart_req_bits_size;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [31:0] _interconnect_io_uart_req_bits_wdata;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [3:0]  _interconnect_io_uart_req_bits_wstrb;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_uart_resp_ready;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_gpio_req_valid;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [31:0] _interconnect_io_gpio_req_bits_addr;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_gpio_req_bits_write;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [1:0]  _interconnect_io_gpio_req_bits_size;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [31:0] _interconnect_io_gpio_req_bits_wdata;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [3:0]  _interconnect_io_gpio_req_bits_wstrb;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_gpio_resp_ready;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_accelerator_req_valid;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [31:0] _interconnect_io_accelerator_req_bits_addr;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_accelerator_req_bits_write;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [1:0]  _interconnect_io_accelerator_req_bits_size;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [31:0] _interconnect_io_accelerator_req_bits_wdata;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [3:0]  _interconnect_io_accelerator_req_bits_wstrb;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_accelerator_resp_ready;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_externalImem_req_valid;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [31:0] _interconnect_io_externalImem_req_bits_addr;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [1:0]  _interconnect_io_externalImem_req_bits_size;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_externalImem_resp_ready;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_externalDmem_req_valid;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [31:0] _interconnect_io_externalDmem_req_bits_addr;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_externalDmem_req_bits_write;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [1:0]  _interconnect_io_externalDmem_req_bits_size;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [31:0] _interconnect_io_externalDmem_req_bits_wdata;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire [3:0]  _interconnect_io_externalDmem_req_bits_wstrb;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _interconnect_io_externalDmem_resp_ready;	// src/main/scala/soc/SoCTop.scala:40:36
+  wire        _core_io_imem_req_valid;	// src/main/scala/soc/SoCTop.scala:39:28
+  wire [31:0] _core_io_imem_req_bits_addr;	// src/main/scala/soc/SoCTop.scala:39:28
+  wire        _core_io_imem_resp_ready;	// src/main/scala/soc/SoCTop.scala:39:28
+  wire        _core_io_dmem_req_valid;	// src/main/scala/soc/SoCTop.scala:39:28
+  wire [31:0] _core_io_dmem_req_bits_addr;	// src/main/scala/soc/SoCTop.scala:39:28
+  wire        _core_io_dmem_req_bits_write;	// src/main/scala/soc/SoCTop.scala:39:28
+  wire [1:0]  _core_io_dmem_req_bits_size;	// src/main/scala/soc/SoCTop.scala:39:28
+  wire [31:0] _core_io_dmem_req_bits_wdata;	// src/main/scala/soc/SoCTop.scala:39:28
+  wire [3:0]  _core_io_dmem_req_bits_wstrb;	// src/main/scala/soc/SoCTop.scala:39:28
+  wire        _core_io_dmem_resp_ready;	// src/main/scala/soc/SoCTop.scala:39:28
+  Rv32Core core (	// src/main/scala/soc/SoCTop.scala:39:28
     .clock                   (clock),
     .reset                   (reset),
-    .io_imem_req_ready       (_interconnect_io_cpuImem_req_ready),	// src/main/scala/soc/SoCTop.scala:37:36
+    .io_imem_req_ready       (_interconnect_io_cpuImem_req_ready),	// src/main/scala/soc/SoCTop.scala:40:36
     .io_imem_req_valid       (_core_io_imem_req_valid),
     .io_imem_req_bits_addr   (_core_io_imem_req_bits_addr),
     .io_imem_resp_ready      (_core_io_imem_resp_ready),
-    .io_imem_resp_valid      (_interconnect_io_cpuImem_resp_valid),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_imem_resp_bits_rdata (_interconnect_io_cpuImem_resp_bits_rdata),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_imem_resp_bits_error (_interconnect_io_cpuImem_resp_bits_error),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_dmem_req_ready       (_interconnect_io_cpuDmem_req_ready),	// src/main/scala/soc/SoCTop.scala:37:36
+    .io_imem_resp_valid      (_interconnect_io_cpuImem_resp_valid),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_imem_resp_bits_rdata (_interconnect_io_cpuImem_resp_bits_rdata),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_imem_resp_bits_error (_interconnect_io_cpuImem_resp_bits_error),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_dmem_req_ready       (_interconnect_io_cpuDmem_req_ready),	// src/main/scala/soc/SoCTop.scala:40:36
     .io_dmem_req_valid       (_core_io_dmem_req_valid),
     .io_dmem_req_bits_addr   (_core_io_dmem_req_bits_addr),
     .io_dmem_req_bits_write  (_core_io_dmem_req_bits_write),
@@ -165,9 +190,9 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
     .io_dmem_req_bits_wdata  (_core_io_dmem_req_bits_wdata),
     .io_dmem_req_bits_wstrb  (_core_io_dmem_req_bits_wstrb),
     .io_dmem_resp_ready      (_core_io_dmem_resp_ready),
-    .io_dmem_resp_valid      (_interconnect_io_cpuDmem_resp_valid),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_dmem_resp_bits_rdata (_interconnect_io_cpuDmem_resp_bits_rdata),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_dmem_resp_bits_error (_interconnect_io_cpuDmem_resp_bits_error),	// src/main/scala/soc/SoCTop.scala:37:36
+    .io_dmem_resp_valid      (_interconnect_io_cpuDmem_resp_valid),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_dmem_resp_bits_rdata (_interconnect_io_cpuDmem_resp_bits_rdata),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_dmem_resp_bits_error (_interconnect_io_cpuDmem_resp_bits_error),	// src/main/scala/soc/SoCTop.scala:40:36
     .io_commit_valid         (io_commit_valid),
     .io_commit_pc            (io_commit_pc),
     .io_commit_inst          (io_commit_inst),
@@ -179,37 +204,37 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
     .io_trap_pc              (io_trap_pc),
     .io_trap_inst            (io_trap_inst),
     .io_halted               (io_halted)
-  );	// src/main/scala/soc/SoCTop.scala:36:28
-  SoCInterconnect interconnect_0 (	// src/main/scala/soc/SoCTop.scala:37:36
+  );	// src/main/scala/soc/SoCTop.scala:39:28
+  SoCInterconnect interconnect_0 (	// src/main/scala/soc/SoCTop.scala:40:36
     .clock                           (clock),
     .reset                           (reset),
     .io_cpuImem_req_ready            (_interconnect_io_cpuImem_req_ready),
-    .io_cpuImem_req_valid            (_core_io_imem_req_valid),	// src/main/scala/soc/SoCTop.scala:36:28
-    .io_cpuImem_req_bits_addr        (_core_io_imem_req_bits_addr),	// src/main/scala/soc/SoCTop.scala:36:28
-    .io_cpuImem_resp_ready           (_core_io_imem_resp_ready),	// src/main/scala/soc/SoCTop.scala:36:28
+    .io_cpuImem_req_valid            (_core_io_imem_req_valid),	// src/main/scala/soc/SoCTop.scala:39:28
+    .io_cpuImem_req_bits_addr        (_core_io_imem_req_bits_addr),	// src/main/scala/soc/SoCTop.scala:39:28
+    .io_cpuImem_resp_ready           (_core_io_imem_resp_ready),	// src/main/scala/soc/SoCTop.scala:39:28
     .io_cpuImem_resp_valid           (_interconnect_io_cpuImem_resp_valid),
     .io_cpuImem_resp_bits_rdata      (_interconnect_io_cpuImem_resp_bits_rdata),
     .io_cpuImem_resp_bits_error      (_interconnect_io_cpuImem_resp_bits_error),
     .io_cpuDmem_req_ready            (_interconnect_io_cpuDmem_req_ready),
-    .io_cpuDmem_req_valid            (_core_io_dmem_req_valid),	// src/main/scala/soc/SoCTop.scala:36:28
-    .io_cpuDmem_req_bits_addr        (_core_io_dmem_req_bits_addr),	// src/main/scala/soc/SoCTop.scala:36:28
-    .io_cpuDmem_req_bits_write       (_core_io_dmem_req_bits_write),	// src/main/scala/soc/SoCTop.scala:36:28
-    .io_cpuDmem_req_bits_size        (_core_io_dmem_req_bits_size),	// src/main/scala/soc/SoCTop.scala:36:28
-    .io_cpuDmem_req_bits_wdata       (_core_io_dmem_req_bits_wdata),	// src/main/scala/soc/SoCTop.scala:36:28
-    .io_cpuDmem_req_bits_wstrb       (_core_io_dmem_req_bits_wstrb),	// src/main/scala/soc/SoCTop.scala:36:28
-    .io_cpuDmem_resp_ready           (_core_io_dmem_resp_ready),	// src/main/scala/soc/SoCTop.scala:36:28
+    .io_cpuDmem_req_valid            (_core_io_dmem_req_valid),	// src/main/scala/soc/SoCTop.scala:39:28
+    .io_cpuDmem_req_bits_addr        (_core_io_dmem_req_bits_addr),	// src/main/scala/soc/SoCTop.scala:39:28
+    .io_cpuDmem_req_bits_write       (_core_io_dmem_req_bits_write),	// src/main/scala/soc/SoCTop.scala:39:28
+    .io_cpuDmem_req_bits_size        (_core_io_dmem_req_bits_size),	// src/main/scala/soc/SoCTop.scala:39:28
+    .io_cpuDmem_req_bits_wdata       (_core_io_dmem_req_bits_wdata),	// src/main/scala/soc/SoCTop.scala:39:28
+    .io_cpuDmem_req_bits_wstrb       (_core_io_dmem_req_bits_wstrb),	// src/main/scala/soc/SoCTop.scala:39:28
+    .io_cpuDmem_resp_ready           (_core_io_dmem_resp_ready),	// src/main/scala/soc/SoCTop.scala:39:28
     .io_cpuDmem_resp_valid           (_interconnect_io_cpuDmem_resp_valid),
     .io_cpuDmem_resp_bits_rdata      (_interconnect_io_cpuDmem_resp_bits_rdata),
     .io_cpuDmem_resp_bits_error      (_interconnect_io_cpuDmem_resp_bits_error),
-    .io_ramImem_req_ready            (_ram_io_imem_req_ready),	// src/main/scala/soc/SoCTop.scala:38:27
+    .io_ramImem_req_ready            (_ram_io_imem_req_ready),	// src/main/scala/soc/SoCTop.scala:41:27
     .io_ramImem_req_valid            (_interconnect_io_ramImem_req_valid),
     .io_ramImem_req_bits_addr        (_interconnect_io_ramImem_req_bits_addr),
     .io_ramImem_req_bits_size        (_interconnect_io_ramImem_req_bits_size),
     .io_ramImem_resp_ready           (_interconnect_io_ramImem_resp_ready),
-    .io_ramImem_resp_valid           (_ram_io_imem_resp_valid),	// src/main/scala/soc/SoCTop.scala:38:27
-    .io_ramImem_resp_bits_rdata      (_ram_io_imem_resp_bits_rdata),	// src/main/scala/soc/SoCTop.scala:38:27
-    .io_ramImem_resp_bits_error      (_ram_io_imem_resp_bits_error),	// src/main/scala/soc/SoCTop.scala:38:27
-    .io_ramDmem_req_ready            (_ram_io_dmem_req_ready),	// src/main/scala/soc/SoCTop.scala:38:27
+    .io_ramImem_resp_valid           (_ram_io_imem_resp_valid),	// src/main/scala/soc/SoCTop.scala:41:27
+    .io_ramImem_resp_bits_rdata      (_ram_io_imem_resp_bits_rdata),	// src/main/scala/soc/SoCTop.scala:41:27
+    .io_ramImem_resp_bits_error      (_ram_io_imem_resp_bits_error),	// src/main/scala/soc/SoCTop.scala:41:27
+    .io_ramDmem_req_ready            (_ram_io_dmem_req_ready),	// src/main/scala/soc/SoCTop.scala:41:27
     .io_ramDmem_req_valid            (_interconnect_io_ramDmem_req_valid),
     .io_ramDmem_req_bits_addr        (_interconnect_io_ramDmem_req_bits_addr),
     .io_ramDmem_req_bits_write       (_interconnect_io_ramDmem_req_bits_write),
@@ -217,10 +242,21 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
     .io_ramDmem_req_bits_wdata       (_interconnect_io_ramDmem_req_bits_wdata),
     .io_ramDmem_req_bits_wstrb       (_interconnect_io_ramDmem_req_bits_wstrb),
     .io_ramDmem_resp_ready           (_interconnect_io_ramDmem_resp_ready),
-    .io_ramDmem_resp_valid           (_ram_io_dmem_resp_valid),	// src/main/scala/soc/SoCTop.scala:38:27
-    .io_ramDmem_resp_bits_rdata      (_ram_io_dmem_resp_bits_rdata),	// src/main/scala/soc/SoCTop.scala:38:27
-    .io_ramDmem_resp_bits_error      (_ram_io_dmem_resp_bits_error),	// src/main/scala/soc/SoCTop.scala:38:27
-    .io_uart_req_ready               (_uart_io_bus_req_ready),	// src/main/scala/soc/SoCTop.scala:39:28
+    .io_ramDmem_resp_valid           (_ram_io_dmem_resp_valid),	// src/main/scala/soc/SoCTop.scala:41:27
+    .io_ramDmem_resp_bits_rdata      (_ram_io_dmem_resp_bits_rdata),	// src/main/scala/soc/SoCTop.scala:41:27
+    .io_ramDmem_resp_bits_error      (_ram_io_dmem_resp_bits_error),	// src/main/scala/soc/SoCTop.scala:41:27
+    .io_timer_req_ready              (_timer_io_bus_req_ready),	// src/main/scala/soc/SoCTop.scala:42:29
+    .io_timer_req_valid              (_interconnect_io_timer_req_valid),
+    .io_timer_req_bits_addr          (_interconnect_io_timer_req_bits_addr),
+    .io_timer_req_bits_write         (_interconnect_io_timer_req_bits_write),
+    .io_timer_req_bits_size          (_interconnect_io_timer_req_bits_size),
+    .io_timer_req_bits_wdata         (_interconnect_io_timer_req_bits_wdata),
+    .io_timer_req_bits_wstrb         (_interconnect_io_timer_req_bits_wstrb),
+    .io_timer_resp_ready             (_interconnect_io_timer_resp_ready),
+    .io_timer_resp_valid             (_timer_io_bus_resp_valid),	// src/main/scala/soc/SoCTop.scala:42:29
+    .io_timer_resp_bits_rdata        (_timer_io_bus_resp_bits_rdata),	// src/main/scala/soc/SoCTop.scala:42:29
+    .io_timer_resp_bits_error        (_timer_io_bus_resp_bits_error),	// src/main/scala/soc/SoCTop.scala:42:29
+    .io_uart_req_ready               (_uart_io_bus_req_ready),	// src/main/scala/soc/SoCTop.scala:43:28
     .io_uart_req_valid               (_interconnect_io_uart_req_valid),
     .io_uart_req_bits_addr           (_interconnect_io_uart_req_bits_addr),
     .io_uart_req_bits_write          (_interconnect_io_uart_req_bits_write),
@@ -228,10 +264,21 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
     .io_uart_req_bits_wdata          (_interconnect_io_uart_req_bits_wdata),
     .io_uart_req_bits_wstrb          (_interconnect_io_uart_req_bits_wstrb),
     .io_uart_resp_ready              (_interconnect_io_uart_resp_ready),
-    .io_uart_resp_valid              (_uart_io_bus_resp_valid),	// src/main/scala/soc/SoCTop.scala:39:28
-    .io_uart_resp_bits_rdata         (_uart_io_bus_resp_bits_rdata),	// src/main/scala/soc/SoCTop.scala:39:28
-    .io_uart_resp_bits_error         (_uart_io_bus_resp_bits_error),	// src/main/scala/soc/SoCTop.scala:39:28
-    .io_accelerator_req_ready        (_acceleratorRegisters_io_bus_req_ready),	// src/main/scala/soc/SoCTop.scala:40:44
+    .io_uart_resp_valid              (_uart_io_bus_resp_valid),	// src/main/scala/soc/SoCTop.scala:43:28
+    .io_uart_resp_bits_rdata         (_uart_io_bus_resp_bits_rdata),	// src/main/scala/soc/SoCTop.scala:43:28
+    .io_uart_resp_bits_error         (_uart_io_bus_resp_bits_error),	// src/main/scala/soc/SoCTop.scala:43:28
+    .io_gpio_req_ready               (_gpio_io_bus_req_ready),	// src/main/scala/soc/SoCTop.scala:44:28
+    .io_gpio_req_valid               (_interconnect_io_gpio_req_valid),
+    .io_gpio_req_bits_addr           (_interconnect_io_gpio_req_bits_addr),
+    .io_gpio_req_bits_write          (_interconnect_io_gpio_req_bits_write),
+    .io_gpio_req_bits_size           (_interconnect_io_gpio_req_bits_size),
+    .io_gpio_req_bits_wdata          (_interconnect_io_gpio_req_bits_wdata),
+    .io_gpio_req_bits_wstrb          (_interconnect_io_gpio_req_bits_wstrb),
+    .io_gpio_resp_ready              (_interconnect_io_gpio_resp_ready),
+    .io_gpio_resp_valid              (_gpio_io_bus_resp_valid),	// src/main/scala/soc/SoCTop.scala:44:28
+    .io_gpio_resp_bits_rdata         (_gpio_io_bus_resp_bits_rdata),	// src/main/scala/soc/SoCTop.scala:44:28
+    .io_gpio_resp_bits_error         (_gpio_io_bus_resp_bits_error),	// src/main/scala/soc/SoCTop.scala:44:28
+    .io_accelerator_req_ready        (_acceleratorRegisters_io_bus_req_ready),	// src/main/scala/soc/SoCTop.scala:45:44
     .io_accelerator_req_valid        (_interconnect_io_accelerator_req_valid),
     .io_accelerator_req_bits_addr    (_interconnect_io_accelerator_req_bits_addr),
     .io_accelerator_req_bits_write   (_interconnect_io_accelerator_req_bits_write),
@@ -239,18 +286,18 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
     .io_accelerator_req_bits_wdata   (_interconnect_io_accelerator_req_bits_wdata),
     .io_accelerator_req_bits_wstrb   (_interconnect_io_accelerator_req_bits_wstrb),
     .io_accelerator_resp_ready       (_interconnect_io_accelerator_resp_ready),
-    .io_accelerator_resp_valid       (_acceleratorRegisters_io_bus_resp_valid),	// src/main/scala/soc/SoCTop.scala:40:44
-    .io_accelerator_resp_bits_rdata  (_acceleratorRegisters_io_bus_resp_bits_rdata),	// src/main/scala/soc/SoCTop.scala:40:44
-    .io_accelerator_resp_bits_error  (_acceleratorRegisters_io_bus_resp_bits_error),	// src/main/scala/soc/SoCTop.scala:40:44
-    .io_externalImem_req_ready       (_externalImemRequest_io_enq_ready),	// src/main/scala/soc/SoCTop.scala:42:43
+    .io_accelerator_resp_valid       (_acceleratorRegisters_io_bus_resp_valid),	// src/main/scala/soc/SoCTop.scala:45:44
+    .io_accelerator_resp_bits_rdata  (_acceleratorRegisters_io_bus_resp_bits_rdata),	// src/main/scala/soc/SoCTop.scala:45:44
+    .io_accelerator_resp_bits_error  (_acceleratorRegisters_io_bus_resp_bits_error),	// src/main/scala/soc/SoCTop.scala:45:44
+    .io_externalImem_req_ready       (_externalImemRequest_io_enq_ready),	// src/main/scala/soc/SoCTop.scala:47:43
     .io_externalImem_req_valid       (_interconnect_io_externalImem_req_valid),
     .io_externalImem_req_bits_addr   (_interconnect_io_externalImem_req_bits_addr),
     .io_externalImem_req_bits_size   (_interconnect_io_externalImem_req_bits_size),
     .io_externalImem_resp_ready      (_interconnect_io_externalImem_resp_ready),
-    .io_externalImem_resp_valid      (_externalImemResponse_io_deq_valid),	// src/main/scala/soc/SoCTop.scala:43:44
-    .io_externalImem_resp_bits_rdata (_externalImemResponse_io_deq_bits_rdata),	// src/main/scala/soc/SoCTop.scala:43:44
-    .io_externalImem_resp_bits_error (_externalImemResponse_io_deq_bits_error),	// src/main/scala/soc/SoCTop.scala:43:44
-    .io_externalDmem_req_ready       (_externalDmemRequest_io_enq_ready),	// src/main/scala/soc/SoCTop.scala:44:43
+    .io_externalImem_resp_valid      (_externalImemResponse_io_deq_valid),	// src/main/scala/soc/SoCTop.scala:48:44
+    .io_externalImem_resp_bits_rdata (_externalImemResponse_io_deq_bits_rdata),	// src/main/scala/soc/SoCTop.scala:48:44
+    .io_externalImem_resp_bits_error (_externalImemResponse_io_deq_bits_error),	// src/main/scala/soc/SoCTop.scala:48:44
+    .io_externalDmem_req_ready       (_externalDmemRequest_io_enq_ready),	// src/main/scala/soc/SoCTop.scala:49:43
     .io_externalDmem_req_valid       (_interconnect_io_externalDmem_req_valid),
     .io_externalDmem_req_bits_addr   (_interconnect_io_externalDmem_req_bits_addr),
     .io_externalDmem_req_bits_write  (_interconnect_io_externalDmem_req_bits_write),
@@ -258,44 +305,60 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
     .io_externalDmem_req_bits_wdata  (_interconnect_io_externalDmem_req_bits_wdata),
     .io_externalDmem_req_bits_wstrb  (_interconnect_io_externalDmem_req_bits_wstrb),
     .io_externalDmem_resp_ready      (_interconnect_io_externalDmem_resp_ready),
-    .io_externalDmem_resp_valid      (_externalDmemResponse_io_deq_valid),	// src/main/scala/soc/SoCTop.scala:45:44
-    .io_externalDmem_resp_bits_rdata (_externalDmemResponse_io_deq_bits_rdata),	// src/main/scala/soc/SoCTop.scala:45:44
-    .io_externalDmem_resp_bits_error (_externalDmemResponse_io_deq_bits_error)	// src/main/scala/soc/SoCTop.scala:45:44
-  );	// src/main/scala/soc/SoCTop.scala:37:36
-  DualPortRam ram (	// src/main/scala/soc/SoCTop.scala:38:27
+    .io_externalDmem_resp_valid      (_externalDmemResponse_io_deq_valid),	// src/main/scala/soc/SoCTop.scala:50:44
+    .io_externalDmem_resp_bits_rdata (_externalDmemResponse_io_deq_bits_rdata),	// src/main/scala/soc/SoCTop.scala:50:44
+    .io_externalDmem_resp_bits_error (_externalDmemResponse_io_deq_bits_error)	// src/main/scala/soc/SoCTop.scala:50:44
+  );	// src/main/scala/soc/SoCTop.scala:40:36
+  DualPortRam ram (	// src/main/scala/soc/SoCTop.scala:41:27
     .clock                   (clock),
     .reset                   (reset),
     .io_imem_req_ready       (_ram_io_imem_req_ready),
-    .io_imem_req_valid       (_interconnect_io_ramImem_req_valid),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_imem_req_bits_addr   (_interconnect_io_ramImem_req_bits_addr),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_imem_req_bits_size   (_interconnect_io_ramImem_req_bits_size),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_imem_resp_ready      (_interconnect_io_ramImem_resp_ready),	// src/main/scala/soc/SoCTop.scala:37:36
+    .io_imem_req_valid       (_interconnect_io_ramImem_req_valid),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_imem_req_bits_addr   (_interconnect_io_ramImem_req_bits_addr),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_imem_req_bits_size   (_interconnect_io_ramImem_req_bits_size),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_imem_resp_ready      (_interconnect_io_ramImem_resp_ready),	// src/main/scala/soc/SoCTop.scala:40:36
     .io_imem_resp_valid      (_ram_io_imem_resp_valid),
     .io_imem_resp_bits_rdata (_ram_io_imem_resp_bits_rdata),
     .io_imem_resp_bits_error (_ram_io_imem_resp_bits_error),
     .io_dmem_req_ready       (_ram_io_dmem_req_ready),
-    .io_dmem_req_valid       (_interconnect_io_ramDmem_req_valid),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_dmem_req_bits_addr   (_interconnect_io_ramDmem_req_bits_addr),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_dmem_req_bits_write  (_interconnect_io_ramDmem_req_bits_write),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_dmem_req_bits_size   (_interconnect_io_ramDmem_req_bits_size),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_dmem_req_bits_wdata  (_interconnect_io_ramDmem_req_bits_wdata),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_dmem_req_bits_wstrb  (_interconnect_io_ramDmem_req_bits_wstrb),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_dmem_resp_ready      (_interconnect_io_ramDmem_resp_ready),	// src/main/scala/soc/SoCTop.scala:37:36
+    .io_dmem_req_valid       (_interconnect_io_ramDmem_req_valid),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_dmem_req_bits_addr   (_interconnect_io_ramDmem_req_bits_addr),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_dmem_req_bits_write  (_interconnect_io_ramDmem_req_bits_write),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_dmem_req_bits_size   (_interconnect_io_ramDmem_req_bits_size),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_dmem_req_bits_wdata  (_interconnect_io_ramDmem_req_bits_wdata),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_dmem_req_bits_wstrb  (_interconnect_io_ramDmem_req_bits_wstrb),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_dmem_resp_ready      (_interconnect_io_ramDmem_resp_ready),	// src/main/scala/soc/SoCTop.scala:40:36
     .io_dmem_resp_valid      (_ram_io_dmem_resp_valid),
     .io_dmem_resp_bits_rdata (_ram_io_dmem_resp_bits_rdata),
     .io_dmem_resp_bits_error (_ram_io_dmem_resp_bits_error)
-  );	// src/main/scala/soc/SoCTop.scala:38:27
-  MmioUart uart (	// src/main/scala/soc/SoCTop.scala:39:28
+  );	// src/main/scala/soc/SoCTop.scala:41:27
+  MachineTimer timer (	// src/main/scala/soc/SoCTop.scala:42:29
+    .clock                  (clock),
+    .reset                  (reset),
+    .io_bus_req_ready       (_timer_io_bus_req_ready),
+    .io_bus_req_valid       (_interconnect_io_timer_req_valid),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_addr   (_interconnect_io_timer_req_bits_addr),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_write  (_interconnect_io_timer_req_bits_write),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_size   (_interconnect_io_timer_req_bits_size),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_wdata  (_interconnect_io_timer_req_bits_wdata),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_wstrb  (_interconnect_io_timer_req_bits_wstrb),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_resp_ready      (_interconnect_io_timer_resp_ready),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_resp_valid      (_timer_io_bus_resp_valid),
+    .io_bus_resp_bits_rdata (_timer_io_bus_resp_bits_rdata),
+    .io_bus_resp_bits_error (_timer_io_bus_resp_bits_error),
+    .io_interrupt           (io_timerInterrupt)
+  );	// src/main/scala/soc/SoCTop.scala:42:29
+  MmioUart uart (	// src/main/scala/soc/SoCTop.scala:43:28
     .clock                  (clock),
     .reset                  (reset),
     .io_bus_req_ready       (_uart_io_bus_req_ready),
-    .io_bus_req_valid       (_interconnect_io_uart_req_valid),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_bus_req_bits_addr   (_interconnect_io_uart_req_bits_addr),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_bus_req_bits_write  (_interconnect_io_uart_req_bits_write),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_bus_req_bits_size   (_interconnect_io_uart_req_bits_size),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_bus_req_bits_wdata  (_interconnect_io_uart_req_bits_wdata),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_bus_req_bits_wstrb  (_interconnect_io_uart_req_bits_wstrb),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_bus_resp_ready      (_interconnect_io_uart_resp_ready),	// src/main/scala/soc/SoCTop.scala:37:36
+    .io_bus_req_valid       (_interconnect_io_uart_req_valid),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_addr   (_interconnect_io_uart_req_bits_addr),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_write  (_interconnect_io_uart_req_bits_write),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_size   (_interconnect_io_uart_req_bits_size),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_wdata  (_interconnect_io_uart_req_bits_wdata),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_wstrb  (_interconnect_io_uart_req_bits_wstrb),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_resp_ready      (_interconnect_io_uart_resp_ready),	// src/main/scala/soc/SoCTop.scala:40:36
     .io_bus_resp_valid      (_uart_io_bus_resp_valid),
     .io_bus_resp_bits_rdata (_uart_io_bus_resp_bits_rdata),
     .io_bus_resp_bits_error (_uart_io_bus_resp_bits_error),
@@ -305,32 +368,49 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
     .io_rx_ready            (io_uartRx_ready),
     .io_rx_valid            (io_uartRx_valid),
     .io_rx_bits             (io_uartRx_bits)
-  );	// src/main/scala/soc/SoCTop.scala:39:28
-  AccelRegs acceleratorRegisters (	// src/main/scala/soc/SoCTop.scala:40:44
+  );	// src/main/scala/soc/SoCTop.scala:43:28
+  Gpio gpio (	// src/main/scala/soc/SoCTop.scala:44:28
+    .clock                  (clock),
+    .reset                  (reset),
+    .io_bus_req_ready       (_gpio_io_bus_req_ready),
+    .io_bus_req_valid       (_interconnect_io_gpio_req_valid),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_addr   (_interconnect_io_gpio_req_bits_addr),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_write  (_interconnect_io_gpio_req_bits_write),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_size   (_interconnect_io_gpio_req_bits_size),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_wdata  (_interconnect_io_gpio_req_bits_wdata),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_wstrb  (_interconnect_io_gpio_req_bits_wstrb),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_resp_ready      (_interconnect_io_gpio_resp_ready),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_resp_valid      (_gpio_io_bus_resp_valid),
+    .io_bus_resp_bits_rdata (_gpio_io_bus_resp_bits_rdata),
+    .io_bus_resp_bits_error (_gpio_io_bus_resp_bits_error),
+    .io_input               (io_gpioInput),
+    .io_output              (io_gpioOutput)
+  );	// src/main/scala/soc/SoCTop.scala:44:28
+  AccelRegs acceleratorRegisters (	// src/main/scala/soc/SoCTop.scala:45:44
     .clock                  (clock),
     .reset                  (reset),
     .io_bus_req_ready       (_acceleratorRegisters_io_bus_req_ready),
-    .io_bus_req_valid       (_interconnect_io_accelerator_req_valid),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_bus_req_bits_addr   (_interconnect_io_accelerator_req_bits_addr),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_bus_req_bits_write  (_interconnect_io_accelerator_req_bits_write),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_bus_req_bits_size   (_interconnect_io_accelerator_req_bits_size),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_bus_req_bits_wdata  (_interconnect_io_accelerator_req_bits_wdata),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_bus_req_bits_wstrb  (_interconnect_io_accelerator_req_bits_wstrb),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_bus_resp_ready      (_interconnect_io_accelerator_resp_ready),	// src/main/scala/soc/SoCTop.scala:37:36
+    .io_bus_req_valid       (_interconnect_io_accelerator_req_valid),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_addr   (_interconnect_io_accelerator_req_bits_addr),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_write  (_interconnect_io_accelerator_req_bits_write),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_size   (_interconnect_io_accelerator_req_bits_size),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_wdata  (_interconnect_io_accelerator_req_bits_wdata),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_req_bits_wstrb  (_interconnect_io_accelerator_req_bits_wstrb),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_bus_resp_ready      (_interconnect_io_accelerator_resp_ready),	// src/main/scala/soc/SoCTop.scala:40:36
     .io_bus_resp_valid      (_acceleratorRegisters_io_bus_resp_valid),
     .io_bus_resp_bits_rdata (_acceleratorRegisters_io_bus_resp_bits_rdata),
     .io_bus_resp_bits_error (_acceleratorRegisters_io_bus_resp_bits_error),
-    .io_busy                (_videoAccelerator_busy),	// src/main/scala/soc/SoCTop.scala:41:40
-    .io_frameDone           (_videoAccelerator_frame_done),	// src/main/scala/soc/SoCTop.scala:41:40
-    .io_inputAccepted       (_videoAccelerator_pixel_in_ready & io_video_input_valid),	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCTop.scala:41:40
-    .io_outputAccepted      (io_video_output_ready & _videoAccelerator_pixel_out_valid),	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCTop.scala:41:40
-    .io_outputStalled       (_videoAccelerator_pixel_out_valid & ~io_video_output_ready),	// src/main/scala/soc/SoCTop.scala:41:40, :90:{66,69}
+    .io_busy                (_videoAccelerator_busy),	// src/main/scala/soc/SoCTop.scala:46:40
+    .io_frameDone           (_videoAccelerator_frame_done),	// src/main/scala/soc/SoCTop.scala:46:40
+    .io_inputAccepted       (_videoAccelerator_pixel_in_ready & io_video_input_valid),	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCTop.scala:46:40
+    .io_outputAccepted      (io_video_output_ready & _videoAccelerator_pixel_out_valid),	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCTop.scala:46:40
+    .io_outputStalled       (_videoAccelerator_pixel_out_valid & ~io_video_output_ready),	// src/main/scala/soc/SoCTop.scala:46:40, :100:{66,69}
     .io_enable              (_acceleratorRegisters_io_enable),
     .io_mode                (_acceleratorRegisters_io_mode),
     .io_threshold           (_acceleratorRegisters_io_threshold),
     .io_bypass              (_acceleratorRegisters_io_bypass)
-  );	// src/main/scala/soc/SoCTop.scala:40:44
-  VideoAccelTop videoAccelerator (	// src/main/scala/soc/SoCTop.scala:41:40
+  );	// src/main/scala/soc/SoCTop.scala:45:44
+  VideoAccelTop videoAccelerator (	// src/main/scala/soc/SoCTop.scala:46:40
     .clock                    (clock),
     .reset                    (reset),
     .pixel_in                 (io_video_input_bits_data),
@@ -339,10 +419,10 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
     .pixel_in_start_of_frame  (io_video_input_bits_startOfFrame),
     .pixel_in_end_of_line     (io_video_input_bits_endOfLine),
     .pixel_in_end_of_frame    (io_video_input_bits_endOfFrame),
-    .enable                   (_acceleratorRegisters_io_enable),	// src/main/scala/soc/SoCTop.scala:40:44
-    .mode                     (_acceleratorRegisters_io_mode),	// src/main/scala/soc/SoCTop.scala:40:44
-    .threshold                (_acceleratorRegisters_io_threshold),	// src/main/scala/soc/SoCTop.scala:40:44
-    .bypass                   (_acceleratorRegisters_io_bypass),	// src/main/scala/soc/SoCTop.scala:40:44
+    .enable                   (_acceleratorRegisters_io_enable),	// src/main/scala/soc/SoCTop.scala:45:44
+    .mode                     (_acceleratorRegisters_io_mode),	// src/main/scala/soc/SoCTop.scala:45:44
+    .threshold                (_acceleratorRegisters_io_threshold),	// src/main/scala/soc/SoCTop.scala:45:44
+    .bypass                   (_acceleratorRegisters_io_bypass),	// src/main/scala/soc/SoCTop.scala:45:44
     .pixel_out                (io_video_output_bits_data),
     .pixel_out_valid          (_videoAccelerator_pixel_out_valid),
     .pixel_out_ready          (io_video_output_ready),
@@ -351,17 +431,17 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
     .pixel_out_end_of_frame   (io_video_output_bits_endOfFrame),
     .busy                     (_videoAccelerator_busy),
     .frame_done               (_videoAccelerator_frame_done)
-  );	// src/main/scala/soc/SoCTop.scala:41:40
-  Queue1_CoreBusReq externalImemRequest (	// src/main/scala/soc/SoCTop.scala:42:43
+  );	// src/main/scala/soc/SoCTop.scala:46:40
+  Queue1_CoreBusReq externalImemRequest (	// src/main/scala/soc/SoCTop.scala:47:43
     .clock             (clock),
     .reset             (reset),
     .io_enq_ready      (_externalImemRequest_io_enq_ready),
-    .io_enq_valid      (_interconnect_io_externalImem_req_valid),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_enq_bits_addr  (_interconnect_io_externalImem_req_bits_addr),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_enq_bits_write (1'h0),	// src/main/scala/soc/SoCTop.scala:36:28, :37:36, :38:27, :42:43
-    .io_enq_bits_size  (_interconnect_io_externalImem_req_bits_size),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_enq_bits_wdata (32'h0),	// src/main/scala/soc/SoCTop.scala:36:28, :37:36, :38:27, :42:43
-    .io_enq_bits_wstrb (4'h0),	// src/main/scala/soc/SoCTop.scala:36:28, :37:36, :38:27, :42:43
+    .io_enq_valid      (_interconnect_io_externalImem_req_valid),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_enq_bits_addr  (_interconnect_io_externalImem_req_bits_addr),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_enq_bits_write (1'h0),	// src/main/scala/soc/SoCTop.scala:39:28, :40:36, :41:27, :47:43
+    .io_enq_bits_size  (_interconnect_io_externalImem_req_bits_size),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_enq_bits_wdata (32'h0),	// src/main/scala/soc/SoCTop.scala:39:28, :40:36, :41:27, :47:43
+    .io_enq_bits_wstrb (4'h0),	// src/main/scala/soc/SoCTop.scala:39:28, :40:36, :41:27, :47:43
     .io_deq_ready      (io_externalImem_req_ready),
     .io_deq_valid      (io_externalImem_req_valid),
     .io_deq_bits_addr  (io_externalImem_req_bits_addr),
@@ -369,29 +449,29 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
     .io_deq_bits_size  (io_externalImem_req_bits_size),
     .io_deq_bits_wdata (io_externalImem_req_bits_wdata),
     .io_deq_bits_wstrb (io_externalImem_req_bits_wstrb)
-  );	// src/main/scala/soc/SoCTop.scala:42:43
-  Queue1_CoreBusResp externalImemResponse (	// src/main/scala/soc/SoCTop.scala:43:44
+  );	// src/main/scala/soc/SoCTop.scala:47:43
+  Queue1_CoreBusResp externalImemResponse (	// src/main/scala/soc/SoCTop.scala:48:44
     .clock             (clock),
     .reset             (reset),
     .io_enq_ready      (io_externalImem_resp_ready),
     .io_enq_valid      (io_externalImem_resp_valid),
     .io_enq_bits_rdata (io_externalImem_resp_bits_rdata),
     .io_enq_bits_error (io_externalImem_resp_bits_error),
-    .io_deq_ready      (_interconnect_io_externalImem_resp_ready),	// src/main/scala/soc/SoCTop.scala:37:36
+    .io_deq_ready      (_interconnect_io_externalImem_resp_ready),	// src/main/scala/soc/SoCTop.scala:40:36
     .io_deq_valid      (_externalImemResponse_io_deq_valid),
     .io_deq_bits_rdata (_externalImemResponse_io_deq_bits_rdata),
     .io_deq_bits_error (_externalImemResponse_io_deq_bits_error)
-  );	// src/main/scala/soc/SoCTop.scala:43:44
-  Queue1_CoreBusReq externalDmemRequest (	// src/main/scala/soc/SoCTop.scala:44:43
+  );	// src/main/scala/soc/SoCTop.scala:48:44
+  Queue1_CoreBusReq externalDmemRequest (	// src/main/scala/soc/SoCTop.scala:49:43
     .clock             (clock),
     .reset             (reset),
     .io_enq_ready      (_externalDmemRequest_io_enq_ready),
-    .io_enq_valid      (_interconnect_io_externalDmem_req_valid),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_enq_bits_addr  (_interconnect_io_externalDmem_req_bits_addr),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_enq_bits_write (_interconnect_io_externalDmem_req_bits_write),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_enq_bits_size  (_interconnect_io_externalDmem_req_bits_size),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_enq_bits_wdata (_interconnect_io_externalDmem_req_bits_wdata),	// src/main/scala/soc/SoCTop.scala:37:36
-    .io_enq_bits_wstrb (_interconnect_io_externalDmem_req_bits_wstrb),	// src/main/scala/soc/SoCTop.scala:37:36
+    .io_enq_valid      (_interconnect_io_externalDmem_req_valid),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_enq_bits_addr  (_interconnect_io_externalDmem_req_bits_addr),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_enq_bits_write (_interconnect_io_externalDmem_req_bits_write),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_enq_bits_size  (_interconnect_io_externalDmem_req_bits_size),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_enq_bits_wdata (_interconnect_io_externalDmem_req_bits_wdata),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_enq_bits_wstrb (_interconnect_io_externalDmem_req_bits_wstrb),	// src/main/scala/soc/SoCTop.scala:40:36
     .io_deq_ready      (io_externalDmem_req_ready),
     .io_deq_valid      (io_externalDmem_req_valid),
     .io_deq_bits_addr  (io_externalDmem_req_bits_addr),
@@ -399,26 +479,26 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
     .io_deq_bits_size  (io_externalDmem_req_bits_size),
     .io_deq_bits_wdata (io_externalDmem_req_bits_wdata),
     .io_deq_bits_wstrb (io_externalDmem_req_bits_wstrb)
-  );	// src/main/scala/soc/SoCTop.scala:44:43
-  Queue1_CoreBusResp externalDmemResponse (	// src/main/scala/soc/SoCTop.scala:45:44
+  );	// src/main/scala/soc/SoCTop.scala:49:43
+  Queue1_CoreBusResp externalDmemResponse (	// src/main/scala/soc/SoCTop.scala:50:44
     .clock             (clock),
     .reset             (reset),
     .io_enq_ready      (io_externalDmem_resp_ready),
     .io_enq_valid      (io_externalDmem_resp_valid),
     .io_enq_bits_rdata (io_externalDmem_resp_bits_rdata),
     .io_enq_bits_error (io_externalDmem_resp_bits_error),
-    .io_deq_ready      (_interconnect_io_externalDmem_resp_ready),	// src/main/scala/soc/SoCTop.scala:37:36
+    .io_deq_ready      (_interconnect_io_externalDmem_resp_ready),	// src/main/scala/soc/SoCTop.scala:40:36
     .io_deq_valid      (_externalDmemResponse_io_deq_valid),
     .io_deq_bits_rdata (_externalDmemResponse_io_deq_bits_rdata),
     .io_deq_bits_error (_externalDmemResponse_io_deq_bits_error)
-  );	// src/main/scala/soc/SoCTop.scala:45:44
-  assign io_video_input_ready = _videoAccelerator_pixel_in_ready;	// src/main/scala/soc/SoCTop.scala:14:7, :41:40
-  assign io_video_output_valid = _videoAccelerator_pixel_out_valid;	// src/main/scala/soc/SoCTop.scala:14:7, :41:40
-  assign io_video_busy = _videoAccelerator_busy;	// src/main/scala/soc/SoCTop.scala:14:7, :41:40
-  assign io_video_frameDone = _videoAccelerator_frame_done;	// src/main/scala/soc/SoCTop.scala:14:7, :41:40
-  assign io_accelEnable = _acceleratorRegisters_io_enable;	// src/main/scala/soc/SoCTop.scala:14:7, :40:44
-  assign io_accelMode = _acceleratorRegisters_io_mode;	// src/main/scala/soc/SoCTop.scala:14:7, :40:44
-  assign io_accelThreshold = _acceleratorRegisters_io_threshold;	// src/main/scala/soc/SoCTop.scala:14:7, :40:44
-  assign io_accelBypass = _acceleratorRegisters_io_bypass;	// src/main/scala/soc/SoCTop.scala:14:7, :40:44
+  );	// src/main/scala/soc/SoCTop.scala:50:44
+  assign io_video_input_ready = _videoAccelerator_pixel_in_ready;	// src/main/scala/soc/SoCTop.scala:14:7, :46:40
+  assign io_video_output_valid = _videoAccelerator_pixel_out_valid;	// src/main/scala/soc/SoCTop.scala:14:7, :46:40
+  assign io_video_busy = _videoAccelerator_busy;	// src/main/scala/soc/SoCTop.scala:14:7, :46:40
+  assign io_video_frameDone = _videoAccelerator_frame_done;	// src/main/scala/soc/SoCTop.scala:14:7, :46:40
+  assign io_accelEnable = _acceleratorRegisters_io_enable;	// src/main/scala/soc/SoCTop.scala:14:7, :45:44
+  assign io_accelMode = _acceleratorRegisters_io_mode;	// src/main/scala/soc/SoCTop.scala:14:7, :45:44
+  assign io_accelThreshold = _acceleratorRegisters_io_threshold;	// src/main/scala/soc/SoCTop.scala:14:7, :45:44
+  assign io_accelBypass = _acceleratorRegisters_io_bypass;	// src/main/scala/soc/SoCTop.scala:14:7, :45:44
 endmodule
 

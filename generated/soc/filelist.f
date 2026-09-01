@@ -10,7 +10,9 @@ Rv32Core.sv
 SoCInterconnect.sv
 memory_16384x32.sv
 DualPortRam.sv
+MachineTimer.sv
 MmioUart.sv
+Gpio.sv
 AccelRegs.sv
 ./VideoAccelTop.v
 Queue1_CoreBusReq.sv
