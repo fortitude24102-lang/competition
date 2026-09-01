@@ -35,4 +35,5 @@ build_image() {
 build_image driver_test "$project_root/sw/tests/driver_test.c"
 build_image driver_test_fail "$project_root/sw/tests/driver_test.c" -DFORCE_FAILURE
 build_image cli "$project_root/sw/apps/cli.c"
+build_image pango_bringup "$project_root/sw/tests/pango_bringup.c"
 echo "Built C validation images in $output_dir"

@@ -27,7 +27,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\test-video-rtl.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build-software-test.ps1
 ```
 
-`sw/build/cli.hex` 是 UART RX 命令行镜像，支持 `help/status/mode/threshold/bypass/enable/perf`。生成物位于忽略目录，不进入 Git。
+`sw/build/cli.hex` 是 UART RX 命令行镜像，支持 `help/status/mode/threshold/bypass/enable/perf`。`sw/build/pango_bringup.hex` 验证盘古目标平台所需的 GPIO 和机器计时器。生成物位于忽略目录，不进入 Git。
 
 只重新生成 RTL：
 
