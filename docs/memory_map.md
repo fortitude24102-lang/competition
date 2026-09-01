@@ -5,11 +5,33 @@ The address map is frozen for the Demo. Unlisted addresses return a bus error an
 | Region | Address range | Access | Reset/use |
 |---|---:|---|---|
 | Boot RAM | `0x0000_0000`–`0x0000_FFFF` | R/W, instruction read | 64 KiB program and data memory |
+| Machine timer | `0x0200_0000`–`0x0200_FFFF` | MMIO | 64-bit cycle time and timer comparison |
 | UART | `0x1000_0000`–`0x1000_0FFF` | MMIO | Decoded-byte transmit and receive interface |
+| GPIO | `0x1000_1000`–`0x1000_1FFF` | MMIO | Eight input and eight output bits |
 | Accelerator | `0x3000_0000`–`0x3000_0FFF` | MMIO | Video control and status |
 | External memory | `0x8000_0000`–`0xFFFF_FFFF` | R/W | Reserved CoreBus window for a future AXI bridge |
 
 Boot RAM does not define same-address read-during-write behavior. Software must not write a word through the data port while the instruction port reads that word in the same cycle; self-modifying code needs a separately specified synchronization policy.
+
+## Machine timer registers
+
+| Offset | Name | Access | Definition | Reset |
+|---:|---|---|---|---:|
+| `0x4000` | MTIMECMP_LO | R/W | Timer comparison bits 31:0 | `0xFFFF_FFFF` |
+| `0x4004` | MTIMECMP_HI | R/W | Timer comparison bits 63:32 | `0xFFFF_FFFF` |
+| `0xBFF8` | MTIME_LO | R | SoC cycle time bits 31:0 | 0 |
+| `0xBFFC` | MTIME_HI | R | SoC cycle time bits 63:32 | 0 |
+
+The timer interrupt is asserted while unsigned `mtime >= mtimecmp`. RV32 software reads a coherent time value by reading high, low, then high again and retrying if the high words differ.
+
+## GPIO registers
+
+| Offset | Name | Access | Definition | Reset |
+|---:|---|---|---|---:|
+| `0x00` | OUTPUT | R/W | Low 8 bits drive output pins | 0 |
+| `0x04` | INPUT | R | Low 8 bits sample input pins | input value |
+
+GPIO accepts aligned 32-bit accesses. OUTPUT writes require all four byte strobes; invalid offsets and writes to INPUT return an error without changing the output register.
 
 ## UART registers
 

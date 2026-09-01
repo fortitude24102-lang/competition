@@ -6,7 +6,9 @@ sealed trait MemoryRegion
 
 object MemoryRegion {
   case object BootRam extends MemoryRegion
+  case object Timer extends MemoryRegion
   case object Uart extends MemoryRegion
+  case object Gpio extends MemoryRegion
   case object Accelerator extends MemoryRegion
   case object External extends MemoryRegion
   case object Unmapped extends MemoryRegion
@@ -15,8 +17,12 @@ object MemoryRegion {
 object MemoryMap {
   val BootRamBase: BigInt = BigInt("00000000", 16)
   val BootRamBytes: BigInt = BigInt("00010000", 16)
+  val TimerBase: BigInt = BigInt("02000000", 16)
+  val TimerBytes: BigInt = BigInt("00010000", 16)
   val UartBase: BigInt = BigInt("10000000", 16)
   val UartBytes: BigInt = BigInt("00001000", 16)
+  val GpioBase: BigInt = BigInt("10001000", 16)
+  val GpioBytes: BigInt = BigInt("00001000", 16)
   val AccelBase: BigInt = BigInt("30000000", 16)
   val AccelBytes: BigInt = BigInt("00001000", 16)
   val ExternalBase: BigInt = BigInt("80000000", 16)
@@ -25,6 +31,18 @@ object MemoryMap {
     val TxDataOffset: BigInt = 0x00
     val StatusOffset: BigInt = 0x04
     val RxDataOffset: BigInt = 0x08
+  }
+
+  object Timer {
+    val MtimecmpLowOffset: BigInt = 0x4000
+    val MtimecmpHighOffset: BigInt = 0x4004
+    val MtimeLowOffset: BigInt = 0xbff8
+    val MtimeHighOffset: BigInt = 0xbffc
+  }
+
+  object Gpio {
+    val OutputOffset: BigInt = 0x00
+    val InputOffset: BigInt = 0x04
   }
 
   object Accelerator {
@@ -50,14 +68,18 @@ object MemoryMap {
 
   def regionOf(address: BigInt): MemoryRegion = {
     if (contains(address, BootRamBase, BootRamBytes)) MemoryRegion.BootRam
+    else if (contains(address, TimerBase, TimerBytes)) MemoryRegion.Timer
     else if (contains(address, UartBase, UartBytes)) MemoryRegion.Uart
+    else if (contains(address, GpioBase, GpioBytes)) MemoryRegion.Gpio
     else if (contains(address, AccelBase, AccelBytes)) MemoryRegion.Accelerator
     else if (address >= ExternalBase && address <= BigInt("ffffffff", 16)) MemoryRegion.External
     else MemoryRegion.Unmapped
   }
 
   def isBootRam(address: UInt): Bool = contains(address, BootRamBase, BootRamBytes)
+  def isTimer(address: UInt): Bool = contains(address, TimerBase, TimerBytes)
   def isUart(address: UInt): Bool = contains(address, UartBase, UartBytes)
+  def isGpio(address: UInt): Bool = contains(address, GpioBase, GpioBytes)
   def isAccelerator(address: UInt): Bool = contains(address, AccelBase, AccelBytes)
   def isExternal(address: UInt): Bool = address >= ExternalBase.U(32.W)
 }
