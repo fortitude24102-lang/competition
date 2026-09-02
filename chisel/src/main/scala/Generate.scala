@@ -6,6 +6,11 @@ object Generate extends App {
   args.headOption match {
     case Some("soc") =>
       ChiselStage.emitSystemVerilogFile(new SoCTop(), args.tail)
+    case Some("soc-image") if args.length >= 2 =>
+      ChiselStage.emitSystemVerilogFile(
+        new SoCTop(ramInitFile = Some(args(1).replace('\\', '/'))),
+        args.drop(2)
+      )
     case Some("rv32") =>
       ChiselStage.emitSystemVerilogFile(new Rv32Core(), args.tail)
     case _ =>

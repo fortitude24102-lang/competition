@@ -29,6 +29,18 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build-software-test.
 
 `sw/build/cli.hex` 是 UART RX 命令行镜像，支持 `help/status/mode/threshold/bypass/enable/perf`。`sw/build/pango_bringup.hex` 验证盘古目标平台所需的 GPIO 和机器计时器。`sw/build/machine_trap.hex` 验证 C 程序配置 `mtvec`、汇编入口保存陷阱状态并用 `mret` 返回。生成物位于忽略目录，不进入 Git。
 
+## CoreMark 开发基线
+
+当前 RV32I 五级流水 SoC 已能运行官方 CoreMark v1.0。快速复测入口不会调用 Vivado/PDS：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-coremark-baseline.ps1 -Iterations 10
+```
+
+2026-09-02 的 10 轮 RTL 结果为每轮 `2,729,159` 个 CPU 周期，折算约 `0.3664 CoreMark/MHz`；标准 2K performance 三项 CRC 均通过。源码固定到提交 `1f483d5b8316753a742cbf5590caf5bd0a4e4777`，编译参数为 `-O2 -march=rv32i -mabi=ilp32`，镜像约 13 KiB。详细结果保存在 `generated/reports/coremark-baseline.txt`。
+
+这是用于后续 RV32M、缓存和分支预测优化前后对比的短时开发基线，不是可提交的竞赛成绩。正式成绩需要把 `sw/build/coremark_board.hex` 放到目标 FPGA，在实际测得的时钟频率下连续运行至少 10 秒；按当前周期数，400 轮约覆盖 10.9 秒。
+
 只重新生成 RTL：
 
 ```powershell

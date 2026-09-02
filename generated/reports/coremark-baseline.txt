@@ -1,0 +1,16 @@
+CoreMark RV32I RTL development baseline
+=======================================
+Status: non-reportable short simulation baseline
+CoreMark source revision: 1f483d5b8316753a742cbf5590caf5bd0a4e4777
+Compiler flags: -O2 -march=rv32i -mabi=ilp32
+RTL simulator: Verilator 5.020 2024-01-01 rev (Debian 5.020-1)
+Data size: 2000 bytes
+Measured iterations: 10
+Timed CPU cycles: 27291590
+Cycles per iteration: 2729159.00
+Estimated CoreMark/MHz: 0.3664
+Full simulation cycles: 27404898
+CRC validation: passed
+
+This quick RTL result is for architecture comparison only. The contest result
+must be rerun on the target FPGA for at least 10 seconds at the measured clock.

@@ -25,9 +25,9 @@
 - Create: `third_party/coremark/*`
 - Create: `scripts/verify-coremark-sources.ps1`
 
-- [ ] Import the official license, five algorithm sources, `core_main.c`, `coremark.h`, and source MD5 file.
-- [ ] Add a script that checks the pinned file hashes and fails if benchmark algorithms change.
-- [ ] Run the integrity check and commit the official source import.
+- [x] Import the official license, five algorithm sources, `core_main.c`, `coremark.h`, and source MD5 file.
+- [x] Add a script that checks the pinned file hashes and fails if benchmark algorithms change.
+- [x] Run the integrity check and commit the official source import.
 
 ### Task 2: Build the RV32I CoreMark image
 
@@ -37,10 +37,10 @@
 - Create: `scripts/build-coremark.ps1`
 - Create: `scripts/build-coremark.sh`
 
-- [ ] Add a build check that fails before the port exists.
-- [ ] Implement performance seeds, fixed iterations, MMIO timer hooks, and the minimal UART formatter.
-- [ ] Build `coremark_smoke.hex` and `coremark_board.hex` with identical RV32I optimization flags.
-- [ ] Reject an ELF whose load image exceeds the 64 KiB RAM window.
+- [x] Add input and image checks that reject invalid or missing benchmark inputs.
+- [x] Implement performance seeds, fixed iterations, MMIO timer hooks, and the minimal UART formatter.
+- [x] Build `coremark_smoke.hex` and `coremark_board.hex` with identical RV32I optimization flags.
+- [x] Reject an ELF whose load image exceeds the 64 KiB RAM window.
 
 ### Task 3: Run and measure the RTL baseline
 
@@ -49,11 +49,11 @@
 - Create: `tb/coremark_sim.cpp`
 - Create: `scripts/run-coremark-baseline.ps1`
 
-- [ ] Add a simulation-only generator that preloads a selected RAM image.
-- [ ] Add the Verilator harness and verify it fails on a zero or missing image.
-- [ ] Run the CoreMark image to EBREAK and capture UART plus elapsed simulation cycles.
-- [ ] Require standard performance CRCs and reject algorithm CRC errors.
-- [ ] Write `generated/reports/coremark-baseline.txt` with cycles/iteration and estimated CoreMark/MHz.
+- [x] Add a simulation-only generator that preloads a selected RAM image.
+- [x] Add the Verilator harness and verify it fails on a zero or missing image.
+- [x] Run the CoreMark image to EBREAK and capture UART plus elapsed simulation cycles.
+- [x] Require standard performance CRCs and reject algorithm CRC errors.
+- [x] Write `generated/reports/coremark-baseline.txt` with cycles/iteration and estimated CoreMark/MHz.
 
 ### Task 4: Close the baseline stage
 
@@ -62,6 +62,6 @@
 - Modify: `docs/chisel_build.md`
 - Modify: this plan
 
-- [ ] Run source integrity, software build, CoreMark RTL baseline, focused CPU/SoC tests, RTL generation, Verilator lint, and `git diff --check`.
-- [ ] Document the measured result and its non-reportable status.
-- [ ] Mark every task complete and commit without generated ELF/BIN/HEX files.
+- [x] Run source integrity, software build, CoreMark RTL baseline, full CPU/SoC tests, RTL generation, Verilator lint, and `git diff --check`.
+- [x] Document the measured result and its non-reportable status.
+- [x] Mark every task complete and commit without generated ELF/BIN/HEX files.

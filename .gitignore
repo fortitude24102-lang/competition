@@ -5,6 +5,7 @@ chisel/.bsp/
 chisel/.metals/
 generated/filelist.f
 generated/verification/
+generated/coremark-sim/
 generated/reports/*/vivado.log
 chisel/src/test/resources/rv32i/*.bin
 chisel/src/test/resources/rv32i/*.elf
