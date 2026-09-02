@@ -36,4 +36,6 @@ build_image driver_test "$project_root/sw/tests/driver_test.c"
 build_image driver_test_fail "$project_root/sw/tests/driver_test.c" -DFORCE_FAILURE
 build_image cli "$project_root/sw/apps/cli.c"
 build_image pango_bringup "$project_root/sw/tests/pango_bringup.c"
+build_image machine_trap "$project_root/sw/tests/machine_trap.c" \
+  -march=rv32i_zicsr "$project_root/sw/trap.S"
 echo "Built C validation images in $output_dir"

@@ -24,7 +24,7 @@ Write-Host '[PASS] standalone video RTL regression'
 Assert-LastExitCode 'C software validation image'
 Write-Host '[PASS] C software validation image built'
 
-foreach ($image in @('driver_test.hex', 'driver_test_fail.hex', 'cli.hex', 'pango_bringup.hex')) {
+foreach ($image in @('driver_test.hex', 'driver_test_fail.hex', 'cli.hex', 'pango_bringup.hex', 'machine_trap.hex')) {
     $imagePath = Join-Path $projectRoot "sw\build\$image"
     if (-not (Test-Path -LiteralPath $imagePath -PathType Leaf)) {
         throw "Software build did not produce $imagePath"

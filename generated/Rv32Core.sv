@@ -43,520 +43,632 @@
     `define INIT_RANDOM_PROLOG_
   `endif // RANDOMIZE
 `endif // not def INIT_RANDOM_PROLOG_
-module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:57:7
-  input         clock,	// src/main/scala/cpu/Rv32Core.scala:57:7
-                reset,	// src/main/scala/cpu/Rv32Core.scala:57:7
-                io_imem_req_ready,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output        io_imem_req_valid,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output [31:0] io_imem_req_bits_addr,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output        io_imem_req_bits_write,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output [1:0]  io_imem_req_bits_size,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output [31:0] io_imem_req_bits_wdata,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output [3:0]  io_imem_req_bits_wstrb,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output        io_imem_resp_ready,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  input         io_imem_resp_valid,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  input  [31:0] io_imem_resp_bits_rdata,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  input         io_imem_resp_bits_error,	// src/main/scala/cpu/Rv32Core.scala:58:14
-                io_dmem_req_ready,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output        io_dmem_req_valid,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output [31:0] io_dmem_req_bits_addr,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output        io_dmem_req_bits_write,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output [1:0]  io_dmem_req_bits_size,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output [31:0] io_dmem_req_bits_wdata,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output [3:0]  io_dmem_req_bits_wstrb,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output        io_dmem_resp_ready,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  input         io_dmem_resp_valid,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  input  [31:0] io_dmem_resp_bits_rdata,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  input         io_dmem_resp_bits_error,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output        io_commit_valid,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output [31:0] io_commit_pc,	// src/main/scala/cpu/Rv32Core.scala:58:14
-                io_commit_inst,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output        io_commit_writeEnable,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output [4:0]  io_commit_rd,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output [31:0] io_commit_data,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output        io_trap_valid,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output [3:0]  io_trap_cause,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output [31:0] io_trap_pc,	// src/main/scala/cpu/Rv32Core.scala:58:14
-                io_trap_inst,	// src/main/scala/cpu/Rv32Core.scala:58:14
-  output        io_halted	// src/main/scala/cpu/Rv32Core.scala:58:14
+module Rv32Core(	// src/main/scala/cpu/Rv32Core.scala:59:7
+  input         clock,	// src/main/scala/cpu/Rv32Core.scala:59:7
+                reset,	// src/main/scala/cpu/Rv32Core.scala:59:7
+                io_imem_req_ready,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output        io_imem_req_valid,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output [31:0] io_imem_req_bits_addr,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output        io_imem_req_bits_write,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output [1:0]  io_imem_req_bits_size,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output [31:0] io_imem_req_bits_wdata,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output [3:0]  io_imem_req_bits_wstrb,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output        io_imem_resp_ready,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  input         io_imem_resp_valid,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  input  [31:0] io_imem_resp_bits_rdata,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  input         io_imem_resp_bits_error,	// src/main/scala/cpu/Rv32Core.scala:64:14
+                io_dmem_req_ready,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output        io_dmem_req_valid,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output [31:0] io_dmem_req_bits_addr,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output        io_dmem_req_bits_write,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output [1:0]  io_dmem_req_bits_size,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output [31:0] io_dmem_req_bits_wdata,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output [3:0]  io_dmem_req_bits_wstrb,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output        io_dmem_resp_ready,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  input         io_dmem_resp_valid,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  input  [31:0] io_dmem_resp_bits_rdata,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  input         io_dmem_resp_bits_error,	// src/main/scala/cpu/Rv32Core.scala:64:14
+                io_timerInterrupt,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output        io_commit_valid,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output [31:0] io_commit_pc,	// src/main/scala/cpu/Rv32Core.scala:64:14
+                io_commit_inst,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output        io_commit_writeEnable,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output [4:0]  io_commit_rd,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output [31:0] io_commit_data,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output        io_trap_valid,	// src/main/scala/cpu/Rv32Core.scala:64:14
+                io_trap_interrupt,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output [3:0]  io_trap_cause,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output [31:0] io_trap_pc,	// src/main/scala/cpu/Rv32Core.scala:64:14
+                io_trap_inst,	// src/main/scala/cpu/Rv32Core.scala:64:14
+  output        io_halted	// src/main/scala/cpu/Rv32Core.scala:64:14
 );
 
-  wire [1:0]  _control_io_forwardRs1;	// src/main/scala/cpu/Rv32Core.scala:71:23
-  wire [1:0]  _control_io_forwardRs2;	// src/main/scala/cpu/Rv32Core.scala:71:23
-  wire [2:0]  _control_io_action;	// src/main/scala/cpu/Rv32Core.scala:71:23
-  wire        _loadStore_io_misaligned;	// src/main/scala/cpu/Rv32Core.scala:70:25
-  wire [3:0]  _loadStore_io_wstrb;	// src/main/scala/cpu/Rv32Core.scala:70:25
-  wire [31:0] _loadStore_io_wdata;	// src/main/scala/cpu/Rv32Core.scala:70:25
-  wire [31:0] _loadStore_io_loadData;	// src/main/scala/cpu/Rv32Core.scala:70:25
-  wire [31:0] _execute_io_aluResult;	// src/main/scala/cpu/Rv32Core.scala:69:23
-  wire        _execute_io_branchTaken;	// src/main/scala/cpu/Rv32Core.scala:69:23
-  wire [31:0] _execute_io_branchTarget;	// src/main/scala/cpu/Rv32Core.scala:69:23
-  wire [31:0] _regFile_io_rs1Data;	// src/main/scala/cpu/Rv32Core.scala:68:23
-  wire [31:0] _regFile_io_rs2Data;	// src/main/scala/cpu/Rv32Core.scala:68:23
-  wire        _decoder_io_control_legal;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire        _decoder_io_control_rs1Used;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire        _decoder_io_control_rs2Used;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire [3:0]  _decoder_io_control_aluOp;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire [1:0]  _decoder_io_control_op1Sel;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire        _decoder_io_control_op2Sel;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire [3:0]  _decoder_io_control_branchOp;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire        _decoder_io_control_memRead;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire        _decoder_io_control_memWrite;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire [1:0]  _decoder_io_control_memWidth;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire        _decoder_io_control_memUnsigned;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire        _decoder_io_control_regWrite;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire [1:0]  _decoder_io_control_wbSel;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire        _decoder_io_control_ecall;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire        _decoder_io_control_ebreak;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire [31:0] _decoder_io_immediate;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire [4:0]  _decoder_io_rs1;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire [4:0]  _decoder_io_rs2;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire [4:0]  _decoder_io_rd;	// src/main/scala/cpu/Rv32Core.scala:67:23
-  wire        _frontend_io_imem_req_valid;	// src/main/scala/cpu/Rv32Core.scala:66:24
-  wire        _frontend_io_imem_resp_ready;	// src/main/scala/cpu/Rv32Core.scala:66:24
-  wire        _frontend_io_output_valid;	// src/main/scala/cpu/Rv32Core.scala:66:24
-  wire [31:0] _frontend_io_output_bits_pc;	// src/main/scala/cpu/Rv32Core.scala:66:24
-  wire [31:0] _frontend_io_output_bits_inst;	// src/main/scala/cpu/Rv32Core.scala:66:24
-  wire        _frontend_io_output_bits_error;	// src/main/scala/cpu/Rv32Core.scala:66:24
-  reg         ifId_valid;	// src/main/scala/cpu/Rv32Core.scala:73:29
-  reg  [31:0] ifId_pc;	// src/main/scala/cpu/Rv32Core.scala:73:29
-  reg  [31:0] ifId_inst;	// src/main/scala/cpu/Rv32Core.scala:73:29
-  reg         ifId_fetchError;	// src/main/scala/cpu/Rv32Core.scala:73:29
-  reg         idEx_valid;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg  [31:0] idEx_pc;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg  [31:0] idEx_inst;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg         idEx_control_legal;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg         idEx_control_rs1Used;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg         idEx_control_rs2Used;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg  [3:0]  idEx_control_aluOp;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg  [1:0]  idEx_control_op1Sel;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg         idEx_control_op2Sel;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg  [3:0]  idEx_control_branchOp;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg         idEx_control_memRead;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg         idEx_control_memWrite;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg  [1:0]  idEx_control_memWidth;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg         idEx_control_memUnsigned;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg         idEx_control_regWrite;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg  [1:0]  idEx_control_wbSel;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg  [31:0] idEx_immediate;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg  [4:0]  idEx_rs1;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg  [4:0]  idEx_rs2;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg  [4:0]  idEx_rd;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg  [31:0] idEx_rs1Value;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg  [31:0] idEx_rs2Value;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg         idEx_exceptionValid;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg  [3:0]  idEx_exceptionCause;	// src/main/scala/cpu/Rv32Core.scala:74:29
-  reg         exMem_valid;	// src/main/scala/cpu/Rv32Core.scala:75:30
-  reg  [31:0] exMem_pc;	// src/main/scala/cpu/Rv32Core.scala:75:30
-  reg  [31:0] exMem_inst;	// src/main/scala/cpu/Rv32Core.scala:75:30
-  reg         exMem_legal;	// src/main/scala/cpu/Rv32Core.scala:75:30
-  reg  [31:0] exMem_aluResult;	// src/main/scala/cpu/Rv32Core.scala:75:30
-  reg  [4:0]  exMem_rd;	// src/main/scala/cpu/Rv32Core.scala:75:30
-  reg         exMem_regWrite;	// src/main/scala/cpu/Rv32Core.scala:75:30
-  reg  [1:0]  exMem_wbSel;	// src/main/scala/cpu/Rv32Core.scala:75:30
-  reg         exMem_memRead;	// src/main/scala/cpu/Rv32Core.scala:75:30
-  reg         exMem_memWrite;	// src/main/scala/cpu/Rv32Core.scala:75:30
-  reg  [1:0]  exMem_memWidth;	// src/main/scala/cpu/Rv32Core.scala:75:30
-  reg         exMem_memUnsigned;	// src/main/scala/cpu/Rv32Core.scala:75:30
-  reg  [31:0] exMem_storeData;	// src/main/scala/cpu/Rv32Core.scala:75:30
-  reg         exMem_exceptionValid;	// src/main/scala/cpu/Rv32Core.scala:75:30
-  reg  [3:0]  exMem_exceptionCause;	// src/main/scala/cpu/Rv32Core.scala:75:30
-  reg         memWb_valid;	// src/main/scala/cpu/Rv32Core.scala:76:30
-  reg  [31:0] memWb_pc;	// src/main/scala/cpu/Rv32Core.scala:76:30
-  reg  [31:0] memWb_inst;	// src/main/scala/cpu/Rv32Core.scala:76:30
-  reg         memWb_legal;	// src/main/scala/cpu/Rv32Core.scala:76:30
-  reg  [4:0]  memWb_rd;	// src/main/scala/cpu/Rv32Core.scala:76:30
-  reg         memWb_regWrite;	// src/main/scala/cpu/Rv32Core.scala:76:30
-  reg  [31:0] memWb_writeData;	// src/main/scala/cpu/Rv32Core.scala:76:30
-  reg         memoryRequestSent;	// src/main/scala/cpu/Rv32Core.scala:77:42
-  reg         haltedReg;	// src/main/scala/cpu/Rv32Core.scala:78:34
+  wire [31:0] _csrFile_io_readData;	// src/main/scala/cpu/Rv32Core.scala:79:23
+  wire        _csrFile_io_readLegal;	// src/main/scala/cpu/Rv32Core.scala:79:23
+  wire        _csrFile_io_writeAllowed;	// src/main/scala/cpu/Rv32Core.scala:79:23
+  wire        _csrFile_io_timerInterruptPending;	// src/main/scala/cpu/Rv32Core.scala:79:23
+  wire [31:0] _csrFile_io_trapVector;	// src/main/scala/cpu/Rv32Core.scala:79:23
+  wire [31:0] _csrFile_io_returnPc;	// src/main/scala/cpu/Rv32Core.scala:79:23
+  wire [1:0]  _control_io_forwardRs1;	// src/main/scala/cpu/Rv32Core.scala:78:23
+  wire [1:0]  _control_io_forwardRs2;	// src/main/scala/cpu/Rv32Core.scala:78:23
+  wire [2:0]  _control_io_action;	// src/main/scala/cpu/Rv32Core.scala:78:23
+  wire        _loadStore_io_misaligned;	// src/main/scala/cpu/Rv32Core.scala:77:25
+  wire [3:0]  _loadStore_io_wstrb;	// src/main/scala/cpu/Rv32Core.scala:77:25
+  wire [31:0] _loadStore_io_wdata;	// src/main/scala/cpu/Rv32Core.scala:77:25
+  wire [31:0] _loadStore_io_loadData;	// src/main/scala/cpu/Rv32Core.scala:77:25
+  wire [31:0] _execute_io_aluResult;	// src/main/scala/cpu/Rv32Core.scala:76:23
+  wire        _execute_io_branchTaken;	// src/main/scala/cpu/Rv32Core.scala:76:23
+  wire [31:0] _execute_io_branchTarget;	// src/main/scala/cpu/Rv32Core.scala:76:23
+  wire [31:0] _regFile_io_rs1Data;	// src/main/scala/cpu/Rv32Core.scala:75:23
+  wire [31:0] _regFile_io_rs2Data;	// src/main/scala/cpu/Rv32Core.scala:75:23
+  wire        _decoder_io_control_legal;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire        _decoder_io_control_rs1Used;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire        _decoder_io_control_rs2Used;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire [3:0]  _decoder_io_control_aluOp;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire [1:0]  _decoder_io_control_op1Sel;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire        _decoder_io_control_op2Sel;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire [3:0]  _decoder_io_control_branchOp;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire        _decoder_io_control_memRead;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire        _decoder_io_control_memWrite;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire [1:0]  _decoder_io_control_memWidth;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire        _decoder_io_control_memUnsigned;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire        _decoder_io_control_regWrite;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire [1:0]  _decoder_io_control_wbSel;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire        _decoder_io_control_ecall;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire        _decoder_io_control_ebreak;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire [1:0]  _decoder_io_control_csrOp;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire        _decoder_io_control_csrImmediate;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire        _decoder_io_control_mret;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire [31:0] _decoder_io_immediate;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire [4:0]  _decoder_io_rs1;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire [4:0]  _decoder_io_rs2;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire [4:0]  _decoder_io_rd;	// src/main/scala/cpu/Rv32Core.scala:74:23
+  wire        _frontend_io_imem_req_valid;	// src/main/scala/cpu/Rv32Core.scala:73:24
+  wire        _frontend_io_imem_resp_ready;	// src/main/scala/cpu/Rv32Core.scala:73:24
+  wire        _frontend_io_output_valid;	// src/main/scala/cpu/Rv32Core.scala:73:24
+  wire [31:0] _frontend_io_output_bits_pc;	// src/main/scala/cpu/Rv32Core.scala:73:24
+  wire [31:0] _frontend_io_output_bits_inst;	// src/main/scala/cpu/Rv32Core.scala:73:24
+  wire        _frontend_io_output_bits_error;	// src/main/scala/cpu/Rv32Core.scala:73:24
+  reg         ifId_valid;	// src/main/scala/cpu/Rv32Core.scala:81:29
+  reg  [31:0] ifId_pc;	// src/main/scala/cpu/Rv32Core.scala:81:29
+  reg  [31:0] ifId_inst;	// src/main/scala/cpu/Rv32Core.scala:81:29
+  reg         ifId_fetchError;	// src/main/scala/cpu/Rv32Core.scala:81:29
+  reg         idEx_valid;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg  [31:0] idEx_pc;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg  [31:0] idEx_inst;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg         idEx_control_legal;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg         idEx_control_rs1Used;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg         idEx_control_rs2Used;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg  [3:0]  idEx_control_aluOp;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg  [1:0]  idEx_control_op1Sel;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg         idEx_control_op2Sel;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg  [3:0]  idEx_control_branchOp;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg         idEx_control_memRead;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg         idEx_control_memWrite;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg  [1:0]  idEx_control_memWidth;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg         idEx_control_memUnsigned;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg         idEx_control_regWrite;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg  [1:0]  idEx_control_wbSel;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg  [1:0]  idEx_control_csrOp;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg         idEx_control_csrImmediate;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg         idEx_control_mret;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg  [31:0] idEx_immediate;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg  [4:0]  idEx_rs1;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg  [4:0]  idEx_rs2;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg  [4:0]  idEx_rd;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg  [31:0] idEx_rs1Value;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg  [31:0] idEx_rs2Value;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg         idEx_exceptionValid;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg  [3:0]  idEx_exceptionCause;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg  [31:0] idEx_exceptionValue;	// src/main/scala/cpu/Rv32Core.scala:82:29
+  reg         exMem_valid;	// src/main/scala/cpu/Rv32Core.scala:83:30
+  reg  [31:0] exMem_pc;	// src/main/scala/cpu/Rv32Core.scala:83:30
+  reg  [31:0] exMem_inst;	// src/main/scala/cpu/Rv32Core.scala:83:30
+  reg         exMem_legal;	// src/main/scala/cpu/Rv32Core.scala:83:30
+  reg  [31:0] exMem_aluResult;	// src/main/scala/cpu/Rv32Core.scala:83:30
+  reg  [4:0]  exMem_rd;	// src/main/scala/cpu/Rv32Core.scala:83:30
+  reg         exMem_regWrite;	// src/main/scala/cpu/Rv32Core.scala:83:30
+  reg  [1:0]  exMem_wbSel;	// src/main/scala/cpu/Rv32Core.scala:83:30
+  reg         exMem_memRead;	// src/main/scala/cpu/Rv32Core.scala:83:30
+  reg         exMem_memWrite;	// src/main/scala/cpu/Rv32Core.scala:83:30
+  reg  [1:0]  exMem_memWidth;	// src/main/scala/cpu/Rv32Core.scala:83:30
+  reg         exMem_memUnsigned;	// src/main/scala/cpu/Rv32Core.scala:83:30
+  reg  [31:0] exMem_storeData;	// src/main/scala/cpu/Rv32Core.scala:83:30
+  reg         exMem_exceptionValid;	// src/main/scala/cpu/Rv32Core.scala:83:30
+  reg  [3:0]  exMem_exceptionCause;	// src/main/scala/cpu/Rv32Core.scala:83:30
+  reg  [31:0] exMem_exceptionValue;	// src/main/scala/cpu/Rv32Core.scala:83:30
+  reg         memWb_valid;	// src/main/scala/cpu/Rv32Core.scala:84:30
+  reg  [31:0] memWb_pc;	// src/main/scala/cpu/Rv32Core.scala:84:30
+  reg  [31:0] memWb_inst;	// src/main/scala/cpu/Rv32Core.scala:84:30
+  reg         memWb_legal;	// src/main/scala/cpu/Rv32Core.scala:84:30
+  reg  [4:0]  memWb_rd;	// src/main/scala/cpu/Rv32Core.scala:84:30
+  reg         memWb_regWrite;	// src/main/scala/cpu/Rv32Core.scala:84:30
+  reg  [31:0] memWb_writeData;	// src/main/scala/cpu/Rv32Core.scala:84:30
+  reg         memoryRequestSent;	// src/main/scala/cpu/Rv32Core.scala:85:42
+  reg         haltedReg;	// src/main/scala/cpu/Rv32Core.scala:86:34
   wire        memoryOperation =
-    exMem_valid & exMem_legal & ~exMem_exceptionValid & (exMem_memRead | exMem_memWrite);	// src/main/scala/cpu/Rv32Core.scala:75:30, :93:{37,52,55,77,95}
-  wire        memoryResponseValid = memoryRequestSent & io_dmem_resp_valid;	// src/main/scala/cpu/Rv32Core.scala:77:42, :94:47
+    exMem_valid & exMem_legal & ~exMem_exceptionValid & (exMem_memRead | exMem_memWrite);	// src/main/scala/cpu/Rv32Core.scala:83:30, :101:{37,52,55,77,95}
+  wire        memoryResponseValid = memoryRequestSent & io_dmem_resp_valid;	// src/main/scala/cpu/Rv32Core.scala:85:42, :102:47
   wire        memoryWait =
-    memoryOperation & ~_loadStore_io_misaligned & ~memoryResponseValid;	// src/main/scala/cpu/Rv32Core.scala:70:25, :93:{37,52,77}, :94:47, :95:{36,39,64,67}
-  wire        memoryMisaligned = memoryOperation & _loadStore_io_misaligned;	// src/main/scala/cpu/Rv32Core.scala:70:25, :93:{37,52,77}, :96:42
+    memoryOperation & ~_loadStore_io_misaligned & ~memoryResponseValid;	// src/main/scala/cpu/Rv32Core.scala:77:25, :101:{37,52,77}, :102:47, :103:{36,39,64,67}
+  wire        memoryMisaligned = memoryOperation & _loadStore_io_misaligned;	// src/main/scala/cpu/Rv32Core.scala:77:25, :101:{37,52,77}, :104:42
   wire        trapEvent =
     exMem_valid
     & (exMem_exceptionValid | memoryMisaligned | memoryOperation & memoryResponseValid
-       & io_dmem_resp_bits_error);	// src/main/scala/cpu/Rv32Core.scala:75:30, :93:{37,52,77}, :94:47, :96:42, :97:{40,63}, :98:{31,56,76}
+       & io_dmem_resp_bits_error);	// src/main/scala/cpu/Rv32Core.scala:83:30, :101:{37,52,77}, :102:47, :104:42, :105:{40,63}, :106:{31,56,76}
+  wire        debugHaltEvent =
+    trapEvent & exMem_exceptionValid & exMem_exceptionCause == 4'h3;	// src/main/scala/cpu/Rv32Core.scala:83:30, :106:31, :112:{34,58}, :113:26
   wire        io_dmem_req_valid_0 =
-    memoryOperation & ~_loadStore_io_misaligned & ~memoryRequestSent;	// src/main/scala/cpu/Rv32Core.scala:70:25, :77:42, :93:{37,52,77}, :95:39, :104:{40,68,71}
-  wire        io_dmem_resp_ready_0 = memoryOperation & memoryRequestSent;	// src/main/scala/cpu/Rv32Core.scala:77:42, :93:{37,52,77}, :110:41
-  wire        _io_commit_writeEnable_T = memWb_valid & memWb_legal;	// src/main/scala/cpu/Rv32Core.scala:76:30, :123:41
-  wire [31:0] exMemForwardValue =
-    exMem_wbSel == 2'h2 ? exMem_pc + 32'h4 : exMem_aluResult;	// src/main/scala/cpu/Rv32Core.scala:75:30, :126:{30,43,67}
+    memoryOperation & ~_loadStore_io_misaligned & ~memoryRequestSent;	// src/main/scala/cpu/Rv32Core.scala:77:25, :85:42, :101:{37,52,77}, :103:39, :117:{40,68,71}
+  wire        io_dmem_resp_ready_0 = memoryOperation & memoryRequestSent;	// src/main/scala/cpu/Rv32Core.scala:85:42, :101:{37,52,77}, :123:41
+  wire        _io_commit_writeEnable_T = memWb_valid & memWb_legal;	// src/main/scala/cpu/Rv32Core.scala:84:30, :136:41
+  wire [31:0] _interruptPc_T = exMem_pc + 32'h4;	// src/main/scala/cpu/Rv32Core.scala:83:30, :139:67
+  wire [31:0] exMemForwardValue = exMem_wbSel == 2'h2 ? _interruptPc_T : exMem_aluResult;	// src/main/scala/cpu/Rv32Core.scala:83:30, :139:{30,43,67}
   wire [31:0] forwardedRs1 =
     _control_io_forwardRs1 == 2'h2
       ? memWb_writeData
-      : _control_io_forwardRs1 == 2'h1 ? exMemForwardValue : idEx_rs1Value;	// src/main/scala/cpu/Rv32Core.scala:71:23, :74:29, :76:30, :126:30, :127:69
+      : _control_io_forwardRs1 == 2'h1 ? exMemForwardValue : idEx_rs1Value;	// src/main/scala/cpu/Rv32Core.scala:78:23, :82:29, :84:30, :139:30, :140:69
   wire [31:0] forwardedRs2 =
     _control_io_forwardRs2 == 2'h2
       ? memWb_writeData
-      : _control_io_forwardRs2 == 2'h1 ? exMemForwardValue : idEx_rs2Value;	// src/main/scala/cpu/Rv32Core.scala:71:23, :74:29, :76:30, :126:30, :131:69
-  wire        redirectRequest =
+      : _control_io_forwardRs2 == 2'h1 ? exMemForwardValue : idEx_rs2Value;	// src/main/scala/cpu/Rv32Core.scala:78:23, :82:29, :84:30, :139:30, :144:69
+  wire        _csrWriteWanted_T = idEx_control_csrOp == 2'h1;	// src/main/scala/cpu/Rv32Core.scala:82:29, :150:62
+  wire        csrWriteWanted =
+    (|idEx_control_csrOp)
+    & (_csrWriteWanted_T | (idEx_control_csrOp == 2'h2 | (&idEx_control_csrOp))
+       & (|idEx_rs1));	// src/main/scala/cpu/Rv32Core.scala:82:29, :149:43, :150:62, :151:{39,78}, :152:{26,40,62,79,91}
+  wire [31:0] csrSource = idEx_control_csrImmediate ? {27'h0, idEx_rs1} : forwardedRs1;	// src/main/scala/cpu/Rv32Core.scala:82:29, :140:69, :153:{22,53}
+  wire        interruptEvent =
+    _csrFile_io_timerInterruptPending & ~trapEvent & ~memoryWait & ~haltedReg;	// src/main/scala/cpu/Rv32Core.scala:79:23, :86:34, :88:54, :103:{36,64}, :106:31, :164:80, :165:{5,16,19,31}
+  wire        csrFile_io_trapValid = trapEvent & ~debugHaltEvent | interruptEvent;	// src/main/scala/cpu/Rv32Core.scala:106:31, :112:{34,58}, :114:{59,62}, :164:80, :165:{16,31}, :173:44
+  wire [31:0] csrFile_io_trapPc =
+    interruptEvent
+      ? (idEx_valid
+           ? idEx_pc
+           : ifId_valid
+               ? ifId_pc
+               : _frontend_io_output_valid
+                   ? _frontend_io_output_bits_pc
+                   : exMem_valid
+                       ? _interruptPc_T
+                       : memWb_valid ? memWb_pc + 32'h4 : 32'h0)
+      : exMem_pc;	// src/main/scala/chisel3/util/Mux.scala:130:16, src/main/scala/cpu/Rv32Core.scala:73:24, :81:29, :82:29, :83:30, :84:30, :139:67, :164:80, :165:{16,31}, :171:30, :174:27
+  wire [3:0]  io_trap_cause_0 =
+    interruptEvent
+      ? 4'h7
+      : exMem_exceptionValid
+          ? exMem_exceptionCause
+          : {2'h1, exMem_memWrite, ~memoryMisaligned};	// src/main/scala/cpu/Rv32Core.scala:83:30, :104:42, :107:22, :108:8, :110:10, :164:80, :165:{16,31}, :175:30
+  wire        csrAccessIllegal =
+    (|idEx_control_csrOp)
+    & ((|idEx_control_csrOp) & ~(_csrWriteWanted_T & idEx_rd == 5'h0)
+       & ~_csrFile_io_readLegal | csrWriteWanted & ~_csrFile_io_writeAllowed);	// src/main/scala/cpu/Rv32Core.scala:59:7, :79:23, :82:29, :149:43, :150:{38,41,62,78,89}, :151:39, :179:41, :180:{20,23,46,65,68}
+  wire        branchRedirectRequest =
     idEx_valid & ~idEx_exceptionValid & idEx_control_legal & (|idEx_control_branchOp)
-    & _execute_io_branchTaken;	// src/main/scala/cpu/Rv32Core.scala:69:23, :74:29, :164:53, :166:{36,60,82}, :167:{27,45}
+    & _execute_io_branchTaken;	// src/main/scala/cpu/Rv32Core.scala:76:23, :82:29, :212:53, :214:{42,66,88}, :215:{27,45}
+  wire        mretRequest =
+    idEx_valid & ~idEx_exceptionValid & idEx_control_legal & idEx_control_mret;	// src/main/scala/cpu/Rv32Core.scala:82:29, :212:53, :216:{32,56,78}
   wire        branchTargetMisaligned =
-    redirectRequest & (|(_execute_io_branchTarget[1:0]));	// src/main/scala/cpu/Rv32Core.scala:69:23, :166:{36,60,82}, :167:45, :168:{48,74,81}
+    branchRedirectRequest & (|(_execute_io_branchTarget[1:0]));	// src/main/scala/cpu/Rv32Core.scala:76:23, :214:{42,66,88}, :215:45, :218:{54,80,87}
   wire        redirectValid =
-    redirectRequest & ~branchTargetMisaligned & ~memoryWait & ~trapEvent;	// src/main/scala/cpu/Rv32Core.scala:95:{36,64}, :98:31, :166:{36,60,82}, :167:45, :168:48, :169:{39,42,66,69,81,84}
-  wire        frontend_io_output_ready = _control_io_action == 3'h0;	// src/main/scala/cpu/Rv32Core.scala:71:23, :189:49
-  always @(posedge clock) begin	// src/main/scala/cpu/Rv32Core.scala:57:7
-    if (reset) begin	// src/main/scala/cpu/Rv32Core.scala:57:7
-      ifId_valid <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:73:29
-      ifId_pc <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:73:29
-      ifId_inst <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:73:29
-      ifId_fetchError <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:73:29
-      idEx_valid <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_pc <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_inst <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_control_legal <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_control_rs1Used <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_control_rs2Used <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_control_aluOp <= 4'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_control_op1Sel <= 2'h0;	// <stdin>:923:5, src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_control_op2Sel <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_control_branchOp <= 4'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_control_memRead <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_control_memWrite <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_control_memWidth <= 2'h0;	// <stdin>:923:5, src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_control_memUnsigned <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_control_regWrite <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_control_wbSel <= 2'h0;	// <stdin>:923:5, src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_immediate <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_rs1 <= 5'h0;	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-      idEx_rs2 <= 5'h0;	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-      idEx_rd <= 5'h0;	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-      idEx_rs1Value <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_rs2Value <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_exceptionValid <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      idEx_exceptionCause <= 4'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29
-      exMem_valid <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
-      exMem_pc <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
-      exMem_inst <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
-      exMem_legal <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
-      exMem_aluResult <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
-      exMem_rd <= 5'h0;	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-      exMem_regWrite <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
-      exMem_wbSel <= 2'h0;	// <stdin>:923:5, src/main/scala/cpu/Rv32Core.scala:75:30
-      exMem_memRead <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
-      exMem_memWrite <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
-      exMem_memWidth <= 2'h0;	// <stdin>:923:5, src/main/scala/cpu/Rv32Core.scala:75:30
-      exMem_memUnsigned <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
-      exMem_storeData <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
-      exMem_exceptionValid <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
-      exMem_exceptionCause <= 4'h0;	// src/main/scala/cpu/Rv32Core.scala:75:30
-      memWb_valid <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:76:30
-      memWb_pc <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:76:30
-      memWb_inst <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:76:30
-      memWb_legal <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:76:30
-      memWb_rd <= 5'h0;	// src/main/scala/cpu/Rv32Core.scala:57:7, :76:30
-      memWb_regWrite <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:76:30
-      memWb_writeData <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:76:30
-      memoryRequestSent <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:77:42
-      haltedReg <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:78:34
+    (branchRedirectRequest & ~branchTargetMisaligned | mretRequest) & ~memoryWait
+    & ~trapEvent;	// src/main/scala/cpu/Rv32Core.scala:103:{36,64}, :106:31, :165:{5,19}, :214:{42,66,88}, :215:45, :216:{32,56,78}, :218:54, :219:{48,51,76}, :220:{39,54}
+  wire        frontend_io_output_ready = _control_io_action == 3'h0;	// src/main/scala/cpu/Rv32Core.scala:78:23, :248:49
+  wire        _idExAdvances_T_1 = _control_io_action == 3'h1;	// src/main/scala/cpu/Rv32Core.scala:78:23, :252:23
+  wire        _csrFile_io_mretValid_T = _control_io_action == 3'h3;	// src/main/scala/cpu/Rv32Core.scala:78:23, :253:23
+  always @(posedge clock) begin	// src/main/scala/cpu/Rv32Core.scala:59:7
+    if (reset) begin	// src/main/scala/cpu/Rv32Core.scala:59:7
+      ifId_valid <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:81:29
+      ifId_pc <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:81:29
+      ifId_inst <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:81:29
+      ifId_fetchError <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:81:29
+      idEx_valid <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_pc <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_inst <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_control_legal <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_control_rs1Used <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_control_rs2Used <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_control_aluOp <= 4'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_control_op1Sel <= 2'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_control_op2Sel <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_control_branchOp <= 4'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_control_memRead <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_control_memWrite <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_control_memWidth <= 2'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_control_memUnsigned <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_control_regWrite <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_control_wbSel <= 2'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_control_csrOp <= 2'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_control_csrImmediate <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_control_mret <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_immediate <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_rs1 <= 5'h0;	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+      idEx_rs2 <= 5'h0;	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+      idEx_rd <= 5'h0;	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+      idEx_rs1Value <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_rs2Value <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_exceptionValid <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_exceptionCause <= 4'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      idEx_exceptionValue <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:82:29
+      exMem_valid <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:83:30
+      exMem_pc <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:83:30
+      exMem_inst <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:83:30
+      exMem_legal <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:83:30
+      exMem_aluResult <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:83:30
+      exMem_rd <= 5'h0;	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30
+      exMem_regWrite <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:83:30
+      exMem_wbSel <= 2'h0;	// src/main/scala/cpu/Rv32Core.scala:83:30
+      exMem_memRead <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:83:30
+      exMem_memWrite <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:83:30
+      exMem_memWidth <= 2'h0;	// src/main/scala/cpu/Rv32Core.scala:83:30
+      exMem_memUnsigned <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:83:30
+      exMem_storeData <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:83:30
+      exMem_exceptionValid <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:83:30
+      exMem_exceptionCause <= 4'h0;	// src/main/scala/cpu/Rv32Core.scala:83:30
+      exMem_exceptionValue <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:83:30
+      memWb_valid <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:84:30
+      memWb_pc <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:84:30
+      memWb_inst <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:84:30
+      memWb_legal <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:84:30
+      memWb_rd <= 5'h0;	// src/main/scala/cpu/Rv32Core.scala:59:7, :84:30
+      memWb_regWrite <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:84:30
+      memWb_writeData <= 32'h0;	// src/main/scala/cpu/Rv32Core.scala:84:30
+      memoryRequestSent <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:85:42
+      haltedReg <= 1'h0;	// src/main/scala/cpu/Rv32Core.scala:86:34
     end
-    else begin	// src/main/scala/cpu/Rv32Core.scala:57:7
-      automatic logic _GEN = _control_io_action == 3'h5;	// src/main/scala/cpu/Rv32Core.scala:71:23, :193:26
-      automatic logic _GEN_0 = _control_io_action == 3'h4;	// src/main/scala/cpu/Rv32Core.scala:71:23, :126:67, :200:32
-      automatic logic _GEN_1 = _control_io_action == 3'h2;	// src/main/scala/cpu/Rv32Core.scala:71:23, :209:32
-      automatic logic _GEN_2 = _control_io_action == 3'h1;	// src/main/scala/cpu/Rv32Core.scala:71:23, :211:32
-      automatic logic _GEN_3 = _control_io_action == 3'h3;	// src/main/scala/cpu/Rv32Core.scala:71:23, :236:32
-      automatic logic _GEN_4 = _GEN_2 | _GEN_3 | frontend_io_output_ready;	// src/main/scala/cpu/Rv32Core.scala:76:30, :189:49, :211:{32,65}, :212:17, :236:{32,61}, :237:17, :263:60, :264:17
-      automatic logic _GEN_5 = _GEN | _GEN_0 | _GEN_1;	// src/main/scala/cpu/Rv32Core.scala:193:{26,52}, :197:17, :200:{32,57}, :204:17, :209:{32,63}, :210:17, :211:65
-      automatic logic _GEN_6 = _GEN_5 | ~_GEN_4;	// src/main/scala/cpu/Rv32Core.scala:76:30, :193:52, :197:17, :200:57, :204:17, :209:63, :210:17, :211:65, :212:17, :236:61, :237:17, :263:60, :264:17
-      automatic logic _GEN_7 = _GEN | _GEN_0;	// src/main/scala/cpu/Rv32Core.scala:193:{26,52}, :196:17, :200:{32,57}, :203:17, :209:63
-      automatic logic _GEN_8 = _GEN_2 | _GEN_3;	// src/main/scala/cpu/Rv32Core.scala:211:{32,65}, :235:16, :236:{32,61}, :261:16, :263:60
-      automatic logic _GEN_9 = _GEN | _GEN_0 | _GEN_1 | _GEN_8;	// src/main/scala/cpu/Rv32Core.scala:74:29, :193:{26,52}, :200:{32,57}, :209:{32,63}, :211:65, :235:16, :236:61, :261:16, :263:60
+    else begin	// src/main/scala/cpu/Rv32Core.scala:59:7
+      automatic logic _GEN = _control_io_action == 3'h6;	// src/main/scala/cpu/Rv32Core.scala:78:23, :257:26
+      automatic logic _GEN_0 = _control_io_action == 3'h5;	// src/main/scala/cpu/Rv32Core.scala:78:23, :264:32
+      automatic logic _GEN_1 = _control_io_action == 3'h4;	// src/main/scala/cpu/Rv32Core.scala:78:23, :139:67, :273:32
+      automatic logic _GEN_2 = _control_io_action == 3'h2;	// src/main/scala/cpu/Rv32Core.scala:78:23, :286:32
+      automatic logic _GEN_3 =
+        _idExAdvances_T_1 | _csrFile_io_mretValid_T | frontend_io_output_ready;	// src/main/scala/cpu/Rv32Core.scala:84:30, :248:49, :252:23, :253:23, :288:65, :289:17, :314:61, :315:17, :342:60, :343:17
+      automatic logic _GEN_4 = _GEN | _GEN_0;	// src/main/scala/cpu/Rv32Core.scala:257:{26,52}, :261:17, :264:{32,57}, :268:17, :273:62
+      automatic logic _GEN_5 = _GEN_2 | ~_GEN_3;	// src/main/scala/cpu/Rv32Core.scala:84:30, :286:{32,63}, :288:65, :289:17, :314:61, :315:17, :342:60, :343:17
+      automatic logic _GEN_6 = _GEN | _GEN_0 | _GEN_1;	// src/main/scala/cpu/Rv32Core.scala:257:{26,52}, :260:17, :264:{32,57}, :267:17, :273:{32,62}, :282:17, :286:63
+      automatic logic _GEN_7 = _idExAdvances_T_1 | _csrFile_io_mretValid_T;	// src/main/scala/cpu/Rv32Core.scala:252:23, :253:23, :288:65, :313:16, :314:61, :340:16, :342:60
+      automatic logic _GEN_8 = _GEN | _GEN_0 | _GEN_1 | _GEN_2 | _GEN_7;	// src/main/scala/cpu/Rv32Core.scala:82:29, :257:{26,52}, :264:{32,57}, :273:{32,62}, :286:{32,63}, :288:65, :313:16, :314:61, :340:16, :342:60
       ifId_valid <=
-        ~_GEN_7
-        & (_GEN_1 | _GEN_2
+        ~_GEN_6
+        & (_GEN_2 | _idExAdvances_T_1
              ? ifId_valid
-             : ~_GEN_3
-               & (frontend_io_output_ready ? _frontend_io_output_valid : ifId_valid));	// src/main/scala/cpu/Rv32Core.scala:66:24, :73:29, :189:49, :193:52, :194:16, :196:17, :200:57, :201:16, :203:17, :209:{32,63}, :211:{32,65}, :236:{32,61}, :262:16, :263:60, :302:16
-      if (_GEN_9 | ~(frontend_io_output_ready & _frontend_io_output_valid)) begin	// src/main/scala/cpu/Rv32Core.scala:66:24, :73:29, :74:29, :189:49, :193:52, :200:57, :209:63, :211:65, :236:61, :263:60, :303:36, :304:15
+             : ~_csrFile_io_mretValid_T
+               & (frontend_io_output_ready ? _frontend_io_output_valid : ifId_valid));	// src/main/scala/cpu/Rv32Core.scala:73:24, :81:29, :248:49, :252:23, :253:23, :257:52, :258:16, :260:17, :264:57, :265:16, :267:17, :273:62, :282:17, :284:16, :286:{32,63}, :288:65, :314:61, :341:16, :342:60, :383:16
+      if (_GEN_8 | ~(frontend_io_output_ready & _frontend_io_output_valid)) begin	// src/main/scala/cpu/Rv32Core.scala:73:24, :81:29, :82:29, :248:49, :257:52, :264:57, :273:62, :286:63, :288:65, :314:61, :342:60, :384:36, :385:15
       end
-      else begin	// src/main/scala/cpu/Rv32Core.scala:73:29, :193:52, :200:57, :209:63, :211:65, :236:61, :263:60
-        ifId_pc <= _frontend_io_output_bits_pc;	// src/main/scala/cpu/Rv32Core.scala:66:24, :73:29
-        ifId_inst <= _frontend_io_output_bits_inst;	// src/main/scala/cpu/Rv32Core.scala:66:24, :73:29
-        ifId_fetchError <= _frontend_io_output_bits_error;	// src/main/scala/cpu/Rv32Core.scala:66:24, :73:29
+      else begin	// src/main/scala/cpu/Rv32Core.scala:81:29, :257:52, :264:57, :273:62, :286:63, :288:65, :314:61, :342:60
+        ifId_pc <= _frontend_io_output_bits_pc;	// src/main/scala/cpu/Rv32Core.scala:73:24, :81:29
+        ifId_inst <= _frontend_io_output_bits_inst;	// src/main/scala/cpu/Rv32Core.scala:73:24, :81:29
+        ifId_fetchError <= _frontend_io_output_bits_error;	// src/main/scala/cpu/Rv32Core.scala:73:24, :81:29
       end
       idEx_valid <=
-        ~_GEN_7
-        & (_GEN_1
+        ~_GEN_6
+        & (_GEN_2
              ? idEx_valid
-             : ~_GEN_8 & (frontend_io_output_ready ? ifId_valid : idEx_valid));	// src/main/scala/cpu/Rv32Core.scala:73:29, :74:29, :189:49, :193:52, :195:16, :196:17, :200:57, :202:16, :203:17, :209:{32,63}, :211:65, :235:16, :236:61, :261:16, :263:60, :288:16
-      if (_GEN_9 | ~frontend_io_output_ready) begin	// src/main/scala/cpu/Rv32Core.scala:74:29, :189:49, :193:52, :200:57, :209:63, :211:65, :236:61, :263:60
+             : ~_GEN_7 & (frontend_io_output_ready ? ifId_valid : idEx_valid));	// src/main/scala/cpu/Rv32Core.scala:81:29, :82:29, :248:49, :257:52, :259:16, :260:17, :264:57, :266:16, :267:17, :273:62, :282:17, :283:16, :286:{32,63}, :288:65, :313:16, :314:61, :340:16, :342:60, :368:16
+      if (_GEN_8 | ~frontend_io_output_ready) begin	// src/main/scala/cpu/Rv32Core.scala:82:29, :248:49, :257:52, :264:57, :273:62, :286:63, :288:65, :314:61, :342:60
       end
-      else begin	// src/main/scala/cpu/Rv32Core.scala:74:29, :193:52, :200:57, :209:63, :211:65, :236:61, :263:60
-        idEx_pc <= ifId_pc;	// src/main/scala/cpu/Rv32Core.scala:73:29, :74:29
-        idEx_inst <= ifId_inst;	// src/main/scala/cpu/Rv32Core.scala:73:29, :74:29
-        idEx_control_legal <= _decoder_io_control_legal;	// src/main/scala/cpu/Rv32Core.scala:67:23, :74:29
-        idEx_control_rs1Used <= _decoder_io_control_rs1Used;	// src/main/scala/cpu/Rv32Core.scala:67:23, :74:29
-        idEx_control_rs2Used <= _decoder_io_control_rs2Used;	// src/main/scala/cpu/Rv32Core.scala:67:23, :74:29
-        idEx_control_aluOp <= _decoder_io_control_aluOp;	// src/main/scala/cpu/Rv32Core.scala:67:23, :74:29
-        idEx_control_op1Sel <= _decoder_io_control_op1Sel;	// src/main/scala/cpu/Rv32Core.scala:67:23, :74:29
-        idEx_control_op2Sel <= _decoder_io_control_op2Sel;	// src/main/scala/cpu/Rv32Core.scala:67:23, :74:29
-        idEx_control_branchOp <= _decoder_io_control_branchOp;	// src/main/scala/cpu/Rv32Core.scala:67:23, :74:29
-        idEx_control_memRead <= _decoder_io_control_memRead;	// src/main/scala/cpu/Rv32Core.scala:67:23, :74:29
-        idEx_control_memWrite <= _decoder_io_control_memWrite;	// src/main/scala/cpu/Rv32Core.scala:67:23, :74:29
-        idEx_control_memWidth <= _decoder_io_control_memWidth;	// src/main/scala/cpu/Rv32Core.scala:67:23, :74:29
-        idEx_control_memUnsigned <= _decoder_io_control_memUnsigned;	// src/main/scala/cpu/Rv32Core.scala:67:23, :74:29
-        idEx_control_regWrite <= _decoder_io_control_regWrite;	// src/main/scala/cpu/Rv32Core.scala:67:23, :74:29
-        idEx_control_wbSel <= _decoder_io_control_wbSel;	// src/main/scala/cpu/Rv32Core.scala:67:23, :74:29
-        idEx_immediate <= _decoder_io_immediate;	// src/main/scala/cpu/Rv32Core.scala:67:23, :74:29
-        idEx_rs1 <= _decoder_io_rs1;	// src/main/scala/cpu/Rv32Core.scala:67:23, :74:29
-        idEx_rs2 <= _decoder_io_rs2;	// src/main/scala/cpu/Rv32Core.scala:67:23, :74:29
-        idEx_rd <= _decoder_io_rd;	// src/main/scala/cpu/Rv32Core.scala:67:23, :74:29
-        idEx_rs1Value <= _regFile_io_rs1Data;	// src/main/scala/cpu/Rv32Core.scala:68:23, :74:29
-        idEx_rs2Value <= _regFile_io_rs2Data;	// src/main/scala/cpu/Rv32Core.scala:68:23, :74:29
+      else begin	// src/main/scala/cpu/Rv32Core.scala:82:29, :257:52, :264:57, :273:62, :286:63, :288:65, :314:61, :342:60
+        idEx_pc <= ifId_pc;	// src/main/scala/cpu/Rv32Core.scala:81:29, :82:29
+        idEx_inst <= ifId_inst;	// src/main/scala/cpu/Rv32Core.scala:81:29, :82:29
+        idEx_control_legal <= _decoder_io_control_legal;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_control_rs1Used <= _decoder_io_control_rs1Used;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_control_rs2Used <= _decoder_io_control_rs2Used;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_control_aluOp <= _decoder_io_control_aluOp;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_control_op1Sel <= _decoder_io_control_op1Sel;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_control_op2Sel <= _decoder_io_control_op2Sel;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_control_branchOp <= _decoder_io_control_branchOp;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_control_memRead <= _decoder_io_control_memRead;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_control_memWrite <= _decoder_io_control_memWrite;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_control_memWidth <= _decoder_io_control_memWidth;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_control_memUnsigned <= _decoder_io_control_memUnsigned;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_control_regWrite <= _decoder_io_control_regWrite;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_control_wbSel <= _decoder_io_control_wbSel;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_control_csrOp <= _decoder_io_control_csrOp;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_control_csrImmediate <= _decoder_io_control_csrImmediate;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_control_mret <= _decoder_io_control_mret;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_immediate <= _decoder_io_immediate;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_rs1 <= _decoder_io_rs1;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_rs2 <= _decoder_io_rs2;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_rd <= _decoder_io_rd;	// src/main/scala/cpu/Rv32Core.scala:74:23, :82:29
+        idEx_rs1Value <= _regFile_io_rs1Data;	// src/main/scala/cpu/Rv32Core.scala:75:23, :82:29
+        idEx_rs2Value <= _regFile_io_rs2Data;	// src/main/scala/cpu/Rv32Core.scala:75:23, :82:29
         idEx_exceptionValid <=
           ifId_fetchError | ~_decoder_io_control_legal | _decoder_io_control_ebreak
-          | _decoder_io_control_ecall;	// src/main/scala/cpu/Rv32Core.scala:67:23, :73:29, :74:29, :174:{46,49,75}, :175:31
+          | _decoder_io_control_ecall;	// src/main/scala/cpu/Rv32Core.scala:74:23, :81:29, :82:29, :228:{46,49,75}, :229:31
         idEx_exceptionCause <=
           ifId_fetchError
             ? 4'h1
-            : _decoder_io_control_ebreak ? 4'h3 : _decoder_io_control_ecall ? 4'hB : 4'h2;	// src/main/scala/chisel3/util/Mux.scala:130:16, src/main/scala/cpu/Rv32Core.scala:67:23, :73:29, :74:29
+            : _decoder_io_control_ebreak ? 4'h3 : _decoder_io_control_ecall ? 4'hB : 4'h2;	// src/main/scala/chisel3/util/Mux.scala:130:16, src/main/scala/cpu/Rv32Core.scala:74:23, :81:29, :82:29, :113:26, :224:8
+        idEx_exceptionValue <=
+          ifId_fetchError ? ifId_pc : _decoder_io_control_legal ? 32'h0 : ifId_inst;	// src/main/scala/chisel3/util/Mux.scala:130:16, src/main/scala/cpu/Rv32Core.scala:74:23, :81:29, :82:29
       end
-      exMem_valid <= ~_GEN_7 & (_GEN_1 | ~_GEN_4 ? exMem_valid : idEx_valid);	// src/main/scala/cpu/Rv32Core.scala:74:29, :75:30, :76:30, :193:52, :196:17, :200:57, :203:17, :209:{32,63}, :211:65, :212:17, :236:61, :237:17, :263:60, :264:17
-      if (_GEN_6) begin	// src/main/scala/cpu/Rv32Core.scala:75:30, :76:30, :193:52, :200:57, :209:63, :211:65
+      exMem_valid <= ~_GEN_6 & (_GEN_5 ? exMem_valid : idEx_valid);	// src/main/scala/cpu/Rv32Core.scala:82:29, :83:30, :84:30, :257:52, :260:17, :264:57, :267:17, :273:62, :282:17, :286:63, :288:65
+      if (_GEN | _GEN_0 | _GEN_1 | _GEN_2 | ~_GEN_3) begin	// src/main/scala/cpu/Rv32Core.scala:83:30, :84:30, :257:{26,52}, :264:{32,57}, :273:{32,62}, :286:{32,63}, :288:65, :289:17, :314:61, :315:17, :342:60, :343:17
       end
-      else begin	// src/main/scala/cpu/Rv32Core.scala:75:30, :193:52, :200:57, :209:63, :211:65
-        exMem_pc <= idEx_pc;	// src/main/scala/cpu/Rv32Core.scala:74:29, :75:30
-        exMem_inst <= idEx_inst;	// src/main/scala/cpu/Rv32Core.scala:74:29, :75:30
-        exMem_legal <= idEx_control_legal;	// src/main/scala/cpu/Rv32Core.scala:74:29, :75:30
-        exMem_aluResult <= _execute_io_aluResult;	// src/main/scala/cpu/Rv32Core.scala:69:23, :75:30
-        exMem_rd <= idEx_rd;	// src/main/scala/cpu/Rv32Core.scala:74:29, :75:30
-        exMem_regWrite <= idEx_control_regWrite;	// src/main/scala/cpu/Rv32Core.scala:74:29, :75:30
-        exMem_wbSel <= idEx_control_wbSel;	// src/main/scala/cpu/Rv32Core.scala:74:29, :75:30
-        exMem_memRead <= idEx_control_memRead;	// src/main/scala/cpu/Rv32Core.scala:74:29, :75:30
-        exMem_memWrite <= idEx_control_memWrite;	// src/main/scala/cpu/Rv32Core.scala:74:29, :75:30
-        exMem_memWidth <= idEx_control_memWidth;	// src/main/scala/cpu/Rv32Core.scala:74:29, :75:30
-        exMem_memUnsigned <= idEx_control_memUnsigned;	// src/main/scala/cpu/Rv32Core.scala:74:29, :75:30
-        exMem_storeData <= forwardedRs2;	// src/main/scala/cpu/Rv32Core.scala:75:30, :131:69
-        exMem_exceptionValid <= idEx_exceptionValid | branchTargetMisaligned;	// src/main/scala/cpu/Rv32Core.scala:74:29, :75:30, :168:48, :170:51
-        exMem_exceptionCause <= idEx_exceptionValid ? idEx_exceptionCause : 4'h0;	// src/main/scala/cpu/Rv32Core.scala:74:29, :75:30, :171:34
+      else begin	// src/main/scala/cpu/Rv32Core.scala:83:30, :257:52, :264:57, :273:62, :286:63, :288:65
+        exMem_pc <= idEx_pc;	// src/main/scala/cpu/Rv32Core.scala:82:29, :83:30
+        exMem_inst <= idEx_inst;	// src/main/scala/cpu/Rv32Core.scala:82:29, :83:30
+        exMem_legal <= idEx_control_legal;	// src/main/scala/cpu/Rv32Core.scala:82:29, :83:30
+        exMem_aluResult <=
+          (|idEx_control_csrOp) ? _csrFile_io_readData : _execute_io_aluResult;	// src/main/scala/cpu/Rv32Core.scala:76:23, :79:23, :82:29, :83:30, :149:43, :194:26
+        exMem_rd <= idEx_rd;	// src/main/scala/cpu/Rv32Core.scala:82:29, :83:30
+        exMem_regWrite <= idEx_control_regWrite;	// src/main/scala/cpu/Rv32Core.scala:82:29, :83:30
+        exMem_wbSel <= idEx_control_wbSel;	// src/main/scala/cpu/Rv32Core.scala:82:29, :83:30
+        exMem_memRead <= idEx_control_memRead;	// src/main/scala/cpu/Rv32Core.scala:82:29, :83:30
+        exMem_memWrite <= idEx_control_memWrite;	// src/main/scala/cpu/Rv32Core.scala:82:29, :83:30
+        exMem_memWidth <= idEx_control_memWidth;	// src/main/scala/cpu/Rv32Core.scala:82:29, :83:30
+        exMem_memUnsigned <= idEx_control_memUnsigned;	// src/main/scala/cpu/Rv32Core.scala:82:29, :83:30
+        exMem_storeData <= forwardedRs2;	// src/main/scala/cpu/Rv32Core.scala:83:30, :144:69
+        exMem_exceptionValid <=
+          idEx_exceptionValid | branchTargetMisaligned | csrAccessIllegal;	// src/main/scala/cpu/Rv32Core.scala:82:29, :83:30, :179:41, :218:54, :222:{51,77}
+        exMem_exceptionCause <=
+          idEx_exceptionValid
+            ? idEx_exceptionCause
+            : {2'h0, ~branchTargetMisaligned, 1'h0};	// src/main/scala/cpu/Rv32Core.scala:82:29, :83:30, :218:54, :223:34, :224:8
+        exMem_exceptionValue <=
+          idEx_exceptionValid
+            ? idEx_exceptionValue
+            : branchTargetMisaligned ? _execute_io_branchTarget : idEx_inst;	// src/main/scala/cpu/Rv32Core.scala:76:23, :82:29, :83:30, :218:54, :225:34, :226:8
       end
-      memWb_valid <= ~_GEN_5 & (_GEN_4 ? exMem_valid : memWb_valid);	// src/main/scala/cpu/Rv32Core.scala:75:30, :76:30, :193:52, :197:17, :200:57, :204:17, :209:63, :210:17, :211:65, :212:17, :236:61, :237:17, :263:60, :264:17
-      if (_GEN_6) begin	// src/main/scala/cpu/Rv32Core.scala:76:30, :193:52, :200:57, :209:63, :211:65
+      memWb_valid <=
+        ~_GEN_4 & (_GEN_1 ? exMem_valid : ~_GEN_2 & (_GEN_3 ? exMem_valid : memWb_valid));	// src/main/scala/cpu/Rv32Core.scala:83:30, :84:30, :257:52, :261:17, :264:57, :268:17, :273:{32,62}, :274:17, :286:{32,63}, :287:17, :288:65, :289:17, :314:61, :315:17, :342:60, :343:17
+      if (_GEN_4 | ~(_GEN_1 | ~_GEN_5)) begin	// src/main/scala/cpu/Rv32Core.scala:84:30, :257:52, :261:17, :264:57, :268:17, :273:{32,62}, :275:14, :286:63, :288:65
       end
-      else begin	// src/main/scala/cpu/Rv32Core.scala:76:30, :193:52, :200:57, :209:63, :211:65
-        memWb_pc <= exMem_pc;	// src/main/scala/cpu/Rv32Core.scala:75:30, :76:30
-        memWb_inst <= exMem_inst;	// src/main/scala/cpu/Rv32Core.scala:75:30, :76:30
-        memWb_legal <= exMem_legal;	// src/main/scala/cpu/Rv32Core.scala:75:30, :76:30
-        memWb_rd <= exMem_rd;	// src/main/scala/cpu/Rv32Core.scala:75:30, :76:30
-        memWb_regWrite <= exMem_regWrite;	// src/main/scala/cpu/Rv32Core.scala:75:30, :76:30
-        memWb_writeData <= exMem_memRead ? _loadStore_io_loadData : exMemForwardValue;	// src/main/scala/cpu/Rv32Core.scala:70:25, :75:30, :76:30, :126:30, :191:27
+      else begin	// src/main/scala/cpu/Rv32Core.scala:84:30, :257:52, :264:57, :273:62
+        memWb_pc <= exMem_pc;	// src/main/scala/cpu/Rv32Core.scala:83:30, :84:30
+        memWb_inst <= exMem_inst;	// src/main/scala/cpu/Rv32Core.scala:83:30, :84:30
+        memWb_legal <= exMem_legal;	// src/main/scala/cpu/Rv32Core.scala:83:30, :84:30
+        memWb_rd <= exMem_rd;	// src/main/scala/cpu/Rv32Core.scala:83:30, :84:30
+        memWb_regWrite <= exMem_regWrite;	// src/main/scala/cpu/Rv32Core.scala:83:30, :84:30
+        memWb_writeData <= exMem_memRead ? _loadStore_io_loadData : exMemForwardValue;	// src/main/scala/cpu/Rv32Core.scala:77:25, :83:30, :84:30, :139:30, :250:27
       end
       memoryRequestSent <=
-        ~(_GEN | _GEN_0 | io_dmem_resp_ready_0 & io_dmem_resp_valid)
-        & (io_dmem_req_ready & io_dmem_req_valid_0 | memoryRequestSent);	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/cpu/Rv32Core.scala:77:42, :104:{40,68}, :110:41, :112:26, :113:23, :115:27, :116:23, :193:{26,52}, :198:23, :200:{32,57}, :205:23
-      haltedReg <= ~_GEN & (_GEN_0 & trapEvent | haltedReg);	// src/main/scala/cpu/Rv32Core.scala:78:34, :98:31, :193:{26,52}, :199:15, :200:{32,57}, :206:21, :207:17
+        ~(_GEN | _GEN_0 | _GEN_1 | io_dmem_resp_ready_0 & io_dmem_resp_valid)
+        & (io_dmem_req_ready & io_dmem_req_valid_0 | memoryRequestSent);	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/cpu/Rv32Core.scala:85:42, :117:{40,68}, :123:41, :125:26, :126:23, :128:27, :129:23, :257:{26,52}, :262:23, :264:{32,57}, :269:23, :273:{32,62}, :285:23
+      haltedReg <= ~_GEN & (_GEN_0 & debugHaltEvent | haltedReg);	// src/main/scala/cpu/Rv32Core.scala:86:34, :112:{34,58}, :257:{26,52}, :263:15, :264:{32,57}, :270:25, :271:17
     end
   end // always @(posedge)
-  `ifdef ENABLE_INITIAL_REG_	// src/main/scala/cpu/Rv32Core.scala:57:7
-    `ifdef FIRRTL_BEFORE_INITIAL	// src/main/scala/cpu/Rv32Core.scala:57:7
-      `FIRRTL_BEFORE_INITIAL	// src/main/scala/cpu/Rv32Core.scala:57:7
+  `ifdef ENABLE_INITIAL_REG_	// src/main/scala/cpu/Rv32Core.scala:59:7
+    `ifdef FIRRTL_BEFORE_INITIAL	// src/main/scala/cpu/Rv32Core.scala:59:7
+      `FIRRTL_BEFORE_INITIAL	// src/main/scala/cpu/Rv32Core.scala:59:7
     `endif // FIRRTL_BEFORE_INITIAL
-    initial begin	// src/main/scala/cpu/Rv32Core.scala:57:7
-      automatic logic [31:0] _RANDOM[0:16];	// src/main/scala/cpu/Rv32Core.scala:57:7
-      `ifdef INIT_RANDOM_PROLOG_	// src/main/scala/cpu/Rv32Core.scala:57:7
-        `INIT_RANDOM_PROLOG_	// src/main/scala/cpu/Rv32Core.scala:57:7
+    initial begin	// src/main/scala/cpu/Rv32Core.scala:59:7
+      automatic logic [31:0] _RANDOM[0:18];	// src/main/scala/cpu/Rv32Core.scala:59:7
+      `ifdef INIT_RANDOM_PROLOG_	// src/main/scala/cpu/Rv32Core.scala:59:7
+        `INIT_RANDOM_PROLOG_	// src/main/scala/cpu/Rv32Core.scala:59:7
       `endif // INIT_RANDOM_PROLOG_
-      `ifdef RANDOMIZE_REG_INIT	// src/main/scala/cpu/Rv32Core.scala:57:7
-        for (logic [4:0] i = 5'h0; i < 5'h11; i += 5'h1) begin
-          _RANDOM[i] = `RANDOM;	// src/main/scala/cpu/Rv32Core.scala:57:7
-        end	// src/main/scala/cpu/Rv32Core.scala:57:7
-        ifId_valid = _RANDOM[5'h0][0];	// src/main/scala/cpu/Rv32Core.scala:57:7, :73:29
-        ifId_pc = {_RANDOM[5'h0][31:1], _RANDOM[5'h1][0]};	// src/main/scala/cpu/Rv32Core.scala:57:7, :73:29
-        ifId_inst = {_RANDOM[5'h1][31:1], _RANDOM[5'h2][0]};	// src/main/scala/cpu/Rv32Core.scala:57:7, :73:29
-        ifId_fetchError = _RANDOM[5'h2][1];	// src/main/scala/cpu/Rv32Core.scala:57:7, :73:29
-        idEx_valid = _RANDOM[5'h2][2];	// src/main/scala/cpu/Rv32Core.scala:57:7, :73:29, :74:29
-        idEx_pc = {_RANDOM[5'h2][31:3], _RANDOM[5'h3][2:0]};	// src/main/scala/cpu/Rv32Core.scala:57:7, :73:29, :74:29
-        idEx_inst = {_RANDOM[5'h3][31:3], _RANDOM[5'h4][2:0]};	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_control_legal = _RANDOM[5'h4][4];	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_control_rs1Used = _RANDOM[5'h4][5];	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_control_rs2Used = _RANDOM[5'h4][6];	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_control_aluOp = _RANDOM[5'h4][10:7];	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_control_op1Sel = _RANDOM[5'h4][12:11];	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_control_op2Sel = _RANDOM[5'h4][13];	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_control_branchOp = _RANDOM[5'h4][17:14];	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_control_memRead = _RANDOM[5'h4][18];	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_control_memWrite = _RANDOM[5'h4][19];	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_control_memWidth = _RANDOM[5'h4][21:20];	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_control_memUnsigned = _RANDOM[5'h4][22];	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_control_regWrite = _RANDOM[5'h4][23];	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_control_wbSel = _RANDOM[5'h4][25:24];	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_immediate = {_RANDOM[5'h4][31:29], _RANDOM[5'h5][28:0]};	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_rs1 = {_RANDOM[5'h5][31:29], _RANDOM[5'h6][1:0]};	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_rs2 = _RANDOM[5'h6][6:2];	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_rd = _RANDOM[5'h6][11:7];	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_rs1Value = {_RANDOM[5'h6][31:12], _RANDOM[5'h7][11:0]};	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_rs2Value = {_RANDOM[5'h7][31:12], _RANDOM[5'h8][11:0]};	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_exceptionValid = _RANDOM[5'h8][12];	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        idEx_exceptionCause = _RANDOM[5'h8][16:13];	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29
-        exMem_valid = _RANDOM[5'h8][17];	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29, :75:30
-        exMem_pc = {_RANDOM[5'h8][31:18], _RANDOM[5'h9][17:0]};	// src/main/scala/cpu/Rv32Core.scala:57:7, :74:29, :75:30
-        exMem_inst = {_RANDOM[5'h9][31:18], _RANDOM[5'hA][17:0]};	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-        exMem_legal = _RANDOM[5'hA][18];	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-        exMem_aluResult = {_RANDOM[5'hA][31:19], _RANDOM[5'hB][18:0]};	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-        exMem_rd = _RANDOM[5'hB][23:19];	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-        exMem_regWrite = _RANDOM[5'hB][24];	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-        exMem_wbSel = _RANDOM[5'hB][26:25];	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-        exMem_memRead = _RANDOM[5'hB][27];	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-        exMem_memWrite = _RANDOM[5'hB][28];	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-        exMem_memWidth = _RANDOM[5'hB][30:29];	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-        exMem_memUnsigned = _RANDOM[5'hB][31];	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-        exMem_storeData = _RANDOM[5'hC];	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-        exMem_exceptionValid = _RANDOM[5'hD][0];	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-        exMem_exceptionCause = _RANDOM[5'hD][4:1];	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-        memWb_valid = _RANDOM[5'hD][5];	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30, :76:30
-        memWb_pc = {_RANDOM[5'hD][31:6], _RANDOM[5'hE][5:0]};	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30, :76:30
-        memWb_inst = {_RANDOM[5'hE][31:6], _RANDOM[5'hF][5:0]};	// src/main/scala/cpu/Rv32Core.scala:57:7, :76:30
-        memWb_legal = _RANDOM[5'hF][6];	// src/main/scala/cpu/Rv32Core.scala:57:7, :76:30
-        memWb_rd = _RANDOM[5'hF][11:7];	// src/main/scala/cpu/Rv32Core.scala:57:7, :76:30
-        memWb_regWrite = _RANDOM[5'hF][12];	// src/main/scala/cpu/Rv32Core.scala:57:7, :76:30
-        memWb_writeData = {_RANDOM[5'hF][31:13], _RANDOM[5'h10][12:0]};	// src/main/scala/cpu/Rv32Core.scala:57:7, :76:30
-        memoryRequestSent = _RANDOM[5'h10][13];	// src/main/scala/cpu/Rv32Core.scala:57:7, :76:30, :77:42
-        haltedReg = _RANDOM[5'h10][14];	// src/main/scala/cpu/Rv32Core.scala:57:7, :76:30, :78:34
+      `ifdef RANDOMIZE_REG_INIT	// src/main/scala/cpu/Rv32Core.scala:59:7
+        for (logic [4:0] i = 5'h0; i < 5'h13; i += 5'h1) begin
+          _RANDOM[i] = `RANDOM;	// src/main/scala/cpu/Rv32Core.scala:59:7
+        end	// src/main/scala/cpu/Rv32Core.scala:59:7
+        ifId_valid = _RANDOM[5'h0][0];	// src/main/scala/cpu/Rv32Core.scala:59:7, :81:29
+        ifId_pc = {_RANDOM[5'h0][31:1], _RANDOM[5'h1][0]};	// src/main/scala/cpu/Rv32Core.scala:59:7, :81:29
+        ifId_inst = {_RANDOM[5'h1][31:1], _RANDOM[5'h2][0]};	// src/main/scala/cpu/Rv32Core.scala:59:7, :81:29
+        ifId_fetchError = _RANDOM[5'h2][1];	// src/main/scala/cpu/Rv32Core.scala:59:7, :81:29
+        idEx_valid = _RANDOM[5'h2][2];	// src/main/scala/cpu/Rv32Core.scala:59:7, :81:29, :82:29
+        idEx_pc = {_RANDOM[5'h2][31:3], _RANDOM[5'h3][2:0]};	// src/main/scala/cpu/Rv32Core.scala:59:7, :81:29, :82:29
+        idEx_inst = {_RANDOM[5'h3][31:3], _RANDOM[5'h4][2:0]};	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_control_legal = _RANDOM[5'h4][4];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_control_rs1Used = _RANDOM[5'h4][5];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_control_rs2Used = _RANDOM[5'h4][6];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_control_aluOp = _RANDOM[5'h4][10:7];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_control_op1Sel = _RANDOM[5'h4][12:11];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_control_op2Sel = _RANDOM[5'h4][13];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_control_branchOp = _RANDOM[5'h4][17:14];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_control_memRead = _RANDOM[5'h4][18];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_control_memWrite = _RANDOM[5'h4][19];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_control_memWidth = _RANDOM[5'h4][21:20];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_control_memUnsigned = _RANDOM[5'h4][22];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_control_regWrite = _RANDOM[5'h4][23];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_control_wbSel = _RANDOM[5'h4][25:24];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_control_csrOp = _RANDOM[5'h4][30:29];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_control_csrImmediate = _RANDOM[5'h4][31];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_control_mret = _RANDOM[5'h5][0];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_immediate = {_RANDOM[5'h5][31:1], _RANDOM[5'h6][0]};	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_rs1 = _RANDOM[5'h6][5:1];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_rs2 = _RANDOM[5'h6][10:6];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_rd = _RANDOM[5'h6][15:11];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_rs1Value = {_RANDOM[5'h6][31:16], _RANDOM[5'h7][15:0]};	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_rs2Value = {_RANDOM[5'h7][31:16], _RANDOM[5'h8][15:0]};	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_exceptionValid = _RANDOM[5'h8][16];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_exceptionCause = _RANDOM[5'h8][20:17];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        idEx_exceptionValue = {_RANDOM[5'h8][31:21], _RANDOM[5'h9][20:0]};	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29
+        exMem_valid = _RANDOM[5'h9][21];	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29, :83:30
+        exMem_pc = {_RANDOM[5'h9][31:22], _RANDOM[5'hA][21:0]};	// src/main/scala/cpu/Rv32Core.scala:59:7, :82:29, :83:30
+        exMem_inst = {_RANDOM[5'hA][31:22], _RANDOM[5'hB][21:0]};	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30
+        exMem_legal = _RANDOM[5'hB][22];	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30
+        exMem_aluResult = {_RANDOM[5'hB][31:23], _RANDOM[5'hC][22:0]};	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30
+        exMem_rd = _RANDOM[5'hC][27:23];	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30
+        exMem_regWrite = _RANDOM[5'hC][28];	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30
+        exMem_wbSel = _RANDOM[5'hC][30:29];	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30
+        exMem_memRead = _RANDOM[5'hC][31];	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30
+        exMem_memWrite = _RANDOM[5'hD][0];	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30
+        exMem_memWidth = _RANDOM[5'hD][2:1];	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30
+        exMem_memUnsigned = _RANDOM[5'hD][3];	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30
+        exMem_storeData = {_RANDOM[5'hD][31:4], _RANDOM[5'hE][3:0]};	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30
+        exMem_exceptionValid = _RANDOM[5'hE][4];	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30
+        exMem_exceptionCause = _RANDOM[5'hE][8:5];	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30
+        exMem_exceptionValue = {_RANDOM[5'hE][31:9], _RANDOM[5'hF][8:0]};	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30
+        memWb_valid = _RANDOM[5'hF][9];	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30, :84:30
+        memWb_pc = {_RANDOM[5'hF][31:10], _RANDOM[5'h10][9:0]};	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30, :84:30
+        memWb_inst = {_RANDOM[5'h10][31:10], _RANDOM[5'h11][9:0]};	// src/main/scala/cpu/Rv32Core.scala:59:7, :84:30
+        memWb_legal = _RANDOM[5'h11][10];	// src/main/scala/cpu/Rv32Core.scala:59:7, :84:30
+        memWb_rd = _RANDOM[5'h11][15:11];	// src/main/scala/cpu/Rv32Core.scala:59:7, :84:30
+        memWb_regWrite = _RANDOM[5'h11][16];	// src/main/scala/cpu/Rv32Core.scala:59:7, :84:30
+        memWb_writeData = {_RANDOM[5'h11][31:17], _RANDOM[5'h12][16:0]};	// src/main/scala/cpu/Rv32Core.scala:59:7, :84:30
+        memoryRequestSent = _RANDOM[5'h12][17];	// src/main/scala/cpu/Rv32Core.scala:59:7, :84:30, :85:42
+        haltedReg = _RANDOM[5'h12][18];	// src/main/scala/cpu/Rv32Core.scala:59:7, :84:30, :86:34
       `endif // RANDOMIZE_REG_INIT
     end // initial
-    `ifdef FIRRTL_AFTER_INITIAL	// src/main/scala/cpu/Rv32Core.scala:57:7
-      `FIRRTL_AFTER_INITIAL	// src/main/scala/cpu/Rv32Core.scala:57:7
+    `ifdef FIRRTL_AFTER_INITIAL	// src/main/scala/cpu/Rv32Core.scala:59:7
+      `FIRRTL_AFTER_INITIAL	// src/main/scala/cpu/Rv32Core.scala:59:7
     `endif // FIRRTL_AFTER_INITIAL
   `endif // ENABLE_INITIAL_REG_
-  Frontend frontend (	// src/main/scala/cpu/Rv32Core.scala:66:24
+  Frontend frontend (	// src/main/scala/cpu/Rv32Core.scala:73:24
     .clock                   (clock),
     .reset                   (reset),
-    .io_imem_req_ready       (io_imem_req_ready & ~haltedReg),	// src/main/scala/cpu/Rv32Core.scala:78:34, :80:54, :82:51
+    .io_imem_req_ready       (io_imem_req_ready & ~haltedReg),	// src/main/scala/cpu/Rv32Core.scala:86:34, :88:54, :90:51
     .io_imem_req_valid       (_frontend_io_imem_req_valid),
     .io_imem_req_bits_addr   (io_imem_req_bits_addr),
     .io_imem_resp_ready      (_frontend_io_imem_resp_ready),
-    .io_imem_resp_valid      (io_imem_resp_valid & ~haltedReg),	// src/main/scala/cpu/Rv32Core.scala:78:34, :80:54, :83:53
+    .io_imem_resp_valid      (io_imem_resp_valid & ~haltedReg),	// src/main/scala/cpu/Rv32Core.scala:86:34, :88:54, :91:53
     .io_imem_resp_bits_rdata (io_imem_resp_bits_rdata),
     .io_imem_resp_bits_error (io_imem_resp_bits_error),
-    .io_output_ready         (frontend_io_output_ready),	// src/main/scala/cpu/Rv32Core.scala:189:49
+    .io_output_ready         (frontend_io_output_ready),	// src/main/scala/cpu/Rv32Core.scala:248:49
     .io_output_valid         (_frontend_io_output_valid),
     .io_output_bits_pc       (_frontend_io_output_bits_pc),
     .io_output_bits_inst     (_frontend_io_output_bits_inst),
     .io_output_bits_error    (_frontend_io_output_bits_error),
-    .io_redirectValid        (redirectValid),	// src/main/scala/cpu/Rv32Core.scala:169:{39,66,81}
-    .io_redirectPc           (_execute_io_branchTarget)	// src/main/scala/cpu/Rv32Core.scala:69:23
-  );	// src/main/scala/cpu/Rv32Core.scala:66:24
-  Decoder decoder (	// src/main/scala/cpu/Rv32Core.scala:67:23
-    .io_inst                (ifId_inst),	// src/main/scala/cpu/Rv32Core.scala:73:29
-    .io_control_legal       (_decoder_io_control_legal),
-    .io_control_rs1Used     (_decoder_io_control_rs1Used),
-    .io_control_rs2Used     (_decoder_io_control_rs2Used),
-    .io_control_aluOp       (_decoder_io_control_aluOp),
-    .io_control_op1Sel      (_decoder_io_control_op1Sel),
-    .io_control_op2Sel      (_decoder_io_control_op2Sel),
-    .io_control_branchOp    (_decoder_io_control_branchOp),
-    .io_control_memRead     (_decoder_io_control_memRead),
-    .io_control_memWrite    (_decoder_io_control_memWrite),
-    .io_control_memWidth    (_decoder_io_control_memWidth),
-    .io_control_memUnsigned (_decoder_io_control_memUnsigned),
-    .io_control_regWrite    (_decoder_io_control_regWrite),
-    .io_control_wbSel       (_decoder_io_control_wbSel),
-    .io_control_ecall       (_decoder_io_control_ecall),
-    .io_control_ebreak      (_decoder_io_control_ebreak),
-    .io_immediate           (_decoder_io_immediate),
-    .io_rs1                 (_decoder_io_rs1),
-    .io_rs2                 (_decoder_io_rs2),
-    .io_rd                  (_decoder_io_rd)
-  );	// src/main/scala/cpu/Rv32Core.scala:67:23
-  RegFile regFile (	// src/main/scala/cpu/Rv32Core.scala:68:23
+    .io_redirectValid        (csrFile_io_trapValid | redirectValid),	// src/main/scala/cpu/Rv32Core.scala:173:44, :220:{39,54}, :246:67
+    .io_redirectPc
+      (csrFile_io_trapValid
+         ? _csrFile_io_trapVector
+         : mretRequest ? _csrFile_io_returnPc : _execute_io_branchTarget)	// src/main/scala/cpu/Rv32Core.scala:76:23, :79:23, :173:44, :216:{32,56,78}, :221:27, :247:32
+  );	// src/main/scala/cpu/Rv32Core.scala:73:24
+  Decoder decoder (	// src/main/scala/cpu/Rv32Core.scala:74:23
+    .io_inst                 (ifId_inst),	// src/main/scala/cpu/Rv32Core.scala:81:29
+    .io_control_legal        (_decoder_io_control_legal),
+    .io_control_rs1Used      (_decoder_io_control_rs1Used),
+    .io_control_rs2Used      (_decoder_io_control_rs2Used),
+    .io_control_aluOp        (_decoder_io_control_aluOp),
+    .io_control_op1Sel       (_decoder_io_control_op1Sel),
+    .io_control_op2Sel       (_decoder_io_control_op2Sel),
+    .io_control_branchOp     (_decoder_io_control_branchOp),
+    .io_control_memRead      (_decoder_io_control_memRead),
+    .io_control_memWrite     (_decoder_io_control_memWrite),
+    .io_control_memWidth     (_decoder_io_control_memWidth),
+    .io_control_memUnsigned  (_decoder_io_control_memUnsigned),
+    .io_control_regWrite     (_decoder_io_control_regWrite),
+    .io_control_wbSel        (_decoder_io_control_wbSel),
+    .io_control_ecall        (_decoder_io_control_ecall),
+    .io_control_ebreak       (_decoder_io_control_ebreak),
+    .io_control_csrOp        (_decoder_io_control_csrOp),
+    .io_control_csrImmediate (_decoder_io_control_csrImmediate),
+    .io_control_mret         (_decoder_io_control_mret),
+    .io_immediate            (_decoder_io_immediate),
+    .io_rs1                  (_decoder_io_rs1),
+    .io_rs2                  (_decoder_io_rs2),
+    .io_rd                   (_decoder_io_rd)
+  );	// src/main/scala/cpu/Rv32Core.scala:74:23
+  RegFile regFile (	// src/main/scala/cpu/Rv32Core.scala:75:23
     .clock          (clock),
     .reset          (reset),
-    .io_rs1         (_decoder_io_rs1),	// src/main/scala/cpu/Rv32Core.scala:67:23
-    .io_rs2         (_decoder_io_rs2),	// src/main/scala/cpu/Rv32Core.scala:67:23
-    .io_rd          (memWb_rd),	// src/main/scala/cpu/Rv32Core.scala:76:30
-    .io_writeEnable (_io_commit_writeEnable_T & memWb_regWrite),	// src/main/scala/cpu/Rv32Core.scala:76:30, :123:{41,56}
-    .io_writeData   (memWb_writeData),	// src/main/scala/cpu/Rv32Core.scala:76:30
+    .io_rs1         (_decoder_io_rs1),	// src/main/scala/cpu/Rv32Core.scala:74:23
+    .io_rs2         (_decoder_io_rs2),	// src/main/scala/cpu/Rv32Core.scala:74:23
+    .io_rd          (memWb_rd),	// src/main/scala/cpu/Rv32Core.scala:84:30
+    .io_writeEnable (_io_commit_writeEnable_T & memWb_regWrite),	// src/main/scala/cpu/Rv32Core.scala:84:30, :136:{41,56}
+    .io_writeData   (memWb_writeData),	// src/main/scala/cpu/Rv32Core.scala:84:30
     .io_rs1Data     (_regFile_io_rs1Data),
     .io_rs2Data     (_regFile_io_rs2Data)
-  );	// src/main/scala/cpu/Rv32Core.scala:68:23
-  Execute execute (	// src/main/scala/cpu/Rv32Core.scala:69:23
+  );	// src/main/scala/cpu/Rv32Core.scala:75:23
+  Execute execute (	// src/main/scala/cpu/Rv32Core.scala:76:23
     .io_operand1
       (idEx_control_op1Sel == 2'h2
          ? 32'h0
-         : idEx_control_op1Sel == 2'h1 ? idEx_pc : forwardedRs1),	// src/main/scala/cpu/Rv32Core.scala:74:29, :127:69, :136:70
-    .io_operand2     (idEx_control_op2Sel ? idEx_immediate : forwardedRs2),	// src/main/scala/cpu/Rv32Core.scala:74:29, :131:69, :140:29
-    .io_rs1Value     (forwardedRs1),	// src/main/scala/cpu/Rv32Core.scala:127:69
-    .io_rs2Value     (forwardedRs2),	// src/main/scala/cpu/Rv32Core.scala:131:69
-    .io_pc           (idEx_pc),	// src/main/scala/cpu/Rv32Core.scala:74:29
-    .io_immediate    (idEx_immediate),	// src/main/scala/cpu/Rv32Core.scala:74:29
-    .io_aluOp        (idEx_control_aluOp),	// src/main/scala/cpu/Rv32Core.scala:74:29
-    .io_branchOp     (idEx_control_branchOp),	// src/main/scala/cpu/Rv32Core.scala:74:29
+         : idEx_control_op1Sel == 2'h1 ? idEx_pc : forwardedRs1),	// src/main/scala/cpu/Rv32Core.scala:82:29, :140:69, :183:70
+    .io_operand2     (idEx_control_op2Sel ? idEx_immediate : forwardedRs2),	// src/main/scala/cpu/Rv32Core.scala:82:29, :144:69, :187:29
+    .io_rs1Value     (forwardedRs1),	// src/main/scala/cpu/Rv32Core.scala:140:69
+    .io_rs2Value     (forwardedRs2),	// src/main/scala/cpu/Rv32Core.scala:144:69
+    .io_pc           (idEx_pc),	// src/main/scala/cpu/Rv32Core.scala:82:29
+    .io_immediate    (idEx_immediate),	// src/main/scala/cpu/Rv32Core.scala:82:29
+    .io_aluOp        (idEx_control_aluOp),	// src/main/scala/cpu/Rv32Core.scala:82:29
+    .io_branchOp     (idEx_control_branchOp),	// src/main/scala/cpu/Rv32Core.scala:82:29
     .io_aluResult    (_execute_io_aluResult),
     .io_branchTaken  (_execute_io_branchTaken),
     .io_branchTarget (_execute_io_branchTarget)
-  );	// src/main/scala/cpu/Rv32Core.scala:69:23
-  LoadStoreUnit loadStore (	// src/main/scala/cpu/Rv32Core.scala:70:25
-    .io_addr         (exMem_aluResult),	// src/main/scala/cpu/Rv32Core.scala:75:30
-    .io_memWidth     (exMem_memWidth),	// src/main/scala/cpu/Rv32Core.scala:75:30
-    .io_unsignedLoad (exMem_memUnsigned),	// src/main/scala/cpu/Rv32Core.scala:75:30
-    .io_storeData    (exMem_storeData),	// src/main/scala/cpu/Rv32Core.scala:75:30
+  );	// src/main/scala/cpu/Rv32Core.scala:76:23
+  LoadStoreUnit loadStore (	// src/main/scala/cpu/Rv32Core.scala:77:25
+    .io_addr         (exMem_aluResult),	// src/main/scala/cpu/Rv32Core.scala:83:30
+    .io_memWidth     (exMem_memWidth),	// src/main/scala/cpu/Rv32Core.scala:83:30
+    .io_unsignedLoad (exMem_memUnsigned),	// src/main/scala/cpu/Rv32Core.scala:83:30
+    .io_storeData    (exMem_storeData),	// src/main/scala/cpu/Rv32Core.scala:83:30
     .io_responseData (io_dmem_resp_bits_rdata),
     .io_misaligned   (_loadStore_io_misaligned),
     .io_wstrb        (_loadStore_io_wstrb),
     .io_wdata        (_loadStore_io_wdata),
     .io_loadData     (_loadStore_io_loadData)
-  );	// src/main/scala/cpu/Rv32Core.scala:70:25
-  PipelineControl control (	// src/main/scala/cpu/Rv32Core.scala:71:23
-    .io_exRs1            (idEx_rs1),	// src/main/scala/cpu/Rv32Core.scala:74:29
-    .io_exRs2            (idEx_rs2),	// src/main/scala/cpu/Rv32Core.scala:74:29
-    .io_exRs1Used        (idEx_valid & idEx_control_rs1Used),	// src/main/scala/cpu/Rv32Core.scala:74:29, :150:38
-    .io_exRs2Used        (idEx_valid & idEx_control_rs2Used),	// src/main/scala/cpu/Rv32Core.scala:74:29, :151:38
-    .io_exMemValid       (exMem_valid),	// src/main/scala/cpu/Rv32Core.scala:75:30
-    .io_exMemRegWrite    (exMem_regWrite),	// src/main/scala/cpu/Rv32Core.scala:75:30
-    .io_exMemResultReady (~exMem_memRead),	// src/main/scala/cpu/Rv32Core.scala:75:30, :154:34
-    .io_exMemRd          (exMem_rd),	// src/main/scala/cpu/Rv32Core.scala:75:30
-    .io_memWbValid       (memWb_valid),	// src/main/scala/cpu/Rv32Core.scala:76:30
-    .io_memWbRegWrite    (memWb_regWrite),	// src/main/scala/cpu/Rv32Core.scala:76:30
-    .io_memWbRd          (memWb_rd),	// src/main/scala/cpu/Rv32Core.scala:76:30
-    .io_idRs1            (_decoder_io_rs1),	// src/main/scala/cpu/Rv32Core.scala:67:23
-    .io_idRs2            (_decoder_io_rs2),	// src/main/scala/cpu/Rv32Core.scala:67:23
-    .io_idRs1Used        (ifId_valid & _decoder_io_control_rs1Used),	// src/main/scala/cpu/Rv32Core.scala:67:23, :73:29, :161:38
-    .io_idRs2Used        (ifId_valid & _decoder_io_control_rs2Used),	// src/main/scala/cpu/Rv32Core.scala:67:23, :73:29, :162:38
-    .io_idExValid        (idEx_valid),	// src/main/scala/cpu/Rv32Core.scala:74:29
-    .io_idExMemRead      (idEx_control_memRead & ~idEx_exceptionValid),	// src/main/scala/cpu/Rv32Core.scala:74:29, :164:{50,53}
-    .io_idExRd           (idEx_rd),	// src/main/scala/cpu/Rv32Core.scala:74:29
+  );	// src/main/scala/cpu/Rv32Core.scala:77:25
+  PipelineControl control (	// src/main/scala/cpu/Rv32Core.scala:78:23
+    .io_exRs1            (idEx_rs1),	// src/main/scala/cpu/Rv32Core.scala:82:29
+    .io_exRs2            (idEx_rs2),	// src/main/scala/cpu/Rv32Core.scala:82:29
+    .io_exRs1Used        (idEx_valid & idEx_control_rs1Used),	// src/main/scala/cpu/Rv32Core.scala:82:29, :198:38
+    .io_exRs2Used        (idEx_valid & idEx_control_rs2Used),	// src/main/scala/cpu/Rv32Core.scala:82:29, :199:38
+    .io_exMemValid       (exMem_valid),	// src/main/scala/cpu/Rv32Core.scala:83:30
+    .io_exMemRegWrite    (exMem_regWrite),	// src/main/scala/cpu/Rv32Core.scala:83:30
+    .io_exMemResultReady (~exMem_memRead),	// src/main/scala/cpu/Rv32Core.scala:83:30, :202:34
+    .io_exMemRd          (exMem_rd),	// src/main/scala/cpu/Rv32Core.scala:83:30
+    .io_memWbValid       (memWb_valid),	// src/main/scala/cpu/Rv32Core.scala:84:30
+    .io_memWbRegWrite    (memWb_regWrite),	// src/main/scala/cpu/Rv32Core.scala:84:30
+    .io_memWbRd          (memWb_rd),	// src/main/scala/cpu/Rv32Core.scala:84:30
+    .io_idRs1            (_decoder_io_rs1),	// src/main/scala/cpu/Rv32Core.scala:74:23
+    .io_idRs2            (_decoder_io_rs2),	// src/main/scala/cpu/Rv32Core.scala:74:23
+    .io_idRs1Used        (ifId_valid & _decoder_io_control_rs1Used),	// src/main/scala/cpu/Rv32Core.scala:74:23, :81:29, :209:38
+    .io_idRs2Used        (ifId_valid & _decoder_io_control_rs2Used),	// src/main/scala/cpu/Rv32Core.scala:74:23, :81:29, :210:38
+    .io_idExValid        (idEx_valid),	// src/main/scala/cpu/Rv32Core.scala:82:29
+    .io_idExMemRead      (idEx_control_memRead & ~idEx_exceptionValid),	// src/main/scala/cpu/Rv32Core.scala:82:29, :212:{50,53}
+    .io_idExRd           (idEx_rd),	// src/main/scala/cpu/Rv32Core.scala:82:29
     .io_resetActive      (reset),
-    .io_trap             (trapEvent | haltedReg),	// src/main/scala/cpu/Rv32Core.scala:78:34, :98:31, :183:32
-    .io_redirect         (redirectValid),	// src/main/scala/cpu/Rv32Core.scala:169:{39,66,81}
-    .io_memoryWait       (memoryWait),	// src/main/scala/cpu/Rv32Core.scala:95:{36,64}
+    .io_trap             (trapEvent | haltedReg),	// src/main/scala/cpu/Rv32Core.scala:86:34, :106:31, :241:32
+    .io_interrupt        (interruptEvent),	// src/main/scala/cpu/Rv32Core.scala:164:80, :165:{16,31}
+    .io_redirect         (redirectValid),	// src/main/scala/cpu/Rv32Core.scala:220:{39,54}
+    .io_memoryWait       (memoryWait),	// src/main/scala/cpu/Rv32Core.scala:103:{36,64}
     .io_forwardRs1       (_control_io_forwardRs1),
     .io_forwardRs2       (_control_io_forwardRs2),
     .io_action           (_control_io_action)
-  );	// src/main/scala/cpu/Rv32Core.scala:71:23
-  assign io_imem_req_valid = _frontend_io_imem_req_valid & ~haltedReg;	// src/main/scala/cpu/Rv32Core.scala:57:7, :66:24, :78:34, :80:{51,54}
-  assign io_imem_req_bits_write = 1'h0;	// src/main/scala/cpu/Rv32Core.scala:57:7
-  assign io_imem_req_bits_size = 2'h2;	// src/main/scala/cpu/Rv32Core.scala:57:7
-  assign io_imem_req_bits_wdata = 32'h0;	// src/main/scala/cpu/Rv32Core.scala:57:7
-  assign io_imem_req_bits_wstrb = 4'h0;	// src/main/scala/cpu/Rv32Core.scala:57:7
-  assign io_imem_resp_ready = _frontend_io_imem_resp_ready & ~haltedReg;	// src/main/scala/cpu/Rv32Core.scala:57:7, :66:24, :78:34, :80:54, :85:53
-  assign io_dmem_req_valid = io_dmem_req_valid_0;	// src/main/scala/cpu/Rv32Core.scala:57:7, :104:{40,68}
-  assign io_dmem_req_bits_addr = exMem_aluResult;	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-  assign io_dmem_req_bits_write = exMem_memWrite;	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-  assign io_dmem_req_bits_size = exMem_memWidth;	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-  assign io_dmem_req_bits_wdata = exMem_memWrite ? _loadStore_io_wdata : 32'h0;	// src/main/scala/cpu/Rv32Core.scala:57:7, :70:25, :75:30, :108:32
-  assign io_dmem_req_bits_wstrb = exMem_memWrite ? _loadStore_io_wstrb : 4'h0;	// src/main/scala/cpu/Rv32Core.scala:57:7, :70:25, :75:30, :109:32
-  assign io_dmem_resp_ready = io_dmem_resp_ready_0;	// src/main/scala/cpu/Rv32Core.scala:57:7, :110:41
-  assign io_commit_valid = _io_commit_writeEnable_T & ~haltedReg;	// src/main/scala/cpu/Rv32Core.scala:57:7, :78:34, :80:54, :123:41, :310:49
-  assign io_commit_pc = memWb_pc;	// src/main/scala/cpu/Rv32Core.scala:57:7, :76:30
-  assign io_commit_inst = memWb_inst;	// src/main/scala/cpu/Rv32Core.scala:57:7, :76:30
-  assign io_commit_writeEnable = _io_commit_writeEnable_T & memWb_regWrite & (|memWb_rd);	// src/main/scala/cpu/Rv32Core.scala:57:7, :76:30, :123:41, :313:{55,73,85}
-  assign io_commit_rd = memWb_rd;	// src/main/scala/cpu/Rv32Core.scala:57:7, :76:30
-  assign io_commit_data = memWb_writeData;	// src/main/scala/cpu/Rv32Core.scala:57:7, :76:30
-  assign io_trap_valid = trapEvent & ~haltedReg & ~reset;	// src/main/scala/cpu/Rv32Core.scala:57:7, :78:34, :80:54, :98:31, :317:{30,44,47}
-  assign io_trap_cause =
-    exMem_exceptionValid
-      ? exMem_exceptionCause
-      : {2'h1, exMem_memWrite, ~memoryMisaligned};	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30, :96:42, :99:22, :100:8
-  assign io_trap_pc = exMem_pc;	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-  assign io_trap_inst = exMem_inst;	// src/main/scala/cpu/Rv32Core.scala:57:7, :75:30
-  assign io_halted = haltedReg;	// src/main/scala/cpu/Rv32Core.scala:57:7, :78:34
+  );	// src/main/scala/cpu/Rv32Core.scala:78:23
+  CsrFile csrFile (	// src/main/scala/cpu/Rv32Core.scala:79:23
+    .clock                    (clock),
+    .reset                    (reset),
+    .io_address               (idEx_inst[31:20]),	// src/main/scala/cpu/Rv32Core.scala:82:29, :155:34
+    .io_readData              (_csrFile_io_readData),
+    .io_readLegal             (_csrFile_io_readLegal),
+    .io_writeAllowed          (_csrFile_io_writeAllowed),
+    .io_writeValid
+      (idEx_valid & csrWriteWanted & ~csrAccessIllegal
+       & (frontend_io_output_ready | _idExAdvances_T_1 | _csrFile_io_mretValid_T)),	// src/main/scala/cpu/Rv32Core.scala:82:29, :151:39, :179:41, :248:49, :251:67, :252:{23,55}, :253:23, :254:{39,57,60,78}
+    .io_writeData
+      ((&idEx_control_csrOp)
+         ? _csrFile_io_readData & ~csrSource
+         : {32{idEx_control_csrOp == 2'h2}} & _csrFile_io_readData | csrSource),	// src/main/scala/cpu/Rv32Core.scala:79:23, :82:29, :153:22, :156:67, :158:{41,43}
+    .io_trapValid             (csrFile_io_trapValid),	// src/main/scala/cpu/Rv32Core.scala:173:44
+    .io_trapPc                (csrFile_io_trapPc),	// src/main/scala/cpu/Rv32Core.scala:174:27
+    .io_trapCause             ({27'h0, io_trap_cause_0}),	// src/main/scala/cpu/Rv32Core.scala:153:53, :175:{24,30}
+    .io_trapInterrupt         (interruptEvent),	// src/main/scala/cpu/Rv32Core.scala:164:80, :165:{16,31}
+    .io_trapValue
+      (interruptEvent
+         ? 32'h0
+         : exMem_exceptionValid ? exMem_exceptionValue : exMem_aluResult),	// src/main/scala/cpu/Rv32Core.scala:83:30, :111:22, :164:80, :165:{16,31}, :177:30
+    .io_mretValid             (mretRequest & _csrFile_io_mretValid_T),	// src/main/scala/cpu/Rv32Core.scala:216:{32,56,78}, :253:23, :255:39
+    .io_timerInterrupt        (io_timerInterrupt),
+    .io_timerInterruptPending (_csrFile_io_timerInterruptPending),
+    .io_trapVector            (_csrFile_io_trapVector),
+    .io_returnPc              (_csrFile_io_returnPc)
+  );	// src/main/scala/cpu/Rv32Core.scala:79:23
+  assign io_imem_req_valid = _frontend_io_imem_req_valid & ~haltedReg;	// src/main/scala/cpu/Rv32Core.scala:59:7, :73:24, :86:34, :88:{51,54}
+  assign io_imem_req_bits_write = 1'h0;	// src/main/scala/cpu/Rv32Core.scala:59:7
+  assign io_imem_req_bits_size = 2'h2;	// src/main/scala/cpu/Rv32Core.scala:59:7
+  assign io_imem_req_bits_wdata = 32'h0;	// src/main/scala/cpu/Rv32Core.scala:59:7
+  assign io_imem_req_bits_wstrb = 4'h0;	// src/main/scala/cpu/Rv32Core.scala:59:7
+  assign io_imem_resp_ready = _frontend_io_imem_resp_ready & ~haltedReg;	// src/main/scala/cpu/Rv32Core.scala:59:7, :73:24, :86:34, :88:54, :93:53
+  assign io_dmem_req_valid = io_dmem_req_valid_0;	// src/main/scala/cpu/Rv32Core.scala:59:7, :117:{40,68}
+  assign io_dmem_req_bits_addr = exMem_aluResult;	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30
+  assign io_dmem_req_bits_write = exMem_memWrite;	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30
+  assign io_dmem_req_bits_size = exMem_memWidth;	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30
+  assign io_dmem_req_bits_wdata = exMem_memWrite ? _loadStore_io_wdata : 32'h0;	// src/main/scala/cpu/Rv32Core.scala:59:7, :77:25, :83:30, :121:32
+  assign io_dmem_req_bits_wstrb = exMem_memWrite ? _loadStore_io_wstrb : 4'h0;	// src/main/scala/cpu/Rv32Core.scala:59:7, :77:25, :83:30, :122:32
+  assign io_dmem_resp_ready = io_dmem_resp_ready_0;	// src/main/scala/cpu/Rv32Core.scala:59:7, :123:41
+  assign io_commit_valid = _io_commit_writeEnable_T & ~haltedReg;	// src/main/scala/cpu/Rv32Core.scala:59:7, :86:34, :88:54, :136:41, :391:49
+  assign io_commit_pc = memWb_pc;	// src/main/scala/cpu/Rv32Core.scala:59:7, :84:30
+  assign io_commit_inst = memWb_inst;	// src/main/scala/cpu/Rv32Core.scala:59:7, :84:30
+  assign io_commit_writeEnable = _io_commit_writeEnable_T & memWb_regWrite & (|memWb_rd);	// src/main/scala/cpu/Rv32Core.scala:59:7, :84:30, :136:41, :394:{55,73,85}
+  assign io_commit_rd = memWb_rd;	// src/main/scala/cpu/Rv32Core.scala:59:7, :84:30
+  assign io_commit_data = memWb_writeData;	// src/main/scala/cpu/Rv32Core.scala:59:7, :84:30
+  assign io_trap_valid = (trapEvent | interruptEvent) & ~haltedReg & ~reset;	// src/main/scala/cpu/Rv32Core.scala:59:7, :86:34, :88:54, :106:31, :164:80, :165:{16,31}, :398:{31,50,64,67}
+  assign io_trap_interrupt = interruptEvent;	// src/main/scala/cpu/Rv32Core.scala:59:7, :164:80, :165:{16,31}
+  assign io_trap_cause = io_trap_cause_0;	// src/main/scala/cpu/Rv32Core.scala:59:7, :175:30
+  assign io_trap_pc = csrFile_io_trapPc;	// src/main/scala/cpu/Rv32Core.scala:59:7, :174:27
+  assign io_trap_inst = interruptEvent ? 32'h0 : exMem_inst;	// src/main/scala/cpu/Rv32Core.scala:59:7, :83:30, :164:80, :165:{16,31}, :402:22
+  assign io_halted = haltedReg;	// src/main/scala/cpu/Rv32Core.scala:59:7, :86:34
 endmodule
 

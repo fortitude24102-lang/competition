@@ -30,11 +30,11 @@
 **Interfaces:**
 - Produces: `CsrOp.None/Write/Set/Clear`, `DecodedControl.csrOp`, `csrImmediate`, and `mret`
 
-- [ ] Write decoder assertions for all six CSR encodings, register-source use, immediate-source handling, and exact `0x30200073` MRET decoding.
-- [ ] Run `sbt "testOnly cpu.DecoderSpec"` and verify RED because CSR fields do not exist.
-- [ ] Add the minimal enum/control fields and SYSTEM decode; preserve illegal behavior for reserved funct3 values and other privileged encodings.
-- [ ] Run `DecoderSpec` and verify GREEN.
-- [ ] Commit with `feat(cpu): decode zicsr and mret instructions`.
+- [x] Write decoder assertions for all six CSR encodings, register-source use, immediate-source handling, and exact `0x30200073` MRET decoding.
+- [x] Run `sbt "testOnly cpu.DecoderSpec"` and verify RED because CSR fields do not exist.
+- [x] Add the minimal enum/control fields and SYSTEM decode; preserve illegal behavior for reserved funct3 values and other privileged encodings.
+- [x] Run `DecoderSpec` and verify GREEN.
+- [x] Commit with `feat(cpu): decode zicsr and mret instructions`.
 
 ### Task 2: Implement the machine CSR file
 
@@ -45,11 +45,11 @@
 **Interfaces:**
 - Produces: combinational CSR read data/legality, registered CSR write port, trap-entry port, MRET port, `trapVector`, `returnPc`, and `timerInterruptPending`
 
-- [ ] Write unit tests for reset values, writable masks, read-only/unknown legality, CSR write results, trap entry, MRET state restoration, MTIP reflection, and MTIE/MIE gating.
-- [ ] Run `CsrFileSpec` and verify RED because `CsrFile` does not exist.
-- [ ] Implement only the ten CSRs in the spec, direct `mtvec`, and the documented update priority `trap > mret > CSR write`.
-- [ ] Run `CsrFileSpec` and verify GREEN.
-- [ ] Commit with `feat(cpu): add machine mode csr file`.
+- [x] Write unit tests for reset values, writable masks, read-only/unknown legality, CSR write results, trap entry, MRET state restoration, MTIP reflection, and MTIE/MIE gating.
+- [x] Run `CsrFileSpec` and verify RED because `CsrFile` does not exist.
+- [x] Implement only the ten CSRs in the spec, direct `mtvec`, and the documented update priority `trap > mret > CSR write`.
+- [x] Run `CsrFileSpec` and verify GREEN.
+- [x] Commit with `feat(cpu): add machine mode csr file`.
 
 ### Task 3: Integrate precise synchronous trap redirects
 
@@ -68,12 +68,12 @@
 **Interfaces:**
 - Produces: `Rv32Core(enableMachineMode: Boolean = true, haltOnEbreak: Boolean = true)`, input `timerInterrupt`, and `TrapTrace.interrupt`
 
-- [ ] Add a program test that sets `mtvec`, executes ECALL, reads `mcause/mepc` in a handler, advances `mepc`, executes MRET, resumes the interrupted program, and ends with EBREAK.
-- [ ] Run `Rv32CoreCsrSpec` and verify RED before core integration.
-- [ ] Carry CSR operation and precise `mtval` data through ID/EX and EX/MEM, execute legal CSR writes only when EX advances, and return old CSR values through normal writeback.
-- [ ] Redirect synchronous machine traps to `mtvec`; preserve legacy permanent-halt assertions with `enableMachineMode=false`; keep configurable EBREAK halt.
-- [ ] Run decoder, CSR, trap, arithmetic, control-flow, and memory suites and verify GREEN.
-- [ ] Commit with `feat(cpu): enter and return from machine traps`.
+- [x] Add a program test that sets `mtvec`, executes ECALL, reads `mcause/mepc` in a handler, advances `mepc`, executes MRET, resumes the interrupted program, and ends with EBREAK.
+- [x] Run `Rv32CoreCsrSpec` and verify RED before core integration.
+- [x] Carry CSR operation and precise `mtval` data through ID/EX and EX/MEM, execute legal CSR writes only when EX advances, and return old CSR values through normal writeback.
+- [x] Redirect synchronous machine traps to `mtvec`; preserve legacy permanent-halt assertions with `enableMachineMode=false`; keep configurable EBREAK halt.
+- [x] Run decoder, CSR, trap, arithmetic, control-flow, and memory suites and verify GREEN.
+- [x] Commit with `feat(cpu): enter and return from machine traps`.
 
 ### Task 4: Accept precise machine timer interrupts
 
@@ -88,11 +88,11 @@
 - Consumes: `MachineTimer.io.interrupt`
 - Produces: `PipelineAction.Interrupt` and precise `mcause=0x80000007`
 
-- [ ] Add priority and integration tests showing that an older MEM result retires, younger writes are suppressed, `mepc` points to the oldest flushed instruction, and synchronous exceptions win over a simultaneous timer interrupt.
-- [ ] Run the focused tests and verify RED before adding `PipelineAction.Interrupt`.
-- [ ] Implement the interrupt action, next-PC selection, CSR trap entry, frontend redirect, and SoCTop timer connection.
-- [ ] Run focused CPU/SoC tests and verify GREEN.
-- [ ] Commit with `feat(cpu): handle precise machine timer interrupts`.
+- [x] Add priority and integration tests showing that an older MEM result retires, younger writes are suppressed, `mepc` points to the oldest flushed instruction, and synchronous exceptions win over a simultaneous timer interrupt.
+- [x] Run the focused tests and verify RED before adding `PipelineAction.Interrupt`.
+- [x] Implement the interrupt action, next-PC selection, CSR trap entry, frontend redirect, and SoCTop timer connection.
+- [x] Run focused CPU/SoC tests and verify GREEN.
+- [x] Commit with `feat(cpu): handle precise machine timer interrupts`.
 
 ### Task 5: Bare-metal trap smoke and generated RTL
 
@@ -107,8 +107,8 @@
 **Interfaces:**
 - Produces: minimal CSR read/write/set/clear helpers and a real-software ECALL/MRET smoke image
 
-- [ ] Write the SoC software test first and verify it fails before `machine_trap.hex` exists.
-- [ ] Add a freestanding trap handler that records ECALL state, advances `mepc`, returns with MRET, prints `P`, and finishes with EBREAK.
-- [ ] Build the image and run the software test until GREEN.
-- [ ] Run the full non-Vivado Chisel regression, regenerate RTL, run Verilator lint, and run `git diff --check`.
-- [ ] Mark this plan complete and commit with `test(cpu): verify machine trap software flow`.
+- [x] Write the SoC software test first and verify it fails before `machine_trap.hex` exists.
+- [x] Add a freestanding trap handler that records ECALL state, advances `mepc`, returns with MRET, prints `P`, and finishes with EBREAK.
+- [x] Build the image and run the software test until GREEN.
+- [x] Run the full non-Vivado Chisel regression, regenerate RTL, run Verilator lint, and run `git diff --check`.
+- [x] Mark this plan complete and commit with `test(cpu): verify machine trap software flow`.

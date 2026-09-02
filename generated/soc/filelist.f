@@ -6,6 +6,7 @@ RegFile.sv
 Execute.sv
 LoadStoreUnit.sv
 PipelineControl.sv
+CsrFile.sv
 Rv32Core.sv
 SoCInterconnect.sv
 memory_16384x32.sv

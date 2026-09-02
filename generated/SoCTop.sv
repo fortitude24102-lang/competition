@@ -58,6 +58,7 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
   output [4:0]  io_commit_rd,	// src/main/scala/soc/SoCTop.scala:19:14
   output [31:0] io_commit_data,	// src/main/scala/soc/SoCTop.scala:19:14
   output        io_trap_valid,	// src/main/scala/soc/SoCTop.scala:19:14
+                io_trap_interrupt,	// src/main/scala/soc/SoCTop.scala:19:14
   output [3:0]  io_trap_cause,	// src/main/scala/soc/SoCTop.scala:19:14
   output [31:0] io_trap_pc,	// src/main/scala/soc/SoCTop.scala:19:14
                 io_trap_inst,	// src/main/scala/soc/SoCTop.scala:19:14
@@ -96,6 +97,7 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
   wire        _timer_io_bus_resp_valid;	// src/main/scala/soc/SoCTop.scala:42:29
   wire [31:0] _timer_io_bus_resp_bits_rdata;	// src/main/scala/soc/SoCTop.scala:42:29
   wire        _timer_io_bus_resp_bits_error;	// src/main/scala/soc/SoCTop.scala:42:29
+  wire        _timer_io_interrupt;	// src/main/scala/soc/SoCTop.scala:42:29
   wire        _ram_io_imem_req_ready;	// src/main/scala/soc/SoCTop.scala:41:27
   wire        _ram_io_imem_resp_valid;	// src/main/scala/soc/SoCTop.scala:41:27
   wire [31:0] _ram_io_imem_resp_bits_rdata;	// src/main/scala/soc/SoCTop.scala:41:27
@@ -193,6 +195,7 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
     .io_dmem_resp_valid      (_interconnect_io_cpuDmem_resp_valid),	// src/main/scala/soc/SoCTop.scala:40:36
     .io_dmem_resp_bits_rdata (_interconnect_io_cpuDmem_resp_bits_rdata),	// src/main/scala/soc/SoCTop.scala:40:36
     .io_dmem_resp_bits_error (_interconnect_io_cpuDmem_resp_bits_error),	// src/main/scala/soc/SoCTop.scala:40:36
+    .io_timerInterrupt       (_timer_io_interrupt),	// src/main/scala/soc/SoCTop.scala:42:29
     .io_commit_valid         (io_commit_valid),
     .io_commit_pc            (io_commit_pc),
     .io_commit_inst          (io_commit_inst),
@@ -200,6 +203,7 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
     .io_commit_rd            (io_commit_rd),
     .io_commit_data          (io_commit_data),
     .io_trap_valid           (io_trap_valid),
+    .io_trap_interrupt       (io_trap_interrupt),
     .io_trap_cause           (io_trap_cause),
     .io_trap_pc              (io_trap_pc),
     .io_trap_inst            (io_trap_inst),
@@ -346,7 +350,7 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
     .io_bus_resp_valid      (_timer_io_bus_resp_valid),
     .io_bus_resp_bits_rdata (_timer_io_bus_resp_bits_rdata),
     .io_bus_resp_bits_error (_timer_io_bus_resp_bits_error),
-    .io_interrupt           (io_timerInterrupt)
+    .io_interrupt           (_timer_io_interrupt)
   );	// src/main/scala/soc/SoCTop.scala:42:29
   MmioUart uart (	// src/main/scala/soc/SoCTop.scala:43:28
     .clock                  (clock),
@@ -404,7 +408,7 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
     .io_frameDone           (_videoAccelerator_frame_done),	// src/main/scala/soc/SoCTop.scala:46:40
     .io_inputAccepted       (_videoAccelerator_pixel_in_ready & io_video_input_valid),	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCTop.scala:46:40
     .io_outputAccepted      (io_video_output_ready & _videoAccelerator_pixel_out_valid),	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/soc/SoCTop.scala:46:40
-    .io_outputStalled       (_videoAccelerator_pixel_out_valid & ~io_video_output_ready),	// src/main/scala/soc/SoCTop.scala:46:40, :100:{66,69}
+    .io_outputStalled       (_videoAccelerator_pixel_out_valid & ~io_video_output_ready),	// src/main/scala/soc/SoCTop.scala:46:40, :102:{66,69}
     .io_enable              (_acceleratorRegisters_io_enable),
     .io_mode                (_acceleratorRegisters_io_mode),
     .io_threshold           (_acceleratorRegisters_io_threshold),
@@ -496,6 +500,7 @@ module SoCTop(	// src/main/scala/soc/SoCTop.scala:14:7
   assign io_video_output_valid = _videoAccelerator_pixel_out_valid;	// src/main/scala/soc/SoCTop.scala:14:7, :46:40
   assign io_video_busy = _videoAccelerator_busy;	// src/main/scala/soc/SoCTop.scala:14:7, :46:40
   assign io_video_frameDone = _videoAccelerator_frame_done;	// src/main/scala/soc/SoCTop.scala:14:7, :46:40
+  assign io_timerInterrupt = _timer_io_interrupt;	// src/main/scala/soc/SoCTop.scala:14:7, :42:29
   assign io_accelEnable = _acceleratorRegisters_io_enable;	// src/main/scala/soc/SoCTop.scala:14:7, :45:44
   assign io_accelMode = _acceleratorRegisters_io_mode;	// src/main/scala/soc/SoCTop.scala:14:7, :45:44
   assign io_accelThreshold = _acceleratorRegisters_io_threshold;	// src/main/scala/soc/SoCTop.scala:14:7, :45:44
