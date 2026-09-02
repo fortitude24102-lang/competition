@@ -7,7 +7,7 @@ object ForwardSel extends ChiselEnum {
 }
 
 object PipelineAction extends ChiselEnum {
-  val Advance, LoadUseStall, MemoryWait, Redirect, Trap, Reset = Value
+  val Advance, LoadUseStall, MemoryWait, Redirect, Interrupt, Trap, Reset = Value
 }
 
 class PipelineControl extends Module {
@@ -32,6 +32,7 @@ class PipelineControl extends Module {
     val idExRd = Input(UInt(5.W))
     val resetActive = Input(Bool())
     val trap = Input(Bool())
+    val interrupt = Input(Bool())
     val redirect = Input(Bool())
     val memoryWait = Input(Bool())
     val forwardRs1 = Output(ForwardSel())
@@ -63,6 +64,8 @@ class PipelineControl extends Module {
     io.action := PipelineAction.Reset
   }.elsewhen(io.trap) {
     io.action := PipelineAction.Trap
+  }.elsewhen(io.interrupt) {
+    io.action := PipelineAction.Interrupt
   }.elsewhen(io.redirect) {
     io.action := PipelineAction.Redirect
   }.elsewhen(io.memoryWait) {

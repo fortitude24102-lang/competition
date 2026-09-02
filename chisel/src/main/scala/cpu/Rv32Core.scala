@@ -158,13 +158,23 @@ class Rv32Core(
     CsrOp.Clear -> (csrFile.io.readData & ~csrSource)
   ))
   csrFile.io.writeValid := false.B
-  csrFile.io.trapValid := machineTrapEvent
-  csrFile.io.trapPc := exMem.pc
-  csrFile.io.trapCause := trapCause
-  csrFile.io.trapInterrupt := false.B
-  csrFile.io.trapValue := trapValue
   csrFile.io.mretValid := false.B
   csrFile.io.timerInterrupt := io.timerInterrupt
+
+  val interruptEvent = enableMachineMode.B && csrFile.io.timerInterruptPending &&
+    !trapEvent && !memoryWait && !haltedReg
+  val interruptPc = MuxCase(resetVector.U(32.W), Seq(
+    idEx.valid -> idEx.pc,
+    ifId.valid -> ifId.pc,
+    frontend.io.output.valid -> frontend.io.output.bits.pc,
+    exMem.valid -> (exMem.pc + 4.U),
+    memWb.valid -> (memWb.pc + 4.U)
+  ))
+  csrFile.io.trapValid := machineTrapEvent || interruptEvent
+  csrFile.io.trapPc := Mux(interruptEvent, interruptPc, exMem.pc)
+  csrFile.io.trapCause := Mux(interruptEvent, TrapCause.MachineTimerInterrupt, trapCause)
+  csrFile.io.trapInterrupt := interruptEvent
+  csrFile.io.trapValue := Mux(interruptEvent, 0.U, trapValue)
 
   val csrAccessIllegal = csrInstruction && (!enableMachineMode.B ||
     (csrReadWanted && !csrFile.io.readLegal) || (csrWriteWanted && !csrFile.io.writeAllowed))
@@ -229,11 +239,12 @@ class Rv32Core(
 
   control.io.resetActive := reset.asBool
   control.io.trap := trapEvent || haltedReg
+  control.io.interrupt := interruptEvent
   control.io.redirect := redirectValid
   control.io.memoryWait := memoryWait
 
-  frontend.io.redirectValid := machineTrapEvent || redirectValid
-  frontend.io.redirectPc := Mux(machineTrapEvent, csrFile.io.trapVector, redirectTarget)
+  frontend.io.redirectValid := machineTrapEvent || interruptEvent || redirectValid
+  frontend.io.redirectPc := Mux(machineTrapEvent || interruptEvent, csrFile.io.trapVector, redirectTarget)
   frontend.io.output.ready := control.io.action === PipelineAction.Advance
 
   val exMemWriteData = Mux(exMem.memRead, loadStore.io.loadData, exMemForwardValue)
@@ -259,6 +270,19 @@ class Rv32Core(
     when(haltTrapEvent) {
       haltedReg := true.B
     }
+  }.elsewhen(control.io.action === PipelineAction.Interrupt) {
+    memWb.valid := exMem.valid
+    memWb.pc := exMem.pc
+    memWb.inst := exMem.inst
+    memWb.legal := exMem.legal
+    memWb.rd := exMem.rd
+    memWb.regWrite := exMem.regWrite
+    memWb.writeData := exMemWriteData
+
+    exMem.valid := false.B
+    idEx.valid := false.B
+    ifId.valid := false.B
+    memoryRequestSent := false.B
   }.elsewhen(control.io.action === PipelineAction.MemoryWait) {
     memWb.valid := false.B
   }.elsewhen(control.io.action === PipelineAction.LoadUseStall) {
@@ -371,10 +395,10 @@ class Rv32Core(
   io.commit.rd := memWb.rd
   io.commit.data := memWb.writeData
 
-  io.trap.valid := trapEvent && !haltedReg && !reset.asBool
-  io.trap.interrupt := false.B
-  io.trap.cause := trapCause
-  io.trap.pc := exMem.pc
-  io.trap.inst := exMem.inst
+  io.trap.valid := (trapEvent || interruptEvent) && !haltedReg && !reset.asBool
+  io.trap.interrupt := interruptEvent
+  io.trap.cause := Mux(interruptEvent, TrapCause.MachineTimerInterrupt, trapCause)
+  io.trap.pc := Mux(interruptEvent, interruptPc, exMem.pc)
+  io.trap.inst := Mux(interruptEvent, 0.U, exMem.inst)
   io.halted := haltedReg
 }

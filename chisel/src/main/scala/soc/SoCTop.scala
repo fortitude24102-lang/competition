@@ -49,7 +49,7 @@ class SoCTop(
   private val externalDmemRequest = Module(new Queue(new CoreBusReq, 1, pipe = false, flow = false))
   private val externalDmemResponse = Module(new Queue(new CoreBusResp, 1, pipe = false, flow = false))
 
-  core.io.timerInterrupt := false.B
+  core.io.timerInterrupt := timer.io.interrupt
 
   interconnect.io.cpuImem <> core.io.imem
   interconnect.io.cpuDmem <> core.io.dmem

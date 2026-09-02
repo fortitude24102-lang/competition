@@ -115,5 +115,40 @@ class Rv32CoreCsrSpec extends AnyFunSpec with StableChiselSim with Matchers {
       )
       result.halted shouldBe true
     }
+
+    it("takes a machine timer interrupt between instructions and preserves precise retirement") {
+      val program = Seq(
+        BigInt("04000093", 16), // addi x1, x0, 0x40
+        BigInt("30509073", 16), // csrw mtvec, x1
+        BigInt("08000093", 16), // addi x1, x0, 0x80
+        BigInt("30409073", 16), // csrw mie, x1
+        BigInt("00500293", 16), // addi x5, x0, 5
+        BigInt("30046073", 16), // csrsi mstatus, 8
+        BigInt("00600313", 16), // addi x6, x0, 6 (must not retire before the handler)
+        BigInt("0000006f", 16)  // jal x0, 0
+      ) ++ Seq.fill(8)(BigInt("00000013", 16)) ++ Seq(
+        BigInt("34202173", 16), // csrr x2, mcause
+        BigInt("341021f3", 16), // csrr x3, mepc
+        BigInt("00700393", 16), // addi x7, x0, 7
+        BigInt("00100073", 16)  // ebreak
+      )
+
+      val result = run(program, timerInterrupt = true)
+
+      result.traps shouldBe Vector(
+        TrapEvent(interrupt = true, cause = 7, pc = 24),
+        TrapEvent(interrupt = false, cause = 3, pc = 76)
+      )
+      result.writes should contain inOrderOnly (
+        1 -> BigInt(64),
+        1 -> BigInt(128),
+        5 -> BigInt(5),
+        2 -> BigInt("80000007", 16),
+        3 -> BigInt(24),
+        7 -> BigInt(7)
+      )
+      result.writes.map(_._1) should not contain 6
+      result.halted shouldBe true
+    }
   }
 }

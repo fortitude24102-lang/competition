@@ -25,6 +25,7 @@ class PipelineControlSpec extends AnyFunSpec with StableChiselSim {
     dut.io.idExRd.poke(0)
     dut.io.resetActive.poke(false)
     dut.io.trap.poke(false)
+    dut.io.interrupt.poke(false)
     dut.io.redirect.poke(false)
     dut.io.memoryWait.poke(false)
   }
@@ -91,11 +92,12 @@ class PipelineControlSpec extends AnyFunSpec with StableChiselSim {
       }
     }
 
-    it("applies reset trap redirect memory and hazard priority") {
+    it("applies reset trap interrupt redirect memory and hazard priority") {
       simulate(new PipelineControl) { dut =>
         defaults(dut)
         dut.io.memoryWait.poke(true)
         dut.io.redirect.poke(true)
+        dut.io.interrupt.poke(true)
         dut.io.trap.poke(true)
         dut.io.resetActive.poke(true)
         dut.io.action.expect(PipelineAction.Reset)
@@ -103,6 +105,8 @@ class PipelineControlSpec extends AnyFunSpec with StableChiselSim {
         dut.io.resetActive.poke(false)
         dut.io.action.expect(PipelineAction.Trap)
         dut.io.trap.poke(false)
+        dut.io.action.expect(PipelineAction.Interrupt)
+        dut.io.interrupt.poke(false)
         dut.io.action.expect(PipelineAction.Redirect)
         dut.io.redirect.poke(false)
         dut.io.action.expect(PipelineAction.MemoryWait)
