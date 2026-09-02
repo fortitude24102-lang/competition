@@ -27,6 +27,7 @@ class Rv32CoreMemorySpec extends AnyFunSpec with StableChiselSim with Matchers {
       val data = Array.fill(512)(0)
 
       simulate(new Rv32Core()) { dut =>
+        dut.io.timerInterrupt.poke(false)
         dut.io.imem.req.ready.poke(true)
         dut.io.imem.resp.valid.poke(false)
         dut.io.imem.resp.bits.rdata.poke(0)

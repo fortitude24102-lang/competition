@@ -39,6 +39,7 @@ object TrapCause {
   val LoadAccessFault = 5.U(4.W)
   val StoreAddressMisaligned = 6.U(4.W)
   val StoreAccessFault = 7.U(4.W)
+  val MachineTimerInterrupt = 7.U(4.W)
   val EnvironmentCall = 11.U(4.W)
 }
 

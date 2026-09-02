@@ -20,6 +20,7 @@ class Rv32ProgramSpec extends AnyFunSpec with StableChiselSim with Matchers {
       }
 
       simulate(new Rv32Core()) { dut =>
+        dut.io.timerInterrupt.poke(false)
         dut.io.imem.resp.valid.poke(false)
         dut.io.imem.resp.bits.rdata.poke(0)
         dut.io.imem.resp.bits.error.poke(false)

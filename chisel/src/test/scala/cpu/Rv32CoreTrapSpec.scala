@@ -25,7 +25,8 @@ class Rv32CoreTrapSpec extends AnyFunSpec with StableChiselSim with Matchers {
     val instructions = new TestMemory(words)
     var result = RunResult(Vector.empty, Vector.empty, Vector.empty, halted = false, resetClearedHalt = false)
 
-    simulate(new Rv32Core()) { dut =>
+    simulate(new Rv32Core(enableMachineMode = false)) { dut =>
+      dut.io.timerInterrupt.poke(false)
       dut.io.imem.req.ready.poke(true)
       dut.io.imem.resp.valid.poke(false)
       dut.io.imem.resp.bits.rdata.poke(0)

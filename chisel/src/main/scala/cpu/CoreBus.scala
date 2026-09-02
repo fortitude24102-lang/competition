@@ -32,6 +32,7 @@ class CommitTrace extends Bundle {
 
 class TrapTrace extends Bundle {
   val valid = Bool()
+  val interrupt = Bool()
   val cause = UInt(4.W)
   val pc = UInt(32.W)
   val inst = UInt(32.W)

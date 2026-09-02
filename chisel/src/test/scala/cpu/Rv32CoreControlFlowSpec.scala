@@ -27,6 +27,7 @@ class Rv32CoreControlFlowSpec extends AnyFunSpec with StableChiselSim with Match
       ))
 
       simulate(new Rv32Core()) { dut =>
+        dut.io.timerInterrupt.poke(false)
         dut.io.imem.req.ready.poke(true)
         dut.io.imem.resp.valid.poke(false)
         dut.io.imem.resp.bits.rdata.poke(0)

@@ -21,6 +21,7 @@ class Rv32UiSpec extends AnyFunSpec with StableChiselSim with Matchers {
       val binaries = tests.map(name => name -> Files.readAllBytes(buildDirectory.resolve(s"$name.bin")))
 
       simulate(new Rv32Core()) { dut =>
+        dut.io.timerInterrupt.poke(false)
         dut.io.imem.resp.bits.error.poke(false)
         dut.io.dmem.resp.bits.error.poke(false)
 
