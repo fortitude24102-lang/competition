@@ -6,6 +6,7 @@ chisel/.metals/
 generated/filelist.f
 generated/verification/
 generated/coremark-sim/
+generated/docx_work/
 generated/reports/*/vivado.log
 chisel/src/test/resources/rv32i/*.bin
 chisel/src/test/resources/rv32i/*.elf
