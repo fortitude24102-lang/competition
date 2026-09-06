@@ -1,0 +1,53 @@
+组员 B 第 1 天：官方 Sapphire UART/DDR 软件离线基线
+====================================================
+
+执行日期：2026-09-06
+硬件状态：无 Ti60F225 DemoBoard；本文件只记录官方软件的离线编译证据。
+
+官方来源（未修改）：
+  Sapphire 工程：D:\ZYNQ\smallproject\Ti60F225_DemoBoard_v4\08_ti60f225_soc_demo\09_Ti60F225_hardjtag_demo\par\ddr_demo_ti60
+  BSP：embedded_sw\soc\bsp\efinix\EfxSapphireSoc
+  DDR 测试：embedded_sw\soc\software\standalone\application\memTest
+  UART 测试：embedded_sw\soc\software\standalone\uart\uartEchoDemo
+实际构建使用上述 soc 的临时副本：
+  D:\efinity_builds\competition_day1_20260906\sapphire\soc
+
+工具：
+  riscv-none-elf-gcc 13.4.0（xPack GNU RISC-V Embedded GCC x86_64）
+  make：D:\efinity\risc_v_gcc\build_tools\bin\make.exe
+  工具链：D:\efinity\risc_v_gcc\toolchain\bin
+  BSP 参数：BSP=efinix/EfxSapphireSoc
+  构建参数：RISCV_BIN=D:/efinity/risc_v_gcc/toolchain/bin/riscv-none-elf- MARCH=rv32im_zicsr
+
+兼容性记录：
+  官方 Makefile 为两个应用加入 -DSMP。GCC 13 在该组合下要求显式 zicsr：
+  -DSMP -march=rv32im 会在 start.S 的 csrr a0,mhartid 处失败；
+  -DSMP -march=rv32im_zicsr 可通过。只通过命令行覆盖 MARCH，未改官方源码。
+
+memTest 构建结果：
+  命令：make -B -j 4 BSP=efinix/EfxSapphireSoc RISCV_BIN=<toolchain-prefix> MARCH=rv32im_zicsr
+  链接报告：ram 使用 5952 B / 124 KB（4.69%）
+  ELF：build/memTest.elf，59924 bytes
+  BIN：build/memTest.bin，1834 bytes，SHA256 0A39342407889E94632B47BC6C631A8CF864EA229077FEEF731911180B656C29
+  HEX：build/memTest.hex，5210 bytes，SHA256 6E2FAAA7DA22A3EFE0904DD4509E75A778B5F125B256E3E67245E06D61756EE3
+  ELF 架构属性：rv32i2p1_m2p0_zicsr2p0_zmmul1p0
+  官方测试参数：MEM_LOC=0x00010000，MAX_WORDS=4*1024*1024；运行时写入并回读外部 DDR。
+
+uartEchoDemo 构建结果：
+  命令：make -B -j 4 BSP=efinix/EfxSapphireSoc RISCV_BIN=<toolchain-prefix> MARCH=rv32im_zicsr
+  链接报告：ram 使用 6000 B / 124 KB（4.73%）
+  ELF：build/uartEchoDemo.elf，61228 bytes
+  BIN：build/uartEchoDemo.bin，1890 bytes，SHA256 7F902A4014AF5B1614FA706C8BEE106CDD71352B3E4F7C135DD8CC595FCBD90B
+  HEX：build/uartEchoDemo.hex，5374 bytes，SHA256 FD29BE8D28AAE6EE6F85BD62FB99966007D0124B65C7109E3A6820679FD4DA49
+  ELF 架构属性：rv32i2p1_m2p0_zicsr2p0
+  官方 UART 参数：115200 baud，8 data bits，no parity，1 stop bit（由 soc.h 确认）。
+
+离线可核对的程序字符串（不等同于运行日志）：
+  memTest：***Starting Memory Test*** / Data matched .. Test PASSED
+  uartEchoDemo：***Starting Uart Echo Demo*** / Start typing on terminal... / Echo character: %c
+
+板卡验收状态：
+  [待完成] 下载程序并打开 UART 终端
+  [待完成] 观察 memTest 的真实 DDR 读写无 mismatch 输出
+  [待完成] 输入字符并观察 UART 回显
+  本文件没有伪造串口输出；上述运行项目因当前没有板卡，不作通过判定。

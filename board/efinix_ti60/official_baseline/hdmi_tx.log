@@ -1,0 +1,47 @@
+负责人 A 第 1 天：官方 HDMI 彩条离线基线
+================================================
+
+执行日期：2026-09-06
+硬件状态：无 Ti60F225 DemoBoard；本文件只记录可在无板卡条件下完成的工程编译证据。
+
+官方来源（未修改）：
+  D:\ZYNQ\smallproject\Ti60F225_DemoBoard_v4\03_hdmi_tx_demo\hdmi_tx_demo_v2\led_demo.xml
+工程顶层：top（工程名 hdmi_tx，器件 Ti60F225，Timing Model C4）
+
+工具：
+  Efinity 2026.1.132（由生成的 hdmi_tx.timing.rpt / led_demo.log 确认）
+  调用：call D:\efinity\bin\setup.bat && D:\efinity\bin\efx_run.bat <led_demo.xml> --flow compile
+  输出目录：D:\efinity_builds\competition_day1_20260906\hdmi\outflow
+  工作目录：D:\efinity_builds\competition_day1_20260906\hdmi\work
+
+离线编译结果：
+  map       PASS
+  interface PASS
+  pnr       PASS
+  pgm       PASS（仅生成编程文件，未连接板卡下载）
+  生成 bit：hdmi_tx.bit，1,622,328 bytes
+  bit SHA256：F117FA0F02EA7B95B50B24A6CB77B1584CD4830A0110D0827310AF047CB37EF2
+  生成 hex：hdmi_tx.hex，1,622,388 bytes
+  hex SHA256：9E6B5328937F08E548EF9DDD7DB2D61CFFD47E40925329AB75B0BAB61328B9A9
+
+时序摘要（hdmi_tx.timing.rpt）：
+  hdmi_tx_slow_clk：148.743 MHz 目标约束；最大分析频率 327.118 MHz
+  hdmi_tx_fast_clk：743.494 MHz 目标约束
+  setup slack：3.666 ns；hold slack：0.094 ns
+
+资源摘要（hdmi_tx.res.csv）：
+  top：87 FF，147 ADD，189 LUT，0 RAM，0 DSP/MULT
+  u_color_bar_rgb：42 FF，93 LUT
+  dvi_encoder_m0：42 FF，147 ADD，84 LUT
+
+已知警告（官方工程原样保留）：
+  led_test.pt.sdc 第 14/20/26 行报告 osc_clk、FB 或 period 约束未匹配/缺失；
+  HDL 中有 ANSI 端口重复声明及未连接 i_cfg_vid 的综合警告。
+  本次没有修改官方约束或 RTL；后续正式工程应补齐实际板级时钟约束后再作最终时序签核。
+
+板卡验收状态：
+  [待完成] 下载 bitstream 到 Ti60F225
+  [待完成] HDMI 连接显示器并确认 1080p 彩条
+  [待完成] 连续显示 10 分钟无黑屏/闪烁
+  [待完成] 保存 hdmi_photo.png
+  以上项目因当前没有板卡，不作通过判定。
