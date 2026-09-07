@@ -22,6 +22,8 @@
 
 RGB565 为小端 16 位，地址公式为 `base + y * stride_bytes + x * 2`。地址至少 2 字节对齐，普通图像 stride 不小于 `width * 2`。
 
+RGB565 转 RGB888 使用位复制：红、蓝 5 位分量 `x` 扩展为 `{x,x[4:2]}`，绿 6 位分量扩展为 `{x,x[5:4]}`。RGB888 转 RGB565 取高 5、6、5 位，不做四舍五入。
+
 ## 命令
 
 | 字段 | 位宽 | 含义 |
@@ -36,7 +38,7 @@ RGB565 为小端 16 位，地址公式为 `base + y * stride_bytes + x * 2`。�
 | `flags` | 16 | 中断和模式控制 |
 | `tag` | 16 | 软件分配的顺序完成标签 |
 
-Alpha 每个颜色通道使用整数公式 `(fg * alpha + bg * (255 - alpha) + 127) / 255`。`alpha=0` 保留背景，`alpha=255` 输出前景。
+Alpha 在原生 RGB565 的 5、6、5 位通道上分别使用整数公式 `(fg * alpha + bg * (255 - alpha) + 127) / 255`，再按 5、6、5 位打包。`alpha=0` 保留背景，`alpha=255` 输出前景。
 
 ## APB 寄存器
 
@@ -65,6 +67,14 @@ Alpha 每个颜色通道使用整数公式 `(fg * alpha + bg * (255 - alpha) + 1
 | `0x0050`–`0x0074` | PERF_* | R | 64 位周期、像素、读写字节和 stall |
 
 APB 合法访问单周期完成。写 CONTROL.SUBMIT 时，完整影子命令原子进入 16 项 FIFO；FIFO 满时返回 `PSLVERROR`，不能覆盖或丢弃旧命令。
+
+### 当前实现边界
+
+2026-09-08 对照 `GpuApbRegs.scala`：`STATUS[4:0]` 为 queue level，bit5 为 empty，bit6 为 full，bit7 为 busy，其余位为零。`OP[3:0]`、`TAG[15:0]` 有效；`ALPHA_FLAGS[15:8]` 保留为零。
+
+`QOS_WATERMARKS`、`PERF_CONTROL` 和 `PERF_*` 目前仅保留偏移，读取返回零、写入不生效；不能据此认为 QoS 或计数器已经接入。`FRONT_BUFFER`、`BACK_BUFFER` 当前返回固定地址，尚不代表换帧控制器已完成。`flags` 的具体控制位及 IRQ 控制尚未实现，现阶段软件使用零。
+
+`LAST_DONE` 只提供最近完成 tag，`ERROR` 只提供最近错误；它们不是可查询全部历史完成结果的队列。上述说明记录当前实现，不改变后续原计划目标。
 
 ## 错误码
 
