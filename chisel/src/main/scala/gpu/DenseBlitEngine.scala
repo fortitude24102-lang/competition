@@ -13,55 +13,83 @@ class DenseBlitEngine extends Module {
   })
 
   private val rect = Module(new RectAddressGen)
+  private val reader = Module(new AxiReadEngine)
+  private val aligner = Module(new PixelReadAligner)
   private val packer = Module(new PixelWritePacker)
   private val writer = Module(new AxiWriteEngine)
 
-  private val idle :: launchFirstRow :: launchRow :: requestPixel :: waitPixel :: waitRow :: finish :: Nil = Enum(7)
+  private val idle :: startRect :: startWrite :: startAligner :: startRead :: requestPixel :: waitPixel :: waitRow :: finish :: Nil = Enum(9)
   private val state = RegInit(idle)
   private val commandReg = Reg(new GpuCommand)
-  private val rowBase = Reg(UInt(32.W))
+  private val srcRowBase = Reg(UInt(32.W))
+  private val dstRowBase = Reg(UInt(32.W))
   private val pixelAddress = Reg(UInt(32.W))
   private val pixelRowLast = Reg(Bool())
   private val pixelLast = Reg(Bool())
+  private val rowReadDone = RegInit(false.B)
+  private val rowWriteDone = RegInit(false.B)
+  private val rowReadError = RegInit(false.B)
+  private val rowWriteError = RegInit(false.B)
   private val completionError = RegInit(GpuError.None.U(8.W))
 
   io.command.ready := state === idle
   when(io.command.fire) {
     commandReg := io.command.bits
-    rowBase := io.command.bits.dstAddr
+    srcRowBase := io.command.bits.srcAddr
+    dstRowBase := io.command.bits.dstAddr
     completionError := GpuError.None.U
-    state := launchFirstRow
+    state := startRect
   }
 
-  private val firstLaunch = state === launchFirstRow
-  private val laterLaunch = state === launchRow
-  private val launching = firstLaunch || laterLaunch
+  private val isCopy = commandReg.op === GpuOpcode.Copy.U
   private val rowBytes = Cat(0.U(15.W), commandReg.widthPixels, 0.U(1.W))
-  private val rowTransferBytes = rowBytes + rowBase(1, 0)
+  private val rowTransferBytes = rowBytes + dstRowBase(1, 0)
   private val rowBeats = (rowTransferBytes + 3.U) >> 2
 
-  rect.io.start.valid := firstLaunch && writer.io.request.ready
+  rect.io.start.valid := state === startRect
   rect.io.start.bits.base := commandReg.dstAddr
   rect.io.start.bits.widthPixels := commandReg.widthPixels
   rect.io.start.bits.heightPixels := commandReg.heightPixels
   rect.io.start.bits.stride := commandReg.dstStride
+  when(rect.io.start.fire) {
+    state := startWrite
+  }
 
-  writer.io.request.valid := launching && (laterLaunch || rect.io.start.ready)
-  writer.io.request.bits.address := rowBase
+  writer.io.request.valid := state === startWrite
+  writer.io.request.bits.address := dstRowBase
   writer.io.request.bits.beats := rowBeats
+  when(writer.io.request.fire) {
+    rowWriteDone := false.B
+    rowWriteError := false.B
+    state := Mux(isCopy, startAligner, requestPixel)
+  }
 
-  when(writer.io.request.fire && (laterLaunch || rect.io.start.fire)) {
+  aligner.io.start.valid := state === startAligner
+  aligner.io.start.bits.upperFirst := srcRowBase(1)
+  aligner.io.start.bits.pixels := commandReg.widthPixels
+  when(aligner.io.start.fire) {
+    state := startRead
+  }
+
+  reader.io.request.valid := state === startRead
+  reader.io.request.bits.address := srcRowBase
+  reader.io.request.bits.bytes := rowBytes
+  when(reader.io.request.fire) {
+    rowReadDone := false.B
+    rowReadError := false.B
     state := requestPixel
   }
 
-  io.pixelRequest.valid := state === requestPixel && rect.io.address.valid
+  private val sourceValid = !isCopy || aligner.io.output.valid
+  io.pixelRequest.valid := state === requestPixel && rect.io.address.valid && sourceValid
   io.pixelRequest.bits.op := commandReg.op(2, 0)
-  io.pixelRequest.bits.foreground := 0.U
+  io.pixelRequest.bits.foreground := aligner.io.output.bits.pixel
   io.pixelRequest.bits.background := 0.U
   io.pixelRequest.bits.fillColor := commandReg.color
   io.pixelRequest.bits.colorKey := commandReg.colorKey
   io.pixelRequest.bits.alpha := commandReg.alpha
-  rect.io.address.ready := state === requestPixel && io.pixelRequest.ready
+  rect.io.address.ready := state === requestPixel && io.pixelRequest.ready && sourceValid
+  aligner.io.output.ready := state === requestPixel && isCopy && rect.io.address.valid && io.pixelRequest.ready
 
   when(io.pixelRequest.fire) {
     pixelAddress := rect.io.address.bits.address
@@ -86,15 +114,28 @@ class DenseBlitEngine extends Module {
   writer.io.data.bits.strb := packer.io.output.bits.strb
   packer.io.output.ready := writer.io.data.ready
 
-  when(state === waitRow && writer.io.done) {
-    when(writer.io.error) {
+  when(writer.io.done) {
+    rowWriteDone := true.B
+    rowWriteError := writer.io.error
+  }
+  when(reader.io.done) {
+    rowReadDone := true.B
+    rowReadError := reader.io.error
+  }
+
+  private val writeFinished = rowWriteDone || writer.io.done
+  private val readFinished = !isCopy || rowReadDone || reader.io.done
+  private val transferError = rowWriteError || writer.io.error || rowReadError || reader.io.error
+  when(state === waitRow && writeFinished && readFinished) {
+    when(transferError) {
       completionError := GpuError.AxiResponse.U
       state := finish
     }.elsewhen(pixelLast) {
       state := finish
     }.otherwise {
-      rowBase := rowBase + commandReg.dstStride
-      state := launchRow
+      srcRowBase := srcRowBase + commandReg.srcStride
+      dstRowBase := dstRowBase + commandReg.dstStride
+      state := startWrite
     }
   }
 
@@ -115,7 +156,14 @@ class DenseBlitEngine extends Module {
   writer.io.axiB.bits := io.axi.b.bits
   io.axi.b.ready := writer.io.axiB.ready
 
-  io.axi.ar.valid := false.B
-  io.axi.ar.bits := 0.U.asTypeOf(new Axi4Address)
-  io.axi.r.ready := false.B
+  io.axi.ar.valid := reader.io.axiAr.valid
+  io.axi.ar.bits := reader.io.axiAr.bits
+  reader.io.axiAr.ready := io.axi.ar.ready
+  reader.io.axiR.valid := io.axi.r.valid
+  reader.io.axiR.bits := io.axi.r.bits
+  io.axi.r.ready := reader.io.axiR.ready
+
+  aligner.io.input.valid := reader.io.data.valid
+  aligner.io.input.bits := reader.io.data.bits.data
+  reader.io.data.ready := aligner.io.input.ready
 }

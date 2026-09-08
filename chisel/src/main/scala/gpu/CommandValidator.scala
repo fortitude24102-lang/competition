@@ -25,7 +25,9 @@ class CommandValidator extends Module {
   private val ddrEnd = GpuMemoryMap.DdrEndExclusive.U(64.W)
 
   private val zeroSize = renderOp && (command.widthPixels === 0.U || command.heightPixels === 0.U)
-  private val misaligned = (sourceOp && command.srcAddr(0)) || (destinationOp && command.dstAddr(0))
+  private val multiRow = command.heightPixels > 1.U
+  private val misaligned = (sourceOp && (command.srcAddr(0) || (multiRow && command.srcStride(0)))) ||
+    (destinationOp && (command.dstAddr(0) || (multiRow && command.dstStride(0))))
   private val strideTooSmall = (renderOp && command.dstStride < rowBytes) ||
     (denseSourceOp && command.srcStride < rowBytes)
   private val srcOutOfRange = sourceOp &&

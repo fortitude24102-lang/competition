@@ -5,6 +5,7 @@ chisel/.bsp/
 chisel/.metals/
 generated/filelist.f
 generated/verification/
+generated/efinix_gpu/verification/
 generated/coremark-sim/
 generated/docx_work/
 generated/reports/*/vivado.log

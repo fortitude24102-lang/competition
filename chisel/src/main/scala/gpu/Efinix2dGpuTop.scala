@@ -22,23 +22,56 @@ class Efinix2dGpuTop extends Module {
     val displayReady = Input(Bool())
     val displayPixel = Output(UInt(16.W))
     val displayValid = Output(Bool())
+    val displayLineLast = Output(Bool())
+    val displayFrameLast = Output(Bool())
     val irq = Output(Bool())
   })
 
-  io.apb.prdata := 0.U
-  io.apb.pready := true.B
-  io.apb.pslverror := false.B
+  private val regs = Module(new GpuApbRegs)
+  private val render = Module(new RenderEngine)
+  private val scanout = Module(new ScanoutDma)
+  private val ddr = Module(new DdrQosArbiter)
+  private val lastDoneTag = RegInit(0.U(16.W))
+  private val lastError = RegInit(GpuError.None.U(8.W))
+  private val irq = RegInit(false.B)
 
-  io.axi.aw.valid := false.B
-  io.axi.aw.bits := 0.U.asTypeOf(new Axi4Address)
-  io.axi.w.valid := false.B
-  io.axi.w.bits := 0.U.asTypeOf(new Axi4WriteData)
-  io.axi.b.ready := false.B
-  io.axi.ar.valid := false.B
-  io.axi.ar.bits := 0.U.asTypeOf(new Axi4Address)
-  io.axi.r.ready := false.B
+  regs.io.paddr := io.apb.paddr
+  regs.io.psel := io.apb.psel
+  regs.io.penable := io.apb.penable
+  regs.io.pwrite := io.apb.pwrite
+  regs.io.pwdata := io.apb.pwdata
+  io.apb.prdata := regs.io.prdata
+  io.apb.pready := regs.io.pready
+  io.apb.pslverror := regs.io.pslverror
 
-  io.displayPixel := 0.U
-  io.displayValid := false.B
-  io.irq := false.B
+  render.io.command <> regs.io.command
+  regs.io.queueLevel := render.io.queueLevel
+  regs.io.queueFull := render.io.queueFull
+  regs.io.queueEmpty := render.io.queueEmpty
+  regs.io.engineBusy := render.io.busy
+  regs.io.lastDoneTag := lastDoneTag
+  regs.io.lastError := lastError
+
+  render.io.completion.ready := true.B
+  irq := false.B
+  when(render.io.completion.fire) {
+    lastDoneTag := render.io.completion.bits.tag
+    lastError := render.io.completion.bits.error
+    irq := true.B
+  }
+
+  ddr.io.render <> render.io.axi
+  ddr.io.scanout <> scanout.io.axi
+  io.axi <> ddr.io.axi
+
+  scanout.io.enable := true.B
+  scanout.io.frontBase := GpuMemoryMap.FramebufferA.U
+  scanout.io.fifoLevel := io.scanoutLevel
+  scanout.io.pixel.ready := io.displayReady
+
+  io.displayPixel := scanout.io.pixel.bits.pixel
+  io.displayValid := scanout.io.pixel.valid
+  io.displayLineLast := scanout.io.pixel.bits.lineLast
+  io.displayFrameLast := scanout.io.pixel.bits.frameLast
+  io.irq := irq
 }

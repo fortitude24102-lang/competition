@@ -48,13 +48,15 @@
 
 更详细的目录和复用边界见 [`docs/efinix_2d_gpu/directory_layout.md`](docs/efinix_2d_gpu/directory_layout.md)。
 
-## 组员 A 与 B 离线测试
+## 离线测试
 
 在本工作树中执行：
 
 ```powershell
+./scripts/test-efinix-gpu.ps1
 ./scripts/test-efinix-verilog.ps1
 ./scripts/test-efinix-software.ps1
+./scripts/test-efinix-board.ps1 -EfinityHome D:/efinity -Flow map
 ```
 
-分别检查官方 HDMI 复用边界与 RGB565 转换，以及 Sapphire 软件接口和 CPU 参考模型。软件脚本的交叉编译不等同于固件已经在开发板运行。测试依赖与本轮阶段状态见 [A、B 离线推进记录](docs/efinix_2d_gpu/ab_offline_progress.md)。
+依次检查负责人 GPU、组员 A 的官方 HDMI/RGB565 边界、组员 B 的 Sapphire 软件接口，以及派生工程的 Efinity 映射。软件交叉编译和 Efinity 映射均不等同于开发板运行。测试依赖与本轮阶段状态见 [A、B 离线推进记录](docs/efinix_2d_gpu/ab_offline_progress.md)。

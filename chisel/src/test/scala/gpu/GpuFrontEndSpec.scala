@@ -89,6 +89,9 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
         pokeCommand(dut, GpuOpcode.Copy, GpuMemoryMap.DenseAssets + 1, GpuMemoryMap.FramebufferA, 8, 4, 16, 16)
         dut.io.error.expect(GpuError.MisalignedAddress)
 
+        pokeCommand(dut, GpuOpcode.Copy, GpuMemoryMap.DenseAssets, GpuMemoryMap.FramebufferA, 1, 2, 3, 2)
+        dut.io.error.expect(GpuError.MisalignedAddress)
+
         pokeCommand(dut, GpuOpcode.Copy, GpuMemoryMap.DenseAssets, GpuMemoryMap.FramebufferA, 8, 4, 14, 16)
         dut.io.error.expect(GpuError.StrideTooSmall)
 

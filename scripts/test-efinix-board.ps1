@@ -10,7 +10,11 @@ foreach($file in $project.SelectNodes('//e:design_file|//e:sdc_file',$ns)) {
  if(!(Test-Path -LiteralPath $full)){throw "Missing project input: $full"}
  $file.SetAttribute('name',$full.Replace('\','/'))
 }
-$project.SelectSingleNode('//e:param[@name="include"]',$ns).SetAttribute('value',((Join-Path $board 'vendor/sapphire_ddr3/rtl').Replace('\','/')))
+$include=$project.SelectSingleNode('//e:param[@name="include"]',$ns)
+$includePaths=$include.value.Split(';') | ForEach-Object {
+ [IO.Path]::GetFullPath((Join-Path $board $_)).Replace('\','/')
+}
+$include.SetAttribute('value',($includePaths -join ';'))
 $project.Save((Join-Path $OutputDirectory 'efinix_2d_gpu.xml'))
 Copy-Item (Join-Path $board 'efinix_2d_gpu.peri.xml') $OutputDirectory -Force
 Get-ChildItem (Join-Path $board 'vendor/sapphire_ddr3/par/ddr_demo_ti60/ip/soc') -Filter *.bin | Copy-Item -Destination $OutputDirectory -Force

@@ -192,6 +192,61 @@ parameter FREQ = 200;			// default is 100 MHz.  Redefine as needed.
   wire                              s_axi_rlast;
   wire                              s_axi_rvalid;
 
+  // Sapphire APB Slave 0 and external AXI Master 0 connect the generated GPU.
+  wire [15:0]                       gpu_apb_paddr;
+  wire                              gpu_apb_psel;
+  wire                              gpu_apb_penable;
+  wire                              gpu_apb_pwrite;
+  wire [31:0]                       gpu_apb_pwdata;
+  wire [31:0]                       gpu_apb_prdata;
+  wire                              gpu_apb_pready;
+  wire                              gpu_apb_pslverror;
+  wire                              gpu_irq;
+  wire                              gpu_reset;
+  wire                              gpu_awready;
+  wire                              gpu_awvalid;
+  wire [31:0]                       gpu_awaddr;
+  wire [3:0]                        gpu_awid;
+  wire [7:0]                        gpu_awlen;
+  wire [2:0]                        gpu_awsize;
+  wire [1:0]                        gpu_awburst;
+  wire                              gpu_awlock;
+  wire [3:0]                        gpu_awcache;
+  wire [2:0]                        gpu_awprot;
+  wire [3:0]                        gpu_awqos;
+  wire [3:0]                        gpu_awregion;
+  wire                              gpu_wready;
+  wire                              gpu_wvalid;
+  wire [31:0]                       gpu_wdata;
+  wire [3:0]                        gpu_wstrb;
+  wire                              gpu_wlast;
+  wire                              gpu_bready;
+  wire                              gpu_bvalid;
+  wire [3:0]                        gpu_bid;
+  wire [1:0]                        gpu_bresp;
+  wire                              gpu_arready;
+  wire                              gpu_arvalid;
+  wire [31:0]                       gpu_araddr;
+  wire [3:0]                        gpu_arid;
+  wire [7:0]                        gpu_arlen;
+  wire [2:0]                        gpu_arsize;
+  wire [1:0]                        gpu_arburst;
+  wire                              gpu_arlock;
+  wire [3:0]                        gpu_arcache;
+  wire [2:0]                        gpu_arprot;
+  wire [3:0]                        gpu_arqos;
+  wire [3:0]                        gpu_arregion;
+  wire                              gpu_rready;
+  wire                              gpu_rvalid;
+  wire [3:0]                        gpu_rid;
+  wire [31:0]                       gpu_rdata;
+  wire [1:0]                        gpu_rresp;
+  wire                              gpu_rlast;
+  wire [15:0]                       gpu_display_pixel;
+  wire                              gpu_display_valid;
+  wire                              gpu_display_line_last;
+  wire                              gpu_display_frame_last;
+
 
 //***************************************************************************
   wire [2:0]                        vio_pll_shift;  
@@ -371,7 +426,67 @@ ddr3_top                 u_ddr3_top
 
 
 //***************************************************************************
-soc u_sapphire_soc(
+Efinix2dGpuTop u_efinix_2d_gpu (
+    .clock                     (user_clk),
+    .reset                     (!sys_rst | gpu_reset),
+    .io_apb_paddr              (gpu_apb_paddr),
+    .io_apb_psel               (gpu_apb_psel),
+    .io_apb_penable            (gpu_apb_penable),
+    .io_apb_pwrite             (gpu_apb_pwrite),
+    .io_apb_pwdata             (gpu_apb_pwdata),
+    .io_apb_prdata             (gpu_apb_prdata),
+    .io_apb_pready             (gpu_apb_pready),
+    .io_apb_pslverror          (gpu_apb_pslverror),
+    .io_axi_aw_ready           (gpu_awready),
+    .io_axi_aw_valid           (gpu_awvalid),
+    .io_axi_aw_bits_addr       (gpu_awaddr),
+    .io_axi_aw_bits_id         (gpu_awid),
+    .io_axi_aw_bits_len        (gpu_awlen),
+    .io_axi_aw_bits_size       (gpu_awsize),
+    .io_axi_aw_bits_burst      (gpu_awburst),
+    .io_axi_aw_bits_lock       (gpu_awlock),
+    .io_axi_aw_bits_cache      (gpu_awcache),
+    .io_axi_aw_bits_prot       (gpu_awprot),
+    .io_axi_aw_bits_qos        (gpu_awqos),
+    .io_axi_aw_bits_region     (gpu_awregion),
+    .io_axi_w_ready            (gpu_wready),
+    .io_axi_w_valid            (gpu_wvalid),
+    .io_axi_w_bits_data        (gpu_wdata),
+    .io_axi_w_bits_strb        (gpu_wstrb),
+    .io_axi_w_bits_last        (gpu_wlast),
+    .io_axi_b_ready            (gpu_bready),
+    .io_axi_b_valid            (gpu_bvalid),
+    .io_axi_b_bits_id          (gpu_bid),
+    .io_axi_b_bits_resp        (gpu_bresp),
+    .io_axi_ar_ready           (gpu_arready),
+    .io_axi_ar_valid           (gpu_arvalid),
+    .io_axi_ar_bits_addr       (gpu_araddr),
+    .io_axi_ar_bits_id         (gpu_arid),
+    .io_axi_ar_bits_len        (gpu_arlen),
+    .io_axi_ar_bits_size       (gpu_arsize),
+    .io_axi_ar_bits_burst      (gpu_arburst),
+    .io_axi_ar_bits_lock       (gpu_arlock),
+    .io_axi_ar_bits_cache      (gpu_arcache),
+    .io_axi_ar_bits_prot       (gpu_arprot),
+    .io_axi_ar_bits_qos        (gpu_arqos),
+    .io_axi_ar_bits_region     (gpu_arregion),
+    .io_axi_r_ready            (gpu_rready),
+    .io_axi_r_valid            (gpu_rvalid),
+    .io_axi_r_bits_id          (gpu_rid),
+    .io_axi_r_bits_data        (gpu_rdata),
+    .io_axi_r_bits_resp        (gpu_rresp),
+    .io_axi_r_bits_last        (gpu_rlast),
+    .io_vblank                 (1'b0),
+    .io_scanoutLevel           (12'hfff),
+    .io_displayReady           (1'b0),
+    .io_displayPixel           (gpu_display_pixel),
+    .io_displayValid           (gpu_display_valid),
+    .io_displayLineLast        (gpu_display_line_last),
+    .io_displayFrameLast       (gpu_display_frame_last),
+    .io_irq                    (gpu_irq)
+);
+
+ soc u_sapphire_soc(
     .axiA_awready(1'b0),
     .axiA_arready(1'b0),
     .axiAInterrupt(1'b0),
@@ -384,38 +499,50 @@ soc u_sapphire_soc(
     .axiA_rdata(1'b0),
     .axiA_rid(1'b0),
     .axiA_rresp(1'b0),
-    .userInterruptA(1'b0),
+    .userInterruptA(gpu_irq),
     .system_i2c_0_io_scl_read(1'b1),
     .system_i2c_0_io_sda_read(1'b1),
     .io_ddrMasters_0_clk(user_clk),
-    .io_ddrMasters_0_r_ready(1'b0),
-    .io_ddrMasters_0_ar_payload_prot(1'b0),
-    .io_ddrMasters_0_ar_payload_qos(1'b0),
-    .io_ddrMasters_0_ar_payload_cache(1'b0),
-    .io_ddrMasters_0_ar_payload_lock(1'b0),
-    .io_ddrMasters_0_ar_payload_burst(1'b0),
-    .io_ddrMasters_0_ar_payload_size(1'b0),
-    .io_ddrMasters_0_ar_payload_len(1'b0),
-    .io_ddrMasters_0_ar_payload_region(1'b0),
-    .io_ddrMasters_0_ar_payload_id(1'b0),
-    .io_ddrMasters_0_ar_payload_addr(1'b0),
-    .io_ddrMasters_0_ar_valid(1'b0),
-    .io_ddrMasters_0_b_ready(1'b0),
-    .io_ddrMasters_0_w_payload_last(1'b0),
-    .io_ddrMasters_0_w_payload_strb(1'b0),
-    .io_ddrMasters_0_w_payload_data(1'b0),
-    .io_ddrMasters_0_w_valid(1'b0),
-    .io_ddrMasters_0_aw_payload_prot(1'b0),
-    .io_ddrMasters_0_aw_payload_qos(1'b0),
-    .io_ddrMasters_0_aw_payload_cache(1'b0),
-    .io_ddrMasters_0_aw_payload_lock(1'b0),
-    .io_ddrMasters_0_aw_payload_burst(1'b0),
-    .io_ddrMasters_0_aw_payload_size(1'b0),
-    .io_ddrMasters_0_aw_payload_len(1'b0),
-    .io_ddrMasters_0_aw_payload_region(1'b0),
-    .io_ddrMasters_0_aw_payload_id(1'b0),
-    .io_ddrMasters_0_aw_payload_addr(1'b0),
-    .io_ddrMasters_0_aw_valid(1'b0),
+    .io_ddrMasters_0_reset(gpu_reset),
+    .io_ddrMasters_0_r_payload_last(gpu_rlast),
+    .io_ddrMasters_0_r_payload_resp(gpu_rresp),
+    .io_ddrMasters_0_r_payload_id(gpu_rid),
+    .io_ddrMasters_0_r_payload_data(gpu_rdata),
+    .io_ddrMasters_0_r_ready(gpu_rready),
+    .io_ddrMasters_0_r_valid(gpu_rvalid),
+    .io_ddrMasters_0_ar_payload_prot(gpu_arprot),
+    .io_ddrMasters_0_ar_payload_qos(gpu_arqos),
+    .io_ddrMasters_0_ar_payload_cache(gpu_arcache),
+    .io_ddrMasters_0_ar_payload_lock(gpu_arlock),
+    .io_ddrMasters_0_ar_payload_burst(gpu_arburst),
+    .io_ddrMasters_0_ar_payload_size(gpu_arsize),
+    .io_ddrMasters_0_ar_payload_len(gpu_arlen),
+    .io_ddrMasters_0_ar_payload_region(gpu_arregion),
+    .io_ddrMasters_0_ar_payload_id(gpu_arid),
+    .io_ddrMasters_0_ar_payload_addr(gpu_araddr),
+    .io_ddrMasters_0_ar_ready(gpu_arready),
+    .io_ddrMasters_0_ar_valid(gpu_arvalid),
+    .io_ddrMasters_0_b_payload_resp(gpu_bresp),
+    .io_ddrMasters_0_b_payload_id(gpu_bid),
+    .io_ddrMasters_0_b_ready(gpu_bready),
+    .io_ddrMasters_0_b_valid(gpu_bvalid),
+    .io_ddrMasters_0_w_payload_last(gpu_wlast),
+    .io_ddrMasters_0_w_payload_strb(gpu_wstrb),
+    .io_ddrMasters_0_w_payload_data(gpu_wdata),
+    .io_ddrMasters_0_w_ready(gpu_wready),
+    .io_ddrMasters_0_w_valid(gpu_wvalid),
+    .io_ddrMasters_0_aw_payload_prot(gpu_awprot),
+    .io_ddrMasters_0_aw_payload_qos(gpu_awqos),
+    .io_ddrMasters_0_aw_payload_cache(gpu_awcache),
+    .io_ddrMasters_0_aw_payload_lock(gpu_awlock),
+    .io_ddrMasters_0_aw_payload_burst(gpu_awburst),
+    .io_ddrMasters_0_aw_payload_size(gpu_awsize),
+    .io_ddrMasters_0_aw_payload_len(gpu_awlen),
+    .io_ddrMasters_0_aw_payload_region(gpu_awregion),
+    .io_ddrMasters_0_aw_payload_id(gpu_awid),
+    .io_ddrMasters_0_aw_payload_addr(gpu_awaddr),
+    .io_ddrMasters_0_aw_ready(gpu_awready),
+    .io_ddrMasters_0_aw_valid(gpu_awvalid),
     .io_asyncReset                      (!pll_locked                        ),
     .io_systemClk                       (user_clk                           ),
 
@@ -481,14 +608,14 @@ soc u_sapphire_soc(
     .system_spi_0_io_data_3_write       (                                   ),
     .system_spi_0_io_ss                 (system_spi_0_io_ss                 ),
     //APB 0
-    .io_apbSlave_0_PADDR                (),
-    .io_apbSlave_0_PSEL                 (),
-    .io_apbSlave_0_PENABLE              (),
-    .io_apbSlave_0_PREADY               (1'b1),
-    .io_apbSlave_0_PWRITE               (),
-    .io_apbSlave_0_PWDATA               (),
-    .io_apbSlave_0_PRDATA               (32'b0),
-    .io_apbSlave_0_PSLVERROR            (1'b0),
+    .io_apbSlave_0_PADDR                (gpu_apb_paddr),
+    .io_apbSlave_0_PSEL                 (gpu_apb_psel),
+    .io_apbSlave_0_PENABLE              (gpu_apb_penable),
+    .io_apbSlave_0_PREADY               (gpu_apb_pready),
+    .io_apbSlave_0_PWRITE               (gpu_apb_pwrite),
+    .io_apbSlave_0_PWDATA               (gpu_apb_pwdata),
+    .io_apbSlave_0_PRDATA               (gpu_apb_prdata),
+    .io_apbSlave_0_PSLVERROR            (gpu_apb_pslverror),
 
     .system_gpio_0_io_write             ( soc_gpio_OUT                      ),//,
     .system_gpio_0_io_read              ( soc_gpio_IN                       ),//
@@ -507,8 +634,6 @@ soc u_sapphire_soc(
 
 );
 
-
-// Unmapped APB peripheral: return ID/data zero; complete without a fault for the software probe.    
 
 //***************************************************************************
 

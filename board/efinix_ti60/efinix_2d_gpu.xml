@@ -40,6 +40,26 @@
     <efx:design_file name="vendor/sapphire_ddr3/rtl/memory_test/common/bit1_delaym.v" version="default" library="default" />
     <efx:design_file name="rtl/board_top.v" version="default" library="default" />
     <efx:design_file name="rtl/efinix_sapphire_adapter.v" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/GpuApbRegs.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/ram_16x220.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/Queue16_GpuCommand.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/CommandQueue.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/CommandValidator.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/RectAddressGen.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/AxiReadEngine.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/PixelReadAligner.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/PixelWritePacker.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/AxiWriteEngine.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/DenseBlitEngine.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/gpu_pixel_copy.v" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/gpu_pixel_fill.v" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/gpu_pixel_pipe.v" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/PixelPipeHarness.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/Arbiter2_GpuCompletion.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/RenderEngine.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/ScanoutDma.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/DdrQosArbiter.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/Efinix2dGpuTop.sv" version="default" library="default" />
     <efx:design_file name="rtl/display/hdmi_tx_adapter.v" version="default" library="default" />
     <efx:design_file name="vendor/hdmi_tx/rtl/reset.v" version="default" library="default" />
     <efx:design_file name="vendor/hdmi_tx/rtl/color_bar_v3.0/color_bar_rgb.v" version="default" library="default" />
@@ -96,7 +116,7 @@
     <efx:param name="peri-syn-inference" value="0" value_type="e_option" />
     <efx:param name="ram-decomp-mode" value="0" value_type="e_option" />
     <efx:param name="max_threads" value="-1" value_type="e_integer" />
-    <efx:param name="include" value="vendor/sapphire_ddr3/par/ddr_demo_ti60/ip/soc;vendor/sapphire_ddr3/rtl" value_type="e_string" />
+    <efx:param name="include" value="vendor/sapphire_ddr3/rtl" value_type="e_string" />
     <efx:param name="suppress_info_msgs" value="off" value_type="e_bool" />
     <efx:param name="suppress_warning_msgs" value="off" value_type="e_bool" />
   </efx:synthesis>

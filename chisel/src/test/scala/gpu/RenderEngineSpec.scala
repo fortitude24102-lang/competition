@@ -52,6 +52,155 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.axi.r.ready.expect(false)
         dut.io.irq.expect(false)
         dut.io.displayValid.expect(false)
+        dut.io.displayLineLast.expect(false)
+        dut.io.displayFrameLast.expect(false)
+      }
+    }
+
+    it("executes an APB-submitted Fill through the real pixel pipe and reports completion") {
+      simulate(new Efinix2dGpuTop) { dut =>
+        val memory = collection.mutable.Map.empty[Long, Int].withDefaultValue(0)
+        var writeAddress = 0L
+        var responsePending = false
+        var sawIrq = false
+
+        dut.io.apb.psel.poke(false)
+        dut.io.apb.penable.poke(false)
+        dut.io.apb.pwrite.poke(false)
+        dut.io.apb.paddr.poke(0)
+        dut.io.apb.pwdata.poke(0)
+        dut.io.axi.aw.ready.poke(true)
+        dut.io.axi.w.ready.poke(true)
+        dut.io.axi.b.valid.poke(false)
+        dut.io.axi.b.bits.id.poke(0)
+        dut.io.axi.b.bits.resp.poke(0)
+        dut.io.axi.ar.ready.poke(true)
+        dut.io.axi.r.valid.poke(false)
+        dut.io.axi.r.bits.id.poke(0)
+        dut.io.axi.r.bits.data.poke(0)
+        dut.io.axi.r.bits.resp.poke(0)
+        dut.io.axi.r.bits.last.poke(false)
+        dut.io.vblank.poke(false)
+        dut.io.scanoutLevel.poke(0)
+        dut.io.displayReady.poke(false)
+        dut.clock.step()
+
+        def apbWrite(offset: Int, data: BigInt): Unit = {
+          dut.io.apb.paddr.poke(offset)
+          dut.io.apb.pwrite.poke(true)
+          dut.io.apb.pwdata.poke(data)
+          dut.io.apb.psel.poke(true)
+          dut.io.apb.penable.poke(true)
+          dut.io.apb.pslverror.expect(false)
+          dut.clock.step()
+          dut.io.apb.psel.poke(false)
+          dut.io.apb.penable.poke(false)
+        }
+
+        apbWrite(GpuRegisterMap.Op, GpuOpcode.Fill)
+        apbWrite(GpuRegisterMap.DstAddr, GpuMemoryMap.FramebufferA + 2)
+        apbWrite(GpuRegisterMap.Size, (2L << 16) | 3L)
+        apbWrite(GpuRegisterMap.DstStride, 12)
+        apbWrite(GpuRegisterMap.ColorKey, 0x5aa5)
+        apbWrite(GpuRegisterMap.Tag, 0x1234)
+        apbWrite(GpuRegisterMap.Control, 1)
+
+        for (_ <- 0 until 300 if !sawIrq) {
+          dut.io.axi.b.valid.poke(responsePending)
+          val awFire = dut.io.axi.aw.valid.peek().litToBoolean
+          val wFire = dut.io.axi.w.valid.peek().litToBoolean
+          val wLast = wFire && dut.io.axi.w.bits.last.peek().litToBoolean
+          val bFire = responsePending && dut.io.axi.b.ready.peek().litToBoolean
+
+          if (awFire) writeAddress = dut.io.axi.aw.bits.addr.peek().litValue.longValue
+          if (wFire) {
+            val data = dut.io.axi.w.bits.data.peek().litValue.longValue
+            val strobe = dut.io.axi.w.bits.strb.peek().litValue.toInt
+            for (byte <- 0 until 4 if ((strobe >> byte) & 1) != 0) {
+              memory(writeAddress + byte) = ((data >> (byte * 8)) & 0xff).toInt
+            }
+            writeAddress += 4
+          }
+          sawIrq ||= dut.io.irq.peek().litToBoolean
+          dut.clock.step()
+          if (bFire) responsePending = false
+          if (wLast) responsePending = true
+        }
+
+        sawIrq shouldBe true
+        def halfWord(address: Long): Int = memory(address) | (memory(address + 1) << 8)
+        Seq(
+          GpuMemoryMap.FramebufferA.longValue + 2,
+          GpuMemoryMap.FramebufferA.longValue + 4,
+          GpuMemoryMap.FramebufferA.longValue + 6,
+          GpuMemoryMap.FramebufferA.longValue + 14,
+          GpuMemoryMap.FramebufferA.longValue + 16,
+          GpuMemoryMap.FramebufferA.longValue + 18
+        ).foreach(address => halfWord(address) shouldBe 0x5aa5)
+
+        dut.io.apb.paddr.poke(GpuRegisterMap.LastDone)
+        dut.io.apb.pwrite.poke(false)
+        dut.io.apb.psel.poke(true)
+        dut.io.apb.penable.poke(true)
+        dut.io.apb.prdata.expect(0x1234)
+        dut.io.apb.paddr.poke(GpuRegisterMap.Error)
+        dut.io.apb.prdata.expect(GpuError.None)
+      }
+    }
+  }
+
+  describe("RenderEngine completion order") {
+    it("does not let a rejected queued command complete ahead of an active Fill") {
+      simulate(new RenderEngine) { dut =>
+        val completionTags = collection.mutable.ArrayBuffer.empty[BigInt]
+        val completionCycles = collection.mutable.ArrayBuffer.empty[Int]
+        var commandIndex = 0
+        var responsePending = false
+
+        dut.io.completion.ready.poke(true)
+        dut.io.axi.aw.ready.poke(true)
+        dut.io.axi.w.ready.poke(true)
+        dut.io.axi.ar.ready.poke(true)
+        dut.io.axi.r.valid.poke(false)
+        dut.io.axi.r.bits.id.poke(0)
+        dut.io.axi.r.bits.data.poke(0)
+        dut.io.axi.r.bits.resp.poke(0)
+        dut.io.axi.r.bits.last.poke(false)
+        dut.io.axi.b.bits.id.poke(0)
+        dut.io.axi.b.bits.resp.poke(0)
+
+        for (cycle <- 0 until 150 if completionTags.size < 2) {
+          dut.io.command.valid.poke(commandIndex < 2)
+          dut.io.command.bits.op.poke(if (commandIndex == 0) GpuOpcode.Fill else 15)
+          dut.io.command.bits.srcAddr.poke(0)
+          dut.io.command.bits.dstAddr.poke(GpuMemoryMap.FramebufferA)
+          dut.io.command.bits.widthPixels.poke(1)
+          dut.io.command.bits.heightPixels.poke(1)
+          dut.io.command.bits.srcStride.poke(0)
+          dut.io.command.bits.dstStride.poke(2)
+          dut.io.command.bits.color.poke(0x1234)
+          dut.io.command.bits.colorKey.poke(0)
+          dut.io.command.bits.alpha.poke(255)
+          dut.io.command.bits.flags.poke(0)
+          dut.io.command.bits.tag.poke(commandIndex + 1)
+          dut.io.axi.b.valid.poke(responsePending)
+
+          val commandFire = dut.io.command.valid.peek().litToBoolean && dut.io.command.ready.peek().litToBoolean
+          val writeLast = dut.io.axi.w.valid.peek().litToBoolean &&
+            dut.io.axi.w.ready.peek().litToBoolean && dut.io.axi.w.bits.last.peek().litToBoolean
+          val responseFire = responsePending && dut.io.axi.b.ready.peek().litToBoolean
+          if (dut.io.completion.valid.peek().litToBoolean) {
+            completionTags += dut.io.completion.bits.tag.peek().litValue
+            completionCycles += cycle
+          }
+          dut.clock.step()
+          if (commandFire) commandIndex += 1
+          if (responseFire) responsePending = false
+          if (writeLast) responsePending = true
+        }
+
+        completionTags.toSeq shouldBe Seq(BigInt(1), BigInt(2))
+        completionCycles(1) - completionCycles(0) should be >= 2
       }
     }
   }
@@ -431,6 +580,186 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
         }
         halfWord(0x2008) shouldBe 0
         halfWord(0x200c) shouldBe 0
+      }
+    }
+
+    it("copies an odd-width strided rectangle from an upper-halfword source") {
+      simulate(new DenseBlitEngine) { dut =>
+        val memory = collection.mutable.Map.empty[Long, Int].withDefaultValue(0)
+        val sourcePixels = Seq(0x1111, 0x2222, 0x3333, 0x4444, 0x5555, 0x6666)
+        val sourceAddresses = Seq(0x2400002L, 0x2400004L, 0x2400006L, 0x2400012L, 0x2400014L, 0x2400016L)
+        for ((pixel, address) <- sourcePixels.zip(sourceAddresses)) {
+          memory(address) = pixel & 0xff
+          memory(address + 1) = pixel >> 8
+        }
+
+        def word(address: Long): Long = (0 until 4).map(byte => memory(address + byte).toLong << (byte * 8)).reduce(_ | _)
+        var submitted = false
+        var completed = false
+        var pixelPending = false
+        var pendingPixel = 0
+        var readAddress = 0L
+        var readBeats = 0
+        var writeAddress = 0L
+        var responsePending = false
+
+        dut.io.completion.ready.poke(true)
+        dut.io.pixelRequest.ready.poke(true)
+        dut.io.axi.aw.ready.poke(true)
+        dut.io.axi.w.ready.poke(true)
+        dut.io.axi.ar.ready.poke(true)
+        dut.io.axi.b.bits.id.poke(0)
+        dut.io.axi.b.bits.resp.poke(0)
+        dut.io.axi.r.bits.id.poke(0)
+        dut.io.axi.r.bits.resp.poke(0)
+
+        for (_ <- 0 until 500 if !completed) {
+          dut.io.command.valid.poke(!submitted)
+          dut.io.command.bits.op.poke(GpuOpcode.Copy)
+          dut.io.command.bits.srcAddr.poke(0x2400002L)
+          dut.io.command.bits.dstAddr.poke(0x2000002L)
+          dut.io.command.bits.widthPixels.poke(3)
+          dut.io.command.bits.heightPixels.poke(2)
+          dut.io.command.bits.srcStride.poke(16)
+          dut.io.command.bits.dstStride.poke(12)
+          dut.io.command.bits.color.poke(0)
+          dut.io.command.bits.colorKey.poke(0)
+          dut.io.command.bits.alpha.poke(255)
+          dut.io.command.bits.flags.poke(0)
+          dut.io.command.bits.tag.poke(0xcafe)
+
+          dut.io.pixelResult.valid.poke(pixelPending)
+          dut.io.pixelResult.bits.pixel.poke(pendingPixel)
+          dut.io.pixelResult.bits.writeEnable.poke(true)
+          dut.io.axi.b.valid.poke(responsePending)
+          dut.io.axi.r.valid.poke(readBeats > 0)
+          dut.io.axi.r.bits.data.poke(if (readBeats > 0) word(readAddress) else 0)
+          dut.io.axi.r.bits.last.poke(readBeats == 1)
+
+          val commandFire = dut.io.command.valid.peek().litToBoolean && dut.io.command.ready.peek().litToBoolean
+          val pixelRequestFire = dut.io.pixelRequest.valid.peek().litToBoolean && dut.io.pixelRequest.ready.peek().litToBoolean
+          val pixelResultFire = dut.io.pixelResult.valid.peek().litToBoolean && dut.io.pixelResult.ready.peek().litToBoolean
+          val arFire = dut.io.axi.ar.valid.peek().litToBoolean && dut.io.axi.ar.ready.peek().litToBoolean
+          val rFire = dut.io.axi.r.valid.peek().litToBoolean && dut.io.axi.r.ready.peek().litToBoolean
+          val awFire = dut.io.axi.aw.valid.peek().litToBoolean && dut.io.axi.aw.ready.peek().litToBoolean
+          val wFire = dut.io.axi.w.valid.peek().litToBoolean && dut.io.axi.w.ready.peek().litToBoolean
+          val wLast = wFire && dut.io.axi.w.bits.last.peek().litToBoolean
+          val bFire = dut.io.axi.b.valid.peek().litToBoolean && dut.io.axi.b.ready.peek().litToBoolean
+          val completionFire = dut.io.completion.valid.peek().litToBoolean && dut.io.completion.ready.peek().litToBoolean
+
+          if (pixelRequestFire) pendingPixel = dut.io.pixelRequest.bits.foreground.peek().litValue.toInt
+          if (arFire) {
+            readAddress = dut.io.axi.ar.bits.addr.peek().litValue.longValue
+            readBeats = dut.io.axi.ar.bits.len.peek().litValue.toInt + 1
+          }
+          if (awFire) writeAddress = dut.io.axi.aw.bits.addr.peek().litValue.longValue
+          if (wFire) {
+            val data = dut.io.axi.w.bits.data.peek().litValue.longValue
+            val strobe = dut.io.axi.w.bits.strb.peek().litValue.toInt
+            for (byte <- 0 until 4 if ((strobe >> byte) & 1) != 0) {
+              memory(writeAddress + byte) = ((data >> (byte * 8)) & 0xff).toInt
+            }
+            writeAddress += 4
+          }
+          if (completionFire) {
+            dut.io.completion.bits.tag.expect(0xcafe)
+            dut.io.completion.bits.error.expect(GpuError.None)
+            completed = true
+          }
+
+          dut.clock.step()
+          if (commandFire) submitted = true
+          if (pixelResultFire) pixelPending = false
+          if (pixelRequestFire) pixelPending = true
+          if (rFire) {
+            readAddress += 4
+            readBeats -= 1
+          }
+          if (bFire) responsePending = false
+          if (wLast) responsePending = true
+        }
+
+        completed shouldBe true
+        def halfWord(address: Long): Int = memory(address) | (memory(address + 1) << 8)
+        val destinationAddresses = Seq(0x2000002L, 0x2000004L, 0x2000006L, 0x200000eL, 0x2000010L, 0x2000012L)
+        destinationAddresses.map(halfWord) shouldBe sourcePixels
+      }
+    }
+  }
+
+  describe("PixelReadAligner") {
+    it("selects the upper first pixel and stops after an odd pixel count under backpressure") {
+      simulate(new PixelReadAligner) { dut =>
+        dut.io.start.valid.poke(true)
+        dut.io.start.bits.upperFirst.poke(true)
+        dut.io.start.bits.pixels.poke(3)
+        dut.io.input.valid.poke(false)
+        dut.io.input.bits.poke(0)
+        dut.io.output.ready.poke(false)
+        dut.clock.step()
+        dut.io.start.valid.poke(false)
+
+        val words = Seq(BigInt("22221111", 16), BigInt("44443333", 16))
+        val observed = collection.mutable.ArrayBuffer.empty[(BigInt, Boolean)]
+        var wordIndex = 0
+        for (cycle <- 0 until 30 if observed.size < 3) {
+          dut.io.output.ready.poke(cycle % 3 != 1)
+          if (wordIndex < words.size) {
+            dut.io.input.valid.poke(true)
+            dut.io.input.bits.poke(words(wordIndex))
+          } else {
+            dut.io.input.valid.poke(false)
+          }
+
+          val inputFire = dut.io.input.valid.peek().litToBoolean && dut.io.input.ready.peek().litToBoolean
+          if (dut.io.output.valid.peek().litToBoolean && dut.io.output.ready.peek().litToBoolean) {
+            observed += ((dut.io.output.bits.pixel.peek().litValue, dut.io.output.bits.last.peek().litToBoolean))
+          }
+          dut.clock.step()
+          if (inputFire) wordIndex += 1
+        }
+
+        observed.toSeq shouldBe Seq(
+          (BigInt(0x2222), false),
+          (BigInt(0x3333), false),
+          (BigInt(0x4444), true)
+        )
+        dut.io.busy.expect(false)
+      }
+    }
+
+    it("handles lower-first even widths and can restart on a strided next row") {
+      simulate(new PixelReadAligner) { dut =>
+        dut.io.start.valid.poke(false)
+        dut.io.input.valid.poke(false)
+        dut.io.input.bits.poke(0)
+        dut.io.output.ready.poke(true)
+        dut.clock.step()
+
+        def readRow(upperFirst: Boolean, pixels: Int, words: Seq[BigInt]): Seq[BigInt] = {
+          dut.io.start.valid.poke(true)
+          dut.io.start.bits.upperFirst.poke(upperFirst)
+          dut.io.start.bits.pixels.poke(pixels)
+          dut.clock.step()
+          dut.io.start.valid.poke(false)
+
+          val result = collection.mutable.ArrayBuffer.empty[BigInt]
+          var wordIndex = 0
+          for (_ <- 0 until 30 if result.size < pixels) {
+            dut.io.input.valid.poke(wordIndex < words.size)
+            if (wordIndex < words.size) dut.io.input.bits.poke(words(wordIndex))
+            val inputFire = dut.io.input.valid.peek().litToBoolean && dut.io.input.ready.peek().litToBoolean
+            if (dut.io.output.valid.peek().litToBoolean) result += dut.io.output.bits.pixel.peek().litValue
+            dut.clock.step()
+            if (inputFire) wordIndex += 1
+          }
+          result.toSeq
+        }
+
+        readRow(upperFirst = false, 4, Seq(BigInt("22221111", 16), BigInt("44443333", 16))) shouldBe
+          Seq(0x1111, 0x2222, 0x3333, 0x4444).map(BigInt(_))
+        readRow(upperFirst = true, 2, Seq(BigInt("66665555", 16), BigInt("88887777", 16))) shouldBe
+          Seq(0x6666, 0x7777).map(BigInt(_))
       }
     }
   }

@@ -1,0 +1,133 @@
+package gpu
+
+import org.scalatest.funspec.AnyFunSpec
+import testutil.StableChiselSim
+
+class DdrQosArbiterSpec extends AnyFunSpec with StableChiselSim {
+  describe("DdrQosArbiter") {
+    it("locks response ownership for complete read and write transactions and rotates priority") {
+      simulate(new DdrQosArbiter) { dut =>
+        def pokeClientAddress(address: Axi4Address, value: Long): Unit = {
+          address.addr.poke(value)
+          address.id.poke(0)
+          address.len.poke(1)
+          address.size.poke(Axi4.WordSize)
+          address.burst.poke(Axi4.Incrementing)
+          address.lock.poke(false)
+          address.cache.poke(0)
+          address.prot.poke(0)
+          address.qos.poke(0)
+          address.region.poke(0)
+        }
+
+        pokeClientAddress(dut.io.render.ar.bits, 0x1000)
+        pokeClientAddress(dut.io.scanout.ar.bits, 0x2000)
+        pokeClientAddress(dut.io.render.aw.bits, 0x3000)
+        pokeClientAddress(dut.io.scanout.aw.bits, 0x4000)
+        dut.io.render.ar.valid.poke(true)
+        dut.io.scanout.ar.valid.poke(true)
+        dut.io.render.aw.valid.poke(true)
+        dut.io.scanout.aw.valid.poke(true)
+        dut.io.render.w.valid.poke(true)
+        dut.io.render.w.bits.data.poke(0x11112222L)
+        dut.io.render.w.bits.strb.poke(0xf)
+        dut.io.render.w.bits.last.poke(false)
+        dut.io.scanout.w.valid.poke(true)
+        dut.io.scanout.w.bits.data.poke(0x33334444L)
+        dut.io.scanout.w.bits.strb.poke(0xf)
+        dut.io.scanout.w.bits.last.poke(true)
+        dut.io.render.r.ready.poke(true)
+        dut.io.scanout.r.ready.poke(true)
+        dut.io.render.b.ready.poke(true)
+        dut.io.scanout.b.ready.poke(true)
+        dut.io.axi.ar.ready.poke(false)
+        dut.io.axi.aw.ready.poke(false)
+        dut.io.axi.w.ready.poke(false)
+        dut.io.axi.r.valid.poke(false)
+        dut.io.axi.r.bits.id.poke(0)
+        dut.io.axi.r.bits.data.poke(0)
+        dut.io.axi.r.bits.resp.poke(0)
+        dut.io.axi.r.bits.last.poke(false)
+        dut.io.axi.b.valid.poke(false)
+        dut.io.axi.b.bits.id.poke(0)
+        dut.io.axi.b.bits.resp.poke(0)
+
+        dut.clock.step()
+        dut.io.axi.ar.valid.expect(true)
+        dut.io.axi.ar.bits.addr.expect(0x1000)
+        dut.io.axi.aw.valid.expect(true)
+        dut.io.axi.aw.bits.addr.expect(0x3000)
+
+        dut.io.axi.ar.ready.poke(true)
+        dut.io.axi.aw.ready.poke(true)
+        dut.clock.step()
+        dut.io.render.ar.valid.poke(false)
+        dut.io.render.aw.valid.poke(false)
+        dut.io.axi.ar.ready.poke(false)
+        dut.io.axi.aw.ready.poke(false)
+
+        dut.io.axi.r.valid.poke(true)
+        dut.io.axi.r.bits.data.poke(0xaaaabbbbL)
+        dut.io.axi.r.bits.last.poke(false)
+        dut.io.render.r.ready.poke(false)
+        dut.io.render.r.valid.expect(true)
+        dut.io.render.r.bits.data.expect(0xaaaabbbbL)
+        dut.io.scanout.r.valid.expect(false)
+        dut.io.axi.r.ready.expect(false)
+        dut.io.axi.w.valid.expect(true)
+        dut.io.axi.w.bits.data.expect(0x11112222L)
+        dut.io.render.w.ready.expect(false)
+        dut.clock.step()
+
+        dut.io.render.r.ready.poke(true)
+        dut.io.axi.w.ready.poke(true)
+        dut.clock.step()
+
+        dut.io.axi.r.bits.data.poke(0xccccddddL)
+        dut.io.axi.r.bits.last.poke(true)
+        dut.io.render.w.bits.data.poke(0x55556666L)
+        dut.io.render.w.bits.last.poke(true)
+        dut.io.render.r.valid.expect(true)
+        dut.io.scanout.r.valid.expect(false)
+        dut.io.axi.w.valid.expect(true)
+        dut.io.axi.w.bits.data.expect(0x55556666L)
+        dut.clock.step()
+
+        dut.io.axi.r.valid.poke(false)
+        dut.io.render.w.valid.poke(false)
+        dut.io.axi.w.ready.poke(false)
+        dut.io.axi.b.valid.poke(true)
+        dut.io.render.b.ready.poke(false)
+        dut.io.render.b.valid.expect(true)
+        dut.io.scanout.b.valid.expect(false)
+        dut.io.axi.b.ready.expect(false)
+        dut.clock.step()
+
+        dut.io.render.b.ready.poke(true)
+        dut.clock.step()
+        dut.io.axi.b.valid.poke(false)
+
+        dut.clock.step()
+        dut.io.axi.ar.valid.expect(true)
+        dut.io.axi.ar.bits.addr.expect(0x2000)
+        dut.io.axi.aw.valid.expect(true)
+        dut.io.axi.aw.bits.addr.expect(0x4000)
+
+        dut.io.axi.ar.ready.poke(true)
+        dut.io.axi.aw.ready.poke(true)
+        dut.clock.step()
+        dut.io.scanout.ar.valid.poke(false)
+        dut.io.scanout.aw.valid.poke(false)
+        dut.io.axi.r.valid.poke(true)
+        dut.io.axi.r.bits.data.poke(0xccccddddL)
+        dut.io.axi.r.bits.last.poke(true)
+        dut.io.scanout.r.valid.expect(true)
+        dut.io.render.r.valid.expect(false)
+        dut.io.axi.w.ready.poke(true)
+        dut.io.axi.w.valid.expect(true)
+        dut.io.axi.w.bits.data.expect(0x33334444L)
+        dut.clock.step()
+      }
+    }
+  }
+}
