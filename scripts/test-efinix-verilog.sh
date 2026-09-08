@@ -25,3 +25,18 @@ for name in rgb565_to_rgb888 hdmi_tx_adapter; do
     }
   "$build_dir/$name/run"
 done
+
+pixel="$project_root/board/efinix_ti60/rtl/pixel"
+# Production self-written Verilog keeps exactly one module in each source.
+while IFS= read -r source; do
+  count=$(grep -Ec '^[[:space:]]*module[[:space:]]' "$source" || true)
+  [[ "$count" == 1 ]] || { echo "FAIL module structure: $source ($count modules)"; exit 1; }
+done < <(find "$project_root/board/efinix_ti60/rtl" -name '*.v' -type f)
+echo 'PASS self-written Verilog module structure'
+verilator --binary --timing --top-module tb_gpu_pixel_pipe \
+  -I"$pixel" --Mdir "$build_dir/pixel" -o run \
+  "$pixel/gpu_pixel_copy.v" "$pixel/gpu_pixel_fill.v" "$pixel/gpu_pixel_pipe.v" \
+  "$project_root/tb/verilog/tb_gpu_pixel_pipe.sv" >"$build_dir/pixel.log" 2>&1 || {
+    cat "$build_dir/pixel.log"; exit 1;
+  }
+"$build_dir/pixel/run"

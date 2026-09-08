@@ -30,4 +30,14 @@ static inline uint32_t gpu_pack_color_key(uint16_t color, uint16_t key) {
 static inline uint32_t gpu_pack_alpha_flags(uint8_t alpha, uint16_t flags) {
     return (uint32_t)alpha | ((uint32_t)flags << GPU_FLAGS_SHIFT);
 }
+enum gpu_driver_result { GPU_DRIVER_ID=-1, GPU_DRIVER_VERSION=-2,
+ GPU_DRIVER_BUSY=-3, GPU_DRIVER_FULL=-4, GPU_DRIVER_TIMEOUT=-5,
+ GPU_DRIVER_TAG=-6, GPU_DRIVER_HARDWARE=-7, GPU_DRIVER_ARGUMENT=-8 };
+/* Exclusive single owner. Timeout/error retains pending until reset.
+ * No interrupt or second producer may access this register block. */
+typedef struct { uintptr_t base; uint16_t pending_tag; uint8_t ready, pending, hardware_error; } gpu_device;
+int gpu_init(gpu_device *d, uintptr_t base);
+int gpu_fill_async(gpu_device *d,uint32_t dst,uint32_t stride,uint16_t w,uint16_t h,uint16_t color,uint16_t *tag);
+int gpu_wait_tag(gpu_device *d,uint16_t tag,uint32_t poll_limit);
+
 #endif

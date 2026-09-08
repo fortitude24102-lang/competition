@@ -1,0 +1,5 @@
+`ifndef GPU_PIXEL_CONTRACT_VH
+`define GPU_PIXEL_CONTRACT_VH
+`define GPU_PIXEL_FILL 3'd1
+`define GPU_PIXEL_COPY 3'd2
+`endif

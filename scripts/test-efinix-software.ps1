@@ -17,7 +17,25 @@ try {
         $name = [IO.Path]::GetFileNameWithoutExtension($source)
         & $RiscvGcc @common -c "sw/efinix_gpu/$source" -o "$out/$name.o"
         if ($LASTEXITCODE -ne 0) { throw "RV32 compilation failed: $source" }
+}
+    foreach ($test in @('driver','copy','benchmark')) {
+        $sources = @("sw/efinix_gpu/tests/test_$test.c", 'sw/efinix_gpu/src/golden_renderer.c')
+        if ($test -ne 'copy') { $sources += 'sw/efinix_gpu/src/gpu.c' }
+        if ($test -eq 'benchmark') { $sources += 'sw/efinix_gpu/src/benchmark.c' }
+        & wsl gcc -std=c11 -O2 -Wall -Wextra -Werror '-fsanitize=address,undefined' -fno-omit-frame-pointer -DGPU_TEST_BACKEND -Isw/efinix_gpu/include @sources -o "$out/test_$test"
+        if ($LASTEXITCODE -ne 0) { throw "Host compile failed: $test" }
+        & wsl "./$out/test_$test"
+        if ($LASTEXITCODE -ne 0) { throw "Host tests failed: $test" }
     }
-    Write-Output 'PASS: host sanitizer tests and official Sapphire RV32 compile probe'
+    $soc = 'D:/efinity_builds/competition_day1_20260906/sapphire/soc'
+    $bsp = "$soc/bsp/efinix/EfxSapphireSoc"
+    if (!(Test-Path "$bsp/linker/default.ld")) { throw "Complete external Sapphire BSP missing: $soc" }
+    & $RiscvGcc -std=gnu11 -Os -Wall -Wextra -Werror -march=rv32im_zicsr -mabi=ilp32 -ffreestanding -ffunction-sections -fdata-sections -Isw/efinix_gpu/include -isystem "$bsp/include" -isystem "$soc/software/standalone/driver" -DUSE_GP -DNO_LIBC_INIT_ARRAY -nostartfiles "-T$bsp/linker/default.ld" '-Wl,--gc-sections' "-Wl,-Map,$out/gpu_demo.map" "$soc/software/standalone/common/start.S" sw/efinix_gpu/src/main.c sw/efinix_gpu/src/gpu.c sw/efinix_gpu/src/benchmark.c sw/efinix_gpu/src/golden_renderer.c sw/efinix_gpu/src/rgb565.c -o "$out/gpu_demo.elf"
+    if ($LASTEXITCODE -ne 0) { throw 'Sapphire ELF link failed' }
+    $objcopy = Join-Path (Split-Path $RiscvGcc) 'riscv-none-elf-objcopy.exe'
+    foreach ($format in @(@('binary','bin'),@('ihex','hex'))) {
+        & $objcopy -O $format[0] "$out/gpu_demo.elf" "$out/gpu_demo.$($format[1])"
+        if ($LASTEXITCODE -ne 0) { throw "objcopy failed: $($format[0])" }
+    }
+    Write-Output 'PASS: host sanitizer tests, production driver/model/benchmark/copy, Sapphire ELF/BIN/Intel HEX (not board executed)'
 } finally { Pop-Location }
-

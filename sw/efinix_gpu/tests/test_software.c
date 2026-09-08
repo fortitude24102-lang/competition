@@ -17,6 +17,9 @@ int main(int argc, char **argv) {
     for (unsigned p = 0; p < 65536; ++p) {
         uint32_t c = rgb565_to_rgb888((uint16_t)p);
         assert(rgb565_from_rgb888(c >> 16, c >> 8, c) == p);
+        assert((c >> 16)==((p>>11)*8+(p>>11)/4));
+        assert(((c>>8)&255)==(((p>>5)&63)*4+((p>>5)&63)/16));
+        assert((c&255)==((p&31)*8+(p&31)/4));
     }
     /* Independent nearest-candidate oracle, not the production division. */
     for (unsigned max = 31; max <= 63; max += 32)
@@ -79,4 +82,3 @@ int main(int argc, char **argv) {
     puts("PASS: packing, RGB roundtrip, exhaustive alpha, guarded odd-width fill, CRC32");
     return 0;
 }
-
