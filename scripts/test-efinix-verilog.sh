@@ -35,7 +35,7 @@ done < <(find "$project_root/board/efinix_ti60/rtl" -name '*.v' -type f)
 echo 'PASS self-written Verilog module structure'
 verilator --binary --timing --top-module tb_gpu_pixel_pipe \
   -I"$pixel" --Mdir "$build_dir/pixel" -o run \
-  "$pixel/gpu_pixel_copy.v" "$pixel/gpu_pixel_fill.v" "$pixel/gpu_pixel_pipe.v" \
+  "$pixel/gpu_pixel_copy.v" "$pixel/gpu_pixel_fill.v" "$pixel/gpu_pixel_color_key.v" "$pixel/gpu_pixel_pipe.v" \
   "$project_root/tb/verilog/tb_gpu_pixel_pipe.sv" >"$build_dir/pixel.log" 2>&1 || {
     cat "$build_dir/pixel.log"; exit 1;
   }
