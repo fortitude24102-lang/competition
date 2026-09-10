@@ -59,6 +59,32 @@ int gpu_copy_async(gpu_device *d,uint32_t src,uint32_t dst,uint32_t src_stride,u
  gpu_command c={.op=GPU_OP_COPY,.src_addr=src,.dst_addr=dst,.src_stride=src_stride,.dst_stride=dst_stride,.width_pixels=w,.height_pixels=h};
  *tag=next; submit(d,&c,next); return 0;
 }
+int gpu_color_key_async(gpu_device *d,uint32_t src,uint32_t dst,uint32_t src_stride,uint32_t dst_stride,uint16_t w,uint16_t h,uint16_t color_key,uint16_t *tag) {
+ uint16_t next; int e=begin_submit(d,&next); if(e) return e;
+ if(!w || !h) return GPU_ERROR_ZERO_SIZE;
+ if((src|dst|src_stride|dst_stride)&1) return GPU_ERROR_MISALIGNED_ADDRESS;
+ uint32_t row=(uint32_t)w*2u;
+ if(src_stride<row || dst_stride<row) return GPU_ERROR_STRIDE_TOO_SMALL;
+ uint64_t src_end=(uint64_t)src+(uint64_t)(h-1)*src_stride+row;
+ uint64_t dst_end=(uint64_t)dst+(uint64_t)(h-1)*dst_stride+row;
+ if(src<GPU_FRAMEBUFFER_A || dst<GPU_FRAMEBUFFER_A || src_end>GPU_DDR_END_EXCLUSIVE || dst_end>GPU_DDR_END_EXCLUSIVE) return GPU_ERROR_ADDRESS_RANGE;
+ if((uint64_t)src<dst_end && (uint64_t)dst<src_end) return GPU_ERROR_OVERLAPPING_COPY;
+ gpu_command c={.op=GPU_OP_COLOR_KEY,.src_addr=src,.dst_addr=dst,.src_stride=src_stride,.dst_stride=dst_stride,.width_pixels=w,.height_pixels=h,.color_key=color_key};
+ *tag=next; submit(d,&c,next); return 0;
+}
+int gpu_alpha_async(gpu_device *d,uint32_t src,uint32_t dst,uint32_t src_stride,uint32_t dst_stride,uint16_t w,uint16_t h,uint8_t alpha,uint16_t *tag) {
+ uint16_t next; int e=begin_submit(d,&next); if(e) return e;
+ if(!w || !h) return GPU_ERROR_ZERO_SIZE;
+ if((src|dst|src_stride|dst_stride)&1) return GPU_ERROR_MISALIGNED_ADDRESS;
+ uint32_t row=(uint32_t)w*2u;
+ if(src_stride<row || dst_stride<row) return GPU_ERROR_STRIDE_TOO_SMALL;
+ uint64_t src_end=(uint64_t)src+(uint64_t)(h-1)*src_stride+row;
+ uint64_t dst_end=(uint64_t)dst+(uint64_t)(h-1)*dst_stride+row;
+ if(src<GPU_FRAMEBUFFER_A || dst<GPU_FRAMEBUFFER_A || src_end>GPU_DDR_END_EXCLUSIVE || dst_end>GPU_DDR_END_EXCLUSIVE) return GPU_ERROR_ADDRESS_RANGE;
+ if((uint64_t)src<dst_end && (uint64_t)dst<src_end) return GPU_ERROR_OVERLAPPING_COPY;
+ gpu_command c={.op=GPU_OP_ALPHA,.src_addr=src,.dst_addr=dst,.src_stride=src_stride,.dst_stride=dst_stride,.width_pixels=w,.height_pixels=h,.alpha=alpha};
+ *tag=next; submit(d,&c,next); return 0;
+}
 int gpu_present_async(gpu_device *d,uint32_t back_buffer,uint16_t *tag) {
  uint16_t next; int e=begin_submit(d,&next); if(e) return e;
  if(back_buffer!=GPU_FRAMEBUFFER_A && back_buffer!=GPU_FRAMEBUFFER_B) return GPU_ERROR_ADDRESS_RANGE;
