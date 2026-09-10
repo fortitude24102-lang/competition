@@ -40,3 +40,26 @@ verilator --binary --timing --top-module tb_gpu_pixel_pipe \
     cat "$build_dir/pixel.log"; exit 1;
   }
 "$build_dir/pixel/run"
+
+display="$project_root/board/efinix_ti60/rtl/display"
+verilator --binary --timing --top-module tb_vblank_pulse_sync \
+  --Mdir "$build_dir/vblank" -o run \
+  "$display/vblank_pulse_sync.v" "$project_root/tb/verilog/tb_vblank_pulse_sync.sv" \
+  >"$build_dir/vblank.log" 2>&1 || { cat "$build_dir/vblank.log"; exit 1; }
+"$build_dir/vblank/run"
+verilator --binary --timing --top-module tb_display_scale2x_1080p \
+  --Mdir "$build_dir/scale" -o run \
+  "$display/display_scale2x_1080p.v" "$project_root/tb/verilog/tb_display_scale2x_1080p.sv" \
+  >"$build_dir/scale.log" 2>&1 || { cat "$build_dir/scale.log"; exit 1; }
+"$build_dir/scale/run"
+verilator --binary --timing --top-module tb_hdmi_subsystem \
+  -Wno-WIDTH -Wno-UNOPTFLAT -Wno-PINMISSING -Wno-TIMESCALEMOD \
+  --Mdir "$build_dir/display" -o run \
+  "$vendor/sapphire_ddr3/rtl/ddr3_controller/common/efx_fifo_v2.3/efx_fifo_wrapper.v" \
+  "$encoder/dvi_encoder.v" "$encoder/encode.v" \
+  "$display/pixel_async_fifo.v" "$display/display_line_buffer.v" \
+  "$display/display_scale2x_1080p.v" "$display/vblank_pulse_sync.v" \
+  "$display/rgb565_to_rgb888.v" "$display/hdmi_tx_adapter.v" \
+  "$display/hdmi_subsystem.v" "$project_root/tb/verilog/tb_hdmi_subsystem.sv" \
+  >"$build_dir/display.log" 2>&1 || { cat "$build_dir/display.log"; exit 1; }
+"$build_dir/display/run"

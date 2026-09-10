@@ -60,9 +60,14 @@
     <efx:design_file name="../../generated/efinix_gpu/ScanoutDma.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/DdrQosArbiter.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/Efinix2dGpuTop.sv" version="default" library="default" />
+    <efx:design_file name="rtl/display/pixel_async_fifo.v" version="default" library="default" />
+    <efx:design_file name="rtl/display/display_line_buffer.v" version="default" library="default" />
+    <efx:design_file name="rtl/display/display_scale2x_1080p.v" version="default" library="default" />
+    <efx:design_file name="rtl/display/vblank_pulse_sync.v" version="default" library="default" />
+    <efx:design_file name="rtl/display/rgb565_to_rgb888.v" version="default" library="default" />
     <efx:design_file name="rtl/display/hdmi_tx_adapter.v" version="default" library="default" />
+    <efx:design_file name="rtl/display/hdmi_subsystem.v" version="default" library="default" />
     <efx:design_file name="vendor/hdmi_tx/rtl/reset.v" version="default" library="default" />
-    <efx:design_file name="vendor/hdmi_tx/rtl/color_bar_v3.0/color_bar_rgb.v" version="default" library="default" />
     <efx:design_file name="vendor/hdmi_tx/rtl/hdmi_src/dvi_tx/dvi_encoder.v" version="default" library="default" />
     <efx:design_file name="vendor/hdmi_tx/rtl/hdmi_src/dvi_tx/encode.v" version="default" library="default" />
     <efx:design_file name="vendor/sapphire_ddr3/par/ddr_demo_ti60/ip/soc/soc.v" version="default" library="default" />

@@ -105,6 +105,11 @@ parameter                       AXI_DATA_WIDTH     = `AXI_DATA_WIDTH
  output tmds_data0_TX_RST,tmds_data1_TX_RST,tmds_data2_TX_RST,tmds_clk_TX_RST,
  output HPD_N
 );
+wire gpu_stream_clk, gpu_stream_reset;
+wire [15:0] gpu_display_pixel;
+wire gpu_display_valid, gpu_display_line_last, gpu_display_frame_last;
+wire gpu_display_ready, gpu_vblank;
+wire [11:0] gpu_scanout_level;
 efinix_sapphire_adapter sapphire (
  .axi_clk(axi_clk),
  .core_clk(core_clk),
@@ -164,17 +169,33 @@ efinix_sapphire_adapter sapphire (
  .system_spi_0_io_data_0_OUT(system_spi_0_io_data_0_OUT),
  .system_spi_0_io_data_0_OE(system_spi_0_io_data_0_OE),
  .system_spi_0_io_data_1_OUT(system_spi_0_io_data_1_OUT),
- .system_spi_0_io_data_1_OE(system_spi_0_io_data_1_OE)
+ .system_spi_0_io_data_1_OE(system_spi_0_io_data_1_OE),
+ .gpu_stream_clk(gpu_stream_clk),
+ .gpu_stream_reset(gpu_stream_reset),
+ .gpu_display_pixel(gpu_display_pixel),
+ .gpu_display_valid(gpu_display_valid),
+ .gpu_display_line_last(gpu_display_line_last),
+ .gpu_display_frame_last(gpu_display_frame_last),
+ .gpu_display_ready(gpu_display_ready),
+ .gpu_scanout_level(gpu_scanout_level),
+ .gpu_vblank(gpu_vblank)
 );
-wire rst_n,hs,vs,de;
-wire [23:0] rgb;
+wire rst_n;
+wire display_vblank, fifo_full, fifo_empty, display_protocol_error;
+wire [15:0] display_rgb565;
+wire display_hs, display_vs, display_de;
 assign HPD_N = 1'b0;
 reset #(.IN_RST_ACTIVE("LOW"),.OUT_RST_ACTIVE("LOW"),.CYCLE(3)) video_reset
  (.i_arst(hdmi_tx_locked),.i_clk(hdmi_tx_slow_clk),.o_srst(rst_n));
-color_bar_rgb #(.HS_POLORY(1'b1),.VS_POLORY(1'b1),.SYMBOL_WIDTH(8),.SYMBOL_NUM(3),.PAR_PIXEL_NUM(1),
- .HFP(88),.HST(44),.HACT(1920),.HBP(148),.VFP(4),.VST(5),.VACT(1080),.VBP(36),.TEST_MODE(2'd2)) bars
- (.clk(hdmi_tx_slow_clk),.rst_n(rst_n),.hs(hs),.vs(vs),.de(de),.i_cfg_vid(24'b0),.o_vid_data(rgb));
-hdmi_tx_adapter hdmi (.pixelclk(hdmi_tx_slow_clk),.rst(~rst_n),.red(rgb[23:16]),.green(rgb[15:8]),.blue(rgb[7:0]),.hs(hs),.vs(vs),.de(de),
+hdmi_subsystem display (
+ .gpu_clk(gpu_stream_clk),.gpu_reset(gpu_stream_reset),
+ .pixel_clk(hdmi_tx_slow_clk),.pixel_reset(~rst_n),
+ .gpu_pixel(gpu_display_pixel),.gpu_valid(gpu_display_valid),
+ .gpu_line_last(gpu_display_line_last),.gpu_frame_last(gpu_display_frame_last),
+ .gpu_ready(gpu_display_ready),.fifo_level(gpu_scanout_level),
+ .vblank_gpu(gpu_vblank),.vblank(display_vblank),
+ .fifo_full(fifo_full),.fifo_empty(fifo_empty),.protocol_error(display_protocol_error),
+ .video_rgb565(display_rgb565),.video_hs(display_hs),.video_vs(display_vs),.video_de(display_de),
  .tmds_data0_o(tmds_data0_o),
  .tmds_data1_o(tmds_data1_o),
  .tmds_data2_o(tmds_data2_o),

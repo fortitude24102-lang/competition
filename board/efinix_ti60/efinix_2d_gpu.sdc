@@ -306,6 +306,6 @@ set_output_delay -clock core_clk -reference_pin [get_ports {core_clk~CLKOUT~1~62
 set_output_delay -clock core_clk -reference_pin [get_ports {core_clk~CLKOUT~1~62}] -min -0.140 [get_ports {system_spi_0_io_data_1_OUT}]
 set_output_delay -clock core_clk -reference_pin [get_ports {core_clk~CLKOUT~1~62}] -max 0.302 [get_ports {system_spi_0_io_data_1_OE}]
 set_output_delay -clock core_clk -reference_pin [get_ports {core_clk~CLKOUT~1~62}] -min -0.140 [get_ports {system_spi_0_io_data_1_OE}]
-# 1080p60: 148.5 MHz pixel / 742.5 MHz serializer
-create_clock -period 6.734006734 hdmi_tx_slow_clk
-create_clock -period 1.346801347 hdmi_tx_fast_clk
+# Official HDMI Demo PLL: 148.75 MHz pixel / 743.75 MHz serializer
+create_clock -period 6.722689076 hdmi_tx_slow_clk
+create_clock -period 1.344537815 hdmi_tx_fast_clk

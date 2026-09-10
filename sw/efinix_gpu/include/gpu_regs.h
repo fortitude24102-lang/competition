@@ -31,8 +31,8 @@
 #define GPU_LAST_DONE_MASK 0xffffu
 #define GPU_ERROR_MASK 0xffu
 /* Offsets >= 0x48 are reserved: reads zero, writes ignored by current RTL.
- * FRONT/BACK return fixed A/B; CONTROL only implements SUBMIT.
- * No MMIO pointer or hardware driver is provided by this offline contract. */
+ * FRONT/BACK return fixed A/B until lead Day14; PRESENT already uses SUBMIT
+ * so software and the future FrameSwapController share one command contract. */
 #define GPU_REG_ID 0x0000u
 #define GPU_REG_VERSION 0x0004u
 #define GPU_REG_STATUS 0x0008u

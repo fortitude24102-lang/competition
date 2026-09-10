@@ -123,7 +123,16 @@ parameter                       AXI_DATA_WIDTH     = `AXI_DATA_WIDTH
    output                             system_spi_0_io_data_0_OE,
    output                             system_spi_0_io_data_1_OUT,
    output                             system_spi_0_io_data_1_OE
-
+,
+   output                             gpu_stream_clk,
+   output                             gpu_stream_reset,
+   output [15:0]                      gpu_display_pixel,
+   output                             gpu_display_valid,
+   output                             gpu_display_line_last,
+   output                             gpu_display_frame_last,
+   input                              gpu_display_ready,
+   input [11:0]                       gpu_scanout_level,
+   input                              gpu_vblank
    );
 
 
@@ -242,12 +251,6 @@ parameter FREQ = 200;			// default is 100 MHz.  Redefine as needed.
   wire [31:0]                       gpu_rdata;
   wire [1:0]                        gpu_rresp;
   wire                              gpu_rlast;
-  wire [15:0]                       gpu_display_pixel;
-  wire                              gpu_display_valid;
-  wire                              gpu_display_line_last;
-  wire                              gpu_display_frame_last;
-
-
 //***************************************************************************
   wire [2:0]                        vio_pll_shift;  
   wire [4:0]                        vio_pll_shift_sel;
@@ -308,6 +311,8 @@ end else begin
 assign user_clk = core_clk;
 end
 endgenerate
+assign gpu_stream_clk = user_clk;
+assign gpu_stream_reset = !sys_rst | gpu_reset;
 //***************************************************************************
 // The traffic generation module instantiated below drives traffic (patterns)
 // on the application interface of the memory controller
@@ -428,7 +433,7 @@ ddr3_top                 u_ddr3_top
 //***************************************************************************
 Efinix2dGpuTop u_efinix_2d_gpu (
     .clock                     (user_clk),
-    .reset                     (!sys_rst | gpu_reset),
+    .reset                     (gpu_stream_reset),
     .io_apb_paddr              (gpu_apb_paddr),
     .io_apb_psel               (gpu_apb_psel),
     .io_apb_penable            (gpu_apb_penable),
@@ -476,9 +481,9 @@ Efinix2dGpuTop u_efinix_2d_gpu (
     .io_axi_r_bits_data        (gpu_rdata),
     .io_axi_r_bits_resp        (gpu_rresp),
     .io_axi_r_bits_last        (gpu_rlast),
-    .io_vblank                 (1'b0),
-    .io_scanoutLevel           (12'hfff),
-    .io_displayReady           (1'b0),
+    .io_vblank                 (gpu_vblank),
+    .io_scanoutLevel           (gpu_scanout_level),
+    .io_displayReady           (gpu_display_ready),
     .io_displayPixel           (gpu_display_pixel),
     .io_displayValid           (gpu_display_valid),
     .io_displayLineLast        (gpu_display_line_last),

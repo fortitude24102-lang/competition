@@ -1,6 +1,6 @@
-# 组员 A：第 2、3 天离线交付
+# 组员 A：第 2～13 天离线交付
 
-日期：2026-09-08。工具：WSL Ubuntu，Verilator 5.020。
+日期：2026-09-10。工具：WSL Ubuntu，Verilator 5.020；Efinity 2025.1。
 
 ## 接口和官方边界
 
@@ -32,7 +32,7 @@
 ./scripts/test-efinix-verilog.ps1
 ```
 
-或在 WSL 中运行 `bash scripts/test-efinix-verilog.sh`。脚本每次先只读核验既有 `vendor/manifest.sha256`，139 个文件全部匹配；没有重新复制或修改 vendor。编译和仿真任一失败都会返回非零；编译产物使用 `mktemp` 临时目录并自动清理，关闭 core dump。只对官方 `encode.v` 的 WIDTH、UNOPTFLAT 警告做局部抑制（官方位宽截断和按位前馈链），自写代码的警告保持可见且致命。
+或在 WSL 中运行 `bash scripts/test-efinix-verilog.sh`。脚本每次先只读核验既有 `vendor/manifest.sha256`，139 个文件全部匹配；没有重新复制或修改 vendor。编译和仿真任一失败都会返回非零；编译产物使用 `mktemp` 临时目录并自动清理，关闭 core dump。单模块测试保持警告致命；包含官方 FIFO/HDMI 源码的集成测试抑制 vendor 已知的 WIDTH、UNOPTFLAT、PINMISSING 和 TIMESCALEMOD 警告，功能仍由端到端断言检查。
 
 测试先于功能实现编写，使用接口占位实现确认断言失败后再补实际逻辑：
 
@@ -52,6 +52,18 @@ PASS HDMI: real vendor encoder, four control tokens, primaries, 256 streamed RGB
 
 RGB565 使用字面量检查红绿蓝白黑，以算术分解独立核对全部 65536 个输入，能捕获通道互换、零填充替代位复制等错误。HDMI 测试编译真实 vendor `dvi_encoder/encode`，没有编码器替身或第二份接线自比：四种控制码和三原色零 disparity 首字使用手工常量，连续 256 个 RGB 像素用独立 TMDS 解码恢复像素并核对通道与两周期延迟，同时验证异步复位、复位后恢复、时钟字反相和 IO 控制。该测试不声称覆盖编码器全部 running-disparity 状态或串行电气行为。
 
-## 板上待验收
+## 已完成的板级编译与仍待板上验收
 
-离线逻辑仿真通过不代表 HDMI 已实际显示。仍需目标 Ti60F225 板卡与 Efinity 工程完成综合布局布线、像素/高速时钟约束和时序检查，验证 PLL 锁定与复位释放、保留官方 LVDS 管脚/10:1 串化位序/极性与输出电气参数，并在实物显示器上验收测试色条、同步和稳定显示。当前没有板卡，未执行这些项目。
+Efinity 2025.1 已完成 `map/interface/pnr/pgm` 全流程，最终 setup/hold 均为正裕量。接口配置沿用官方 Demo 可实现的整数 PLL：像素时钟 148.75 MHz、高速串化时钟 743.75 MHz，对应 2200x1125 时序约 60.10 Hz；约束使用这两个实际时钟值。板卡说明书确认 HDMI 位于 1.8 V 的 3A Bank，DDR3 MT41J128M16JT-125 位于 1.5 V 的 3B/4A/4B Bank。
+
+离线编译通过仍不代表 HDMI 已实际显示。当前没有板卡，尚需验证 PLL 锁定与复位释放、LVDS 管脚/10:1 串化位序/极性和输出电气参数，并在实物显示器上验收 GPU 帧缓冲画面、同步、稳定性和长时间运行。
+
+## 第 9～13 天：显示通路
+
+- `pixel_async_fifo.v` 封装官方 Efinix `efx_fifo_wrapper`，跨 100 MHz GPU 域与官方 Demo 148.75 MHz HDMI 域传送 RGB565、行末和帧末标志，并返回写域水位和 ready。
+- `display_line_buffer.v` 使用两组 640 像素同步读块 RAM，提前一像素取数；显示当前行两次的同时接收下一行，行末位置错误会锁存 `protocol_error`。Efinity 映射为 4 个 RAM10，而非 20,480 个像素时钟域触发器。
+- `display_scale2x_1080p.v` 生成 2200x1125 标准几何时序，把 640x480 最近邻放大为 1280x960；有效区左右各 320、上下各 60 像素黑边。使用官方 148.75 MHz 像素时钟时，实际刷新率约 60.10 Hz。
+- `vblank_pulse_sync.v` 同步 vblank 电平；任一时钟域复位后先等待有效视频低电平再武装，只在下一次低到高边沿产生 GPU 域单周期脉冲，避免复位错位造成伪脉冲。
+- `hdmi_subsystem.v` 连接 FIFO、行缓存、缩放、RGB565 转换和既有官方 DVI 编码适配器；`board_top.v` 已由官方色条切换为 GPU Scanout 数据。
+
+`tb_display_scale2x_1080p.sv` 对完整一帧逐像素检查时序、边框、预取索引和 480 次双行握手；`tb_hdmi_subsystem.sv` 连续核对两帧不同内容，确认跨域反压下无整帧重复、丢失或错序；`tb_vblank_pulse_sync.sv` 独立覆盖源域/目的域复位错位与重新武装。Efinity `map/interface/pnr/pgm` 全流程通过，行缓存改造后总 FF 从 31,452 降为 11,050、HDMI 像素时钟负载从 20,700 降为 220；最终 HDMI 慢时钟 setup 最差裕量 2.611 ns、hold 最差裕量 0.071 ns，全部已分析时钟均为正裕量。无板卡，因此未执行显示器、电气、串行眼图和长时间运行验收。

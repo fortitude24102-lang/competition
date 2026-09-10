@@ -12,6 +12,8 @@ int main(void) {
  assert(gpu_init(&d,GPU_APB_BASE)==GPU_DRIVER_VERSION);
  regs[GPU_REG_VERSION/4]=GPU_VERSION_VALUE; regs[GPU_REG_STATUS/4]=GPU_STATUS_EMPTY;
  assert(gpu_init(&d,GPU_APB_BASE)==0);
+ tag=0xbeef;
+ assert(gpu_fill_async(&d,GPU_FRAMEBUFFER_A,1280,0,2,0x1234,&tag)==GPU_ERROR_ZERO_SIZE && tag==0xbeef && !d.pending);
  assert(gpu_fill_async(&d,GPU_FRAMEBUFFER_A,1280,3,2,0x1234,&tag)==0 && tag==1);
  assert(writes==10 && regs[GPU_REG_SIZE/4]==0x20003 && regs[GPU_REG_CONTROL/4]==1 && barriers);
  assert(gpu_wait_tag(&d,0,2)==GPU_DRIVER_TAG);

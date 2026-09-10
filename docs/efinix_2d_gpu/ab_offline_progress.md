@@ -1,6 +1,6 @@
 # 组员 A 与 B 离线推进记录
 
-日期：2026-09-08。依据 `docs/word/Efinix_2D图像渲染三人开发计划书_官方Demo版.docx`，本轮执行原计划中的一个离线批次，不启动交互绘图与共享碰撞后期扩展。
+日期：2026-09-10。依据 `docs/word/Efinix_2D图像渲染三人开发计划书_官方Demo版.docx`，本轮继续执行原计划，不启动交互绘图与共享碰撞后期扩展。
 
 ## 本轮范围
 
@@ -11,6 +11,10 @@
 | B | 第 2 天 | gpu_regs.h 与 gpu.h | 编译期布局断言、Chisel 合同核对、官方 soc.h 交叉编译 | 已完成（离线） |
 | B | 第 3 天 | RGB565 转换与 Alpha 参考运算 | 边界值、独立黄金值和随机输入 | 已完成（离线） |
 | B | 第 4 天 | CPU Fill 黄金模型与 CRC | 奇数宽度、stride、边界、非法输入与内存保护测试 | 已完成（离线） |
+| A | 第 9～13 天 | 官方 FIFO CDC、同步块 RAM 双行缓存、2×居中缩放、复位安全 vblank 同步、HDMI 子系统 | 完整 2200x1125 帧仿真、两帧不同内容逐像素日志、独立复位测试、Efinity 全流程及时序 | 已完成（离线） |
+| B | 第 9～10 天 | Copy API/Sprite、双缓冲布局与链接保护 | 假设备实际 Copy、独立黄金整帧 CRC/字节比较、地址/stride/tag、ELF map | 已完成（离线） |
+| B | 第 11 天 | PRESENT 软件合同 | 假设备 vblank 完成合同 | 软件已完成；等待负责人 Day14 RTL |
+| B | 第 12～13 天 | HUD、300 帧基础动画、固定对象池游戏 | ASan/UBSan、Sapphire ELF/BIN/HEX | 已完成（离线） |
 
 ## 实施约束与决策
 
@@ -23,11 +27,11 @@
 
 ## 下一阶段
 
-A 第 4 天为建立官方主工程副本，其板上 memTest／UART 验收仍依赖板卡；B 第 5 天为 MMIO 驱动骨架，其 ID／VERSION／错误寄存器实机读取同样依赖板卡。后续可继续准备离线内容，但必须单列待板测事项。
+负责人 Day14 需要把 A 的 `vblank_pulse_sync.v` 接入 `FrameSwapController`，使 B 的 PRESENT 命令只在 vblank 更新前台地址。开发板到位后补做 DDR 实读写、UART、HDMI 显示器和 300 帧无撕裂验收。
 
 ## 本轮实际结果
 
-- A：`./scripts/test-efinix-verilog.ps1` 返回 0；139 项 vendor 哈希匹配，RGB565 全 65,536 个输入通过，真实官方 HDMI 编码器测试通过四种控制码、三原色、256 个连续 RGB 样本、复位、反相和 IO 控制。
-- B：`./scripts/test-efinix-software.ps1` 返回 0；主机 ASan／UBSan 测试通过，参考帧为 614400 字节、CRC32 `77def323`，官方 Sapphire RV32 三个编译探针通过（`MARCH=rv32im_zicsr`）。
-- 本轮未完成：开发板下载、DDR 实读写、UART 交互、HDMI 显示器出图、Efinity 板级最终时序和耐久测试。
+- A：`./scripts/test-efinix-verilog.ps1` 返回 0；139 项 vendor 哈希匹配，RGB565 全 65,536 个输入、复位安全 vblank CDC、完整缩放帧与连续两帧不同内容均通过。真实官方 HDMI 编码器通过四种控制码、三原色、256 个连续 RGB 样本、复位、反相和 IO 控制。Efinity `map/interface/pnr/pgm` 全流程通过；双行缓存映射为 4 个 RAM10，HDMI 时钟域 FF 负载为 220，官方 148.75/743.75 MHz HDMI 时钟约束下 setup/hold 均为正裕量。
+- B：`./scripts/test-efinix-software.ps1` 返回 0；主机 ASan／UBSan、Sprite COPY 整帧黄金比较、显式 fake-vblank PRESENT 等待测试均通过，参考帧为 614400 字节、CRC32 `77def323`，官方 Sapphire RV32 三个编译探针通过（`MARCH=rv32im_zicsr`）。
+- 本轮未完成：开发板下载、DDR 实读写、UART 交互、HDMI 显示器出图和耐久测试。
 - 依赖：A 使用 WSL Ubuntu／Verilator 5.020；B 使用 WSL GCC 主机检查与 `D:/efinity/risc_v_gcc/toolchain/bin/riscv-none-elf-gcc.exe` 官方工具链探针。详细 A 过程见 `board/efinix_ti60/MEMBER_A_OFFLINE_ACCEPTANCE.md`。
