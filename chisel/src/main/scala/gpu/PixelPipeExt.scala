@@ -20,7 +20,7 @@ class PixelPipeExt(sourceDirectory: String = "../board/efinix_ti60/rtl/pixel") e
   val out_ready = IO(Input(Bool()))
   val result_pixel = IO(Output(UInt(16.W)))
   val write_enable = IO(Output(Bool()))
-  Seq("gpu_pixel_contract.vh", "gpu_pixel_copy.v", "gpu_pixel_fill.v", "gpu_pixel_pipe.v")
+  Seq("gpu_pixel_contract.vh", "gpu_pixel_copy.v", "gpu_pixel_fill.v", "gpu_pixel_color_key.v", "gpu_pixel_pipe.v")
     .foreach(name => addPath(s"$sourceDirectory/$name"))
 }
 
