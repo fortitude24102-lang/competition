@@ -21,6 +21,8 @@ class GpuApbRegs extends Module {
     val engineBusy = Input(Bool())
     val lastDoneTag = Input(UInt(16.W))
     val lastError = Input(UInt(8.W))
+    val frontBuffer = Input(UInt(32.W))
+    val backBuffer = Input(UInt(32.W))
   })
 
   private val shadow = RegInit(0.U.asTypeOf(new GpuCommand))
@@ -75,7 +77,7 @@ class GpuApbRegs extends Module {
     is(GpuRegisterMap.LastDone.U) { io.prdata := io.lastDoneTag }
     is(GpuRegisterMap.Error.U) { io.prdata := io.lastError }
     is(GpuRegisterMap.QueueLevel.U) { io.prdata := io.queueLevel }
-    is(GpuRegisterMap.FrontBuffer.U) { io.prdata := GpuMemoryMap.FramebufferA.U }
-    is(GpuRegisterMap.BackBuffer.U) { io.prdata := GpuMemoryMap.FramebufferB.U }
+    is(GpuRegisterMap.FrontBuffer.U) { io.prdata := io.frontBuffer }
+    is(GpuRegisterMap.BackBuffer.U) { io.prdata := io.backBuffer }
   }
 }

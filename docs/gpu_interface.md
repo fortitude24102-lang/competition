@@ -70,9 +70,11 @@ APB 合法访问单周期完成。写 CONTROL.SUBMIT 时，完整影子命令原
 
 ### 当前实现边界
 
-2026-09-08 对照 `GpuApbRegs.scala`：`STATUS[4:0]` 为 queue level，bit5 为 empty，bit6 为 full，bit7 为 busy，其余位为零。`OP[3:0]`、`TAG[15:0]` 有效；`ALPHA_FLAGS[15:8]` 保留为零。
+2026-09-10 对照 `GpuApbRegs.scala`：`STATUS[4:0]` 为 queue level，bit5 为 empty，bit6 为 full，bit7 为 busy，其余位为零。`OP[3:0]`、`TAG[15:0]` 有效；`ALPHA_FLAGS[15:8]` 保留为零。
 
-`QOS_WATERMARKS`、`PERF_CONTROL` 和 `PERF_*` 目前仅保留偏移，读取返回零、写入不生效；不能据此认为 QoS 或计数器已经接入。`FRONT_BUFFER`、`BACK_BUFFER` 当前返回固定地址，尚不代表换帧控制器已完成。`flags` 的具体控制位及 IRQ 控制尚未实现，现阶段软件使用零。
+`PRESENT` 已接入 `FrameSwapController`：命令可提前进入队列，但 `FRONT_BUFFER`、`BACK_BUFFER` 只在同步 vblank 脉冲更新，随后写入 `LAST_DONE`。目标地址只能是固定的 A/B framebuffer。
+
+`QOS_WATERMARKS`、`PERF_CONTROL` 和 `PERF_*` 目前仅保留偏移，读取返回零、写入不生效；不能据此认为 QoS 或计数器已经接入。`flags` 的具体控制位及 IRQ 清除控制尚未实现，现阶段软件使用零。
 
 `LAST_DONE` 只提供最近完成 tag，`ERROR` 只提供最近错误；它们不是可查询全部历史完成结果的队列。上述说明记录当前实现，不改变后续原计划目标。
 

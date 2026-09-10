@@ -36,6 +36,9 @@ class CommandValidator extends Module {
     (command.dstAddr.pad(64) < ddrBase || dstEnd > ddrEnd || dstEnd <= command.dstAddr.pad(64))
   private val overlap = command.op === GpuOpcode.Copy.U &&
     command.srcAddr.pad(64) < dstEnd && command.dstAddr.pad(64) < srcEnd
+  private val invalidPresentBuffer = command.op === GpuOpcode.Present.U &&
+    command.dstAddr =/= GpuMemoryMap.FramebufferA.U &&
+    command.dstAddr =/= GpuMemoryMap.FramebufferB.U
 
   io.error := GpuError.None.U
   when(!legalOpcode) {
@@ -46,7 +49,7 @@ class CommandValidator extends Module {
     io.error := GpuError.MisalignedAddress.U
   }.elsewhen(strideTooSmall) {
     io.error := GpuError.StrideTooSmall.U
-  }.elsewhen(srcOutOfRange || dstOutOfRange) {
+  }.elsewhen(srcOutOfRange || dstOutOfRange || invalidPresentBuffer) {
     io.error := GpuError.AddressRange.U
   }.elsewhen(overlap) {
     io.error := GpuError.OverlappingCopy.U

@@ -9,12 +9,13 @@ PixelReadAligner.sv
 PixelWritePacker.sv
 AxiWriteEngine.sv
 DenseBlitEngine.sv
+FrameSwapController.sv
 ./gpu_pixel_copy.v
 ./gpu_pixel_fill.v
 ./gpu_pixel_pipe.v
 ./gpu_pixel_contract.vh
 PixelPipeHarness.sv
-Arbiter2_GpuCompletion.sv
+Arbiter3_GpuCompletion.sv
 RenderEngine.sv
 ScanoutDma.sv
 DdrQosArbiter.sv

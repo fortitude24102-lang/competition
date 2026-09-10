@@ -100,6 +100,12 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
 
         pokeCommand(dut, GpuOpcode.Copy, GpuMemoryMap.FramebufferA, GpuMemoryMap.FramebufferA + 4, 8, 2, 16, 16)
         dut.io.error.expect(GpuError.OverlappingCopy)
+
+        pokeCommand(dut, GpuOpcode.Present, 0, GpuMemoryMap.FramebufferA + 4096, 1, 1, 0, 2)
+        dut.io.error.expect(GpuError.AddressRange)
+
+        pokeCommand(dut, GpuOpcode.Present, 0, GpuMemoryMap.FramebufferB, 1, 1, 0, 2)
+        dut.io.valid.expect(true)
       }
     }
   }
@@ -119,6 +125,8 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.engineBusy.poke(false)
         dut.io.lastDoneTag.poke(0)
         dut.io.lastError.poke(0)
+        dut.io.frontBuffer.poke(GpuMemoryMap.FramebufferA)
+        dut.io.backBuffer.poke(GpuMemoryMap.FramebufferB)
         dut.clock.step()
 
         def transfer(offset: Int, write: Boolean, data: BigInt = 0): (BigInt, Boolean) = {

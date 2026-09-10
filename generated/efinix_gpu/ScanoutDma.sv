@@ -46,6 +46,8 @@
 module ScanoutDma(	// src/main/scala/gpu/ScanoutDma.scala:13:7
   input         clock,	// src/main/scala/gpu/ScanoutDma.scala:13:7
                 reset,	// src/main/scala/gpu/ScanoutDma.scala:13:7
+                io_enable,	// src/main/scala/gpu/ScanoutDma.scala:22:14
+  input  [31:0] io_frontBase,	// src/main/scala/gpu/ScanoutDma.scala:22:14
   input  [11:0] io_fifoLevel,	// src/main/scala/gpu/ScanoutDma.scala:22:14
   input         io_pixel_ready,	// src/main/scala/gpu/ScanoutDma.scala:22:14
   output        io_pixel_valid,	// src/main/scala/gpu/ScanoutDma.scala:22:14
@@ -83,11 +85,11 @@ module ScanoutDma(	// src/main/scala/gpu/ScanoutDma.scala:13:7
   wire        io_pixel_valid_0 = _aligner_io_output_ready_T & _aligner_io_output_valid;	// src/main/scala/gpu/ScanoutDma.scala:34:31, :80:{27,38}
   wire        _io_pixel_bits_frameLast_T = row == 9'h1DF;	// src/main/scala/gpu/ScanoutDma.scala:38:28, :83:65
   always @(posedge clock) begin	// src/main/scala/gpu/ScanoutDma.scala:13:7
-    automatic logic _GEN;	// src/main/scala/gpu/ScanoutDma.scala:50:14
+    automatic logic _GEN;	// src/main/scala/gpu/ScanoutDma.scala:50:23
     automatic logic _GEN_0;	// src/main/scala/gpu/ScanoutDma.scala:96:27
     automatic logic _GEN_1;	// src/main/scala/gpu/ScanoutDma.scala:50:37, :95:41, :97:25, :100:45, :104:11
     automatic logic _GEN_2;	// src/main/scala/gpu/ScanoutDma.scala:50:37, :96:47, :97:25
-    _GEN = state == 3'h0;	// src/main/scala/gpu/ScanoutDma.scala:36:30, :50:14
+    _GEN = state == 3'h0 & io_enable;	// src/main/scala/gpu/ScanoutDma.scala:36:30, :50:{14,23}
     _GEN_0 = state == 3'h5 & (readDone | _reader_io_done);	// src/main/scala/gpu/ScanoutDma.scala:33:30, :36:30, :39:33, :91:11, :94:42, :96:{14,27}
     _GEN_1 = readError | _reader_io_error | _io_pixel_bits_frameLast_T;	// src/main/scala/gpu/ScanoutDma.scala:33:30, :40:34, :50:37, :83:65, :95:41, :97:25, :100:45, :104:11
     _GEN_2 = ~_GEN_0 | _GEN_1;	// src/main/scala/gpu/ScanoutDma.scala:50:37, :95:41, :96:{27,47}, :97:25, :100:45, :104:11
@@ -110,10 +112,10 @@ module ScanoutDma(	// src/main/scala/gpu/ScanoutDma.scala:13:7
         state <= 3'h3;	// src/main/scala/gpu/ScanoutDma.scala:36:30, :64:11
       else if (state == 3'h1 & io_fifoLevel < 12'h101)	// src/main/scala/gpu/ScanoutDma.scala:36:30, :53:11, :56:{14,29,45}
         state <= 3'h2;	// src/main/scala/gpu/ScanoutDma.scala:36:30
-      else if (_GEN)	// src/main/scala/gpu/ScanoutDma.scala:50:14
+      else if (_GEN)	// src/main/scala/gpu/ScanoutDma.scala:50:23
         state <= 3'h1;	// src/main/scala/gpu/ScanoutDma.scala:36:30, :53:11
       if (_GEN_2) begin	// src/main/scala/gpu/ScanoutDma.scala:50:37, :96:47, :97:25
-        if (_GEN)	// src/main/scala/gpu/ScanoutDma.scala:50:14
+        if (_GEN)	// src/main/scala/gpu/ScanoutDma.scala:50:23
           row <= 9'h0;	// src/main/scala/gpu/ScanoutDma.scala:38:28
       end
       else	// src/main/scala/gpu/ScanoutDma.scala:50:37, :96:47, :97:25
@@ -122,8 +124,8 @@ module ScanoutDma(	// src/main/scala/gpu/ScanoutDma.scala:13:7
       readError <= _reader_io_done ? _reader_io_error : ~_GEN_3 & readError;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/ScanoutDma.scala:33:30, :39:33, :40:34, :70:32, :71:14, :72:15, :86:24, :88:15
     end
     if (_GEN_2) begin	// src/main/scala/gpu/ScanoutDma.scala:50:37, :96:47, :97:25
-      if (_GEN)	// src/main/scala/gpu/ScanoutDma.scala:50:14
-        rowBase <= 32'h2000000;	// src/main/scala/gpu/ScanoutDma.scala:22:14, :37:28
+      if (_GEN)	// src/main/scala/gpu/ScanoutDma.scala:50:23
+        rowBase <= io_frontBase;	// src/main/scala/gpu/ScanoutDma.scala:37:28
     end
     else	// src/main/scala/gpu/ScanoutDma.scala:50:37, :96:47, :97:25
       rowBase <= rowBase + 32'h500;	// src/main/scala/gpu/ScanoutDma.scala:37:28, :105:26

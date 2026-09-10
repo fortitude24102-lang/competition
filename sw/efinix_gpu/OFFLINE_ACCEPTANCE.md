@@ -18,8 +18,8 @@ GpuMemoryMap.scala、GpuApbRegs.scala 逐项核对。
 `gpu_command` 为普通 C 字段合同，不是能直接 memcpy 到 MMIO 的描述符。
 打包函数仅处理 SIZE、COLOR_KEY、ALPHA_FLAGS，后者 bits 15:8 恒零。
 
-当前 RTL 的 QoS/Perf 0x48–0x74 读零、写忽略；front/back 固定为 A/B；
-CONTROL 只有 bit0 提交；flags 执行语义未实现，调用者使用零。
+当前 RTL 的 QoS/Perf 0x48–0x74 读零、写忽略；front/back 已由 Day14
+换帧控制器动态返回；CONTROL 只有 bit0 提交；flags 执行语义未实现，调用者使用零。
 LAST_DONE 仅最近 tag，非历史完成队列。没有提供 MMIO 硬件驱动或后期 API。
 
 `sapphire_probe.c` 直接包含只读官方

@@ -45,12 +45,15 @@ class Efinix2dGpuTop extends Module {
   io.apb.pslverror := regs.io.pslverror
 
   render.io.command <> regs.io.command
+  render.io.vblank := io.vblank
   regs.io.queueLevel := render.io.queueLevel
   regs.io.queueFull := render.io.queueFull
   regs.io.queueEmpty := render.io.queueEmpty
   regs.io.engineBusy := render.io.busy
   regs.io.lastDoneTag := lastDoneTag
   regs.io.lastError := lastError
+  regs.io.frontBuffer := render.io.frontBase
+  regs.io.backBuffer := render.io.backBase
 
   render.io.completion.ready := true.B
   irq := false.B
@@ -64,8 +67,8 @@ class Efinix2dGpuTop extends Module {
   ddr.io.scanout <> scanout.io.axi
   io.axi <> ddr.io.axi
 
-  scanout.io.enable := true.B
-  scanout.io.frontBase := GpuMemoryMap.FramebufferA.U
+  scanout.io.enable := !render.io.swapPending
+  scanout.io.frontBase := render.io.frontBase
   scanout.io.fifoLevel := io.scanoutLevel
   scanout.io.pixel.ready := io.displayReady
 

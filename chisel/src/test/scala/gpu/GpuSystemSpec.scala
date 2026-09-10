@@ -114,6 +114,112 @@ class ScanoutDmaProductionHarness extends Module {
 }
 
 class GpuSystemSpec extends AnyFunSpec with StableChiselSim with Matchers {
+  describe("FrameSwapController") {
+    it("holds both framebuffer addresses until vblank and completes the matching PRESENT tag") {
+      simulate(new FrameSwapController) { dut =>
+        dut.io.present.valid.poke(false)
+        dut.io.present.bits.poke(0.U.asTypeOf(new GpuCommand))
+        dut.io.vblank.poke(false)
+        dut.io.completion.ready.poke(false)
+        dut.clock.step()
+
+        dut.io.frontBase.expect(GpuMemoryMap.FramebufferA)
+        dut.io.backBase.expect(GpuMemoryMap.FramebufferB)
+        dut.io.present.ready.expect(true)
+
+        dut.io.present.valid.poke(true)
+        dut.io.present.bits.op.poke(GpuOpcode.Present)
+        dut.io.present.bits.dstAddr.poke(GpuMemoryMap.FramebufferB)
+        dut.io.present.bits.tag.poke(0x1234)
+        dut.clock.step()
+        dut.io.present.valid.poke(false)
+
+        for (_ <- 0 until 17) {
+          dut.io.frontBase.expect(GpuMemoryMap.FramebufferA)
+          dut.io.backBase.expect(GpuMemoryMap.FramebufferB)
+          dut.io.completion.valid.expect(false)
+          dut.io.pending.expect(true)
+          dut.clock.step()
+        }
+
+        dut.io.vblank.poke(true)
+        dut.clock.step()
+        dut.io.vblank.poke(false)
+        dut.io.frontBase.expect(GpuMemoryMap.FramebufferB)
+        dut.io.backBase.expect(GpuMemoryMap.FramebufferA)
+        dut.io.completion.valid.expect(true)
+        dut.io.completion.bits.tag.expect(0x1234)
+        dut.io.completion.bits.error.expect(GpuError.None)
+        dut.io.present.ready.expect(false)
+
+        dut.clock.step(3)
+        dut.io.completion.valid.expect(true)
+        dut.io.frontBase.expect(GpuMemoryMap.FramebufferB)
+        dut.io.completion.ready.poke(true)
+        dut.clock.step()
+        dut.io.completion.valid.expect(false)
+        dut.io.present.ready.expect(true)
+      }
+    }
+
+    it("routes an APB PRESENT through the command queue and updates scanout only at vblank") {
+      simulate(new Efinix2dGpuTop) { dut =>
+        dut.io.apb.psel.poke(false)
+        dut.io.apb.penable.poke(false)
+        dut.io.apb.pwrite.poke(false)
+        dut.io.apb.paddr.poke(0)
+        dut.io.apb.pwdata.poke(0)
+        dut.io.vblank.poke(false)
+        dut.io.scanoutLevel.poke(4095)
+        dut.io.displayReady.poke(false)
+        dut.io.axi.aw.ready.poke(true)
+        dut.io.axi.w.ready.poke(true)
+        dut.io.axi.b.valid.poke(false)
+        dut.io.axi.b.bits.poke(0.U.asTypeOf(new Axi4WriteResponse))
+        dut.io.axi.ar.ready.poke(false)
+        dut.io.axi.r.valid.poke(false)
+        dut.io.axi.r.bits.poke(0.U.asTypeOf(new Axi4ReadData))
+        dut.clock.step()
+
+        def transfer(offset: Int, write: Boolean, data: BigInt = 0): BigInt = {
+          dut.io.apb.paddr.poke(offset)
+          dut.io.apb.pwrite.poke(write)
+          dut.io.apb.pwdata.poke(data)
+          dut.io.apb.psel.poke(true)
+          dut.io.apb.penable.poke(true)
+          dut.io.apb.pready.expect(true)
+          dut.io.apb.pslverror.expect(false)
+          val result = dut.io.apb.prdata.peek().litValue
+          dut.clock.step()
+          dut.io.apb.psel.poke(false)
+          dut.io.apb.penable.poke(false)
+          dut.clock.step()
+          result
+        }
+
+        transfer(GpuRegisterMap.Op, write = true, GpuOpcode.Present)
+        transfer(GpuRegisterMap.DstAddr, write = true, GpuMemoryMap.FramebufferB)
+        transfer(GpuRegisterMap.Size, write = true, (1L << 16) | 1L)
+        transfer(GpuRegisterMap.DstStride, write = true, 2)
+        transfer(GpuRegisterMap.Tag, write = true, 0x4242)
+        transfer(GpuRegisterMap.Control, write = true, 1)
+
+        dut.clock.step(11)
+        transfer(GpuRegisterMap.FrontBuffer, write = false) shouldBe GpuMemoryMap.FramebufferA
+        transfer(GpuRegisterMap.BackBuffer, write = false) shouldBe GpuMemoryMap.FramebufferB
+        transfer(GpuRegisterMap.LastDone, write = false) shouldBe 0
+
+        dut.io.vblank.poke(true)
+        dut.clock.step()
+        dut.io.vblank.poke(false)
+        dut.clock.step(5)
+        transfer(GpuRegisterMap.FrontBuffer, write = false) shouldBe GpuMemoryMap.FramebufferB
+        transfer(GpuRegisterMap.BackBuffer, write = false) shouldBe GpuMemoryMap.FramebufferA
+        transfer(GpuRegisterMap.LastDone, write = false) shouldBe 0x4242
+      }
+    }
+  }
+
   describe("ScanoutDma") {
     it("reads a strided framebuffer in order and marks line and frame boundaries") {
       simulate(new ScanoutDma(frameWidth = 3, frameHeight = 2, strideBytes = 8, lowWatermark = 2)) { dut =>

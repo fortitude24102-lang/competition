@@ -13,7 +13,7 @@
 | B | 第 4 天 | CPU Fill 黄金模型与 CRC | 奇数宽度、stride、边界、非法输入与内存保护测试 | 已完成（离线） |
 | A | 第 9～13 天 | 官方 FIFO CDC、同步块 RAM 双行缓存、2×居中缩放、复位安全 vblank 同步、HDMI 子系统 | 完整 2200x1125 帧仿真、两帧不同内容逐像素日志、独立复位测试、Efinity 全流程及时序 | 已完成（离线） |
 | B | 第 9～10 天 | Copy API/Sprite、双缓冲布局与链接保护 | 假设备实际 Copy、独立黄金整帧 CRC/字节比较、地址/stride/tag、ELF map | 已完成（离线） |
-| B | 第 11 天 | PRESENT 软件合同 | 假设备 vblank 完成合同 | 软件已完成；等待负责人 Day14 RTL |
+| B | 第 11 天 | PRESENT 软件合同 | 假设备 vblank 完成合同 | 已与负责人 Day14 RTL 接通（离线） |
 | B | 第 12～13 天 | HUD、300 帧基础动画、固定对象池游戏 | ASan/UBSan、Sapphire ELF/BIN/HEX | 已完成（离线） |
 
 ## 实施约束与决策
@@ -27,11 +27,13 @@
 
 ## 下一阶段
 
-负责人 Day14 需要把 A 的 `vblank_pulse_sync.v` 接入 `FrameSwapController`，使 B 的 PRESENT 命令只在 vblank 更新前台地址。开发板到位后补做 DDR 实读写、UART、HDMI 显示器和 300 帧无撕裂验收。
+负责人 Day14 已把 A 的 `vblank_pulse_sync.v` 接入 `FrameSwapController`，B 的 PRESENT 命令现在只在 vblank 更新前后台地址并完成 tag。负责人 Day15 依赖的组员 A `gpu_pixel_color_key.v` 尚未提交，因此后续 Color Key/Alpha 集成在该依赖处暂停。开发板到位后仍需补做 DDR 实读写、UART、HDMI 显示器和 300 帧无撕裂验收。
 
 ## 本轮实际结果
 
 - A：`./scripts/test-efinix-verilog.ps1` 返回 0；139 项 vendor 哈希匹配，RGB565 全 65,536 个输入、复位安全 vblank CDC、完整缩放帧与连续两帧不同内容均通过。真实官方 HDMI 编码器通过四种控制码、三原色、256 个连续 RGB 样本、复位、反相和 IO 控制。Efinity `map/interface/pnr/pgm` 全流程通过；双行缓存映射为 4 个 RAM10，HDMI 时钟域 FF 负载为 220，官方 148.75/743.75 MHz HDMI 时钟约束下 setup/hold 均为正裕量。
 - B：`./scripts/test-efinix-software.ps1` 返回 0；主机 ASan／UBSan、Sprite COPY 整帧黄金比较、显式 fake-vblank PRESENT 等待测试均通过，参考帧为 614400 字节、CRC32 `77def323`，官方 Sapphire RV32 三个编译探针通过（`MARCH=rv32im_zicsr`）。
+- 负责人 Day14：`FrameSwapController.scala` 已接入命令队列、APB 动态前后台寄存器和 Scanout。随机时刻提交后地址在 vblank 前保持不变，vblank 后完成对应 tag；25 项 GPU 回归全部通过。Efinity `map/interface/pnr/pgm` 全流程通过，100 MHz 核心 setup 裕量 0.373 ns，HDMI 慢时钟 setup/hold 裕量 2.581/0.012 ns。
 - 本轮未完成：开发板下载、DDR 实读写、UART 交互、HDMI 显示器出图和耐久测试。
 - 依赖：A 使用 WSL Ubuntu／Verilator 5.020；B 使用 WSL GCC 主机检查与 `D:/efinity/risc_v_gcc/toolchain/bin/riscv-none-elf-gcc.exe` 官方工具链探针。详细 A 过程见 `board/efinix_ti60/MEMBER_A_OFFLINE_ACCEPTANCE.md`。
+- 当前阻塞：负责人 Day15 必须使用组员 A 的 `gpu_pixel_color_key.v`；该文件和相应合同宏当前均不存在，不能用负责人自写替代组员交付。
