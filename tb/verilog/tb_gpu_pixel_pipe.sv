@@ -16,6 +16,16 @@ module tb_gpu_pixel_pipe;
   reg held=0;
   reg [15:0] held_pixel;
   reg held_write;
+  // Reference model matching sw/efinix_gpu/src/rgb565.c rgb565_global_alpha.
+  function automatic [15:0] alpha_ref(input [15:0] fg, input [15:0] bg, input [7:0] a);
+    reg [15:0] r, g, b;
+    begin
+      r = ((fg[15:11] * a) + (bg[15:11] * (8'd255 - a)) + 127) / 255;
+      g = ((fg[10:5]  * a) + (bg[10:5]  * (8'd255 - a)) + 127) / 255;
+      b = ((fg[4:0]   * a) + (bg[4:0]   * (8'd255 - a)) + 127) / 255;
+      alpha_ref = {r[4:0], g[5:0], b[4:0]};
+    end
+  endfunction
   initial begin
     repeat(2) @(negedge clock);
     if(out_valid || write_enable) $fatal(1,"reset must empty pipeline");
@@ -27,7 +37,7 @@ module tb_gpu_pixel_pipe;
         in_valid=sent<10000 && ((cycles<32) || rng[1]);
         op=3'(sent%8);
         foreground=16'(sent); fill_color=16'(sent ^ 32'ha55a);
-        background=16'hdead; color_key=(sent & 1) ? 16'(sent) : 16'hbeef; alpha=8'h80;
+        background=16'(sent ^ 32'h5a5a); color_key=(sent & 1) ? 16'(sent) : 16'hbeef; alpha=8'(sent);
       end
       #1;
       if(held && (!out_valid || result_pixel!==held_pixel || write_enable!==held_write))
@@ -42,8 +52,8 @@ module tb_gpu_pixel_pipe;
       if(held) stalls=stalls+1;
       if(out_valid && out_ready) received=received+1;
       if(in_valid && in_ready) begin
-        expected_pixel[sent]=(op==1)?fill_color:(op==2)?foreground:(op==3)?foreground:16'b0;
-        expected_write[sent]=(op==1)||(op==2)||((op==3)&&(foreground!=color_key));
+        expected_pixel[sent]=(op==1)?fill_color:(op==2)?foreground:(op==3)?foreground:(op==4)?alpha_ref(foreground,background,alpha):16'b0;
+        expected_write[sent]=(op==1)||(op==2)||((op==3)&&(foreground!=color_key))||(op==4);
         sent=sent+1;
       end
       if(cycles==31 && (sent!=32 || received!=31)) $fatal(1,"expected one-cycle latency and one pixel per cycle");
@@ -78,13 +88,36 @@ module tb_gpu_pixel_pipe;
       @(negedge clock);
       if(out_valid !== 1'b0) $fatal(1,"color key boundary: trailing output");
     end
+    // Alpha boundary vectors from rgb565.c: alpha 0 keeps bg, 255 keeps fg, 128 mid-blends.
+    begin : alpha_boundary
+      integer k;
+      reg [15:0] fg [0:3];
+      reg [15:0] bg [0:3];
+      reg [7:0]  al [0:3];
+      reg [15:0] exp [0:3];
+      fg[0]=16'h1234; bg[0]=16'habcd; al[0]=8'd0;   exp[0]=16'habcd;
+      fg[1]=16'h1234; bg[1]=16'habcd; al[1]=8'd255; exp[1]=16'h1234;
+      fg[2]=16'hf800; bg[2]=16'h001f; al[2]=8'd128; exp[2]=16'h800f;
+      fg[3]=16'hffff; bg[3]=16'h0000; al[3]=8'd128; exp[3]=16'h8410;
+      for (k=0; k<4; k=k+1) begin
+        in_valid=1'b1; op=4; foreground=fg[k]; background=bg[k]; alpha=al[k];
+        color_key=16'h0; fill_color=16'h0;
+        @(negedge clock);
+        if(out_valid !== 1'b1) $fatal(1,"alpha boundary: missing output k=%0d",k);
+        if(write_enable !== 1'b1) $fatal(1,"alpha boundary: write must be 1 k=%0d",k);
+        if(result_pixel !== exp[k]) $fatal(1,"alpha boundary: pixel k=%0d got %h want %h",k,result_pixel,exp[k]);
+      end
+      in_valid=1'b0;
+      @(negedge clock);
+      if(out_valid !== 1'b0) $fatal(1,"alpha boundary: trailing output");
+    end
     // Reset discards a stalled in-flight transaction.
     in_valid=1; op=2; foreground=16'h1234; out_ready=0;
     @(negedge clock);
     reset=1;
     @(negedge clock);
     if(out_valid || write_enable) $fatal(1,"reset did not flush pending output");
-    $display("PASS gpu_pixel_pipe: 10000 ordered transactions (Fill/Copy/ColorKey), %0d stalls, %0d cycles, color-key boundaries",stalls,cycles);
+    $display("PASS gpu_pixel_pipe: 10000 ordered transactions (Fill/Copy/ColorKey/Alpha), %0d stalls, %0d cycles, color-key and alpha boundaries",stalls,cycles);
     $finish;
   end
 endmodule
