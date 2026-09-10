@@ -77,8 +77,64 @@ int main(int argc, char **argv) {
         assert(fwrite(frame, 1, sizeof frame, out)==sizeof frame);
         assert(fclose(out)==0);
     }
+    /* Day 14: color key — transparent border keeps background, solid core written */
+    {
+        _Alignas(2) uint8_t ksrc[32], kdst[32];
+        static const uint16_t sprite[16] = {
+            0xf81f,0xf81f,0xf81f,0xf81f,
+            0xf81f,0x07e0,0x07e0,0xf81f,
+            0xf81f,0x07e0,0x07e0,0xf81f,
+            0xf81f,0xf81f,0xf81f,0xf81f,
+        };
+        for (unsigned i = 0; i < 16; i++) {
+            ksrc[i*2]=(uint8_t)sprite[i]; ksrc[i*2+1]=(uint8_t)(sprite[i]>>8);
+            kdst[i*2]=0x34; kdst[i*2+1]=0x12; /* background 0x1234 */
+        }
+        golden_surface ka={ksrc,32,4,4,8}, kb={kdst,32,4,4,8};
+        assert(golden_color_key(&kb,0,0,&ka,0,0,4,4,0xf81f)==GPU_ERROR_NONE);
+        for (unsigned y=0;y<4;y++) for (unsigned x=0;x<4;x++) {
+            uint16_t sp=sprite[y*4+x];
+            uint16_t got=(uint16_t)(kdst[(y*4+x)*2] | ((uint16_t)kdst[(y*4+x)*2+1]<<8));
+            assert(got==(sp==0xf81f ? 0x1234u : sp));
+        }
+        /* same-surface overlap and guard paths */
+        golden_surface kself={ksrc,32,4,4,8};
+        assert(golden_color_key(&kself,1,0,&kself,0,0,3,2,0xf81f)==GPU_ERROR_OVERLAPPING_COPY);
+        assert(golden_color_key(&kb,4,0,&ka,0,0,1,1,0)==GPU_ERROR_ADDRESS_RANGE);
+        assert(golden_color_key(&kb,0,0,&ka,0,0,0,1,0)==GPU_ERROR_ZERO_SIZE);
+        assert(golden_color_key(&kb,0,0,&ka,0,0,1,1,0)==GPU_ERROR_NONE);
+    }
+    /* Day 15: alpha blend — bit-exact with the rgb565 reference formula */
+    {
+        _Alignas(2) uint8_t asrc[32], abg[32], adst[32];
+        unsigned seed=0x9e3779b9u;
+        for (unsigned i=0;i<16;i++) {
+            seed=seed*1664525u+1013904223u;
+            uint16_t fg=(uint16_t)(seed>>16);
+            asrc[i*2]=(uint8_t)fg; asrc[i*2+1]=(uint8_t)(fg>>8);
+            uint16_t bg=(uint16_t)(seed>>3);
+            abg[i*2]=(uint8_t)bg; abg[i*2+1]=(uint8_t)(bg>>8);
+        }
+        golden_surface aa={asrc,32,4,4,8}, ab={adst,32,4,4,8};
+        static const uint8_t alphas[7]={0,1,64,128,200,254,255};
+        for (unsigned k=0;k<7;k++) {
+            uint8_t a=alphas[k];
+            memcpy(adst,abg,sizeof adst);
+            assert(golden_alpha_blend(&ab,0,0,&aa,0,0,4,4,a)==GPU_ERROR_NONE);
+            for (unsigned i=0;i<16;i++) {
+                uint16_t fg=(uint16_t)(asrc[i*2] | ((uint16_t)asrc[i*2+1]<<8));
+                uint16_t bg=(uint16_t)(abg[i*2] | ((uint16_t)abg[i*2+1]<<8));
+                uint16_t want=rgb565_global_alpha(fg,bg,a);
+                uint16_t got=(uint16_t)(adst[i*2] | ((uint16_t)adst[i*2+1]<<8));
+                assert(got==want);
+            }
+        }
+        assert(golden_alpha_blend(&aa,1,0,&aa,0,0,3,2,0)==GPU_ERROR_OVERLAPPING_COPY);
+        assert(golden_alpha_blend(&ab,4,0,&aa,0,0,1,1,0)==GPU_ERROR_ADDRESS_RANGE);
+        assert(golden_alpha_blend(&ab,0,0,&aa,0,0,0,1,0)==GPU_ERROR_ZERO_SIZE);
+    }
     printf("reference RGB565: %zu bytes, CRC32=%08x\n", sizeof frame,
            (unsigned)golden_crc32(frame, sizeof frame));
-    puts("PASS: packing, RGB roundtrip, exhaustive alpha, guarded odd-width fill, CRC32");
+    puts("PASS: packing, RGB roundtrip, exhaustive alpha, guarded odd-width fill, color key, alpha blend, CRC32");
     return 0;
 }

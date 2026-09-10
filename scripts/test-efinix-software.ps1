@@ -19,7 +19,7 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "RV32 compilation failed: $source" }
 }
     foreach ($test in @('driver','copy','benchmark')) {
-        $sources = @("sw/efinix_gpu/tests/test_$test.c", 'sw/efinix_gpu/src/golden_renderer.c')
+        $sources = @("sw/efinix_gpu/tests/test_$test.c", 'sw/efinix_gpu/src/golden_renderer.c', 'sw/efinix_gpu/src/rgb565.c')
         if ($test -ne 'copy') { $sources += 'sw/efinix_gpu/src/gpu.c' }
         if ($test -eq 'benchmark') { $sources += 'sw/efinix_gpu/src/benchmark.c' }
         & wsl gcc -std=c11 -O2 -Wall -Wextra -Werror '-fsanitize=address,undefined' -fno-omit-frame-pointer -DGPU_TEST_BACKEND -Isw/efinix_gpu/include @sources -o "$out/test_$test"
@@ -30,7 +30,7 @@ try {
     $daySources = @('sw/efinix_gpu/tests/test_day9_13.c', 'sw/efinix_gpu/src/gpu.c',
         'sw/efinix_gpu/src/assets.c', 'sw/efinix_gpu/src/framebuffer.c',
         'sw/efinix_gpu/src/hud.c', 'sw/efinix_gpu/src/game.c',
-        'sw/efinix_gpu/src/golden_renderer.c')
+        'sw/efinix_gpu/src/golden_renderer.c', 'sw/efinix_gpu/src/rgb565.c')
     & wsl gcc -std=c11 -O2 -Wall -Wextra -Werror '-fsanitize=address,undefined' -fno-omit-frame-pointer -DGPU_TEST_BACKEND -Isw/efinix_gpu/include @daySources -o "$out/test_day9_13"
     if ($LASTEXITCODE -ne 0) { throw 'Host compile failed: day9_13' }
     & wsl "./$out/test_day9_13"
