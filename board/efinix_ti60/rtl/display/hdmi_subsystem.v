@@ -10,11 +10,15 @@ module hdmi_subsystem (
     input wire gpu_frame_last,
     output wire gpu_ready,
     output wire [11:0] fifo_level,
+    output wire fifo_level_low,
+    output wire fifo_level_high,
     output wire vblank_gpu,
     output wire vblank,
     output wire fifo_full,
     output wire fifo_empty,
     output wire protocol_error,
+    output reg underflow_event,
+    output reg [15:0] underflow_count,
     output wire [15:0] video_rgb565,
     output wire video_hs,
     output wire video_vs,
@@ -38,12 +42,15 @@ module hdmi_subsystem (
     wire [9:0] line_read_index;
     wire [15:0] line_pixel;
     wire line_begin, line_done, line_valid;
+    wire scale_underflow;
+    reg scale_underflow_prev;
     wire [7:0] red, green, blue;
 
     pixel_async_fifo u_fifo (
         .wr_clk(gpu_clk), .wr_reset(gpu_reset),
         .wr_data({gpu_pixel, gpu_line_last, gpu_frame_last}),
         .wr_valid(gpu_valid), .wr_ready(gpu_ready), .wr_level(fifo_level),
+        .wr_level_low(fifo_level_low), .wr_level_high(fifo_level_high),
         .rd_clk(pixel_clk), .rd_reset(pixel_reset), .rd_data(fifo_read_data),
         .rd_valid(fifo_read_valid), .rd_ready(fifo_read_ready), .rd_level(fifo_read_level),
         .full(fifo_full), .empty(fifo_empty)
@@ -59,8 +66,25 @@ module hdmi_subsystem (
     display_scale2x_1080p u_scale (
         .clk(pixel_clk), .reset(pixel_reset), .line_pixel(line_pixel), .line_valid(line_valid),
         .line_read_index(line_read_index), .line_begin(line_begin), .line_done(line_done),
-        .rgb565(video_rgb565), .hs(video_hs), .vs(video_vs), .de(video_de), .vblank(vblank)
+        .rgb565(video_rgb565), .hs(video_hs), .vs(video_vs), .de(video_de), .vblank(vblank),
+        .underflow(scale_underflow)
     );
+
+    // Latch an underflow event (sticky) and count underflow episodes (rising edge),
+    // so the fixed black background on a missing line is observable to software/HUD.
+    always @(posedge pixel_clk or posedge pixel_reset) begin
+        if (pixel_reset) begin
+            underflow_event <= 1'b0;
+            underflow_count <= 16'd0;
+            scale_underflow_prev <= 1'b0;
+        end else begin
+            if (scale_underflow && !scale_underflow_prev) begin
+                underflow_event <= 1'b1;
+                underflow_count <= underflow_count + 1'b1;
+            end
+            scale_underflow_prev <= scale_underflow;
+        end
+    end
 
     vblank_pulse_sync u_vblank_sync (
         .src_clk(pixel_clk), .src_reset(pixel_reset), .src_vblank(vblank),

@@ -182,6 +182,8 @@ efinix_sapphire_adapter sapphire (
 );
 wire rst_n;
 wire display_vblank, fifo_full, fifo_empty, display_protocol_error;
+wire display_underflow_event;
+wire [15:0] display_underflow_count;
 wire [15:0] display_rgb565;
 wire display_hs, display_vs, display_de;
 assign HPD_N = 1'b0;
@@ -195,6 +197,7 @@ hdmi_subsystem display (
  .gpu_ready(gpu_display_ready),.fifo_level(gpu_scanout_level),
  .vblank_gpu(gpu_vblank),.vblank(display_vblank),
  .fifo_full(fifo_full),.fifo_empty(fifo_empty),.protocol_error(display_protocol_error),
+ .underflow_event(display_underflow_event),.underflow_count(display_underflow_count),
  .video_rgb565(display_rgb565),.video_hs(display_hs),.video_vs(display_vs),.video_de(display_de),
  .tmds_data0_o(tmds_data0_o),
  .tmds_data1_o(tmds_data1_o),

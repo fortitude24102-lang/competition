@@ -2,7 +2,9 @@
 module pixel_async_fifo #(
     parameter DATA_WIDTH = 18,
     parameter DEPTH = 2048,
-    parameter ADDRESS_WIDTH = 11
+    parameter ADDRESS_WIDTH = 11,
+    parameter [11:0] LOW_WATERMARK = 12'd256,
+    parameter [11:0] HIGH_WATERMARK = 12'd1536
 ) (
     input wire wr_clk,
     input wire wr_reset,
@@ -10,6 +12,8 @@ module pixel_async_fifo #(
     input wire wr_valid,
     output wire wr_ready,
     output wire [11:0] wr_level,
+    output wire wr_level_low,
+    output wire wr_level_high,
     input wire rd_clk,
     input wire rd_reset,
     output wire [DATA_WIDTH-1:0] rd_data,
@@ -29,6 +33,9 @@ module pixel_async_fifo #(
     assign rd_valid = vendor_rd_valid && !reset_busy;
     assign wr_level = vendor_wr_level;
     assign rd_level = vendor_rd_level;
+    // Normalized water-level threshold comparison for the Chisel DdrQosArbiter.
+    assign wr_level_low = (wr_level < LOW_WATERMARK);
+    assign wr_level_high = (wr_level > HIGH_WATERMARK);
 
     efx_fifo_wrapper #(
         .FAMILY("TITANIUM"), .SYNC_CLK(0), .MODE("FWFT"),

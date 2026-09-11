@@ -6,6 +6,8 @@ module tb_hdmi_subsystem;
     reg gpu_valid = 0, gpu_line_last = 0, gpu_frame_last = 0;
     wire gpu_ready, vblank_gpu, vblank, fifo_full, fifo_empty, protocol_error;
     wire [11:0] fifo_level;
+    wire fifo_level_low, fifo_level_high, underflow_event;
+    wire [15:0] underflow_count;
     wire [9:0] tmds_data0_o, tmds_data1_o, tmds_data2_o, tmds_clk_o;
     wire tmds_data0_TX_OE, tmds_data1_TX_OE, tmds_data2_TX_OE, tmds_clk_TX_OE;
     wire tmds_data0_TX_RST, tmds_data1_TX_RST, tmds_data2_TX_RST, tmds_clk_TX_RST;
@@ -13,6 +15,8 @@ module tb_hdmi_subsystem;
     wire video_hs, video_vs, video_de;
     integer source_x, source_y, source_frame;
     integer checked_frames, active_count, scaled_count, vblank_count;
+    reg cutoff_active = 0, recovery_active = 0, saw_white = 0;
+    reg saw_low = 0, saw_high = 0;
 
     hdmi_subsystem dut (.*);
     always #5000 gpu_clk = ~gpu_clk;
@@ -32,11 +36,20 @@ module tb_hdmi_subsystem;
         end
     endfunction
 
+    task automatic advance_source();
+        if (source_x == 639) begin
+            source_x = 0;
+            if (source_y == 479) begin source_y = 0; source_frame = source_frame + 1; end
+            else source_y = source_y + 1;
+        end else source_x = source_x + 1;
+    endtask
+
     initial begin
         source_x = 0; source_y = 0; source_frame = 0;
         checked_frames = 0; active_count = 0; scaled_count = 0; vblank_count = 0;
         #37000 gpu_reset = 0;
         #46000 pixel_reset = 0;
+        // Phase 0: feed three distinct pattern frames.
         while (source_frame < 3) begin
             @(negedge gpu_clk);
             if (gpu_ready) begin
@@ -44,19 +57,43 @@ module tb_hdmi_subsystem;
                 gpu_pixel = pattern(source_x, source_y, source_frame);
                 gpu_line_last = source_x == 639;
                 gpu_frame_last = source_x == 639 && source_y == 479;
-                if (source_x == 639) begin
-                    source_x = 0;
-                    if (source_y == 479) begin source_y = 0; source_frame = source_frame + 1; end
-                    else source_y = source_y + 1;
-                end else source_x = source_x + 1;
+                advance_source();
             end else gpu_valid = 0;
         end
         @(negedge gpu_clk); gpu_valid = 0; gpu_line_last = 0; gpu_frame_last = 0;
+
+        // Phase 1: cut off the scanout stream to force underflow.
+        cutoff_active = 1;
+        repeat (500000) @(negedge gpu_clk);   // 5 ms: FIFO drains and lines go black
+        if (underflow_event !== 1'b1) $fatal(1, "underflow event was not latched after stream cutoff");
+
+        // Phase 2: resume with a solid white frame; expect the display to recover.
+        cutoff_active = 0;
+        recovery_active = 1;
+        source_x = 0;
+        while (source_x < 640 * 480) begin
+            @(negedge gpu_clk);
+            if (gpu_ready) begin
+                gpu_valid = 1;
+                gpu_pixel = 16'hffff;
+                gpu_line_last = (source_x % 640) == 639;
+                gpu_frame_last = (source_x % 640) == 639 && (source_x / 640) == 479;
+                source_x = source_x + 1;
+            end else gpu_valid = 0;
+        end
+        @(negedge gpu_clk); gpu_valid = 0; gpu_line_last = 0; gpu_frame_last = 0;
+        repeat (800000) @(negedge gpu_clk);   // let the recovery frame reach the screen
+        if (!saw_white) $fatal(1, "display did not recover: no white pixel seen after resume");
+        recovery_active = 0;
+        $display("PASS display: FIFO CDC, 2x centered scaling, vblank sync, TMDS boundary, underflow latch + black background, recovery, QoS watermarks");
+        $finish;
     end
 
     always @(posedge gpu_clk) begin
         if (!gpu_reset && vblank_gpu) vblank_count <= vblank_count + 1;
         if (!gpu_reset && fifo_level > 2048) $fatal(1, "FIFO level overflow: %0d", fifo_level);
+        if (!gpu_reset && fifo_level_low) saw_low <= 1;
+        if (!gpu_reset && fifo_level_high) saw_high <= 1;
     end
 
     always @(negedge pixel_clk) begin : video_check
@@ -77,8 +114,19 @@ module tb_hdmi_subsystem;
                 if (expected_scaled) begin
                     sx = (ax - 320) >> 1; sy = (ay - 60) >> 1;
                     scaled_count = scaled_count + 1;
-                    if (video_rgb565 !== pattern(sx, sy, checked_frames))
-                        $fatal(1, "scaled pixel mismatch at %0d,%0d got %h expected %h", h, v, video_rgb565, pattern(sx, sy, checked_frames));
+                    if (cutoff_active || recovery_active) begin
+                        // No garbage: only black, a fed pattern, or the recovery white.
+                        if (video_rgb565 !== 16'h0000 &&
+                            video_rgb565 !== pattern(sx, sy, 0) &&
+                            video_rgb565 !== pattern(sx, sy, 1) &&
+                            video_rgb565 !== pattern(sx, sy, 2) &&
+                            video_rgb565 !== 16'hffff)
+                            $fatal(1, "garbage pixel at %0d,%0d got %h", h, v, video_rgb565);
+                        if (recovery_active && video_rgb565 === 16'hffff) saw_white = 1;
+                    end else begin
+                        if (video_rgb565 !== pattern(sx, sy, checked_frames))
+                            $fatal(1, "scaled pixel mismatch at %0d,%0d got %h expected %h", h, v, video_rgb565, pattern(sx, sy, checked_frames));
+                    end
                 end else if (video_rgb565 !== 16'h0000)
                     $fatal(1, "border is not black at %0d,%0d", h, v);
             end
@@ -93,15 +141,13 @@ module tb_hdmi_subsystem;
                         {tmds_data0_TX_RST,tmds_data1_TX_RST,tmds_data2_TX_RST,tmds_clk_TX_RST} !== 4'h0 ||
                         tmds_clk_o !== 10'b0000011111)
                         $fatal(1, "official HDMI serializer boundary mismatch");
-                    $display("PASS display: official FIFO CDC, two frame-distinct 640x480 logs, centered 1280x960, vblank sync, official TMDS boundary");
-                    $finish;
                 end
             end
         end
     end
 
     initial begin
-        #(80ms);
+        #(150ms);
         $fatal(1, "HDMI subsystem timeout");
     end
 endmodule
