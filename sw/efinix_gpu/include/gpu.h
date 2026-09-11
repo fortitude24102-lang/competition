@@ -32,11 +32,21 @@ static inline uint32_t gpu_pack_alpha_flags(uint8_t alpha, uint16_t flags) {
 }
 enum gpu_driver_result { GPU_DRIVER_ID=-1, GPU_DRIVER_VERSION=-2,
  GPU_DRIVER_BUSY=-3, GPU_DRIVER_FULL=-4, GPU_DRIVER_TIMEOUT=-5,
- GPU_DRIVER_TAG=-6, GPU_DRIVER_HARDWARE=-7, GPU_DRIVER_ARGUMENT=-8 };
-/* Exclusive single owner. Timeout/error retains pending until reset.
- * No interrupt or second producer may access this register block. */
-typedef struct { uintptr_t base; uint16_t pending_tag; uint8_t ready, pending, hardware_error; } gpu_device;
+ GPU_DRIVER_TAG=-6, GPU_DRIVER_HARDWARE=-7, GPU_DRIVER_ARGUMENT=-8,
+ GPU_DRIVER_AGAIN=GPU_DRIVER_FULL, GPU_POLL_PENDING=1 };
+#define GPU_COMMAND_QUEUE_DEPTH 16u
+/* Exclusive single owner. Completion is inferred from the in-order LAST_DONE
+ * register, so callers must not submit through a second producer. */
+typedef struct {
+ uintptr_t base;
+ uint32_t submitted_count;
+ uint16_t first_tag, next_tag, last_done, pending_tag;
+ uint8_t ready, pending, outstanding, hardware_error, queue_high_watermark;
+} gpu_device;
 int gpu_init(gpu_device *d, uintptr_t base);
+int gpu_try_submit(gpu_device *d,const gpu_command *command,uint16_t *tag);
+int gpu_submit(gpu_device *d,const gpu_command *command,uint32_t poll_limit,uint16_t *tag);
+int gpu_poll(gpu_device *d,uint16_t tag);
 int gpu_fill_async(gpu_device *d,uint32_t dst,uint32_t stride,uint16_t w,uint16_t h,uint16_t color,uint16_t *tag);
 int gpu_copy_async(gpu_device *d,uint32_t src,uint32_t dst,uint32_t src_stride,uint32_t dst_stride,uint16_t w,uint16_t h,uint16_t *tag);
 int gpu_color_key_async(gpu_device *d,uint32_t src,uint32_t dst,uint32_t src_stride,uint32_t dst_stride,uint16_t w,uint16_t h,uint16_t color_key,uint16_t *tag);

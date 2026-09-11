@@ -10,8 +10,20 @@ static const uint16_t player_pixels[GPU_ASSET_WORDS]={
  0,0,0x001f,0,0,0x001f,0,0
 };
 const gpu_asset gpu_player_asset={GPU_DENSE_ASSETS,8,8,16,player_pixels};
+static const uint16_t enemy_pixels[GPU_ENEMY_ASSET_WORDS]={
+ 0xf800,0xf800,0,0,0,0,0,0,0,0,0xf800,0xf800,
+ 0,0xf800,0xf800,0xf800,0,0,0,0,0xf800,0xf800,0xf800,0,
+ 0,0,0xf800,0xf800,0xf800,0xf800,0xf800,0xf800,0xf800,0xf800,0,0,
+ 0,0xf800,0xf800,0xffff,0xf800,0xf800,0xf800,0xf800,0xffff,0xf800,0xf800,0,
+ 0xf800,0xf800,0xf800,0xf800,0xf800,0xf800,0xf800,0xf800,0xf800,0xf800,0xf800,0xf800,
+ 0xf800,0,0xf800,0xf800,0xf800,0xf800,0xf800,0xf800,0xf800,0xf800,0,0xf800,
+ 0xf800,0,0xf800,0,0,0,0,0,0xf800,0,0xf800,
+ 0,0,0,0xf800,0xf800,0,0,0xf800,0xf800,0,0,0
+};
+const gpu_asset gpu_enemy_asset={GPU_DENSE_ASSETS+GPU_PLAYER_ASSET_WORDS*2u,12,8,24,enemy_pixels};
 size_t gpu_assets_upload_dense(volatile uint16_t *destination,size_t capacity_pixels) {
  if(!destination || capacity_pixels<GPU_ASSET_WORDS) return 0;
- for(size_t i=0;i<GPU_ASSET_WORDS;i++) destination[i]=player_pixels[i];
+ for(size_t i=0;i<GPU_PLAYER_ASSET_WORDS;i++) destination[i]=player_pixels[i];
+ for(size_t i=0;i<GPU_ENEMY_ASSET_WORDS;i++) destination[GPU_PLAYER_ASSET_WORDS+i]=enemy_pixels[i];
  return GPU_ASSET_WORDS;
 }
