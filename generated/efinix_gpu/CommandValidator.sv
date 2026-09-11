@@ -7,13 +7,13 @@ module CommandValidator(	// src/main/scala/gpu/CommandValidator.scala:5:7
                 io_command_heightPixels,	// src/main/scala/gpu/CommandValidator.scala:6:14
   input  [31:0] io_command_srcStride,	// src/main/scala/gpu/CommandValidator.scala:6:14
                 io_command_dstStride,	// src/main/scala/gpu/CommandValidator.scala:6:14
-  output        io_valid,	// src/main/scala/gpu/CommandValidator.scala:6:14
   output [7:0]  io_error	// src/main/scala/gpu/CommandValidator.scala:6:14
 );
 
   wire         renderOp = (|io_command_op) & io_command_op < 4'h6;	// src/main/scala/gpu/CommandValidator.scala:13:{37,57,71}
   wire         _overlap_T = io_command_op == 4'h2;	// src/main/scala/gpu/CommandValidator.scala:14:42
-  wire         denseSourceOp = _overlap_T | io_command_op == 4'h3 | io_command_op == 4'h4;	// src/main/scala/gpu/CommandValidator.scala:14:{42,63}, :15:{16,41,55}
+  wire         _overlap_T_1 = io_command_op == 4'h4;	// src/main/scala/gpu/CommandValidator.scala:15:55
+  wire         denseSourceOp = _overlap_T | io_command_op == 4'h3 | _overlap_T_1;	// src/main/scala/gpu/CommandValidator.scala:14:{42,63}, :15:{16,41,55}
   wire         sourceOp = denseSourceOp | io_command_op == 4'h5;	// src/main/scala/gpu/CommandValidator.scala:13:71, :14:63, :15:41, :16:{40,54}
   wire         _invalidPresentBuffer_T = io_command_op == 4'h6;	// src/main/scala/gpu/CommandValidator.scala:17:54
   wire         destinationOp = renderOp | _invalidPresentBuffer_T;	// src/main/scala/gpu/CommandValidator.scala:13:57, :17:{40,54}
@@ -24,7 +24,7 @@ module CommandValidator(	// src/main/scala/gpu/CommandValidator.scala:5:7
   wire [127:0] _srcEnd_T_5 = _GEN_2 + _GEN_1 + _GEN_0 * {96'h0, io_command_srcStride};	// src/main/scala/gpu/CommandValidator.scala:20:56, :22:{43,48,65,93}
   wire [127:0] _GEN_3 = {96'h0, io_command_dstAddr};	// src/main/scala/gpu/CommandValidator.scala:23:{43,48}
   wire [127:0] _dstEnd_T_5 = _GEN_2 + _GEN_3 + _GEN_0 * {96'h0, io_command_dstStride};	// src/main/scala/gpu/CommandValidator.scala:20:56, :22:{65,93}, :23:{43,48,65,93}
-  wire [7:0]   io_error_0 =
+  assign io_error =
     io_command_op > 4'h6
       ? 8'h1
       : renderOp & (io_command_widthPixels == 16'h0 | io_command_heightPixels == 16'h0)
@@ -47,10 +47,11 @@ module CommandValidator(	// src/main/scala/gpu/CommandValidator.scala:5:7
                     | _invalidPresentBuffer_T & io_command_dstAddr != 32'h2000000
                     & io_command_dstAddr != 32'h2200000
                       ? 8'h5
-                      : _overlap_T & _GEN_1 < _dstEnd_T_5 & _GEN_3 < _srcEnd_T_5
+                      : (_overlap_T | _overlap_T_1) & _GEN_1 < _dstEnd_T_5
+                        & _GEN_3 < _srcEnd_T_5
+                        & ~(_overlap_T_1 & io_command_srcAddr == io_command_dstAddr
+                            & io_command_srcStride == io_command_dstStride)
                           ? 8'h6
-                          : 8'h0;	// src/main/scala/gpu/CommandValidator.scala:13:57, :14:{42,63}, :15:41, :16:40, :17:{40,54}, :18:40, :20:56, :21:54, :22:{43,48,88,93}, :23:{43,48,88,93}, :27:{35,59,67,91}, :28:47, :29:{38,57,61,74,94,101}, :30:{20,39,43,56,76}, :31:{42,63,75}, :32:{20,41}, :33:40, :34:{30,40,50,59,69}, :35:45, :36:{30,40,50,59,69}, :37:57, :38:{29,38,65}, :39:73, :40:{21,53}, :41:21, :43:12, :44:{8,22}, :45:14, :46:24, :47:14, :48:26, :49:14, :50:30, :51:14, :52:{28,45,70}, :53:14, :54:23, :55:14
-  assign io_valid = io_error_0 == 8'h0;	// src/main/scala/gpu/CommandValidator.scala:5:7, :43:12, :44:22, :45:14, :46:24, :57:24
-  assign io_error = io_error_0;	// src/main/scala/gpu/CommandValidator.scala:5:7, :44:22, :45:14, :46:24
+                          : 8'h0;	// src/main/scala/gpu/CommandValidator.scala:5:7, :13:57, :14:{42,63}, :15:{41,55}, :16:40, :17:{40,54}, :18:40, :20:56, :21:54, :22:{43,48,88,93}, :23:{43,48,88,93}, :27:{35,59,67,91}, :28:47, :29:{38,57,61,74,94,101}, :30:{20,39,43,56,76}, :31:{42,63,75}, :32:{20,41}, :33:40, :34:{30,40,50,59,69}, :35:45, :36:{30,40,50,59,69}, :37:{56,65,92}, :38:67, :39:{21,41,62}, :40:{58,95}, :41:{20,23}, :42:73, :43:{21,53}, :44:21, :46:12, :47:{8,22}, :48:14, :49:24, :50:14, :51:26, :52:14, :53:30, :54:14, :55:{28,45,70}, :56:14, :57:23, :58:14
 endmodule
 

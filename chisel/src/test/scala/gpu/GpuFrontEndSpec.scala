@@ -101,6 +101,12 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
         pokeCommand(dut, GpuOpcode.Copy, GpuMemoryMap.FramebufferA, GpuMemoryMap.FramebufferA + 4, 8, 2, 16, 16)
         dut.io.error.expect(GpuError.OverlappingCopy)
 
+        pokeCommand(dut, GpuOpcode.Alpha, GpuMemoryMap.FramebufferA, GpuMemoryMap.FramebufferA + 2, 8, 1, 16, 16)
+        dut.io.error.expect(GpuError.OverlappingCopy)
+
+        pokeCommand(dut, GpuOpcode.Alpha, GpuMemoryMap.FramebufferA, GpuMemoryMap.FramebufferA, 8, 2, 16, 16)
+        dut.io.valid.expect(true)
+
         pokeCommand(dut, GpuOpcode.Present, 0, GpuMemoryMap.FramebufferA + 4096, 1, 1, 0, 2)
         dut.io.error.expect(GpuError.AddressRange)
 

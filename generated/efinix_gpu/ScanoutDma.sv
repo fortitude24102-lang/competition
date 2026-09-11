@@ -60,6 +60,7 @@ module ScanoutDma(	// src/main/scala/gpu/ScanoutDma.scala:13:7
   output [7:0]  io_axi_ar_bits_len,	// src/main/scala/gpu/ScanoutDma.scala:22:14
   output        io_axi_r_ready,	// src/main/scala/gpu/ScanoutDma.scala:22:14
   input         io_axi_r_valid,	// src/main/scala/gpu/ScanoutDma.scala:22:14
+  input  [3:0]  io_axi_r_bits_id,	// src/main/scala/gpu/ScanoutDma.scala:22:14
   input  [31:0] io_axi_r_bits_data,	// src/main/scala/gpu/ScanoutDma.scala:22:14
   input  [1:0]  io_axi_r_bits_resp,	// src/main/scala/gpu/ScanoutDma.scala:22:14
   input         io_axi_r_bits_last	// src/main/scala/gpu/ScanoutDma.scala:22:14
@@ -170,6 +171,7 @@ module ScanoutDma(	// src/main/scala/gpu/ScanoutDma.scala:13:7
     .io_axiAr_bits_len       (io_axi_ar_bits_len),
     .io_axiR_ready           (io_axi_r_ready),
     .io_axiR_valid           (io_axi_r_valid),
+    .io_axiR_bits_id         (io_axi_r_bits_id),
     .io_axiR_bits_data       (io_axi_r_bits_data),
     .io_axiR_bits_resp       (io_axi_r_bits_resp),
     .io_axiR_bits_last       (io_axi_r_bits_last),

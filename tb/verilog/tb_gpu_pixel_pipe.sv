@@ -18,11 +18,13 @@ module tb_gpu_pixel_pipe;
   reg held_write;
   // Reference model matching sw/efinix_gpu/src/rgb565.c rgb565_global_alpha.
   function automatic [15:0] alpha_ref(input [15:0] fg, input [15:0] bg, input [7:0] a);
-    reg [15:0] r, g, b;
+    integer unsigned r, g, b, ai, inv;
     begin
-      r = ((fg[15:11] * a) + (bg[15:11] * (8'd255 - a)) + 127) / 255;
-      g = ((fg[10:5]  * a) + (bg[10:5]  * (8'd255 - a)) + 127) / 255;
-      b = ((fg[4:0]   * a) + (bg[4:0]   * (8'd255 - a)) + 127) / 255;
+      ai = 32'(a);
+      inv = 255 - ai;
+      r = ((fg[15:11] * ai) + (bg[15:11] * inv) + 127) / 255;
+      g = ((fg[10:5]  * ai) + (bg[10:5]  * inv) + 127) / 255;
+      b = ((fg[4:0]   * ai) + (bg[4:0]   * inv) + 127) / 255;
       alpha_ref = {r[4:0], g[5:0], b[4:0]};
     end
   endfunction

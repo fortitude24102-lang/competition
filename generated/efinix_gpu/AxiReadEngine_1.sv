@@ -43,7 +43,7 @@
     `define INIT_RANDOM_PROLOG_
   `endif // RANDOMIZE
 `endif // not def INIT_RANDOM_PROLOG_
-module AxiReadEngine(	// src/main/scala/gpu/AxiReadEngine.scala:17:7
+module AxiReadEngine_1(	// src/main/scala/gpu/AxiReadEngine.scala:17:7
   input         clock,	// src/main/scala/gpu/AxiReadEngine.scala:17:7
                 reset,	// src/main/scala/gpu/AxiReadEngine.scala:17:7
   output        io_request_ready,	// src/main/scala/gpu/AxiReadEngine.scala:19:14
@@ -108,7 +108,7 @@ module AxiReadEngine(	// src/main/scala/gpu/AxiReadEngine.scala:17:7
       automatic logic _GEN_4;	// src/main/scala/gpu/AxiReadEngine.scala:67:25, :87:22, :93:34, :94:15
       _GEN_3 = ~_GEN | _GEN_2;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/AxiReadEngine.scala:29:30, :34:34, :67:25, :72:15, :73:{32,41}
       _errorReg_T =
-        errorSeen | (|{io_axiR_bits_id, io_axiR_bits_resp})
+        errorSeen | (|{io_axiR_bits_id != 4'h1, io_axiR_bits_resp})
         | io_axiR_bits_last != expectedLast;	// src/main/scala/gpu/AxiReadEngine.scala:34:34, :88:41, :89:{37,49}, :90:{25,41,62}, :91:28
       _GEN_4 = _GEN_1 & _io_data_bits_last_T;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/AxiReadEngine.scala:64:39, :67:25, :87:22, :93:34, :94:15
       if (_GEN_1) begin	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
@@ -136,7 +136,7 @@ module AxiReadEngine(	// src/main/scala/gpu/AxiReadEngine.scala:17:7
     if (~_GEN_1 | _io_data_bits_last_T) begin	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/AxiReadEngine.scala:64:39, :67:25, :87:22, :93:34
       if (_GEN) begin	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
         automatic logic [32:0] _remainingBeats_T =
-          {31'h0, io_request_bits_address[1:0]} + {1'h0, io_request_bits_bytes} + 33'h3;	// src/main/scala/gpu/AxiReadEngine.scala:68:45, :69:59, :71:35
+          {1'h0, io_request_bits_bytes} + {31'h0, io_request_bits_address[1:0]} + 33'h3;	// src/main/scala/gpu/AxiReadEngine.scala:68:45, :69:59, :71:35
         currentAddress <= {io_request_bits_address[31:2], 2'h0};	// src/main/scala/gpu/AxiReadEngine.scala:17:7, :30:35, :70:{26,50}
         remainingBeats <= {1'h0, _remainingBeats_T[32:2]};	// src/main/scala/gpu/AxiReadEngine.scala:32:35, :69:59, :71:{20,35,42}
       end

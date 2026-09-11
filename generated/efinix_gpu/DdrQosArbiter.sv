@@ -62,9 +62,11 @@ module DdrQosArbiter(	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   output        io_render_ar_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   input         io_render_ar_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   input  [31:0] io_render_ar_bits_addr,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
+  input  [3:0]  io_render_ar_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   input  [7:0]  io_render_ar_bits_len,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   input         io_render_r_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   output        io_render_r_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
+  output [3:0]  io_render_r_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   output [31:0] io_render_r_bits_data,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   output [1:0]  io_render_r_bits_resp,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   output        io_render_r_bits_last,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
@@ -74,6 +76,7 @@ module DdrQosArbiter(	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   input  [7:0]  io_scanout_ar_bits_len,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   input         io_scanout_r_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   output        io_scanout_r_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
+  output [3:0]  io_scanout_r_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   output [31:0] io_scanout_r_bits_data,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   output [1:0]  io_scanout_r_bits_resp,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   output        io_scanout_r_bits_last,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
@@ -95,11 +98,13 @@ module DdrQosArbiter(	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   input         io_axi_ar_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   output        io_axi_ar_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   output [31:0] io_axi_ar_bits_addr,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
+  output [3:0]  io_axi_ar_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   output [7:0]  io_axi_ar_bits_len,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   output [2:0]  io_axi_ar_bits_size,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   output [1:0]  io_axi_ar_bits_burst,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   output        io_axi_r_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   input         io_axi_r_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
+  input  [3:0]  io_axi_r_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   input  [31:0] io_axi_r_bits_data,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   input  [1:0]  io_axi_r_bits_resp,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
   input         io_axi_r_bits_last	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
@@ -180,11 +185,13 @@ module DdrQosArbiter(	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   assign io_render_b_bits_resp = io_axi_b_bits_resp;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   assign io_render_ar_ready = _GEN & ~readOwner & io_axi_ar_ready;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :18:34, :37:22, :39:{18,35}, :42:21, :43:39
   assign io_render_r_valid = _GEN_0 & ~readOwner & io_axi_r_valid;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :18:34, :37:22, :42:21, :43:39, :47:21, :52:{18,32}, :53:21, :57:25
+  assign io_render_r_bits_id = io_axi_r_bits_id;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   assign io_render_r_bits_data = io_axi_r_bits_data;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   assign io_render_r_bits_resp = io_axi_r_bits_resp;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   assign io_render_r_bits_last = io_axi_r_bits_last;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   assign io_scanout_ar_ready = _GEN & readOwner & io_axi_ar_ready;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :18:34, :38:23, :39:{18,35}, :42:{21,43}
   assign io_scanout_r_valid = _GEN_0 & readOwner & io_axi_r_valid;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :18:34, :49:22, :52:{18,32}, :53:21, :54:26
+  assign io_scanout_r_bits_id = io_axi_r_bits_id;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   assign io_scanout_r_bits_data = io_axi_r_bits_data;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   assign io_scanout_r_bits_resp = io_axi_r_bits_resp;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   assign io_scanout_r_bits_last = io_axi_r_bits_last;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
@@ -201,6 +208,7 @@ module DdrQosArbiter(	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   assign io_axi_ar_valid = io_axi_ar_valid_0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :35:19, :39:35, :40:21
   assign io_axi_ar_bits_addr =
     _GEN ? (readOwner ? io_scanout_ar_bits_addr : io_render_ar_bits_addr) : 32'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :18:34, :36:18, :39:{18,35}, :41:{20,26}
+  assign io_axi_ar_bits_id = ~_GEN | readOwner ? 4'h0 : io_render_ar_bits_id;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :18:34, :36:18, :39:{18,35}, :41:20
   assign io_axi_ar_bits_len =
     _GEN ? (readOwner ? io_scanout_ar_bits_len : io_render_ar_bits_len) : 8'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :18:34, :36:18, :39:{18,35}, :41:{20,26}
   assign io_axi_ar_bits_size = {1'h0, _GEN, 1'h0};	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :36:18, :39:{18,35}, :41:20

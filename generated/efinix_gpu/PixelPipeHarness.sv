@@ -6,6 +6,7 @@ module PixelPipeHarness(	// src/main/scala/gpu/PixelPipeExt.scala:28:7
   input         io_input_valid,	// src/main/scala/gpu/PixelPipeExt.scala:29:14
   input  [2:0]  io_input_bits_op,	// src/main/scala/gpu/PixelPipeExt.scala:29:14
   input  [15:0] io_input_bits_foreground,	// src/main/scala/gpu/PixelPipeExt.scala:29:14
+                io_input_bits_background,	// src/main/scala/gpu/PixelPipeExt.scala:29:14
                 io_input_bits_fillColor,	// src/main/scala/gpu/PixelPipeExt.scala:29:14
                 io_input_bits_colorKey,	// src/main/scala/gpu/PixelPipeExt.scala:29:14
   input  [7:0]  io_input_bits_alpha,	// src/main/scala/gpu/PixelPipeExt.scala:29:14
@@ -22,7 +23,7 @@ module PixelPipeHarness(	// src/main/scala/gpu/PixelPipeExt.scala:28:7
     .in_ready     (io_input_ready),
     .op           (io_input_bits_op),
     .foreground   (io_input_bits_foreground),
-    .background   (16'h0),	// src/main/scala/gpu/PixelPipeExt.scala:29:14, :33:29
+    .background   (io_input_bits_background),
     .fill_color   (io_input_bits_fillColor),
     .color_key    (io_input_bits_colorKey),
     .alpha        (io_input_bits_alpha),

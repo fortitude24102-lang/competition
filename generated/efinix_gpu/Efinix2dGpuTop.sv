@@ -110,11 +110,13 @@ module Efinix2dGpuTop(	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7
   wire [1:0]  _ddr_io_render_b_bits_resp;	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
   wire        _ddr_io_render_ar_ready;	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
   wire        _ddr_io_render_r_valid;	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
+  wire [3:0]  _ddr_io_render_r_bits_id;	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
   wire [31:0] _ddr_io_render_r_bits_data;	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
   wire [1:0]  _ddr_io_render_r_bits_resp;	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
   wire        _ddr_io_render_r_bits_last;	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
   wire        _ddr_io_scanout_ar_ready;	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
   wire        _ddr_io_scanout_r_valid;	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
+  wire [3:0]  _ddr_io_scanout_r_bits_id;	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
   wire [31:0] _ddr_io_scanout_r_bits_data;	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
   wire [1:0]  _ddr_io_scanout_r_bits_resp;	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
   wire        _ddr_io_scanout_r_bits_last;	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
@@ -133,6 +135,7 @@ module Efinix2dGpuTop(	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7
   wire        _render_io_axi_b_ready;	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30
   wire        _render_io_axi_ar_valid;	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30
   wire [31:0] _render_io_axi_ar_bits_addr;	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30
+  wire [3:0]  _render_io_axi_ar_bits_id;	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30
   wire [7:0]  _render_io_axi_ar_bits_len;	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30
   wire        _render_io_axi_r_ready;	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30
   wire        _render_io_completion_valid;	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30
@@ -262,9 +265,11 @@ module Efinix2dGpuTop(	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7
     .io_axi_ar_ready              (_ddr_io_render_ar_ready),	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
     .io_axi_ar_valid              (_render_io_axi_ar_valid),
     .io_axi_ar_bits_addr          (_render_io_axi_ar_bits_addr),
+    .io_axi_ar_bits_id            (_render_io_axi_ar_bits_id),
     .io_axi_ar_bits_len           (_render_io_axi_ar_bits_len),
     .io_axi_r_ready               (_render_io_axi_r_ready),
     .io_axi_r_valid               (_ddr_io_render_r_valid),	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
+    .io_axi_r_bits_id             (_ddr_io_render_r_bits_id),	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
     .io_axi_r_bits_data           (_ddr_io_render_r_bits_data),	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
     .io_axi_r_bits_resp           (_ddr_io_render_r_bits_resp),	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
     .io_axi_r_bits_last           (_ddr_io_render_r_bits_last),	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
@@ -296,6 +301,7 @@ module Efinix2dGpuTop(	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7
     .io_axi_ar_bits_len      (_scanout_io_axi_ar_bits_len),
     .io_axi_r_ready          (_scanout_io_axi_r_ready),
     .io_axi_r_valid          (_ddr_io_scanout_r_valid),	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
+    .io_axi_r_bits_id        (_ddr_io_scanout_r_bits_id),	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
     .io_axi_r_bits_data      (_ddr_io_scanout_r_bits_data),	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
     .io_axi_r_bits_resp      (_ddr_io_scanout_r_bits_resp),	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
     .io_axi_r_bits_last      (_ddr_io_scanout_r_bits_last)	// src/main/scala/gpu/Efinix2dGpuTop.scala:33:27
@@ -319,9 +325,11 @@ module Efinix2dGpuTop(	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7
     .io_render_ar_ready      (_ddr_io_render_ar_ready),
     .io_render_ar_valid      (_render_io_axi_ar_valid),	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30
     .io_render_ar_bits_addr  (_render_io_axi_ar_bits_addr),	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30
+    .io_render_ar_bits_id    (_render_io_axi_ar_bits_id),	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30
     .io_render_ar_bits_len   (_render_io_axi_ar_bits_len),	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30
     .io_render_r_ready       (_render_io_axi_r_ready),	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30
     .io_render_r_valid       (_ddr_io_render_r_valid),
+    .io_render_r_bits_id     (_ddr_io_render_r_bits_id),
     .io_render_r_bits_data   (_ddr_io_render_r_bits_data),
     .io_render_r_bits_resp   (_ddr_io_render_r_bits_resp),
     .io_render_r_bits_last   (_ddr_io_render_r_bits_last),
@@ -331,6 +339,7 @@ module Efinix2dGpuTop(	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7
     .io_scanout_ar_bits_len  (_scanout_io_axi_ar_bits_len),	// src/main/scala/gpu/Efinix2dGpuTop.scala:32:31
     .io_scanout_r_ready      (_scanout_io_axi_r_ready),	// src/main/scala/gpu/Efinix2dGpuTop.scala:32:31
     .io_scanout_r_valid      (_ddr_io_scanout_r_valid),
+    .io_scanout_r_bits_id    (_ddr_io_scanout_r_bits_id),
     .io_scanout_r_bits_data  (_ddr_io_scanout_r_bits_data),
     .io_scanout_r_bits_resp  (_ddr_io_scanout_r_bits_resp),
     .io_scanout_r_bits_last  (_ddr_io_scanout_r_bits_last),
@@ -352,11 +361,13 @@ module Efinix2dGpuTop(	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7
     .io_axi_ar_ready         (io_axi_ar_ready),
     .io_axi_ar_valid         (io_axi_ar_valid),
     .io_axi_ar_bits_addr     (io_axi_ar_bits_addr),
+    .io_axi_ar_bits_id       (io_axi_ar_bits_id),
     .io_axi_ar_bits_len      (io_axi_ar_bits_len),
     .io_axi_ar_bits_size     (io_axi_ar_bits_size),
     .io_axi_ar_bits_burst    (io_axi_ar_bits_burst),
     .io_axi_r_ready          (io_axi_r_ready),
     .io_axi_r_valid          (io_axi_r_valid),
+    .io_axi_r_bits_id        (io_axi_r_bits_id),
     .io_axi_r_bits_data      (io_axi_r_bits_data),
     .io_axi_r_bits_resp      (io_axi_r_bits_resp),
     .io_axi_r_bits_last      (io_axi_r_bits_last)
@@ -368,7 +379,6 @@ module Efinix2dGpuTop(	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7
   assign io_axi_aw_bits_prot = 3'h0;	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7, :31:30, :32:31, :33:27
   assign io_axi_aw_bits_qos = 4'h0;	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7, :31:30, :32:31, :33:27
   assign io_axi_aw_bits_region = 4'h0;	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7, :31:30, :32:31, :33:27
-  assign io_axi_ar_bits_id = 4'h0;	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7, :31:30, :32:31, :33:27
   assign io_axi_ar_bits_lock = 1'h0;	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7
   assign io_axi_ar_bits_cache = 4'h0;	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7, :31:30, :32:31, :33:27
   assign io_axi_ar_bits_prot = 3'h0;	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7, :31:30, :32:31, :33:27

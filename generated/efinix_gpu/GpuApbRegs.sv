@@ -93,7 +93,7 @@ module GpuApbRegs(	// src/main/scala/gpu/GpuApbRegs.scala:6:7
   wire        _submit_T = transfer & io_pwrite;	// src/main/scala/gpu/GpuApbRegs.scala:29:34, :30:33
   wire        _legalOffset_WIRE_3 = io_paddr == 16'hC;	// src/main/scala/gpu/GpuApbRegs.scala:30:58
   wire        submit = _submit_T & _legalOffset_WIRE_3 & io_pwdata[0];	// src/main/scala/gpu/GpuApbRegs.scala:30:{33,46,58,87,99}
-  wire        _legalOffset_WIRE_0 = io_paddr == 16'h0;	// <stdin>:143:31, src/main/scala/gpu/GpuApbRegs.scala:31:79
+  wire        _legalOffset_WIRE_0 = io_paddr == 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:31:79
   wire        _legalOffset_WIRE_1 = io_paddr == 16'h4;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
   wire        _legalOffset_WIRE_2 = io_paddr == 16'h8;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
   wire        _legalOffset_WIRE_4 = io_paddr == 16'h10;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
@@ -146,15 +146,15 @@ module GpuApbRegs(	// src/main/scala/gpu/GpuApbRegs.scala:6:7
       shadow_op <= 4'h0;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
       shadow_srcAddr <= 32'h0;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
       shadow_dstAddr <= 32'h0;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-      shadow_widthPixels <= 16'h0;	// <stdin>:143:31, src/main/scala/gpu/GpuApbRegs.scala:28:31
-      shadow_heightPixels <= 16'h0;	// <stdin>:143:31, src/main/scala/gpu/GpuApbRegs.scala:28:31
+      shadow_widthPixels <= 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:28:31
+      shadow_heightPixels <= 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:28:31
       shadow_srcStride <= 32'h0;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
       shadow_dstStride <= 32'h0;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-      shadow_color <= 16'h0;	// <stdin>:143:31, src/main/scala/gpu/GpuApbRegs.scala:28:31
-      shadow_colorKey <= 16'h0;	// <stdin>:143:31, src/main/scala/gpu/GpuApbRegs.scala:28:31
-      shadow_alpha <= 8'h0;	// <stdin>:145:33, src/main/scala/gpu/GpuApbRegs.scala:28:31
-      shadow_flags <= 16'h0;	// <stdin>:143:31, src/main/scala/gpu/GpuApbRegs.scala:28:31
-      shadow_tag <= 16'h0;	// <stdin>:143:31, src/main/scala/gpu/GpuApbRegs.scala:28:31
+      shadow_color <= 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:28:31
+      shadow_colorKey <= 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:28:31
+      shadow_alpha <= 8'h0;	// <stdin>:190:33, src/main/scala/gpu/GpuApbRegs.scala:28:31
+      shadow_flags <= 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:28:31
+      shadow_tag <= 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:28:31
     end
     else begin	// src/main/scala/gpu/GpuApbRegs.scala:6:7
       automatic logic _GEN = _submit_T & (|_legalOffset_T_30);	// src/main/scala/gpu/GpuApbRegs.scala:30:33, :31:{94,101}, :38:30
@@ -275,7 +275,7 @@ module GpuApbRegs(	// src/main/scala/gpu/GpuApbRegs.scala:6:7
                                                                   ? io_frontBuffer
                                                                   : _legalOffset_WIRE_17
                                                                       ? io_backBuffer
-                                                                      : 32'h0;	// <stdin>:143:31, :145:33, src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31, :31:79, :61:13, :62:20, :63:41, :64:46, :66:{17,23}, :68:41, :69:46, :70:46, :71:{43,49}, :72:48, :73:48, :74:{47,53}, :75:{49,55}, :76:42, :77:47, :78:44, :79:49, :80:50, :81:49
+                                                                      : 32'h0;	// <stdin>:188:31, :190:33, src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31, :31:79, :61:13, :62:20, :63:41, :64:46, :66:{17,23}, :68:41, :69:46, :70:46, :71:{43,49}, :72:48, :73:48, :74:{47,53}, :75:{49,55}, :76:42, :77:47, :78:44, :79:49, :80:50, :81:49
   assign io_pslverror = transfer & (~(|_legalOffset_T_30) | submit & ~io_command_ready);	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :29:34, :30:{46,87}, :31:{94,101}, :36:{28,32,45,56,59}
   assign io_command_valid = submit;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :30:{46,87}
   assign io_command_bits_op = shadow_op;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31

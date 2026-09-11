@@ -74,9 +74,11 @@ APB 合法访问单周期完成。写 CONTROL.SUBMIT 时，完整影子命令原
 
 `PRESENT` 已接入 `FrameSwapController`：命令可提前进入队列，但 `FRONT_BUFFER`、`BACK_BUFFER` 只在同步 vblank 脉冲更新，随后写入 `LAST_DONE`。目标地址只能是固定的 A/B framebuffer。
 
-`COLOR_KEY` 已接入 `DenseBlitEngine` 和真实 Verilog PixelPipe：只读取源图；当前景像素等于 `colorKey` 时不读背景、不发目标 AXI 写事务，非透明像素按 RGB565 半字节选通写回。`ALPHA` 和 `SPARSE` 仍未接入渲染引擎。
+`COLOR_KEY` 已接入 `DenseBlitEngine` 和真实 Verilog PixelPipe：只读取源图；当前景像素等于 `colorKey` 时不读背景、不发目标 AXI 写事务，非透明像素按 RGB565 半字节选通写回。
 
-`QOS_WATERMARKS`、`PERF_CONTROL` 和 `PERF_*` 目前仅保留偏移，读取返回零、写入不生效；不能据此认为 QoS 或计数器已经接入。`flags` 的具体控制位及 IRQ 清除控制尚未实现，现阶段软件使用零。
+`ALPHA` 已接入 `DenseBlitEngine`：前景和目标背景分别使用 AXI ID 0/1 读取，并在像素级配对后送入真实 Verilog PixelPipe。为避免两个读流在单 R 通道上互相等待，每次最多读取同一 AXI beat 内的两个 RGB565 像素；当前块读完并混合后才发对应单拍写事务，避免读改写循环等待。源/目标有重叠时只允许地址和 stride 完全相同的同表面操作，其余返回 `OverlappingCopy`。`SPARSE` 仍未接入渲染引擎。
+
+`GpuPerfCounters` 已在渲染引擎内部统计活动周期、完成像素、AXI 读写字节和阻塞周期；但 `PERF_CONTROL`、`PERF_*` 的 APB 快照/清零与读取接口尚未接入，当前这些寄存器仍返回零。`QOS_WATERMARKS` 也仍为保留偏移。不能通过当前 APB 读数判断内部计数值；`flags` 的具体控制位及 IRQ 清除控制尚未实现，现阶段软件使用零。
 
 `LAST_DONE` 只提供最近完成 tag，`ERROR` 只提供最近错误；它们不是可查询全部历史完成结果的队列。上述说明记录当前实现，不改变后续原计划目标。
 
