@@ -59,7 +59,11 @@ class Efinix2dGpuTop extends Module {
   irq := false.B
   when(render.io.completion.fire) {
     lastDoneTag := render.io.completion.bits.tag
-    lastError := render.io.completion.bits.error
+    // Preserve the first failure across later successful completions. This
+    // lets software validate a batch even if LAST_DONE advances by >1 tag.
+    when(lastError === GpuError.None.U && render.io.completion.bits.error =/= GpuError.None.U) {
+      lastError := render.io.completion.bits.error
+    }
     irq := true.B
   }
 

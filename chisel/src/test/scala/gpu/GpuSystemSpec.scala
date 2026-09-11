@@ -216,6 +216,34 @@ class GpuSystemSpec extends AnyFunSpec with StableChiselSim with Matchers {
         transfer(GpuRegisterMap.FrontBuffer, write = false) shouldBe GpuMemoryMap.FramebufferB
         transfer(GpuRegisterMap.BackBuffer, write = false) shouldBe GpuMemoryMap.FramebufferA
         transfer(GpuRegisterMap.LastDone, write = false) shouldBe 0x4242
+
+        transfer(GpuRegisterMap.Op, write = true, 15)
+        transfer(GpuRegisterMap.Tag, write = true, 0x4243)
+        transfer(GpuRegisterMap.Control, write = true, 1)
+        dut.clock.step(12)
+        transfer(GpuRegisterMap.LastDone, write = false) shouldBe 0x4243
+        transfer(GpuRegisterMap.Error, write = false) shouldBe GpuError.InvalidOpcode
+
+        transfer(GpuRegisterMap.Op, write = true, GpuOpcode.Present)
+        transfer(GpuRegisterMap.DstAddr, write = true, GpuMemoryMap.FramebufferA)
+        transfer(GpuRegisterMap.Tag, write = true, 0x4244)
+        transfer(GpuRegisterMap.Control, write = true, 1)
+        dut.clock.step(8)
+        dut.io.vblank.poke(true)
+        dut.clock.step()
+        dut.io.vblank.poke(false)
+        dut.clock.step(5)
+        transfer(GpuRegisterMap.LastDone, write = false) shouldBe 0x4244
+        transfer(GpuRegisterMap.Error, write = false) shouldBe GpuError.InvalidOpcode
+
+        transfer(GpuRegisterMap.Op, write = true, GpuOpcode.Fill)
+        transfer(GpuRegisterMap.Size, write = true, 1L << 16)
+        transfer(GpuRegisterMap.DstStride, write = true, 2)
+        transfer(GpuRegisterMap.Tag, write = true, 0x4245)
+        transfer(GpuRegisterMap.Control, write = true, 1)
+        dut.clock.step(12)
+        transfer(GpuRegisterMap.LastDone, write = false) shouldBe 0x4245
+        transfer(GpuRegisterMap.Error, write = false) shouldBe GpuError.InvalidOpcode
       }
     }
   }

@@ -1,4 +1,5 @@
 #include "game.h"
+#include "assets.h"
 void game_init(game_state *g) {
  if(!g) return;
  *g=(game_state){0}; g->player=(game_object){316,440,0,0,8,8,1};
@@ -28,4 +29,42 @@ void game_step(game_state *g,unsigned input,uint32_t dt) {
  for(unsigned i=0;i<GAME_MAX_BULLETS;i++) g->bullet_count+=g->bullets[i].active;
  for(unsigned i=0;i<GAME_MAX_ENEMIES;i++) g->enemy_count+=g->enemies[i].active;
  g->tick++;
+}
+
+int game_build_commands(const game_state *g,uint32_t dst,game_command_stream *s) {
+ if(!g || !s || (dst!=GPU_FRAMEBUFFER_A && dst!=GPU_FRAMEBUFFER_B)) return GPU_DRIVER_ARGUMENT;
+ *s=(game_command_stream){0};
+ s->commands[s->count++]=(gpu_command){.op=GPU_OP_FILL,.dst_addr=dst,.dst_stride=1280,
+  .width_pixels=GPU_FRAME_WIDTH,.height_pixels=GPU_FRAME_HEIGHT,.color=0};
+ s->commands[s->count++]=(gpu_command){.op=GPU_OP_COLOR_KEY,.src_addr=gpu_player_asset.address,
+  .dst_addr=dst+(uint32_t)g->player.y*1280u+(uint32_t)g->player.x*2u,
+  .src_stride=gpu_player_asset.stride_bytes,.dst_stride=1280,
+  .width_pixels=gpu_player_asset.width,.height_pixels=gpu_player_asset.height,.color_key=0};
+ ++s->sprite_count;
+ for(unsigned i=0;i<GAME_MAX_ENEMIES;i++) if(g->enemies[i].active) {
+  const game_object *o=&g->enemies[i];
+  s->commands[s->count++]=(gpu_command){.op=GPU_OP_ALPHA,.src_addr=gpu_enemy_asset.address,
+   .dst_addr=dst+(uint32_t)o->y*1280u+(uint32_t)o->x*2u,
+   .src_stride=gpu_enemy_asset.stride_bytes,.dst_stride=1280,
+   .width_pixels=gpu_enemy_asset.width,.height_pixels=gpu_enemy_asset.height,.alpha=224};
+  ++s->sprite_count;
+ }
+ for(unsigned i=0;i<GAME_MAX_BULLETS;i++) if(g->bullets[i].active) {
+  const game_object *o=&g->bullets[i];
+  s->commands[s->count++]=(gpu_command){.op=GPU_OP_FILL,
+   .dst_addr=dst+(uint32_t)o->y*1280u+(uint32_t)o->x*2u,.dst_stride=1280,
+   .width_pixels=o->width,.height_pixels=o->height,.color=0xffff};
+  ++s->sprite_count;
+ }
+ return 0;
+}
+
+int game_submit_commands(gpu_device *d,const game_command_stream *s,int batch,uint32_t polls) {
+ if(!d || !s || !s->count || s->count>GAME_MAX_COMMANDS) return GPU_DRIVER_ARGUMENT;
+ uint16_t tag=0;
+ for(unsigned i=0;i<s->count;i++) {
+  int e=gpu_submit(d,&s->commands[i],polls,&tag); if(e) return e;
+  if(!batch && (e=gpu_wait_tag(d,tag,polls))) return e;
+ }
+ return batch ? gpu_wait_tag(d,tag,polls) : 0;
 }

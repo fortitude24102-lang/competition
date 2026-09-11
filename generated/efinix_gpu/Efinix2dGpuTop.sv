@@ -168,10 +168,11 @@ module Efinix2dGpuTop(	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7
       irq <= 1'h0;	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7, :36:28
     end
     else begin	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7
-      if (_render_io_completion_valid) begin	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30
+      if (_render_io_completion_valid)	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30
         lastDoneTag <= _render_io_completion_bits_tag;	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30, :34:36
+      if (_render_io_completion_valid & lastError == 8'h0
+          & (|_render_io_completion_bits_error))	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30, :35:34, :60:35, :64:{20,40,75,96}, :65:17
         lastError <= _render_io_completion_bits_error;	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30, :35:34
-      end
       irq <= _render_io_completion_valid;	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30, :36:28
     end
   end // always @(posedge)
@@ -282,7 +283,7 @@ module Efinix2dGpuTop(	// src/main/scala/gpu/Efinix2dGpuTop.scala:16:7
   ScanoutDma scanout (	// src/main/scala/gpu/Efinix2dGpuTop.scala:32:31
     .clock                   (clock),
     .reset                   (reset),
-    .io_enable               (~_render_io_swapPending),	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30, :70:24
+    .io_enable               (~_render_io_swapPending),	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30, :74:24
     .io_frontBase            (_render_io_frontBase),	// src/main/scala/gpu/Efinix2dGpuTop.scala:31:30
     .io_fifoLevel            (io_scanoutLevel),
     .io_pixel_ready          (io_displayReady),
