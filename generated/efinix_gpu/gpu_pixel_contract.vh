@@ -2,5 +2,6 @@
 `define GPU_PIXEL_CONTRACT_VH
 `define GPU_PIXEL_FILL 3'd1
 `define GPU_PIXEL_COPY 3'd2
+`define GPU_PIXEL_COLOR_KEY 3'd3
 `endif
 

@@ -30,6 +30,7 @@ class DenseBlitEngine extends Module {
   private val rowWriteDone = RegInit(false.B)
   private val rowReadError = RegInit(false.B)
   private val rowWriteError = RegInit(false.B)
+  private val keyedWriteOutstanding = RegInit(false.B)
   private val completionError = RegInit(GpuError.None.U(8.W))
 
   io.command.ready := state === idle
@@ -37,11 +38,14 @@ class DenseBlitEngine extends Module {
     commandReg := io.command.bits
     srcRowBase := io.command.bits.srcAddr
     dstRowBase := io.command.bits.dstAddr
+    keyedWriteOutstanding := false.B
     completionError := GpuError.None.U
     state := startRect
   }
 
   private val isCopy = commandReg.op === GpuOpcode.Copy.U
+  private val isColorKey = commandReg.op === GpuOpcode.ColorKey.U
+  private val hasSource = isCopy || isColorKey
   private val rowBytes = Cat(0.U(15.W), commandReg.widthPixels, 0.U(1.W))
   private val rowTransferBytes = rowBytes + dstRowBase(1, 0)
   private val rowBeats = (rowTransferBytes + 3.U) >> 2
@@ -52,22 +56,35 @@ class DenseBlitEngine extends Module {
   rect.io.start.bits.heightPixels := commandReg.heightPixels
   rect.io.start.bits.stride := commandReg.dstStride
   when(rect.io.start.fire) {
-    state := startWrite
+    state := Mux(isColorKey, startAligner, startWrite)
   }
 
-  writer.io.request.valid := state === startWrite
-  writer.io.request.bits.address := dstRowBase
-  writer.io.request.bits.beats := rowBeats
+  private val fixedWriteRequest = state === startWrite
+  private val keyedWriteRequest = isColorKey &&
+    (state === requestPixel || state === waitPixel || state === waitRow) &&
+    packer.io.output.valid && !keyedWriteOutstanding
+  writer.io.request.valid := fixedWriteRequest || keyedWriteRequest
+  writer.io.request.bits.address := Mux(keyedWriteRequest, packer.io.output.bits.address, dstRowBase)
+  writer.io.request.bits.beats := Mux(keyedWriteRequest, 1.U, rowBeats)
   when(writer.io.request.fire) {
-    rowWriteDone := false.B
-    rowWriteError := false.B
-    state := Mux(isCopy, startAligner, requestPixel)
+    when(keyedWriteRequest) {
+      keyedWriteOutstanding := true.B
+    }.otherwise {
+      rowWriteDone := false.B
+      rowWriteError := false.B
+      state := Mux(isCopy, startAligner, requestPixel)
+    }
   }
 
   aligner.io.start.valid := state === startAligner
   aligner.io.start.bits.upperFirst := srcRowBase(1)
   aligner.io.start.bits.pixels := commandReg.widthPixels
   when(aligner.io.start.fire) {
+    when(isColorKey) {
+      rowWriteDone := false.B
+      rowWriteError := false.B
+      keyedWriteOutstanding := false.B
+    }
     state := startRead
   }
 
@@ -80,7 +97,7 @@ class DenseBlitEngine extends Module {
     state := requestPixel
   }
 
-  private val sourceValid = !isCopy || aligner.io.output.valid
+  private val sourceValid = !hasSource || aligner.io.output.valid
   io.pixelRequest.valid := state === requestPixel && rect.io.address.valid && sourceValid
   io.pixelRequest.bits.op := commandReg.op(2, 0)
   io.pixelRequest.bits.foreground := aligner.io.output.bits.pixel
@@ -89,7 +106,7 @@ class DenseBlitEngine extends Module {
   io.pixelRequest.bits.colorKey := commandReg.colorKey
   io.pixelRequest.bits.alpha := commandReg.alpha
   rect.io.address.ready := state === requestPixel && io.pixelRequest.ready && sourceValid
-  aligner.io.output.ready := state === requestPixel && isCopy && rect.io.address.valid && io.pixelRequest.ready
+  aligner.io.output.ready := state === requestPixel && hasSource && rect.io.address.valid && io.pixelRequest.ready
 
   when(io.pixelRequest.fire) {
     pixelAddress := rect.io.address.bits.address
@@ -116,15 +133,20 @@ class DenseBlitEngine extends Module {
 
   when(writer.io.done) {
     rowWriteDone := true.B
-    rowWriteError := writer.io.error
+    rowWriteError := rowWriteError || writer.io.error
+    keyedWriteOutstanding := false.B
   }
   when(reader.io.done) {
     rowReadDone := true.B
     rowReadError := reader.io.error
   }
 
-  private val writeFinished = rowWriteDone || writer.io.done
-  private val readFinished = !isCopy || rowReadDone || reader.io.done
+  private val writeFinished = Mux(
+    isColorKey,
+    !keyedWriteOutstanding && !packer.io.output.valid,
+    rowWriteDone || writer.io.done
+  )
+  private val readFinished = !hasSource || rowReadDone || reader.io.done
   private val transferError = rowWriteError || writer.io.error || rowReadError || reader.io.error
   when(state === waitRow && writeFinished && readFinished) {
     when(transferError) {
@@ -135,7 +157,7 @@ class DenseBlitEngine extends Module {
     }.otherwise {
       srcRowBase := srcRowBase + commandReg.srcStride
       dstRowBase := dstRowBase + commandReg.dstStride
-      state := startWrite
+      state := Mux(isColorKey, startAligner, startWrite)
     }
   }
 

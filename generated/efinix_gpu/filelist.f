@@ -12,6 +12,7 @@ DenseBlitEngine.sv
 FrameSwapController.sv
 ./gpu_pixel_copy.v
 ./gpu_pixel_fill.v
+./gpu_pixel_color_key.v
 ./gpu_pixel_pipe.v
 ./gpu_pixel_contract.vh
 PixelPipeHarness.sv

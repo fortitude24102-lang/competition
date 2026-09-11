@@ -133,10 +133,12 @@ module RenderEngine(	// src/main/scala/gpu/RenderEngine.scala:7:7
   wire [15:0] _queue_io_deq_bits_tag;	// src/main/scala/gpu/RenderEngine.scala:23:29
   wire        _queue_io_empty;	// src/main/scala/gpu/RenderEngine.scala:23:29
   reg         completionGap;	// src/main/scala/gpu/RenderEngine.scala:29:38
-  wire        dense = _queue_io_deq_bits_op == 4'h1 | _queue_io_deq_bits_op == 4'h2;	// src/main/scala/gpu/RenderEngine.scala:23:29, :34:{44,65}, :35:26
-  wire        present = _queue_io_deq_bits_op == 4'h6;	// src/main/scala/gpu/RenderEngine.scala:23:29, :36:46
-  wire        rejected = ~_validator_io_valid | ~(dense | present);	// src/main/scala/gpu/RenderEngine.scala:24:33, :34:65, :36:46, :37:{26,46,49,57}
-  wire        engineIdle = _blit_io_command_ready & _swap_io_present_ready;	// src/main/scala/gpu/RenderEngine.scala:25:28, :26:28, :39:50
+  wire        dense =
+    _queue_io_deq_bits_op == 4'h1 | _queue_io_deq_bits_op == 4'h2
+    | _queue_io_deq_bits_op == 4'h3;	// src/main/scala/gpu/RenderEngine.scala:23:29, :34:{44,65}, :35:{26,47}, :36:26
+  wire        present = _queue_io_deq_bits_op == 4'h6;	// src/main/scala/gpu/RenderEngine.scala:23:29, :37:46
+  wire        rejected = ~_validator_io_valid | ~(dense | present);	// src/main/scala/gpu/RenderEngine.scala:24:33, :34:65, :35:47, :37:46, :38:{26,46,49,57}
+  wire        engineIdle = _blit_io_command_ready & _swap_io_present_ready;	// src/main/scala/gpu/RenderEngine.scala:25:28, :26:28, :40:50
   always @(posedge clock) begin	// src/main/scala/gpu/RenderEngine.scala:7:7
     if (reset)	// src/main/scala/gpu/RenderEngine.scala:7:7
       completionGap <= 1'h0;	// src/main/scala/gpu/RenderEngine.scala:7:7, :29:38
@@ -182,7 +184,7 @@ module RenderEngine(	// src/main/scala/gpu/RenderEngine.scala:7:7
       (rejected
          ? engineIdle & ~completionGap
          : (present ? _swap_io_present_ready : _blit_io_command_ready) & engineIdle
-           & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:25:28, :26:28, :29:38, :36:46, :37:46, :39:50, :40:81, :54:28, :56:46, :57:{8,64,78}
+           & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:25:28, :26:28, :29:38, :37:46, :38:46, :40:50, :41:81, :55:28, :57:46, :58:{8,64,78}
     .io_deq_valid             (_queue_io_deq_valid),
     .io_deq_bits_op           (_queue_io_deq_bits_op),
     .io_deq_bits_srcAddr      (_queue_io_deq_bits_srcAddr),
@@ -216,7 +218,7 @@ module RenderEngine(	// src/main/scala/gpu/RenderEngine.scala:7:7
     .io_command_ready                (_blit_io_command_ready),
     .io_command_valid
       (_queue_io_deq_valid & dense & _validator_io_valid & _swap_io_present_ready
-       & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:23:29, :24:33, :26:28, :29:38, :34:65, :40:81, :48:{47,56,78}, :49:27
+       & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:23:29, :24:33, :26:28, :29:38, :34:65, :35:47, :41:81, :49:{47,56,78}, :50:27
     .io_command_bits_op              (_queue_io_deq_bits_op),	// src/main/scala/gpu/RenderEngine.scala:23:29
     .io_command_bits_srcAddr         (_queue_io_deq_bits_srcAddr),	// src/main/scala/gpu/RenderEngine.scala:23:29
     .io_command_bits_dstAddr         (_queue_io_deq_bits_dstAddr),	// src/main/scala/gpu/RenderEngine.scala:23:29
@@ -261,7 +263,7 @@ module RenderEngine(	// src/main/scala/gpu/RenderEngine.scala:7:7
     .io_axi_r_bits_data              (io_axi_r_bits_data),
     .io_axi_r_bits_resp              (io_axi_r_bits_resp),
     .io_axi_r_bits_last              (io_axi_r_bits_last),
-    .io_completion_ready             (_completions_io_in_1_ready & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:28:35, :29:38, :40:81, :62:58
+    .io_completion_ready             (_completions_io_in_1_ready & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:28:35, :29:38, :41:81, :63:58
     .io_completion_valid             (_blit_io_completion_valid),
     .io_completion_bits_tag          (_blit_io_completion_bits_tag),
     .io_completion_bits_error        (_blit_io_completion_bits_error)
@@ -272,11 +274,11 @@ module RenderEngine(	// src/main/scala/gpu/RenderEngine.scala:7:7
     .io_present_ready        (_swap_io_present_ready),
     .io_present_valid
       (_queue_io_deq_valid & present & _validator_io_valid & _blit_io_command_ready
-       & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:23:29, :24:33, :25:28, :29:38, :36:46, :40:81, :51:{47,58,80}, :52:27
+       & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:23:29, :24:33, :25:28, :29:38, :37:46, :41:81, :52:{47,58,80}, :53:27
     .io_present_bits_dstAddr (_queue_io_deq_bits_dstAddr),	// src/main/scala/gpu/RenderEngine.scala:23:29
     .io_present_bits_tag     (_queue_io_deq_bits_tag),	// src/main/scala/gpu/RenderEngine.scala:23:29
     .io_vblank               (io_vblank),
-    .io_completion_ready     (_completions_io_in_2_ready & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:28:35, :29:38, :40:81, :65:58
+    .io_completion_ready     (_completions_io_in_2_ready & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:28:35, :29:38, :41:81, :66:58
     .io_completion_valid     (_swap_io_completion_valid),
     .io_completion_bits_tag  (_swap_io_completion_bits_tag),
     .io_frontBase            (io_frontBase),
@@ -299,15 +301,15 @@ module RenderEngine(	// src/main/scala/gpu/RenderEngine.scala:7:7
     .io_output_bits_writeEnable (_pixel_io_output_bits_writeEnable)
   );	// src/main/scala/gpu/RenderEngine.scala:27:29
   Arbiter3_GpuCompletion completions (	// src/main/scala/gpu/RenderEngine.scala:28:35
-    .io_in_0_valid      (_queue_io_deq_valid & rejected & engineIdle & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:23:29, :29:38, :37:46, :39:50, :40:{52,64,78,81}
+    .io_in_0_valid      (_queue_io_deq_valid & rejected & engineIdle & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:23:29, :29:38, :38:46, :40:50, :41:{52,64,78,81}
     .io_in_0_bits_tag   (_queue_io_deq_bits_tag),	// src/main/scala/gpu/RenderEngine.scala:23:29
-    .io_in_0_bits_error (_validator_io_valid ? 8'h1 : _validator_io_error),	// src/main/scala/gpu/RenderEngine.scala:24:33, :42:41
+    .io_in_0_bits_error (_validator_io_valid ? 8'h1 : _validator_io_error),	// src/main/scala/gpu/RenderEngine.scala:24:33, :43:41
     .io_in_1_ready      (_completions_io_in_1_ready),
-    .io_in_1_valid      (_blit_io_completion_valid & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:25:28, :29:38, :40:81, :60:58
+    .io_in_1_valid      (_blit_io_completion_valid & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:25:28, :29:38, :41:81, :61:58
     .io_in_1_bits_tag   (_blit_io_completion_bits_tag),	// src/main/scala/gpu/RenderEngine.scala:25:28
     .io_in_1_bits_error (_blit_io_completion_bits_error),	// src/main/scala/gpu/RenderEngine.scala:25:28
     .io_in_2_ready      (_completions_io_in_2_ready),
-    .io_in_2_valid      (_swap_io_completion_valid & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:26:28, :29:38, :40:81, :63:58
+    .io_in_2_valid      (_swap_io_completion_valid & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:26:28, :29:38, :41:81, :64:58
     .io_in_2_bits_tag   (_swap_io_completion_bits_tag),	// src/main/scala/gpu/RenderEngine.scala:26:28
     .io_out_valid       (_completions_io_out_valid),
     .io_out_bits_tag    (io_completion_bits_tag),
@@ -316,7 +318,7 @@ module RenderEngine(	// src/main/scala/gpu/RenderEngine.scala:7:7
   assign io_completion_valid = _completions_io_out_valid;	// src/main/scala/gpu/RenderEngine.scala:7:7, :28:35
   assign io_busy =
     ~_queue_io_empty | ~_blit_io_command_ready | _swap_io_pending
-    | _completions_io_out_valid;	// src/main/scala/gpu/RenderEngine.scala:7:7, :23:29, :25:28, :26:28, :28:35, :73:{14,30,33,56,75}
+    | _completions_io_out_valid;	// src/main/scala/gpu/RenderEngine.scala:7:7, :23:29, :25:28, :26:28, :28:35, :74:{14,30,33,56,75}
   assign io_queueEmpty = _queue_io_empty;	// src/main/scala/gpu/RenderEngine.scala:7:7, :23:29
   assign io_swapPending = _swap_io_pending;	// src/main/scala/gpu/RenderEngine.scala:7:7, :26:28
 endmodule

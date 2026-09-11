@@ -54,6 +54,7 @@
     <efx:design_file name="../../generated/efinix_gpu/FrameSwapController.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/gpu_pixel_copy.v" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/gpu_pixel_fill.v" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/gpu_pixel_color_key.v" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/gpu_pixel_pipe.v" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/PixelPipeHarness.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/Arbiter3_GpuCompletion.sv" version="default" library="default" />

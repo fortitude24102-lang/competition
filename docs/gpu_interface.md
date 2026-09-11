@@ -74,6 +74,8 @@ APB 合法访问单周期完成。写 CONTROL.SUBMIT 时，完整影子命令原
 
 `PRESENT` 已接入 `FrameSwapController`：命令可提前进入队列，但 `FRONT_BUFFER`、`BACK_BUFFER` 只在同步 vblank 脉冲更新，随后写入 `LAST_DONE`。目标地址只能是固定的 A/B framebuffer。
 
+`COLOR_KEY` 已接入 `DenseBlitEngine` 和真实 Verilog PixelPipe：只读取源图；当前景像素等于 `colorKey` 时不读背景、不发目标 AXI 写事务，非透明像素按 RGB565 半字节选通写回。`ALPHA` 和 `SPARSE` 仍未接入渲染引擎。
+
 `QOS_WATERMARKS`、`PERF_CONTROL` 和 `PERF_*` 目前仅保留偏移，读取返回零、写入不生效；不能据此认为 QoS 或计数器已经接入。`flags` 的具体控制位及 IRQ 清除控制尚未实现，现阶段软件使用零。
 
 `LAST_DONE` 只提供最近完成 tag，`ERROR` 只提供最近错误；它们不是可查询全部历史完成结果的队列。上述说明记录当前实现，不改变后续原计划目标。

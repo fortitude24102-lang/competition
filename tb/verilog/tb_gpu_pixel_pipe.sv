@@ -27,7 +27,7 @@ module tb_gpu_pixel_pipe;
         in_valid=sent<10000 && ((cycles<32) || rng[1]);
         op=3'(sent%8);
         foreground=16'(sent); fill_color=16'(sent ^ 32'ha55a);
-        background=16'hdead; color_key=(sent & 1) ? 16'(sent) : 16'hbeef; alpha=8'h80;
+        background=16'hdead; color_key=sent[0] ? 16'(sent) : 16'hbeef; alpha=8'h80;
       end
       #1;
       if(held && (!out_valid || result_pixel!==held_pixel || write_enable!==held_write))

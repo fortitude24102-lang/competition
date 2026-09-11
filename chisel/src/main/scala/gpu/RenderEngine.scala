@@ -32,7 +32,8 @@ class RenderEngine extends Module {
   validator.io.command := queue.io.deq.bits
 
   private val dense = queue.io.deq.bits.op === GpuOpcode.Fill.U ||
-    queue.io.deq.bits.op === GpuOpcode.Copy.U
+    queue.io.deq.bits.op === GpuOpcode.Copy.U ||
+    queue.io.deq.bits.op === GpuOpcode.ColorKey.U
   private val present = queue.io.deq.bits.op === GpuOpcode.Present.U
   private val rejected = !validator.io.valid || !(dense || present)
 

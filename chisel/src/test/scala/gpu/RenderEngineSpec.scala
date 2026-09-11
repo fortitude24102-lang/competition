@@ -1,5 +1,6 @@
 package gpu
 
+import chisel3._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import testutil.StableChiselSim
@@ -683,6 +684,165 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
         def halfWord(address: Long): Int = memory(address) | (memory(address + 1) << 8)
         val destinationAddresses = Seq(0x2000002L, 0x2000004L, 0x2000006L, 0x200000eL, 0x2000010L, 0x2000012L)
         destinationAddresses.map(halfWord) shouldBe sourcePixels
+      }
+    }
+  }
+
+  describe("Color Key path") {
+    it("routes a valid Color Key command to the dense engine instead of rejecting it") {
+      simulate(new RenderEngine) { dut =>
+        dut.io.command.valid.poke(true)
+        dut.io.command.bits.poke(0.U.asTypeOf(new GpuCommand))
+        dut.io.command.bits.op.poke(GpuOpcode.ColorKey)
+        dut.io.command.bits.srcAddr.poke(GpuMemoryMap.DenseAssets)
+        dut.io.command.bits.dstAddr.poke(GpuMemoryMap.FramebufferA)
+        dut.io.command.bits.widthPixels.poke(2)
+        dut.io.command.bits.heightPixels.poke(1)
+        dut.io.command.bits.srcStride.poke(4)
+        dut.io.command.bits.dstStride.poke(4)
+        dut.io.command.bits.tag.poke(0x15)
+        dut.io.vblank.poke(false)
+        dut.io.completion.ready.poke(true)
+        dut.io.axi.aw.ready.poke(false)
+        dut.io.axi.w.ready.poke(false)
+        dut.io.axi.b.valid.poke(false)
+        dut.io.axi.b.bits.poke(0.U.asTypeOf(new Axi4WriteResponse))
+        dut.io.axi.ar.ready.poke(false)
+        dut.io.axi.r.valid.poke(false)
+        dut.io.axi.r.bits.poke(0.U.asTypeOf(new Axi4ReadData))
+
+        while (!dut.io.command.ready.peek().litToBoolean) dut.clock.step()
+        dut.clock.step()
+        dut.io.command.valid.poke(false)
+        dut.clock.step(8)
+        dut.io.completion.valid.expect(false)
+        dut.io.axi.ar.valid.expect(true)
+        dut.io.axi.ar.bits.addr.expect(GpuMemoryMap.DenseAssets)
+      }
+    }
+
+    it("reads only the source and suppresses transparent byte lanes and an all-transparent row") {
+      simulate(new DenseBlitEngine) { dut =>
+        val key = 0xbeef
+        val srcBase = 0x02400000L
+        val dstBase = 0x02000000L
+        val source = Seq(key, 0x1111, key, 0x2222, key, key, key, key)
+        val initial = Seq(0xaaaa, 0xbbbb, 0xcccc, 0xdddd, 1, 2, 3, 4)
+        val expected = Seq(0xaaaa, 0x1111, 0xcccc, 0x2222, 1, 2, 3, 4)
+        val memory = collection.mutable.Map.empty[Long, Int].withDefaultValue(0)
+        for ((pixel, index) <- source.zipWithIndex) {
+          memory(srcBase + index * 2) = pixel & 0xff
+          memory(srcBase + index * 2 + 1) = pixel >> 8
+        }
+        for ((pixel, index) <- initial.zipWithIndex) {
+          memory(dstBase + index * 2) = pixel & 0xff
+          memory(dstBase + index * 2 + 1) = pixel >> 8
+        }
+
+        def word(address: Long): Long =
+          (0 until 4).map(byte => memory(address + byte).toLong << (byte * 8)).reduce(_ | _)
+        def halfWord(address: Long): Int = memory(address) | (memory(address + 1) << 8)
+
+        var submitted = false
+        var completed = false
+        var pixelPending = false
+        var pendingPixel = 0
+        var pendingWrite = false
+        var readAddress = 0L
+        var readBeats = 0
+        var writeAddress = 0L
+        var responsePending = false
+        val readRequests = collection.mutable.ArrayBuffer.empty[Long]
+        val writeRequests = collection.mutable.ArrayBuffer.empty[Long]
+        val writeStrobes = collection.mutable.ArrayBuffer.empty[Int]
+
+        dut.io.completion.ready.poke(true)
+        dut.io.pixelRequest.ready.poke(true)
+        dut.io.axi.aw.ready.poke(true)
+        dut.io.axi.w.ready.poke(true)
+        dut.io.axi.ar.ready.poke(true)
+        dut.io.axi.b.bits.id.poke(0)
+        dut.io.axi.b.bits.resp.poke(0)
+        dut.io.axi.r.bits.id.poke(0)
+        dut.io.axi.r.bits.resp.poke(0)
+
+        for (_ <- 0 until 1500 if !completed) {
+          dut.io.command.valid.poke(!submitted)
+          dut.io.command.bits.poke(0.U.asTypeOf(new GpuCommand))
+          dut.io.command.bits.op.poke(GpuOpcode.ColorKey)
+          dut.io.command.bits.srcAddr.poke(srcBase)
+          dut.io.command.bits.dstAddr.poke(dstBase)
+          dut.io.command.bits.widthPixels.poke(4)
+          dut.io.command.bits.heightPixels.poke(2)
+          dut.io.command.bits.srcStride.poke(8)
+          dut.io.command.bits.dstStride.poke(8)
+          dut.io.command.bits.colorKey.poke(key)
+          dut.io.command.bits.tag.poke(0x1515)
+
+          dut.io.pixelResult.valid.poke(pixelPending)
+          dut.io.pixelResult.bits.pixel.poke(pendingPixel)
+          dut.io.pixelResult.bits.writeEnable.poke(pendingWrite)
+          dut.io.axi.b.valid.poke(responsePending)
+          dut.io.axi.r.valid.poke(readBeats > 0)
+          dut.io.axi.r.bits.data.poke(BigInt(if (readBeats > 0) word(readAddress) else 0L))
+          dut.io.axi.r.bits.last.poke(readBeats == 1)
+
+          val commandFire = dut.io.command.valid.peek().litToBoolean && dut.io.command.ready.peek().litToBoolean
+          val requestFire = dut.io.pixelRequest.valid.peek().litToBoolean && dut.io.pixelRequest.ready.peek().litToBoolean
+          val resultFire = dut.io.pixelResult.valid.peek().litToBoolean && dut.io.pixelResult.ready.peek().litToBoolean
+          val arFire = dut.io.axi.ar.valid.peek().litToBoolean && dut.io.axi.ar.ready.peek().litToBoolean
+          val rFire = dut.io.axi.r.valid.peek().litToBoolean && dut.io.axi.r.ready.peek().litToBoolean
+          val awFire = dut.io.axi.aw.valid.peek().litToBoolean && dut.io.axi.aw.ready.peek().litToBoolean
+          val wFire = dut.io.axi.w.valid.peek().litToBoolean && dut.io.axi.w.ready.peek().litToBoolean
+          val wLast = wFire && dut.io.axi.w.bits.last.peek().litToBoolean
+          val bFire = dut.io.axi.b.valid.peek().litToBoolean && dut.io.axi.b.ready.peek().litToBoolean
+          val completionFire = dut.io.completion.valid.peek().litToBoolean && dut.io.completion.ready.peek().litToBoolean
+
+          if (requestFire) {
+            pendingPixel = dut.io.pixelRequest.bits.foreground.peek().litValue.toInt
+            pendingWrite = pendingPixel != key
+          }
+          if (arFire) {
+            readAddress = dut.io.axi.ar.bits.addr.peek().litValue.longValue
+            readBeats = dut.io.axi.ar.bits.len.peek().litValue.toInt + 1
+            readRequests += readAddress
+          }
+          if (awFire) {
+            writeAddress = dut.io.axi.aw.bits.addr.peek().litValue.longValue
+            writeRequests += writeAddress
+          }
+          if (wFire) {
+            val data = dut.io.axi.w.bits.data.peek().litValue.longValue
+            val strobe = dut.io.axi.w.bits.strb.peek().litValue.toInt
+            writeStrobes += strobe
+            for (byte <- 0 until 4 if ((strobe >> byte) & 1) != 0) {
+              memory(writeAddress + byte) = ((data >> (byte * 8)) & 0xff).toInt
+            }
+            writeAddress += 4
+          }
+          if (completionFire) {
+            dut.io.completion.bits.tag.expect(0x1515)
+            dut.io.completion.bits.error.expect(GpuError.None)
+            completed = true
+          }
+
+          dut.clock.step()
+          if (commandFire) submitted = true
+          if (resultFire) pixelPending = false
+          if (requestFire) pixelPending = true
+          if (rFire) {
+            readAddress += 4
+            readBeats -= 1
+          }
+          if (bFire) responsePending = false
+          if (wLast) responsePending = true
+        }
+
+        completed shouldBe true
+        (0 until 8).map(index => halfWord(dstBase + index * 2)) shouldBe expected
+        readRequests.toSeq shouldBe Seq(srcBase, srcBase + 8)
+        writeRequests.toSeq shouldBe Seq(dstBase, dstBase + 4)
+        writeStrobes.toSeq shouldBe Seq(0xc, 0xc)
       }
     }
   }
