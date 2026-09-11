@@ -11,7 +11,8 @@ module display_scale2x_1080p (
     output wire hs,
     output wire vs,
     output wire de,
-    output wire vblank
+    output wire vblank,
+    output wire underflow
 );
     reg [11:0] h_count;
     reg [10:0] v_count;
@@ -34,6 +35,9 @@ module display_scale2x_1080p (
     assign line_begin = h_count == 0 && v_active && active_y >= 11'd60 && active_y < 11'd1020 && !scaled_y[0];
     assign line_done = h_count == 12'd2199 && v_active && active_y >= 11'd60 && active_y < 11'd1020 && scaled_y[0];
     assign rgb565 = scaled_active && line_valid ? line_pixel : 16'h0000;
+    // Underflow: the scaled region needs a source line but none is ready; the
+    // same condition that forces rgb565 to the fixed black background.
+    assign underflow = scaled_active && !line_valid;
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin

@@ -12,7 +12,7 @@ module tb_display_scale2x_1080p;
     display_scale2x_1080p dut(
         .clk(clk),.reset(reset),.line_pixel(16'h1234),.line_valid(1'b1),
         .line_read_index(line_read_index),.line_begin(line_begin),.line_done(line_done),
-        .rgb565(rgb565),.hs(hs),.vs(vs),.de(de),.vblank(vblank)
+        .rgb565(rgb565),.hs(hs),.vs(vs),.de(de),.vblank(vblank),.underflow()
     );
     always #3367 clk=~clk;
     initial begin #20000 reset=0; end
