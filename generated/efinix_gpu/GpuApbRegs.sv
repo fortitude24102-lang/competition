@@ -68,60 +68,80 @@ module GpuApbRegs(	// src/main/scala/gpu/GpuApbRegs.scala:6:7
   output [15:0] io_command_bits_flags,	// src/main/scala/gpu/GpuApbRegs.scala:7:14
                 io_command_bits_tag,	// src/main/scala/gpu/GpuApbRegs.scala:7:14
   input  [4:0]  io_queueLevel,	// src/main/scala/gpu/GpuApbRegs.scala:7:14
+                io_queueHighWater,	// src/main/scala/gpu/GpuApbRegs.scala:7:14
   input         io_queueFull,	// src/main/scala/gpu/GpuApbRegs.scala:7:14
                 io_queueEmpty,	// src/main/scala/gpu/GpuApbRegs.scala:7:14
                 io_engineBusy,	// src/main/scala/gpu/GpuApbRegs.scala:7:14
+                io_irqPending,	// src/main/scala/gpu/GpuApbRegs.scala:7:14
   input  [15:0] io_lastDoneTag,	// src/main/scala/gpu/GpuApbRegs.scala:7:14
   input  [7:0]  io_lastError,	// src/main/scala/gpu/GpuApbRegs.scala:7:14
   input  [31:0] io_frontBuffer,	// src/main/scala/gpu/GpuApbRegs.scala:7:14
-                io_backBuffer	// src/main/scala/gpu/GpuApbRegs.scala:7:14
+                io_backBuffer,	// src/main/scala/gpu/GpuApbRegs.scala:7:14
+  input  [63:0] io_perfCycles,	// src/main/scala/gpu/GpuApbRegs.scala:7:14
+                io_perfPixels,	// src/main/scala/gpu/GpuApbRegs.scala:7:14
+                io_perfReadBytes,	// src/main/scala/gpu/GpuApbRegs.scala:7:14
+                io_perfWriteBytes,	// src/main/scala/gpu/GpuApbRegs.scala:7:14
+                io_perfStalls,	// src/main/scala/gpu/GpuApbRegs.scala:7:14
+  output        io_irqClear,	// src/main/scala/gpu/GpuApbRegs.scala:7:14
+                io_perfClear	// src/main/scala/gpu/GpuApbRegs.scala:7:14
 );
 
-  reg  [3:0]  shadow_op;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-  reg  [31:0] shadow_srcAddr;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-  reg  [31:0] shadow_dstAddr;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-  reg  [15:0] shadow_widthPixels;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-  reg  [15:0] shadow_heightPixels;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-  reg  [31:0] shadow_srcStride;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-  reg  [31:0] shadow_dstStride;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-  reg  [15:0] shadow_color;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-  reg  [15:0] shadow_colorKey;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-  reg  [7:0]  shadow_alpha;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-  reg  [15:0] shadow_flags;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-  reg  [15:0] shadow_tag;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-  wire        transfer = io_psel & io_penable;	// src/main/scala/gpu/GpuApbRegs.scala:29:34
-  wire        _submit_T = transfer & io_pwrite;	// src/main/scala/gpu/GpuApbRegs.scala:29:34, :30:33
-  wire        _legalOffset_WIRE_3 = io_paddr == 16'hC;	// src/main/scala/gpu/GpuApbRegs.scala:30:58
-  wire        submit = _submit_T & _legalOffset_WIRE_3 & io_pwdata[0];	// src/main/scala/gpu/GpuApbRegs.scala:30:{33,46,58,87,99}
-  wire        _legalOffset_WIRE_0 = io_paddr == 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:31:79
-  wire        _legalOffset_WIRE_1 = io_paddr == 16'h4;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
-  wire        _legalOffset_WIRE_2 = io_paddr == 16'h8;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
-  wire        _legalOffset_WIRE_4 = io_paddr == 16'h10;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
-  wire        _legalOffset_WIRE_5 = io_paddr == 16'h14;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
-  wire        _legalOffset_WIRE_6 = io_paddr == 16'h18;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
-  wire        _legalOffset_WIRE_7 = io_paddr == 16'h1C;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
-  wire        _legalOffset_WIRE_8 = io_paddr == 16'h20;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
-  wire        _legalOffset_WIRE_9 = io_paddr == 16'h24;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
-  wire        _legalOffset_WIRE_10 = io_paddr == 16'h28;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
-  wire        _legalOffset_WIRE_11 = io_paddr == 16'h2C;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
-  wire        _legalOffset_WIRE_12 = io_paddr == 16'h30;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
-  wire        _legalOffset_WIRE_13 = io_paddr == 16'h34;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
-  wire        _legalOffset_WIRE_14 = io_paddr == 16'h38;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
-  wire        _legalOffset_WIRE_15 = io_paddr == 16'h3C;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
-  wire        _legalOffset_WIRE_16 = io_paddr == 16'h40;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
-  wire        _legalOffset_WIRE_17 = io_paddr == 16'h44;	// src/main/scala/gpu/GpuApbRegs.scala:31:79
+  reg  [3:0]  shadow_op;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
+  reg  [31:0] shadow_srcAddr;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
+  reg  [31:0] shadow_dstAddr;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
+  reg  [15:0] shadow_widthPixels;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
+  reg  [15:0] shadow_heightPixels;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
+  reg  [31:0] shadow_srcStride;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
+  reg  [31:0] shadow_dstStride;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
+  reg  [15:0] shadow_color;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
+  reg  [15:0] shadow_colorKey;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
+  reg  [7:0]  shadow_alpha;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
+  reg  [15:0] shadow_flags;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
+  reg  [15:0] shadow_tag;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
+  wire        transfer = io_psel & io_penable;	// src/main/scala/gpu/GpuApbRegs.scala:38:34
+  wire        _io_perfClear_T = transfer & io_pwrite;	// src/main/scala/gpu/GpuApbRegs.scala:38:34, :39:33
+  wire        _legalOffset_WIRE_3 = io_paddr == 16'hC;	// src/main/scala/gpu/GpuApbRegs.scala:39:58
+  wire        submit = _io_perfClear_T & _legalOffset_WIRE_3 & io_pwdata[0];	// src/main/scala/gpu/GpuApbRegs.scala:39:{33,46,58,87,99}
+  wire        _legalOffset_WIRE_19 = io_paddr == 16'h4C;	// src/main/scala/gpu/GpuApbRegs.scala:41:14
+  wire        _legalOffset_WIRE_0 = io_paddr == 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_1 = io_paddr == 16'h4;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_2 = io_paddr == 16'h8;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_4 = io_paddr == 16'h10;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_5 = io_paddr == 16'h14;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_6 = io_paddr == 16'h18;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_7 = io_paddr == 16'h1C;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_8 = io_paddr == 16'h20;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_9 = io_paddr == 16'h24;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_10 = io_paddr == 16'h28;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_11 = io_paddr == 16'h2C;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_12 = io_paddr == 16'h30;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_13 = io_paddr == 16'h34;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_14 = io_paddr == 16'h38;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_15 = io_paddr == 16'h3C;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_16 = io_paddr == 16'h40;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_17 = io_paddr == 16'h44;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_20 = io_paddr == 16'h50;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_21 = io_paddr == 16'h54;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_22 = io_paddr == 16'h58;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_23 = io_paddr == 16'h5C;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_24 = io_paddr == 16'h60;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_25 = io_paddr == 16'h64;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_26 = io_paddr == 16'h68;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_27 = io_paddr == 16'h6C;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_28 = io_paddr == 16'h70;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
+  wire        _legalOffset_WIRE_29 = io_paddr == 16'h74;	// src/main/scala/gpu/GpuApbRegs.scala:42:79
   wire [29:0] _legalOffset_T_30 =
-    {io_paddr == 16'h74,
-     io_paddr == 16'h70,
-     io_paddr == 16'h6C,
-     io_paddr == 16'h68,
-     io_paddr == 16'h64,
-     io_paddr == 16'h60,
-     io_paddr == 16'h5C,
-     io_paddr == 16'h58,
-     io_paddr == 16'h54,
-     io_paddr == 16'h50,
-     io_paddr == 16'h4C,
+    {_legalOffset_WIRE_29,
+     _legalOffset_WIRE_28,
+     _legalOffset_WIRE_27,
+     _legalOffset_WIRE_26,
+     _legalOffset_WIRE_25,
+     _legalOffset_WIRE_24,
+     _legalOffset_WIRE_23,
+     _legalOffset_WIRE_22,
+     _legalOffset_WIRE_21,
+     _legalOffset_WIRE_20,
+     _legalOffset_WIRE_19,
      io_paddr == 16'h48,
      _legalOffset_WIRE_17,
      _legalOffset_WIRE_16,
@@ -140,73 +160,98 @@ module GpuApbRegs(	// src/main/scala/gpu/GpuApbRegs.scala:6:7
      _legalOffset_WIRE_3,
      _legalOffset_WIRE_2,
      _legalOffset_WIRE_1,
-     _legalOffset_WIRE_0};	// src/main/scala/gpu/GpuApbRegs.scala:30:58, :31:{79,94}
+     _legalOffset_WIRE_0};	// src/main/scala/gpu/GpuApbRegs.scala:39:58, :41:14, :42:{79,94}
+  reg  [63:0] perfCycles;	// src/main/scala/gpu/GpuApbRegs.scala:43:35
+  reg  [63:0] perfPixels;	// src/main/scala/gpu/GpuApbRegs.scala:44:35
+  reg  [63:0] perfReadBytes;	// src/main/scala/gpu/GpuApbRegs.scala:45:38
+  reg  [63:0] perfWriteBytes;	// src/main/scala/gpu/GpuApbRegs.scala:46:39
+  reg  [63:0] perfStalls;	// src/main/scala/gpu/GpuApbRegs.scala:47:35
+  wire        io_perfClear_0 = _io_perfClear_T & _legalOffset_WIRE_19 & io_pwdata[1];	// src/main/scala/gpu/GpuApbRegs.scala:39:33, :41:14, :52:93, :53:{41,86}
   always @(posedge clock) begin	// src/main/scala/gpu/GpuApbRegs.scala:6:7
     if (reset) begin	// src/main/scala/gpu/GpuApbRegs.scala:6:7
-      shadow_op <= 4'h0;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-      shadow_srcAddr <= 32'h0;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-      shadow_dstAddr <= 32'h0;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-      shadow_widthPixels <= 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:28:31
-      shadow_heightPixels <= 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:28:31
-      shadow_srcStride <= 32'h0;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-      shadow_dstStride <= 32'h0;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-      shadow_color <= 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:28:31
-      shadow_colorKey <= 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:28:31
-      shadow_alpha <= 8'h0;	// <stdin>:190:33, src/main/scala/gpu/GpuApbRegs.scala:28:31
-      shadow_flags <= 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:28:31
-      shadow_tag <= 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:28:31
+      shadow_op <= 4'h0;	// <stdin>:199:30, src/main/scala/gpu/GpuApbRegs.scala:37:31
+      shadow_srcAddr <= 32'h0;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
+      shadow_dstAddr <= 32'h0;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
+      shadow_widthPixels <= 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:37:31
+      shadow_heightPixels <= 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:37:31
+      shadow_srcStride <= 32'h0;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
+      shadow_dstStride <= 32'h0;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
+      shadow_color <= 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:37:31
+      shadow_colorKey <= 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:37:31
+      shadow_alpha <= 8'h0;	// <stdin>:190:33, src/main/scala/gpu/GpuApbRegs.scala:37:31
+      shadow_flags <= 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:37:31
+      shadow_tag <= 16'h0;	// <stdin>:188:31, src/main/scala/gpu/GpuApbRegs.scala:37:31
+      perfCycles <= 64'h0;	// src/main/scala/gpu/GpuApbRegs.scala:43:35
+      perfPixels <= 64'h0;	// src/main/scala/gpu/GpuApbRegs.scala:44:35
+      perfReadBytes <= 64'h0;	// src/main/scala/gpu/GpuApbRegs.scala:45:38
+      perfWriteBytes <= 64'h0;	// src/main/scala/gpu/GpuApbRegs.scala:46:39
+      perfStalls <= 64'h0;	// src/main/scala/gpu/GpuApbRegs.scala:47:35
     end
     else begin	// src/main/scala/gpu/GpuApbRegs.scala:6:7
-      automatic logic _GEN = _submit_T & (|_legalOffset_T_30);	// src/main/scala/gpu/GpuApbRegs.scala:30:33, :31:{94,101}, :38:30
-      if (_GEN & _legalOffset_WIRE_4)	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :31:79, :38:{30,46}, :39:22, :40:43
-        shadow_op <= io_pwdata[3:0];	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :40:55
-      if (~_GEN | _legalOffset_WIRE_4 | ~_legalOffset_WIRE_5) begin	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :31:79, :38:{30,46}, :39:22
+      automatic logic _GEN = _io_perfClear_T & (|_legalOffset_T_30);	// src/main/scala/gpu/GpuApbRegs.scala:39:33, :42:{94,101}, :70:30
+      if (_GEN & _legalOffset_WIRE_4)	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :42:79, :70:{30,46}, :71:22, :72:43
+        shadow_op <= io_pwdata[3:0];	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :72:55
+      if (~_GEN | _legalOffset_WIRE_4 | ~_legalOffset_WIRE_5) begin	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :42:79, :70:{30,46}, :71:22
       end
-      else	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :38:46, :39:22
-        shadow_srcAddr <= io_pwdata;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-      if (~_GEN | _legalOffset_WIRE_4 | _legalOffset_WIRE_5 | ~_legalOffset_WIRE_6) begin	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :31:79, :38:{30,46}, :39:22
+      else	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :70:46, :71:22
+        shadow_srcAddr <= io_pwdata;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
+      if (~_GEN | _legalOffset_WIRE_4 | _legalOffset_WIRE_5 | ~_legalOffset_WIRE_6) begin	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :42:79, :70:{30,46}, :71:22
       end
-      else	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :38:46, :39:22
-        shadow_dstAddr <= io_pwdata;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
+      else	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :70:46, :71:22
+        shadow_dstAddr <= io_pwdata;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
       if (~_GEN | _legalOffset_WIRE_4 | _legalOffset_WIRE_5 | _legalOffset_WIRE_6
-          | ~_legalOffset_WIRE_7) begin	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :31:79, :38:{30,46}, :39:22
+          | ~_legalOffset_WIRE_7) begin	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :42:79, :70:{30,46}, :71:22
       end
-      else begin	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :38:46, :39:22
-        shadow_widthPixels <= io_pwdata[15:0];	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :44:40
-        shadow_heightPixels <= io_pwdata[31:16];	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :45:41
+      else begin	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :70:46, :71:22
+        shadow_widthPixels <= io_pwdata[15:0];	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :76:40
+        shadow_heightPixels <= io_pwdata[31:16];	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :77:41
       end
       if (~_GEN | _legalOffset_WIRE_4 | _legalOffset_WIRE_5 | _legalOffset_WIRE_6
-          | _legalOffset_WIRE_7 | ~_legalOffset_WIRE_8) begin	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :31:79, :38:{30,46}, :39:22
+          | _legalOffset_WIRE_7 | ~_legalOffset_WIRE_8) begin	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :42:79, :70:{30,46}, :71:22
       end
-      else	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :38:46, :39:22
-        shadow_srcStride <= io_pwdata;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
+      else	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :70:46, :71:22
+        shadow_srcStride <= io_pwdata;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
       if (~_GEN | _legalOffset_WIRE_4 | _legalOffset_WIRE_5 | _legalOffset_WIRE_6
-          | _legalOffset_WIRE_7 | _legalOffset_WIRE_8 | ~_legalOffset_WIRE_9) begin	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :31:79, :38:{30,46}, :39:22
+          | _legalOffset_WIRE_7 | _legalOffset_WIRE_8 | ~_legalOffset_WIRE_9) begin	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :42:79, :70:{30,46}, :71:22
       end
-      else	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :38:46, :39:22
-        shadow_dstStride <= io_pwdata;	// src/main/scala/gpu/GpuApbRegs.scala:28:31
-      if (~_GEN | _legalOffset_WIRE_4 | _legalOffset_WIRE_5 | _legalOffset_WIRE_6
-          | _legalOffset_WIRE_7 | _legalOffset_WIRE_8 | _legalOffset_WIRE_9
-          | ~_legalOffset_WIRE_10) begin	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :31:79, :38:{30,46}, :39:22
-      end
-      else begin	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :38:46, :39:22
-        shadow_color <= io_pwdata[15:0];	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :50:34
-        shadow_colorKey <= io_pwdata[31:16];	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :51:37
-      end
+      else	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :70:46, :71:22
+        shadow_dstStride <= io_pwdata;	// src/main/scala/gpu/GpuApbRegs.scala:37:31
       if (~_GEN | _legalOffset_WIRE_4 | _legalOffset_WIRE_5 | _legalOffset_WIRE_6
           | _legalOffset_WIRE_7 | _legalOffset_WIRE_8 | _legalOffset_WIRE_9
-          | _legalOffset_WIRE_10 | ~_legalOffset_WIRE_11) begin	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :31:79, :38:{30,46}, :39:22
+          | ~_legalOffset_WIRE_10) begin	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :42:79, :70:{30,46}, :71:22
       end
-      else begin	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :38:46, :39:22
-        shadow_alpha <= io_pwdata[7:0];	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :54:34
-        shadow_flags <= io_pwdata[31:16];	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :55:34
+      else begin	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :70:46, :71:22
+        shadow_color <= io_pwdata[15:0];	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :82:34
+        shadow_colorKey <= io_pwdata[31:16];	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :83:37
       end
       if (~_GEN | _legalOffset_WIRE_4 | _legalOffset_WIRE_5 | _legalOffset_WIRE_6
           | _legalOffset_WIRE_7 | _legalOffset_WIRE_8 | _legalOffset_WIRE_9
-          | _legalOffset_WIRE_10 | _legalOffset_WIRE_11 | ~_legalOffset_WIRE_12) begin	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :31:79, :38:{30,46}, :39:22
+          | _legalOffset_WIRE_10 | ~_legalOffset_WIRE_11) begin	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :42:79, :70:{30,46}, :71:22
       end
-      else	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :38:46, :39:22
-        shadow_tag <= io_pwdata[15:0];	// src/main/scala/gpu/GpuApbRegs.scala:28:31, :57:57
+      else begin	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :70:46, :71:22
+        shadow_alpha <= io_pwdata[7:0];	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :86:34
+        shadow_flags <= io_pwdata[31:16];	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :87:34
+      end
+      if (~_GEN | _legalOffset_WIRE_4 | _legalOffset_WIRE_5 | _legalOffset_WIRE_6
+          | _legalOffset_WIRE_7 | _legalOffset_WIRE_8 | _legalOffset_WIRE_9
+          | _legalOffset_WIRE_10 | _legalOffset_WIRE_11 | ~_legalOffset_WIRE_12) begin	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :42:79, :70:{30,46}, :71:22
+      end
+      else	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :70:46, :71:22
+        shadow_tag <= io_pwdata[15:0];	// src/main/scala/gpu/GpuApbRegs.scala:37:31, :89:57
+      if (_io_perfClear_T & _legalOffset_WIRE_19 & io_pwdata[0]) begin	// src/main/scala/gpu/GpuApbRegs.scala:39:{33,99}, :40:51, :41:{14,47}
+        perfCycles <= io_perfCycles;	// src/main/scala/gpu/GpuApbRegs.scala:43:35
+        perfPixels <= io_perfPixels;	// src/main/scala/gpu/GpuApbRegs.scala:44:35
+        perfReadBytes <= io_perfReadBytes;	// src/main/scala/gpu/GpuApbRegs.scala:45:38
+        perfWriteBytes <= io_perfWriteBytes;	// src/main/scala/gpu/GpuApbRegs.scala:46:39
+        perfStalls <= io_perfStalls;	// src/main/scala/gpu/GpuApbRegs.scala:47:35
+      end
+      else if (io_perfClear_0) begin	// src/main/scala/gpu/GpuApbRegs.scala:53:{41,86}
+        perfCycles <= 64'h0;	// src/main/scala/gpu/GpuApbRegs.scala:43:35
+        perfPixels <= 64'h0;	// src/main/scala/gpu/GpuApbRegs.scala:44:35
+        perfReadBytes <= 64'h0;	// src/main/scala/gpu/GpuApbRegs.scala:45:38
+        perfWriteBytes <= 64'h0;	// src/main/scala/gpu/GpuApbRegs.scala:46:39
+        perfStalls <= 64'h0;	// src/main/scala/gpu/GpuApbRegs.scala:47:35
+      end
     end
   end // always @(posedge)
   `ifdef ENABLE_INITIAL_REG_	// src/main/scala/gpu/GpuApbRegs.scala:6:7
@@ -214,26 +259,31 @@ module GpuApbRegs(	// src/main/scala/gpu/GpuApbRegs.scala:6:7
       `FIRRTL_BEFORE_INITIAL	// src/main/scala/gpu/GpuApbRegs.scala:6:7
     `endif // FIRRTL_BEFORE_INITIAL
     initial begin	// src/main/scala/gpu/GpuApbRegs.scala:6:7
-      automatic logic [31:0] _RANDOM[0:7];	// src/main/scala/gpu/GpuApbRegs.scala:6:7
+      automatic logic [31:0] _RANDOM[0:17];	// src/main/scala/gpu/GpuApbRegs.scala:6:7
       `ifdef INIT_RANDOM_PROLOG_	// src/main/scala/gpu/GpuApbRegs.scala:6:7
         `INIT_RANDOM_PROLOG_	// src/main/scala/gpu/GpuApbRegs.scala:6:7
       `endif // INIT_RANDOM_PROLOG_
       `ifdef RANDOMIZE_REG_INIT	// src/main/scala/gpu/GpuApbRegs.scala:6:7
-        for (logic [3:0] i = 4'h0; i < 4'h8; i += 4'h1) begin
-          _RANDOM[i[2:0]] = `RANDOM;	// src/main/scala/gpu/GpuApbRegs.scala:6:7
+        for (logic [4:0] i = 5'h0; i < 5'h12; i += 5'h1) begin
+          _RANDOM[i] = `RANDOM;	// src/main/scala/gpu/GpuApbRegs.scala:6:7
         end	// src/main/scala/gpu/GpuApbRegs.scala:6:7
-        shadow_op = _RANDOM[3'h0][3:0];	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-        shadow_srcAddr = {_RANDOM[3'h0][31:4], _RANDOM[3'h1][3:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-        shadow_dstAddr = {_RANDOM[3'h1][31:4], _RANDOM[3'h2][3:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-        shadow_widthPixels = _RANDOM[3'h2][19:4];	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-        shadow_heightPixels = {_RANDOM[3'h2][31:20], _RANDOM[3'h3][3:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-        shadow_srcStride = {_RANDOM[3'h3][31:4], _RANDOM[3'h4][3:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-        shadow_dstStride = {_RANDOM[3'h4][31:4], _RANDOM[3'h5][3:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-        shadow_color = _RANDOM[3'h5][19:4];	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-        shadow_colorKey = {_RANDOM[3'h5][31:20], _RANDOM[3'h6][3:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-        shadow_alpha = _RANDOM[3'h6][11:4];	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-        shadow_flags = _RANDOM[3'h6][27:12];	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-        shadow_tag = {_RANDOM[3'h6][31:28], _RANDOM[3'h7][11:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
+        shadow_op = _RANDOM[5'h0][3:0];	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+        shadow_srcAddr = {_RANDOM[5'h0][31:4], _RANDOM[5'h1][3:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+        shadow_dstAddr = {_RANDOM[5'h1][31:4], _RANDOM[5'h2][3:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+        shadow_widthPixels = _RANDOM[5'h2][19:4];	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+        shadow_heightPixels = {_RANDOM[5'h2][31:20], _RANDOM[5'h3][3:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+        shadow_srcStride = {_RANDOM[5'h3][31:4], _RANDOM[5'h4][3:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+        shadow_dstStride = {_RANDOM[5'h4][31:4], _RANDOM[5'h5][3:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+        shadow_color = _RANDOM[5'h5][19:4];	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+        shadow_colorKey = {_RANDOM[5'h5][31:20], _RANDOM[5'h6][3:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+        shadow_alpha = _RANDOM[5'h6][11:4];	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+        shadow_flags = _RANDOM[5'h6][27:12];	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+        shadow_tag = {_RANDOM[5'h6][31:28], _RANDOM[5'h7][11:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+        perfCycles = {_RANDOM[5'h7][31:12], _RANDOM[5'h8], _RANDOM[5'h9][11:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31, :43:35
+        perfPixels = {_RANDOM[5'h9][31:12], _RANDOM[5'hA], _RANDOM[5'hB][11:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :43:35, :44:35
+        perfReadBytes = {_RANDOM[5'hB][31:12], _RANDOM[5'hC], _RANDOM[5'hD][11:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :44:35, :45:38
+        perfWriteBytes = {_RANDOM[5'hD][31:12], _RANDOM[5'hE], _RANDOM[5'hF][11:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :45:38, :46:39
+        perfStalls = {_RANDOM[5'hF][31:12], _RANDOM[5'h10], _RANDOM[5'h11][11:0]};	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :46:39, :47:35
       `endif // RANDOMIZE_REG_INIT
     end // initial
     `ifdef FIRRTL_AFTER_INITIAL	// src/main/scala/gpu/GpuApbRegs.scala:6:7
@@ -246,7 +296,13 @@ module GpuApbRegs(	// src/main/scala/gpu/GpuApbRegs.scala:6:7
       : _legalOffset_WIRE_1
           ? 32'h10000
           : _legalOffset_WIRE_2
-              ? {24'h0, io_engineBusy, io_queueFull, io_queueEmpty, io_queueLevel}
+              ? {18'h0,
+                 io_irqPending,
+                 io_queueHighWater,
+                 io_engineBusy,
+                 io_queueFull,
+                 io_queueEmpty,
+                 io_queueLevel}
               : _legalOffset_WIRE_4
                   ? {28'h0, shadow_op}
                   : _legalOffset_WIRE_5
@@ -275,20 +331,42 @@ module GpuApbRegs(	// src/main/scala/gpu/GpuApbRegs.scala:6:7
                                                                   ? io_frontBuffer
                                                                   : _legalOffset_WIRE_17
                                                                       ? io_backBuffer
-                                                                      : 32'h0;	// <stdin>:188:31, :190:33, src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31, :31:79, :61:13, :62:20, :63:41, :64:46, :66:{17,23}, :68:41, :69:46, :70:46, :71:{43,49}, :72:48, :73:48, :74:{47,53}, :75:{49,55}, :76:42, :77:47, :78:44, :79:49, :80:50, :81:49
-  assign io_pslverror = transfer & (~(|_legalOffset_T_30) | submit & ~io_command_ready);	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :29:34, :30:{46,87}, :31:{94,101}, :36:{28,32,45,56,59}
-  assign io_command_valid = submit;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :30:{46,87}
-  assign io_command_bits_op = shadow_op;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-  assign io_command_bits_srcAddr = shadow_srcAddr;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-  assign io_command_bits_dstAddr = shadow_dstAddr;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-  assign io_command_bits_widthPixels = shadow_widthPixels;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-  assign io_command_bits_heightPixels = shadow_heightPixels;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-  assign io_command_bits_srcStride = shadow_srcStride;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-  assign io_command_bits_dstStride = shadow_dstStride;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-  assign io_command_bits_color = shadow_color;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-  assign io_command_bits_colorKey = shadow_colorKey;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-  assign io_command_bits_alpha = shadow_alpha;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-  assign io_command_bits_flags = shadow_flags;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
-  assign io_command_bits_tag = shadow_tag;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :28:31
+                                                                      : _legalOffset_WIRE_20
+                                                                          ? perfCycles[31:0]
+                                                                          : _legalOffset_WIRE_21
+                                                                              ? perfCycles[63:32]
+                                                                              : _legalOffset_WIRE_22
+                                                                                  ? perfPixels[31:0]
+                                                                                  : _legalOffset_WIRE_23
+                                                                                      ? perfPixels[63:32]
+                                                                                      : _legalOffset_WIRE_24
+                                                                                          ? perfReadBytes[31:0]
+                                                                                          : _legalOffset_WIRE_25
+                                                                                              ? perfReadBytes[63:32]
+                                                                                              : _legalOffset_WIRE_26
+                                                                                                  ? perfWriteBytes[31:0]
+                                                                                                  : _legalOffset_WIRE_27
+                                                                                                      ? perfWriteBytes[63:32]
+                                                                                                      : _legalOffset_WIRE_28
+                                                                                                          ? perfStalls[31:0]
+                                                                                                          : _legalOffset_WIRE_29
+                                                                                                              ? perfStalls[63:32]
+                                                                                                              : 32'h0;	// <stdin>:188:31, :190:33, src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31, :42:79, :43:35, :44:35, :45:38, :46:39, :47:35, :93:13, :94:20, :95:41, :96:46, :98:{17,23}, :103:41, :104:46, :105:46, :106:{43,49}, :107:48, :108:48, :109:{47,53}, :110:{49,55}, :111:42, :112:47, :113:44, :114:49, :115:50, :116:49, :117:{51,64}, :118:{51,64}, :119:{51,64}, :120:{51,64}, :121:{54,70}, :122:{54,70}, :123:{55,72}, :124:{55,72}, :125:{51,64}, :126:{51,64}
+  assign io_pslverror = transfer & (~(|_legalOffset_T_30) | submit & ~io_command_ready);	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :38:34, :39:{46,87}, :42:{94,101}, :54:{28,32,45,56,59}
+  assign io_command_valid = submit;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :39:{46,87}
+  assign io_command_bits_op = shadow_op;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+  assign io_command_bits_srcAddr = shadow_srcAddr;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+  assign io_command_bits_dstAddr = shadow_dstAddr;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+  assign io_command_bits_widthPixels = shadow_widthPixels;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+  assign io_command_bits_heightPixels = shadow_heightPixels;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+  assign io_command_bits_srcStride = shadow_srcStride;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+  assign io_command_bits_dstStride = shadow_dstStride;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+  assign io_command_bits_color = shadow_color;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+  assign io_command_bits_colorKey = shadow_colorKey;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+  assign io_command_bits_alpha = shadow_alpha;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+  assign io_command_bits_flags = shadow_flags;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+  assign io_command_bits_tag = shadow_tag;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :37:31
+  assign io_irqClear = _io_perfClear_T & _legalOffset_WIRE_3 & io_pwdata[1];	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :39:{33,58}, :52:{40,81,93}
+  assign io_perfClear = io_perfClear_0;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :53:{41,86}
 endmodule
 

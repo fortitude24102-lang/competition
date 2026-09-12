@@ -146,6 +146,10 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.apb.prdata.expect(0x1234)
         dut.io.apb.paddr.poke(GpuRegisterMap.Error)
         dut.io.apb.prdata.expect(GpuError.None)
+        dut.io.irq.expect(true)
+
+        apbWrite(GpuRegisterMap.Control, 2)
+        dut.io.irq.expect(false)
       }
     }
   }
@@ -153,6 +157,7 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
   describe("RenderEngine completion order") {
     it("does not let a rejected queued command complete ahead of an active Fill") {
       simulate(new RenderEngine) { dut =>
+        dut.io.perfClear.poke(false)
         val completionTags = collection.mutable.ArrayBuffer.empty[BigInt]
         val completionCycles = collection.mutable.ArrayBuffer.empty[Int]
         var commandIndex = 0
@@ -691,6 +696,7 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
   describe("Color Key path") {
     it("routes a valid Color Key command to the dense engine instead of rejecting it") {
       simulate(new RenderEngine) { dut =>
+        dut.io.perfClear.poke(false)
         dut.io.command.valid.poke(true)
         dut.io.command.bits.poke(0.U.asTypeOf(new GpuCommand))
         dut.io.command.bits.op.poke(GpuOpcode.ColorKey)

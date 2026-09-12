@@ -16,10 +16,16 @@
 #define GPU_ID_VALUE UINT32_C(0x32444750)
 #define GPU_VERSION_VALUE UINT32_C(0x00010000)
 #define GPU_CONTROL_SUBMIT 1u
+#define GPU_CONTROL_IRQ_CLEAR (1u << 1)
 #define GPU_STATUS_QUEUE_LEVEL_MASK 0x1fu
 #define GPU_STATUS_EMPTY 0x20u
 #define GPU_STATUS_FULL 0x40u
 #define GPU_STATUS_BUSY 0x80u
+#define GPU_STATUS_QUEUE_HIGH_WATER_SHIFT 8u
+#define GPU_STATUS_QUEUE_HIGH_WATER_MASK (0x1fu << GPU_STATUS_QUEUE_HIGH_WATER_SHIFT)
+#define GPU_STATUS_IRQ_PENDING (1u << 13)
+#define GPU_PERF_CONTROL_SNAPSHOT 1u
+#define GPU_PERF_CONTROL_CLEAR (1u << 1)
 #define GPU_OP_MASK 0x0fu
 #define GPU_WIDTH_MASK 0xffffu
 #define GPU_HEIGHT_SHIFT 16u
@@ -30,8 +36,8 @@
 #define GPU_TAG_MASK 0xffffu
 #define GPU_LAST_DONE_MASK 0xffffu
 #define GPU_ERROR_MASK 0xffu
-/* Offsets >= 0x48 are reserved: reads zero, writes ignored by current RTL.
- * FRONT/BACK now report the Day14 vblank-controlled swap state. */
+/* QOS_WATERMARKS remains reserved until Day21. PERF_CONTROL and PERF_* are
+ * active from lead Day18. FRONT/BACK report the vblank-controlled swap state. */
 #define GPU_REG_ID 0x0000u
 #define GPU_REG_VERSION 0x0004u
 #define GPU_REG_STATUS 0x0008u

@@ -46,8 +46,8 @@ Alpha 在原生 RGB565 的 5、6、5 位通道上分别使用整数公式 `(fg *
 |---:|---|---|---|
 | `0x0000` | ID | R | `0x32444750` |
 | `0x0004` | VERSION | R | `0x00010000` |
-| `0x0008` | STATUS | R | busy、full、empty、queue level |
-| `0x000C` | CONTROL | W | bit0 SUBMIT；后续位用于 IRQ/计数器控制 |
+| `0x0008` | STATUS | R | busy、full、empty、queue level、queue high-water、IRQ pending |
+| `0x000C` | CONTROL | W | bit0 SUBMIT；bit1 IRQ_CLEAR |
 | `0x0010` | OP | RW | 命令操作码 |
 | `0x0014` | SRC_ADDR | RW | 源地址 |
 | `0x0018` | DST_ADDR | RW | 目标地址 |
@@ -63,14 +63,14 @@ Alpha 在原生 RGB565 的 5、6、5 位通道上分别使用整数公式 `(fg *
 | `0x0040` | FRONT_BUFFER | R | 当前前台帧地址 |
 | `0x0044` | BACK_BUFFER | R | 当前后台帧地址 |
 | `0x0048` | QOS_WATERMARKS | RW | 高低水位 |
-| `0x004C` | PERF_CONTROL | RW | 计数器快照/清零 |
+| `0x004C` | PERF_CONTROL | W | bit0 SNAPSHOT；bit1 CLEAR |
 | `0x0050`–`0x0074` | PERF_* | R | 64 位周期、像素、读写字节和 stall |
 
 APB 合法访问单周期完成。写 CONTROL.SUBMIT 时，完整影子命令原子进入 16 项 FIFO；FIFO 满时返回 `PSLVERROR`，不能覆盖或丢弃旧命令。
 
 ### 当前实现边界
 
-2026-09-10 对照 `GpuApbRegs.scala`：`STATUS[4:0]` 为 queue level，bit5 为 empty，bit6 为 full，bit7 为 busy，其余位为零。`OP[3:0]`、`TAG[15:0]` 有效；`ALPHA_FLAGS[15:8]` 保留为零。
+2026-09-12 对照 `GpuApbRegs.scala`：`STATUS[4:0]` 为 queue level，bit5 为 empty，bit6 为 full，bit7 为 busy，`STATUS[12:8]` 为复位以来的 queue high-water，bit13 为 IRQ pending；其余位为零。`OP[3:0]`、`TAG[15:0]` 有效；`ALPHA_FLAGS[15:8]` 保留为零。
 
 `PRESENT` 已接入 `FrameSwapController`：命令可提前进入队列，但 `FRONT_BUFFER`、`BACK_BUFFER` 只在同步 vblank 脉冲更新，随后写入 `LAST_DONE`。目标地址只能是固定的 A/B framebuffer。
 
@@ -78,9 +78,9 @@ APB 合法访问单周期完成。写 CONTROL.SUBMIT 时，完整影子命令原
 
 `ALPHA` 已接入 `DenseBlitEngine`：前景和目标背景分别使用 AXI ID 0/1 读取，并在像素级配对后送入真实 Verilog PixelPipe。为避免两个读流在单 R 通道上互相等待，每次最多读取同一 AXI beat 内的两个 RGB565 像素；当前块读完并混合后才发对应单拍写事务，避免读改写循环等待。源/目标有重叠时只允许地址和 stride 完全相同的同表面操作，其余返回 `OverlappingCopy`。`SPARSE` 仍未接入渲染引擎。
 
-`GpuPerfCounters` 已在渲染引擎内部统计活动周期、完成像素、AXI 读写字节和阻塞周期；但 `PERF_CONTROL`、`PERF_*` 的 APB 快照/清零与读取接口尚未接入，当前这些寄存器仍返回零。`QOS_WATERMARKS` 也仍为保留偏移。不能通过当前 APB 读数判断内部计数值；`flags` 的具体控制位及 IRQ 清除控制尚未实现，现阶段软件使用零。
+`GpuPerfCounters` 统计活动周期、完成像素、AXI 读写字节和阻塞周期。向 `PERF_CONTROL` 写 bit0 会把五个 64 位计数器同时锁存到 `PERF_*`，CPU 随后可读取高低 32 位而不会撕裂；写 bit1 会清零运行计数器和旧快照。若 bit0、bit1 同时写 1，则先保留清零前快照，再清零运行计数器。`QOS_WATERMARKS` 仍为 Day21 保留偏移。
 
-`LAST_DONE` 只提供最近完成 tag，`ERROR` 只提供最近错误；它们不是可查询全部历史完成结果的队列。上述说明记录当前实现，不改变后续原计划目标。
+完成 IRQ 在任一命令完成后保持为 1，向 `CONTROL` 写 bit1 清除；若清除与新完成同周期发生，新完成优先，IRQ 仍保持。`LAST_DONE` 提供最近完成 tag，命令严格按队列顺序完成，因此软件在最多 16 项在途窗口内可以按 tag 序列批量回收；`ERROR` 保持批次中第一个非零错误直至 GPU 复位。它们不是可乱序弹出的完成队列。
 
 ## 错误码
 

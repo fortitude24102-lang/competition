@@ -47,16 +47,24 @@ class Efinix2dGpuTop extends Module {
   render.io.command <> regs.io.command
   render.io.vblank := io.vblank
   regs.io.queueLevel := render.io.queueLevel
+  regs.io.queueHighWater := render.io.queueHighWater
   regs.io.queueFull := render.io.queueFull
   regs.io.queueEmpty := render.io.queueEmpty
   regs.io.engineBusy := render.io.busy
+  regs.io.irqPending := irq
   regs.io.lastDoneTag := lastDoneTag
   regs.io.lastError := lastError
   regs.io.frontBuffer := render.io.frontBase
   regs.io.backBuffer := render.io.backBase
+  regs.io.perfCycles := render.io.perfCycles
+  regs.io.perfPixels := render.io.perfPixels
+  regs.io.perfReadBytes := render.io.perfReadBytes
+  regs.io.perfWriteBytes := render.io.perfWriteBytes
+  regs.io.perfStalls := render.io.perfStalls
+  render.io.perfClear := regs.io.perfClear
 
   render.io.completion.ready := true.B
-  irq := false.B
+  when(regs.io.irqClear) { irq := false.B }
   when(render.io.completion.fire) {
     lastDoneTag := render.io.completion.bits.tag
     // Preserve the first failure across later successful completions. This

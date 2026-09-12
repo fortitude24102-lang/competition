@@ -27,7 +27,7 @@
 
 ## 下一阶段
 
-负责人 Day14 已把 A 的 `vblank_pulse_sync.v` 接入 `FrameSwapController`，B 的 PRESENT 命令现在只在 vblank 更新前后台地址并完成 tag。负责人 Day15 已复用 A 的 `gpu_pixel_color_key.v`，完成 Color Key 源图读取和透明像素跳写。负责人 Day16～17 已复用 A 的精确 Alpha 模块，完成前景/背景双读配对、写回与内部性能统计。负责人 Day18 的任意 tag 查询和批量完成回收需要 B Day17 的软件/API 合同，当前尚未提交，因此在冻结寄存器合同前暂停。开发板到位后仍需补做 DDR 实读写、UART、HDMI 显示器和 300 帧无撕裂验收。
+负责人 Day14 已把 A 的 `vblank_pulse_sync.v` 接入 `FrameSwapController`，B 的 PRESENT 命令现在只在 vblank 更新前后台地址并完成 tag。负责人 Day15 已复用 A 的 `gpu_pixel_color_key.v`，完成 Color Key 源图读取和透明像素跳写。负责人 Day16～17 已复用 A 的精确 Alpha 模块，完成前景/背景双读配对、写回与内部性能统计。负责人 Day18 已根据 B Day17 的批量驱动合同完成粘滞 IRQ、明确清除、按序 tag 回收状态、队列高水位和性能计数器 APB 快照。开发板到位后仍需补做 DDR 实读写、UART、HDMI 显示器和 300 帧无撕裂验收。
 
 ## 本轮实际结果
 
@@ -36,6 +36,7 @@
 - 负责人 Day14：`FrameSwapController.scala` 已接入命令队列、APB 动态前后台寄存器和 Scanout。随机时刻提交后地址在 vblank 前保持不变，vblank 后完成对应 tag；25 项 GPU 回归全部通过。Efinity `map/interface/pnr/pgm` 全流程通过，100 MHz 核心 setup 裕量 0.373 ns，HDMI 慢时钟 setup/hold 裕量 2.581/0.012 ns。
 - 负责人 Day15：`DenseBlitEngine.scala` 已接受 Color Key 命令并复用 A 的真实 Verilog PixelPipe。透明命中不读背景、不发 AXI 目标写；非透明半字按地址选通写回，整行透明产生 0 次写事务。`RenderEngineSpec` 新增命令路由和两行内存保持测试；GPU 回归 27/27、A 的 Verilog 回归以及 Efinity `map/interface/pnr/pgm` 全部通过。最终时序中 100 MHz 核心 setup/hold 裕量为 0.412/0.026 ns，HDMI 慢时钟 setup/hold 裕量为 2.424/0.071 ns。
 - 负责人 Day16～17：`DenseBlitEngine.scala` 使用 AXI ID 0/1 配对读取前景和目标背景，随机化 AR/R/像素反压下 3×2 跨行测试无错配；`RenderEngine.scala` 接受 Alpha，并接入 `GpuPerfCounters.scala` 统计周期、像素、读写字节和 stall。精确 Alpha 的 0/128/255 边界和 10000 组四模式随机事务由 A 的真实 Verilog 回归覆盖；GPU 回归增至 30/30。Efinity `map/interface/pnr/pgm` 全部通过，100 MHz core setup/hold 裕量 1.849/0.026 ns，HDMI 慢时钟 setup/hold 裕量 2.725/0.012 ns。
+- 负责人 Day18：`GpuApbRegs.scala` 输出队列历史高水位和 IRQ pending，并提供五组 64 位性能计数器的原子快照/清零；`Efinix2dGpuTop.scala` 把完成 IRQ 改为软件明确清除的粘滞状态。B 的最多 16 条在途驱动可依据按序 `LAST_DONE` 批量回收。GPU 回归 31/31 通过并重新生成 split-verilog。
 - 本轮未完成：开发板下载、DDR 实读写、UART 交互、HDMI 显示器出图和耐久测试。
 - 依赖：A 使用 WSL Ubuntu／Verilator 5.020；B 使用 WSL GCC 主机检查与 `D:/efinity/risc_v_gcc/toolchain/bin/riscv-none-elf-gcc.exe` 官方工具链探针。详细 A 过程见 `board/efinix_ti60/MEMBER_A_OFFLINE_ACCEPTANCE.md`。
-- 当前阻塞：负责人 Day18 的任意 tag 查询、批量完成回收、IRQ 清除和计数器 APB 快照会改变冻结寄存器行为，必须先取得组员 B Day17 的 `gpu_wait_tag`／完成回收接口与测试合同；当前 main 只有 B Day15，负责人不单方面新增协议。
+- 当前阻塞：负责人 Day19 `SparseDecoder.scala` 需要组员 B Day22 的 `sparse_format.h`、打包器和随机 token 向量共同冻结 Sparse 边界。当前 B 到 Day20，因此不能在负责人侧单独发明另一套格式。

@@ -8,6 +8,7 @@ class RenderEngine extends Module {
   val io = IO(new Bundle {
     val command = Flipped(Decoupled(new GpuCommand))
     val vblank = Input(Bool())
+    val perfClear = Input(Bool())
     val axi = new Axi4MasterPort
     val completion = Decoupled(new GpuCompletion)
     val busy = Output(Bool())
@@ -99,7 +100,7 @@ class RenderEngine extends Module {
   private val pixelStalled =
     (blit.io.pixelRequest.valid && !blit.io.pixelRequest.ready) ||
       (blit.io.pixelResult.valid && !blit.io.pixelResult.ready)
-  perf.io.clear := false.B
+  perf.io.clear := io.perfClear
   perf.io.active := io.busy
   perf.io.pixelDone := blit.io.pixelResult.fire
   perf.io.readBeat := blit.io.axi.r.fire
