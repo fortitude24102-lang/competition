@@ -1,6 +1,6 @@
 # 组员 A 与 B 离线推进记录
 
-日期：2026-09-12。依据 `docs/word/Efinix_2D图像渲染三人开发计划书_官方Demo版.docx`，本轮继续执行原计划，不启动交互绘图与共享碰撞后期扩展。
+日期：2026-09-12。本文件是截至该日期的历史阶段记录。当前后续工作已由 `docs/word/Efinix_2D图像渲染三人开发计划书_官方Demo版.docx` 的三人三天收尾版接管；本文件不再作为排期或阻塞判断依据。
 
 ## 本轮范围
 
@@ -37,6 +37,6 @@
 - 负责人 Day15：`DenseBlitEngine.scala` 已接受 Color Key 命令并复用 A 的真实 Verilog PixelPipe。透明命中不读背景、不发 AXI 目标写；非透明半字按地址选通写回，整行透明产生 0 次写事务。`RenderEngineSpec` 新增命令路由和两行内存保持测试；GPU 回归 27/27、A 的 Verilog 回归以及 Efinity `map/interface/pnr/pgm` 全部通过。最终时序中 100 MHz 核心 setup/hold 裕量为 0.412/0.026 ns，HDMI 慢时钟 setup/hold 裕量为 2.424/0.071 ns。
 - 负责人 Day16～17：`DenseBlitEngine.scala` 使用 AXI ID 0/1 配对读取前景和目标背景，随机化 AR/R/像素反压下 3×2 跨行测试无错配；`RenderEngine.scala` 接受 Alpha，并接入 `GpuPerfCounters.scala` 统计周期、像素、读写字节和 stall。精确 Alpha 的 0/128/255 边界和 10000 组四模式随机事务由 A 的真实 Verilog 回归覆盖；GPU 回归增至 30/30。Efinity `map/interface/pnr/pgm` 全部通过，100 MHz core setup/hold 裕量 1.849/0.026 ns，HDMI 慢时钟 setup/hold 裕量 2.725/0.012 ns。
 - 负责人 Day18：`GpuApbRegs.scala` 输出队列历史高水位和 IRQ pending，并提供五组 64 位性能计数器的原子快照/清零；`Efinix2dGpuTop.scala` 把完成 IRQ 改为软件明确清除的粘滞状态。B 的最多 16 条在途驱动可依据按序 `LAST_DONE` 批量回收。GPU 回归 31/31 通过并重新生成 split-verilog。
-- 本轮未完成：开发板下载、DDR 实读写、UART 交互、HDMI 显示器出图和耐久测试。
+- 截至 2026-09-12 本轮未完成：开发板下载、DDR 实读写、UART 交互、HDMI 显示器出图和耐久测试。此后基础板级验证已经完成，剩余正式候选验收按新版第 3 天执行。
 - 依赖：A 使用 WSL Ubuntu／Verilator 5.020；B 使用 WSL GCC 主机检查与 `D:/efinity/risc_v_gcc/toolchain/bin/riscv-none-elf-gcc.exe` 官方工具链探针。详细 A 过程见 `board/efinix_ti60/MEMBER_A_OFFLINE_ACCEPTANCE.md`。
-- 当前阻塞：负责人 Day19 `SparseDecoder.scala` 需要组员 B Day22 的 `sparse_format.h`、打包器和随机 token 向量共同冻结 Sparse 边界。当前 B 到 Day20，因此不能在负责人侧单独发明另一套格式。
+- 原阻塞已经关闭：`docs/gpu_interface.md` 已包含共同 Sparse token 合同。新版第 1 天由负责人实现 `SparseDecoder.scala` 和 Sparse Blit，B 按同一合同并行提交 `sparse_format.h`、打包器和随机向量，不再相互等待。

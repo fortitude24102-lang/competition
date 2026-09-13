@@ -1,6 +1,6 @@
 # B 组员第 16～20 天交付与验收
 
-本批任务沿用官方 Sapphire CPU、DDR3 与 HDMI Demo，不引入自研 CPU，也不改变已冻结的 APB 寄存器偏移。当前没有开发板，因此这里只把可离线证明的部分标为完成；画面观感、真实帧率和 HDMI 欠流仍保留为上板验收。
+本批任务沿用官方 Sapphire CPU、DDR3 与 HDMI Demo，不引入自研 CPU，也不改变已冻结的 APB 寄存器偏移。本文件记录当时第 16～20 天的离线验收；当前后续工作由正式三人三天收尾计划接管。
 
 ## 第 16 天：高级绘图 Demo
 
@@ -43,6 +43,6 @@
 
 运行 `scripts/test-efinix-software.ps1`。脚本会执行 sanitizer 主机测试、B 第 16～20 天专项测试、RV32 编译和完整 Sapphire ELF/BIN/HEX 链接，并用 `-Wstack-usage=2048` 防止单个函数接近官方 4 KiB 栈上限。两个大命令列表和 300 帧样本放在 BSS，而不是栈。输出中的 `not board executed` 表示只证明软件构建和离线模型，不代表已经通过板卡验收。
 
-## 下一依赖点
+## 后续状态
 
-B 第 21 天需要负责人完成自适应 QoS 的 CPU 可读/可控接口；B 第 22 天需要负责人完成 SparseDecoder 接口。因此本批在第 20 天停止，未提前伪造后续硬件依赖。
+原先的跨天等待已由新版计划重排：第 1 天 B 按 `docs/gpu_interface.md` 的共同合同与负责人并行完成 Sparse pack、驱动和基准；第 2 天双方先冻结 QOS_WATERMARKS 位域，再并行完成自适应 QoS 与 fixed/adaptive 对比。本文件的第 16～20 天结果保持不变。
