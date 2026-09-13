@@ -186,6 +186,8 @@ class GpuSystemSpec extends AnyFunSpec with StableChiselSim with Matchers {
           dut.io.apb.pwrite.poke(write)
           dut.io.apb.pwdata.poke(data)
           dut.io.apb.psel.poke(true)
+          dut.io.apb.penable.poke(false)
+          dut.clock.step()
           dut.io.apb.penable.poke(true)
           dut.io.apb.pready.expect(true)
           dut.io.apb.pslverror.expect(false)

@@ -76,7 +76,6 @@
     <efx:design_file name="vendor/hdmi_tx/rtl/reset.v" version="default" library="default" />
     <efx:design_file name="vendor/hdmi_tx/rtl/hdmi_src/dvi_tx/dvi_encoder.v" version="default" library="default" />
     <efx:design_file name="vendor/hdmi_tx/rtl/hdmi_src/dvi_tx/encode.v" version="default" library="default" />
-    <efx:design_file name="vendor/sapphire_ddr3/par/ddr_demo_ti60/ip/soc/soc.v" version="default" library="default" />
     <efx:top_vhdl_arch name="" />
   </efx:design_info>
   <efx:constraint_info>
@@ -86,7 +85,11 @@
   <efx:sim_info />
   <efx:misc_info />
   <efx:ooc_info />
-  <efx:ip_info />
+  <efx:ip_info>
+    <efx:ip instance_name="soc" path="vendor/sapphire_ddr3/par/ddr_demo_ti60/ip/soc/settings.json" ooc="false">
+      <efx:ip_src_file name="soc.v" />
+    </efx:ip>
+  </efx:ip_info>
   <efx:synthesis tool_name="efx_map">
     <efx:param name="work_dir" value="work_syn" value_type="e_string" />
     <efx:param name="write_efx_verilog" value="on" value_type="e_bool" />

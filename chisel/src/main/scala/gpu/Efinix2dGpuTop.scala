@@ -34,6 +34,7 @@ class Efinix2dGpuTop extends Module {
   private val lastDoneTag = RegInit(0.U(16.W))
   private val lastError = RegInit(GpuError.None.U(8.W))
   private val irq = RegInit(false.B)
+  private val scanoutStarted = RegInit(false.B)
 
   regs.io.paddr := io.apb.paddr
   regs.io.psel := io.apb.psel
@@ -79,7 +80,8 @@ class Efinix2dGpuTop extends Module {
   ddr.io.scanout <> scanout.io.axi
   io.axi <> ddr.io.axi
 
-  scanout.io.enable := !render.io.swapPending
+  when(render.io.swapPending) { scanoutStarted := true.B }
+  scanout.io.enable := scanoutStarted && !render.io.swapPending
   scanout.io.frontBase := render.io.frontBase
   scanout.io.fifoLevel := io.scanoutLevel
   scanout.io.pixel.ready := io.displayReady

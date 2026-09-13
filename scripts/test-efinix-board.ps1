@@ -10,6 +10,11 @@ foreach($file in $project.SelectNodes('//e:design_file|//e:sdc_file',$ns)) {
  if(!(Test-Path -LiteralPath $full)){throw "Missing project input: $full"}
  $file.SetAttribute('name',$full.Replace('\','/'))
 }
+foreach($ip in $project.SelectNodes('//e:ip',$ns)) {
+ $full=[IO.Path]::GetFullPath((Join-Path $board $ip.path))
+ if(!(Test-Path -LiteralPath $full)){throw "Missing project IP settings: $full"}
+ $ip.SetAttribute('path',$full.Replace('\','/'))
+}
 $include=$project.SelectSingleNode('//e:param[@name="include"]',$ns)
 $includePaths=$include.value.Split(';') | ForEach-Object {
  [IO.Path]::GetFullPath((Join-Path $board $_)).Replace('\','/')

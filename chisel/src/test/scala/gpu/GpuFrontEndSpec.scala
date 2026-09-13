@@ -117,6 +117,44 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
   }
 
   describe("GpuApbRegs") {
+    it("returns read data only in the APB access phase after a setup phase") {
+      simulate(new GpuApbRegs) { dut =>
+        dut.io.psel.poke(false)
+        dut.io.penable.poke(false)
+        dut.io.pwrite.poke(false)
+        dut.io.paddr.poke(0)
+        dut.io.pwdata.poke(0)
+        dut.io.command.ready.poke(true)
+        dut.io.queueLevel.poke(0)
+        dut.io.queueHighWater.poke(0)
+        dut.io.queueFull.poke(false)
+        dut.io.queueEmpty.poke(true)
+        dut.io.engineBusy.poke(false)
+        dut.io.irqPending.poke(false)
+        dut.io.lastDoneTag.poke(0)
+        dut.io.lastError.poke(0)
+        dut.io.frontBuffer.poke(GpuMemoryMap.FramebufferA)
+        dut.io.backBuffer.poke(GpuMemoryMap.FramebufferB)
+        dut.io.perfCycles.poke(0)
+        dut.io.perfPixels.poke(0)
+        dut.io.perfReadBytes.poke(0)
+        dut.io.perfWriteBytes.poke(0)
+        dut.io.perfStalls.poke(0)
+        dut.clock.step()
+
+        dut.io.paddr.poke(GpuRegisterMap.Id)
+        dut.io.psel.poke(true)
+        dut.io.penable.poke(false)
+        dut.io.pready.expect(false)
+        dut.clock.step()
+
+        dut.io.penable.poke(true)
+        dut.io.pready.expect(true)
+        dut.io.prdata.expect(BigInt("32444750", 16))
+        dut.io.pslverror.expect(false)
+      }
+    }
+
     it("reads identity, writes staging fields, submits atomically, and errors on invalid offsets or a full queue") {
       simulate(new GpuApbRegs) { dut =>
         dut.io.psel.poke(false)
@@ -147,6 +185,8 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
           dut.io.pwrite.poke(write)
           dut.io.pwdata.poke(data)
           dut.io.psel.poke(true)
+          dut.io.penable.poke(false)
+          dut.clock.step()
           dut.io.penable.poke(true)
           dut.io.pready.expect(true)
           val result = (dut.io.prdata.peek().litValue, dut.io.pslverror.peek().litToBoolean)
@@ -168,6 +208,8 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.pwrite.poke(true)
         dut.io.pwdata.poke(1)
         dut.io.psel.poke(true)
+        dut.io.penable.poke(false)
+        dut.clock.step()
         dut.io.penable.poke(true)
         dut.io.command.valid.expect(true)
         dut.io.command.bits.op.expect(GpuOpcode.Fill)
@@ -217,6 +259,8 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
           dut.io.pwrite.poke(write)
           dut.io.pwdata.poke(data)
           dut.io.psel.poke(true)
+          dut.io.penable.poke(false)
+          dut.clock.step()
           dut.io.penable.poke(true)
           val result = dut.io.prdata.peek().litValue
           dut.clock.step()
@@ -247,6 +291,8 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.pwrite.poke(true)
         dut.io.pwdata.poke(2)
         dut.io.psel.poke(true)
+        dut.io.penable.poke(false)
+        dut.clock.step()
         dut.io.penable.poke(true)
         dut.io.irqClear.expect(true)
         dut.io.command.valid.expect(false)
@@ -259,6 +305,8 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.pwrite.poke(true)
         dut.io.pwdata.poke(2)
         dut.io.psel.poke(true)
+        dut.io.penable.poke(false)
+        dut.clock.step()
         dut.io.penable.poke(true)
         dut.io.perfClear.expect(true)
         dut.clock.step()

@@ -91,11 +91,27 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
           dut.io.apb.pwrite.poke(true)
           dut.io.apb.pwdata.poke(data)
           dut.io.apb.psel.poke(true)
+          dut.io.apb.penable.poke(false)
+          dut.clock.step()
           dut.io.apb.penable.poke(true)
           dut.io.apb.pslverror.expect(false)
           dut.clock.step()
           dut.io.apb.psel.poke(false)
           dut.io.apb.penable.poke(false)
+        }
+
+        def apbRead(offset: Int): BigInt = {
+          dut.io.apb.paddr.poke(offset)
+          dut.io.apb.pwrite.poke(false)
+          dut.io.apb.psel.poke(true)
+          dut.io.apb.penable.poke(false)
+          dut.clock.step()
+          dut.io.apb.penable.poke(true)
+          val result = dut.io.apb.prdata.peek().litValue
+          dut.clock.step()
+          dut.io.apb.psel.poke(false)
+          dut.io.apb.penable.poke(false)
+          result
         }
 
         apbWrite(GpuRegisterMap.Op, GpuOpcode.Fill)
@@ -139,13 +155,8 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
           GpuMemoryMap.FramebufferA.longValue + 18
         ).foreach(address => halfWord(address) shouldBe 0x5aa5)
 
-        dut.io.apb.paddr.poke(GpuRegisterMap.LastDone)
-        dut.io.apb.pwrite.poke(false)
-        dut.io.apb.psel.poke(true)
-        dut.io.apb.penable.poke(true)
-        dut.io.apb.prdata.expect(0x1234)
-        dut.io.apb.paddr.poke(GpuRegisterMap.Error)
-        dut.io.apb.prdata.expect(GpuError.None)
+        apbRead(GpuRegisterMap.LastDone) shouldBe 0x1234
+        apbRead(GpuRegisterMap.Error) shouldBe GpuError.None
         dut.io.irq.expect(true)
 
         apbWrite(GpuRegisterMap.Control, 2)
