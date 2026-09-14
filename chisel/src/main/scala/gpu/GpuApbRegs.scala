@@ -30,8 +30,14 @@ class GpuApbRegs extends Module {
     val perfReadBytes = Input(UInt(64.W))
     val perfWriteBytes = Input(UInt(64.W))
     val perfStalls = Input(UInt(64.W))
+    val perfUnderflows = Input(UInt(64.W))
+    val perfRenderGrants = Input(UInt(64.W))
+    val perfScanoutGrants = Input(UInt(64.W))
     val irqClear = Output(Bool())
     val perfClear = Output(Bool())
+    val qosLowWatermark = Output(UInt(12.W))
+    val qosHighWatermark = Output(UInt(12.W))
+    val qosAdaptiveEnable = Output(Bool())
   })
 
   private val shadow = RegInit(0.U.asTypeOf(new GpuCommand))
@@ -50,6 +56,15 @@ class GpuApbRegs extends Module {
   private val perfReadBytes = RegInit(0.U(64.W))
   private val perfWriteBytes = RegInit(0.U(64.W))
   private val perfStalls = RegInit(0.U(64.W))
+  private val perfUnderflows = RegInit(0.U(64.W))
+  private val perfRenderGrants = RegInit(0.U(64.W))
+  private val perfScanoutGrants = RegInit(0.U(64.W))
+  private val qosLowWatermark = RegInit(256.U(12.W))
+  private val qosHighWatermark = RegInit(1536.U(12.W))
+  private val qosAdaptiveEnable = RegInit(true.B)
+  private val qosWrite = transfer && write && address === GpuRegisterMap.QosWatermarks.U
+  private val qosWriteValid = writeData(30, 28) === 0.U && writeData(15, 12) === 0.U &&
+    writeData(11, 0) < writeData(27, 16)
 
   when(setup) {
     pending := true.B
@@ -65,7 +80,11 @@ class GpuApbRegs extends Module {
   io.command.bits := shadow
   io.irqClear := transfer && write && address === GpuRegisterMap.Control.U && writeData(1)
   io.perfClear := transfer && write && address === GpuRegisterMap.PerfControl.U && writeData(1)
-  io.pslverror := transfer && (!legalOffset || (submit && !io.command.ready))
+  io.pslverror := transfer && (!legalOffset || (submit && !io.command.ready) ||
+    (qosWrite && !qosWriteValid))
+  io.qosLowWatermark := qosLowWatermark
+  io.qosHighWatermark := qosHighWatermark
+  io.qosAdaptiveEnable := qosAdaptiveEnable
 
   when(perfCapture) {
     perfCycles := io.perfCycles
@@ -73,12 +92,18 @@ class GpuApbRegs extends Module {
     perfReadBytes := io.perfReadBytes
     perfWriteBytes := io.perfWriteBytes
     perfStalls := io.perfStalls
+    perfUnderflows := io.perfUnderflows
+    perfRenderGrants := io.perfRenderGrants
+    perfScanoutGrants := io.perfScanoutGrants
   }.elsewhen(io.perfClear) {
     perfCycles := 0.U
     perfPixels := 0.U
     perfReadBytes := 0.U
     perfWriteBytes := 0.U
     perfStalls := 0.U
+    perfUnderflows := 0.U
+    perfRenderGrants := 0.U
+    perfScanoutGrants := 0.U
   }
 
   when(transfer && write && legalOffset) {
@@ -101,6 +126,13 @@ class GpuApbRegs extends Module {
         shadow.flags := writeData(31, 16)
       }
       is(GpuRegisterMap.Tag.U) { shadow.tag := writeData(15, 0) }
+      is(GpuRegisterMap.QosWatermarks.U) {
+        when(qosWriteValid) {
+          qosLowWatermark := writeData(11, 0)
+          qosHighWatermark := writeData(27, 16)
+          qosAdaptiveEnable := writeData(31)
+        }
+      }
     }
   }
 
@@ -128,6 +160,9 @@ class GpuApbRegs extends Module {
     is(GpuRegisterMap.QueueLevel.U) { io.prdata := io.queueLevel }
     is(GpuRegisterMap.FrontBuffer.U) { io.prdata := io.frontBuffer }
     is(GpuRegisterMap.BackBuffer.U) { io.prdata := io.backBuffer }
+    is(GpuRegisterMap.QosWatermarks.U) {
+      io.prdata := Cat(qosAdaptiveEnable, 0.U(3.W), qosHighWatermark, 0.U(4.W), qosLowWatermark)
+    }
     is(GpuRegisterMap.PerfCyclesLo.U) { io.prdata := perfCycles(31, 0) }
     is(GpuRegisterMap.PerfCyclesHi.U) { io.prdata := perfCycles(63, 32) }
     is(GpuRegisterMap.PerfPixelsLo.U) { io.prdata := perfPixels(31, 0) }
@@ -138,5 +173,11 @@ class GpuApbRegs extends Module {
     is(GpuRegisterMap.PerfWriteBytesHi.U) { io.prdata := perfWriteBytes(63, 32) }
     is(GpuRegisterMap.PerfStallsLo.U) { io.prdata := perfStalls(31, 0) }
     is(GpuRegisterMap.PerfStallsHi.U) { io.prdata := perfStalls(63, 32) }
+    is(GpuRegisterMap.PerfUnderflowsLo.U) { io.prdata := perfUnderflows(31, 0) }
+    is(GpuRegisterMap.PerfUnderflowsHi.U) { io.prdata := perfUnderflows(63, 32) }
+    is(GpuRegisterMap.PerfRenderGrantsLo.U) { io.prdata := perfRenderGrants(31, 0) }
+    is(GpuRegisterMap.PerfRenderGrantsHi.U) { io.prdata := perfRenderGrants(63, 32) }
+    is(GpuRegisterMap.PerfScanoutGrantsLo.U) { io.prdata := perfScanoutGrants(31, 0) }
+    is(GpuRegisterMap.PerfScanoutGrantsHi.U) { io.prdata := perfScanoutGrants(63, 32) }
   }
 }

@@ -19,6 +19,7 @@ class Efinix2dGpuTop extends Module {
     val axi = new Axi4MasterPort
     val vblank = Input(Bool())
     val scanoutLevel = Input(UInt(12.W))
+    val underflow_pulse_gpu = Input(Bool())
     val displayReady = Input(Bool())
     val displayPixel = Output(UInt(16.W))
     val displayValid = Output(Bool())
@@ -62,7 +63,13 @@ class Efinix2dGpuTop extends Module {
   regs.io.perfReadBytes := render.io.perfReadBytes
   regs.io.perfWriteBytes := render.io.perfWriteBytes
   regs.io.perfStalls := render.io.perfStalls
+  regs.io.perfUnderflows := render.io.perfUnderflows
+  regs.io.perfRenderGrants := render.io.perfRenderGrants
+  regs.io.perfScanoutGrants := render.io.perfScanoutGrants
   render.io.perfClear := regs.io.perfClear
+  render.io.underflowPulse := io.underflow_pulse_gpu
+  render.io.renderGrant := ddr.io.renderGrant
+  render.io.scanoutGrant := ddr.io.scanoutGrant
 
   render.io.completion.ready := true.B
   when(regs.io.irqClear) { irq := false.B }
@@ -78,6 +85,10 @@ class Efinix2dGpuTop extends Module {
 
   ddr.io.render <> render.io.axi
   ddr.io.scanout <> scanout.io.axi
+  ddr.io.scanoutLevel := io.scanoutLevel
+  ddr.io.lowWatermark := regs.io.qosLowWatermark
+  ddr.io.highWatermark := regs.io.qosHighWatermark
+  ddr.io.adaptiveEnable := regs.io.qosAdaptiveEnable
   io.axi <> ddr.io.axi
 
   when(render.io.swapPending) { scanoutStarted := true.B }

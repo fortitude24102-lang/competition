@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import testutil.StableChiselSim
 
 class GpuPerfCountersSpec extends AnyFunSpec with StableChiselSim with Matchers {
-  it("counts active cycles, completed pixels, AXI bytes, and stalls") {
+  it("counts active cycles, completed pixels, AXI bytes, stalls, underflows, and DDR grants") {
     simulate(new GpuPerfCounters) { dut =>
       dut.io.clear.poke(false)
       dut.io.active.poke(true)
@@ -14,6 +14,9 @@ class GpuPerfCountersSpec extends AnyFunSpec with StableChiselSim with Matchers 
       dut.io.readBeat.poke(true)
       dut.io.writeStrobe.poke("b1011".U)
       dut.io.stalled.poke(true)
+      dut.io.underflow.poke(true)
+      dut.io.renderGrant.poke(2)
+      dut.io.scanoutGrant.poke(0)
       dut.clock.step()
 
       dut.io.cycles.expect(1)
@@ -21,11 +24,17 @@ class GpuPerfCountersSpec extends AnyFunSpec with StableChiselSim with Matchers 
       dut.io.readBytes.expect(4)
       dut.io.writeBytes.expect(3)
       dut.io.stalls.expect(1)
+      dut.io.underflows.expect(1)
+      dut.io.renderGrants.expect(2)
+      dut.io.scanoutGrants.expect(0)
 
       dut.io.pixelDone.poke(false)
       dut.io.readBeat.poke(false)
       dut.io.writeStrobe.poke(0)
       dut.io.stalled.poke(false)
+      dut.io.underflow.poke(false)
+      dut.io.renderGrant.poke(0)
+      dut.io.scanoutGrant.poke(1)
       dut.clock.step()
 
       dut.io.cycles.expect(2)
@@ -33,6 +42,9 @@ class GpuPerfCountersSpec extends AnyFunSpec with StableChiselSim with Matchers 
       dut.io.readBytes.expect(4)
       dut.io.writeBytes.expect(3)
       dut.io.stalls.expect(1)
+      dut.io.underflows.expect(1)
+      dut.io.renderGrants.expect(2)
+      dut.io.scanoutGrants.expect(1)
 
       dut.io.clear.poke(true)
       dut.clock.step()
@@ -41,6 +53,9 @@ class GpuPerfCountersSpec extends AnyFunSpec with StableChiselSim with Matchers 
       dut.io.readBytes.expect(0)
       dut.io.writeBytes.expect(0)
       dut.io.stalls.expect(0)
+      dut.io.underflows.expect(0)
+      dut.io.renderGrants.expect(0)
+      dut.io.scanoutGrants.expect(0)
     }
   }
 }

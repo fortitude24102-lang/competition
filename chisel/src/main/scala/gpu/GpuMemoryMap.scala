@@ -47,6 +47,12 @@ object GpuRegisterMap {
   val PerfWriteBytesHi = 0x006c
   val PerfStallsLo = 0x0070
   val PerfStallsHi = 0x0074
+  val PerfUnderflowsLo = 0x0078
+  val PerfUnderflowsHi = 0x007c
+  val PerfRenderGrantsLo = 0x0080
+  val PerfRenderGrantsHi = 0x0084
+  val PerfScanoutGrantsLo = 0x0088
+  val PerfScanoutGrantsHi = 0x008c
 
   val All: Seq[Int] = Seq(
     Id, Version, Status, Control, Op, SrcAddr, DstAddr, Size, SrcStride,
@@ -54,6 +60,7 @@ object GpuRegisterMap {
     FrontBuffer, BackBuffer, QosWatermarks, PerfControl, PerfCyclesLo,
     PerfCyclesHi, PerfPixelsLo, PerfPixelsHi, PerfReadBytesLo,
     PerfReadBytesHi, PerfWriteBytesLo, PerfWriteBytesHi, PerfStallsLo,
-    PerfStallsHi
+    PerfStallsHi, PerfUnderflowsLo, PerfUnderflowsHi, PerfRenderGrantsLo,
+    PerfRenderGrantsHi, PerfScanoutGrantsLo, PerfScanoutGrantsHi
   )
 }
