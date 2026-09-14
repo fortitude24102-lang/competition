@@ -19,6 +19,7 @@ module hdmi_subsystem (
     output wire protocol_error,
     output reg underflow_event,
     output reg [15:0] underflow_count,
+    output wire underflow_pulse_gpu,
     output wire [15:0] video_rgb565,
     output wire video_hs,
     output wire video_vs,
@@ -89,6 +90,11 @@ module hdmi_subsystem (
     vblank_pulse_sync u_vblank_sync (
         .src_clk(pixel_clk), .src_reset(pixel_reset), .src_vblank(vblank),
         .dst_clk(gpu_clk), .dst_reset(gpu_reset), .dst_pulse(vblank_gpu)
+    );
+
+    underflow_pulse_cdc u_underflow_sync (
+        .pixel_clk(pixel_clk), .pixel_reset(pixel_reset), .scale_underflow(scale_underflow),
+        .gpu_clk(gpu_clk), .gpu_reset(gpu_reset), .underflow_pulse_gpu(underflow_pulse_gpu)
     );
 
     rgb565_to_rgb888 u_rgb (

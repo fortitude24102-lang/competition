@@ -4,7 +4,7 @@ module tb_hdmi_subsystem;
     reg gpu_reset = 1, pixel_reset = 1;
     reg [15:0] gpu_pixel = 0;
     reg gpu_valid = 0, gpu_line_last = 0, gpu_frame_last = 0;
-    wire gpu_ready, vblank_gpu, vblank, fifo_full, fifo_empty, protocol_error;
+    wire gpu_ready, vblank_gpu, underflow_pulse_gpu, vblank, fifo_full, fifo_empty, protocol_error;
     wire [11:0] fifo_level;
     wire fifo_level_low, fifo_level_high, underflow_event;
     wire [15:0] underflow_count;

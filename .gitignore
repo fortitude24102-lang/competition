@@ -16,3 +16,4 @@ chisel/src/test/resources/soc/*.elf
 chisel/src/test/resources/soc/*.hex
 .worktrees/
 sw/build/
+tb/verilog/*.vcd
