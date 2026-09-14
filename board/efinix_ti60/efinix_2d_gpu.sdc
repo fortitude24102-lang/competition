@@ -309,3 +309,12 @@ set_output_delay -clock core_clk -reference_pin [get_ports {core_clk~CLKOUT~1~62
 # Official HDMI Demo PLL: 148.75 MHz pixel / 743.75 MHz serializer
 create_clock -period 6.722689076 hdmi_tx_slow_clk
 create_clock -period 1.344537815 hdmi_tx_fast_clk
+
+# The registered Gray event counter crosses from the HDMI pixel clock to the
+# GPU clock. Keep its source-to-first-synchronizer routing below one pixel
+# period so two consecutive Gray increments cannot be observed together.
+# Reset-release synchronizers use async_reg attributes; no broad false paths
+# are applied, so ordinary functional timing remains visible to STA.
+set_max_delay 6.722689076 \
+  -from [get_registers -hierarchical {*u_underflow_sync*pixel_event_gray*}] \
+  -to [get_registers -hierarchical {*u_underflow_sync*gpu_gray_sync0*}]

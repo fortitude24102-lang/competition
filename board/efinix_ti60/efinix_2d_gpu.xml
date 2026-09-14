@@ -72,6 +72,7 @@
     <efx:design_file name="rtl/display/vblank_pulse_sync.v" version="default" library="default" />
     <efx:design_file name="rtl/display/rgb565_to_rgb888.v" version="default" library="default" />
     <efx:design_file name="rtl/display/hdmi_tx_adapter.v" version="default" library="default" />
+    <efx:design_file name="rtl/display/underflow_pulse_cdc.v" version="default" library="default" />
     <efx:design_file name="rtl/display/hdmi_subsystem.v" version="default" library="default" />
     <efx:design_file name="vendor/hdmi_tx/rtl/reset.v" version="default" library="default" />
     <efx:design_file name="vendor/hdmi_tx/rtl/hdmi_src/dvi_tx/dvi_encoder.v" version="default" library="default" />

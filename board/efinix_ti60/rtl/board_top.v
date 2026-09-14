@@ -110,6 +110,9 @@ wire [15:0] gpu_display_pixel;
 wire gpu_display_valid, gpu_display_line_last, gpu_display_frame_last;
 wire gpu_display_ready, gpu_vblank;
 wire [11:0] gpu_scanout_level;
+// GPU-clock-domain, active-high, one-cycle underflow episode indication.
+// The lead consumes this internal handoff when its counter port is available.
+wire gpu_underflow_pulse;
 efinix_sapphire_adapter sapphire (
  .axi_clk(axi_clk),
  .core_clk(core_clk),
@@ -198,6 +201,7 @@ hdmi_subsystem display (
  .vblank_gpu(gpu_vblank),.vblank(display_vblank),
  .fifo_full(fifo_full),.fifo_empty(fifo_empty),.protocol_error(display_protocol_error),
  .underflow_event(display_underflow_event),.underflow_count(display_underflow_count),
+ .underflow_pulse_gpu(gpu_underflow_pulse),
  .video_rgb565(display_rgb565),.video_hs(display_hs),.video_vs(display_vs),.video_de(display_de),
  .tmds_data0_o(tmds_data0_o),
  .tmds_data1_o(tmds_data1_o),
