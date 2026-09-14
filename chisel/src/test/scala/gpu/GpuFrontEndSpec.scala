@@ -107,6 +107,12 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
         pokeCommand(dut, GpuOpcode.Alpha, GpuMemoryMap.FramebufferA, GpuMemoryMap.FramebufferA, 8, 2, 16, 16)
         dut.io.valid.expect(true)
 
+        pokeCommand(dut, GpuOpcode.Sparse, GpuMemoryMap.SparseAssets, GpuMemoryMap.FramebufferA, 8, 2, 0, 16)
+        dut.io.valid.expect(true)
+
+        pokeCommand(dut, GpuOpcode.Sparse, GpuMemoryMap.SparseAssets + 2, GpuMemoryMap.FramebufferA, 8, 2, 0, 16)
+        dut.io.error.expect(GpuError.MisalignedAddress)
+
         pokeCommand(dut, GpuOpcode.Present, 0, GpuMemoryMap.FramebufferA + 4096, 1, 1, 0, 2)
         dut.io.error.expect(GpuError.AddressRange)
 
@@ -140,6 +146,9 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.perfReadBytes.poke(0)
         dut.io.perfWriteBytes.poke(0)
         dut.io.perfStalls.poke(0)
+        dut.io.perfUnderflows.poke(0)
+        dut.io.perfRenderGrants.poke(0)
+        dut.io.perfScanoutGrants.poke(0)
         dut.clock.step()
 
         dut.io.paddr.poke(GpuRegisterMap.Id)
@@ -152,6 +161,58 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.pready.expect(true)
         dut.io.prdata.expect(BigInt("32444750", 16))
         dut.io.pslverror.expect(false)
+      }
+    }
+
+    it("programs valid QoS hysteresis thresholds and rejects invalid writes without changing them") {
+      simulate(new GpuApbRegs) { dut =>
+        dut.io.psel.poke(false)
+        dut.io.penable.poke(false)
+        dut.io.pwrite.poke(false)
+        dut.io.paddr.poke(0)
+        dut.io.pwdata.poke(0)
+        dut.io.command.ready.poke(true)
+        dut.io.queueLevel.poke(0)
+        dut.io.queueHighWater.poke(0)
+        dut.io.queueFull.poke(false)
+        dut.io.queueEmpty.poke(true)
+        dut.io.engineBusy.poke(false)
+        dut.io.irqPending.poke(false)
+        dut.io.lastDoneTag.poke(0)
+        dut.io.lastError.poke(0)
+        dut.io.frontBuffer.poke(GpuMemoryMap.FramebufferA)
+        dut.io.backBuffer.poke(GpuMemoryMap.FramebufferB)
+        dut.io.perfCycles.poke(0)
+        dut.io.perfPixels.poke(0)
+        dut.io.perfReadBytes.poke(0)
+        dut.io.perfWriteBytes.poke(0)
+        dut.io.perfStalls.poke(0)
+        dut.io.perfUnderflows.poke(0)
+        dut.io.perfRenderGrants.poke(0)
+        dut.io.perfScanoutGrants.poke(0)
+
+        def transfer(write: Boolean, data: BigInt = 0): (BigInt, Boolean) = {
+          dut.io.paddr.poke(GpuRegisterMap.QosWatermarks)
+          dut.io.pwrite.poke(write)
+          dut.io.pwdata.poke(data)
+          dut.io.psel.poke(true)
+          dut.io.penable.poke(false)
+          dut.clock.step()
+          dut.io.penable.poke(true)
+          val result = dut.io.prdata.peek().litValue -> dut.io.pslverror.peek().litToBoolean
+          dut.clock.step()
+          dut.io.psel.poke(false)
+          dut.io.penable.poke(false)
+          result
+        }
+
+        transfer(write = false)._1 shouldBe BigInt("86000100", 16)
+        transfer(write = true, BigInt("05000064", 16))._2 shouldBe false
+        dut.io.qosLowWatermark.expect(100)
+        dut.io.qosHighWatermark.expect(0x500)
+        dut.io.qosAdaptiveEnable.expect(false)
+        transfer(write = true, BigInt("00320064", 16))._2 shouldBe true
+        transfer(write = false)._1 shouldBe BigInt("05000064", 16)
       }
     }
 
@@ -178,6 +239,9 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.perfReadBytes.poke(0)
         dut.io.perfWriteBytes.poke(0)
         dut.io.perfStalls.poke(0)
+        dut.io.perfUnderflows.poke(0)
+        dut.io.perfRenderGrants.poke(0)
+        dut.io.perfScanoutGrants.poke(0)
         dut.clock.step()
 
         def transfer(offset: Int, write: Boolean, data: BigInt = 0): (BigInt, Boolean) = {
@@ -252,6 +316,9 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.perfReadBytes.poke(BigInt("0102030405060708", 16))
         dut.io.perfWriteBytes.poke(BigInt("1020304050607080", 16))
         dut.io.perfStalls.poke(BigInt("8877665544332211", 16))
+        dut.io.perfUnderflows.poke(BigInt("1111222233334444", 16))
+        dut.io.perfRenderGrants.poke(BigInt("5555666677778888", 16))
+        dut.io.perfScanoutGrants.poke(BigInt("9999aaaabbbbcccc", 16))
         dut.clock.step()
 
         def transfer(offset: Int, write: Boolean, data: BigInt = 0): BigInt = {
@@ -275,6 +342,9 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.perfReadBytes.poke(0)
         dut.io.perfWriteBytes.poke(0)
         dut.io.perfStalls.poke(0)
+        dut.io.perfUnderflows.poke(0)
+        dut.io.perfRenderGrants.poke(0)
+        dut.io.perfScanoutGrants.poke(0)
 
         transfer(GpuRegisterMap.PerfCyclesLo, write = false) shouldBe BigInt("55667788", 16)
         transfer(GpuRegisterMap.PerfCyclesHi, write = false) shouldBe BigInt("11223344", 16)
@@ -282,6 +352,9 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
         transfer(GpuRegisterMap.PerfReadBytesHi, write = false) shouldBe BigInt("01020304", 16)
         transfer(GpuRegisterMap.PerfWriteBytesLo, write = false) shouldBe BigInt("50607080", 16)
         transfer(GpuRegisterMap.PerfStallsHi, write = false) shouldBe BigInt("88776655", 16)
+        transfer(GpuRegisterMap.PerfUnderflowsLo, write = false) shouldBe BigInt("33334444", 16)
+        transfer(GpuRegisterMap.PerfRenderGrantsHi, write = false) shouldBe BigInt("55556666", 16)
+        transfer(GpuRegisterMap.PerfScanoutGrantsLo, write = false) shouldBe BigInt("bbbbcccc", 16)
 
         val status = transfer(GpuRegisterMap.Status, write = false)
         ((status >> 8) & 0x1f) shouldBe 16

@@ -1,6 +1,6 @@
 # Ti60F225 2D GPU 接口合同
 
-状态：冻结于 2026-09-05。硬件、Verilog 和 C 软件必须共同使用本合同；修改字段、地址或舍入规则需要三人共同评审。
+状态：冻结于 2026-09-14。硬件、Verilog 和 C 软件必须共同使用本合同；修改字段、地址或舍入规则需要三人共同评审。
 
 ## 官方边界
 
@@ -9,6 +9,7 @@
 - GPU DDR 入口：Sapphire `io_ddrMasters_0`，AXI4 地址 32 位、数据 32 位、ID 4 位、LEN 8 位。
 - DDR3：板载 MT41J128M16JT-125，软件可用窗口按 256 MiB 管理。
 - 中断：Sapphire USER 0 interrupt，官方配置 ID 16。
+- 显示侧输入：`scanoutLevel[11:0]` 为跨域后的 FIFO 水位，`underflow_pulse_gpu` 为 GPU 时钟域单周期下溢脉冲。
 
 ## 显存布局
 
@@ -32,7 +33,7 @@ RGB565 转 RGB888 使用位复制：红、蓝 5 位分量 `x` 扩展为 `{x,x[4:
 | `srcAddr` | 32 | 源图或 Sparse token 地址 |
 | `dstAddr` | 32 | 目标矩形或 PRESENT 帧地址 |
 | `width` `height` | 16+16 | 像素尺寸 |
-| `srcStride` `dstStride` | 32+32 | 每行字节数 |
+| `srcStride` `dstStride` | 32+32 | Dense 源/目标每行字节数；SPARSE 忽略 `srcStride` |
 | `color` `colorKey` | 16+16 | 填充色和透明色 |
 | `alpha` | 8 | 0–255 全局 Alpha |
 | `flags` | 16 | 中断和模式控制 |
@@ -62,9 +63,12 @@ Alpha 在原生 RGB565 的 5、6、5 位通道上分别使用整数公式 `(fg *
 | `0x003C` | QUEUE_LEVEL | R | 当前队列水位 |
 | `0x0040` | FRONT_BUFFER | R | 当前前台帧地址 |
 | `0x0044` | BACK_BUFFER | R | 当前后台帧地址 |
-| `0x0048` | QOS_WATERMARKS | RW | 高低水位 |
+| `0x0048` | QOS_WATERMARKS | RW | bit31 自适应使能，`[27:16]` 高水位，`[11:0]` 低水位 |
 | `0x004C` | PERF_CONTROL | W | bit0 SNAPSHOT；bit1 CLEAR |
 | `0x0050`–`0x0074` | PERF_* | R | 64 位周期、像素、读写字节和 stall |
+| `0x0078`/`0x007C` | PERF_UNDERFLOWS | R | 64 位显示下溢脉冲计数 |
+| `0x0080`/`0x0084` | PERF_RENDER_GRANTS | R | 64 位 Render DDR 获准计数 |
+| `0x0088`/`0x008C` | PERF_SCANOUT_GRANTS | R | 64 位 Scanout DDR 获准计数 |
 
 APB 合法访问单周期完成。写 CONTROL.SUBMIT 时，完整影子命令原子进入 16 项 FIFO；FIFO 满时返回 `PSLVERROR`，不能覆盖或丢弃旧命令。
 
@@ -76,9 +80,13 @@ APB 合法访问单周期完成。写 CONTROL.SUBMIT 时，完整影子命令原
 
 `COLOR_KEY` 已接入 `DenseBlitEngine` 和真实 Verilog PixelPipe：只读取源图；当前景像素等于 `colorKey` 时不读背景、不发目标 AXI 写事务，非透明像素按 RGB565 半字节选通写回。
 
-`ALPHA` 已接入 `DenseBlitEngine`：前景和目标背景分别使用 AXI ID 0/1 读取，并在像素级配对后送入真实 Verilog PixelPipe。为避免两个读流在单 R 通道上互相等待，每次最多读取同一 AXI beat 内的两个 RGB565 像素；当前块读完并混合后才发对应单拍写事务，避免读改写循环等待。源/目标有重叠时只允许地址和 stride 完全相同的同表面操作，其余返回 `OverlappingCopy`。`SPARSE` 仍未接入渲染引擎。
+`ALPHA` 已接入 `DenseBlitEngine`：前景和目标背景分别使用 AXI ID 0/1 读取，并在像素级配对后送入真实 Verilog PixelPipe。为避免两个读流在单 R 通道上互相等待，每次最多读取同一 AXI beat 内的两个 RGB565 像素；当前块读完并混合后才发对应单拍写事务，避免读改写循环等待。源/目标有重叠时只允许地址和 stride 完全相同的同表面操作，其余返回 `OverlappingCopy`。
 
-`GpuPerfCounters` 统计活动周期、完成像素、AXI 读写字节和阻塞周期。向 `PERF_CONTROL` 写 bit0 会把五个 64 位计数器同时锁存到 `PERF_*`，CPU 随后可读取高低 32 位而不会撕裂；写 bit1 会清零运行计数器和旧快照。若 bit0、bit1 同时写 1，则先保留清零前快照，再清零运行计数器。`QOS_WATERMARKS` 仍为 Day21 保留偏移。
+`SPARSE` 已接入 `SparseDecoder` 与 `SparseBlitEngine`：源地址必须 4 字节对齐，解码器只为 literal 像素发目标写，透明 skip 不读目标背景且不写目标。目标地址仍按 `dstAddr + y * dstStride + x * 2` 计算；格式错误完成码为 8，AXI 读写错误完成码为 9。
+
+`GpuPerfCounters` 统计活动周期、完成像素、AXI 读写字节、阻塞周期、显示下溢及 Render/Scanout DDR 获准次数。向 `PERF_CONTROL` 写 bit0 会同时锁存八个 64 位计数器；写 bit1 会清零运行计数器和旧快照。若 bit0、bit1 同时写 1，则先保留清零前快照，再清零运行计数器。
+
+`QOS_WATERMARKS` 复位值为低水位 256、高水位 1536、自适应使能。自适应模式在 `scanoutLevel <= low` 时进入 Scanout 优先，在 `scanoutLevel >= high` 时回到事务级轮询，中间区间保持原状态；即使处于 Scanout 优先，连续 8 个 Scanout 读事务后也必须给等待中的 Render 一个事务。关闭 bit31 后保持原事务级轮询。写入时必须满足保留位为零且 `low < high`，否则返回 `PSLVERROR` 并保留旧配置。
 
 完成 IRQ 在任一命令完成后保持为 1，向 `CONTROL` 写 bit1 清除；若清除与新完成同周期发生，新完成优先，IRQ 仍保持。`LAST_DONE` 提供最近完成 tag，命令严格按队列顺序完成，因此软件在最多 16 项在途窗口内可以按 tag 序列批量回收；`ERROR` 保持批次中第一个非零错误直至 GPU 复位。它们不是可乱序弹出的完成队列。
 
@@ -99,7 +107,9 @@ APB 合法访问单周期完成。写 CONTROL.SUBMIT 时，完整影子命令原
 
 ## Sparse token
 
-每个 32 位 token 的 `[15:0]` 为 `skipPixels`，`[31:16]` 为 `runPixels`。token 后跟 `runPixels` 个小端 RGB565 literal 像素，两个像素装入一个 32 位字；奇数 run 的高半字填零。`runPixels=0` 表示行结束。
+每个 32 位 header 的 `[15:0]` 为 `skipPixels`，`[31:16]` 为 `runPixels`。先跳过 `skipPixels`，再读取 `runPixels` 个小端 RGB565 literal；两个像素装入一个 32 位字，低半字在前，奇数 run 的最后一个高半字必须为零。
+
+`runPixels=0` 是显式行结束 header：其 `skipPixels` 覆盖行尾透明像素，执行后横坐标必须恰好等于 `width`。每行必须且只能有一个行结束，整个流必须结束恰好 `height` 行。skip/run 越过行宽、提前行结束或奇数 run 的非零填充均返回 `GPU_ERROR_SPARSE_FORMAT`。流以第 `height` 个合法行结束自描述终止，因此硬件不会读取其后的 DDR 字。
 
 ## PixelPipe
 

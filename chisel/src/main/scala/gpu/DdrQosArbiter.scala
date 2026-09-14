@@ -3,12 +3,20 @@ package gpu
 import chisel3._
 import chisel3.util._
 
-/** Basic transaction-level round-robin arbiter; adaptive QoS is added later. */
-class DdrQosArbiter extends Module {
+/** Transaction-level round-robin with scanout-watermark hysteresis. */
+class DdrQosArbiter(maxRenderWait: Int = 8) extends Module {
+  require(maxRenderWait > 0)
   val io = IO(new Bundle {
     val render = Flipped(new Axi4MasterPort)
     val scanout = Flipped(new Axi4MasterPort)
     val axi = new Axi4MasterPort
+    val scanoutLevel = Input(UInt(12.W))
+    val lowWatermark = Input(UInt(12.W))
+    val highWatermark = Input(UInt(12.W))
+    val adaptiveEnable = Input(Bool())
+    val scanoutPriority = Output(Bool())
+    val renderGrant = Output(UInt(2.W))
+    val scanoutGrant = Output(UInt(2.W))
   })
 
   private val readIdle :: readAddress :: readData :: Nil = Enum(3)
@@ -19,12 +27,26 @@ class DdrQosArbiter extends Module {
   private val writeOwner = RegInit(false.B)
   private val nextReadOwner = RegInit(false.B)
   private val nextWriteOwner = RegInit(false.B)
+  private val scanoutPriority = RegInit(false.B)
+  private val renderWait = RegInit(0.U(log2Ceil(maxRenderWait + 1).W))
+
+  when(!io.adaptiveEnable) {
+    scanoutPriority := false.B
+  }.elsewhen(io.scanoutLevel <= io.lowWatermark) {
+    scanoutPriority := true.B
+  }.elsewhen(io.scanoutLevel >= io.highWatermark) {
+    scanoutPriority := false.B
+  }
+  io.scanoutPriority := scanoutPriority
+
+  private val forceRender = renderWait >= maxRenderWait.U
+  private val readPreference = Mux(io.adaptiveEnable && scanoutPriority, !forceRender, nextReadOwner)
 
   private def choose(renderValid: Bool, scanoutValid: Bool, preferScanout: Bool): Bool =
     Mux(renderValid && scanoutValid, preferScanout, scanoutValid)
 
   when(readState === readIdle && (io.render.ar.valid || io.scanout.ar.valid)) {
-    readOwner := choose(io.render.ar.valid, io.scanout.ar.valid, nextReadOwner)
+    readOwner := choose(io.render.ar.valid, io.scanout.ar.valid, readPreference)
     readState := readAddress
   }
   when(writeState === writeIdle && (io.render.aw.valid || io.scanout.aw.valid)) {
@@ -42,6 +64,14 @@ class DdrQosArbiter extends Module {
     when(readOwner) { io.scanout.ar.ready := io.axi.ar.ready }
       .otherwise { io.render.ar.ready := io.axi.ar.ready }
     when(io.axi.ar.fire) { readState := readData }
+  }
+
+  private val renderReadGrant = io.axi.ar.fire && !readOwner
+  private val scanoutReadGrant = io.axi.ar.fire && readOwner
+  when(!io.render.ar.valid || renderReadGrant) {
+    renderWait := 0.U
+  }.elsewhen(scanoutReadGrant && renderWait < maxRenderWait.U) {
+    renderWait := renderWait + 1.U
   }
 
   io.render.r.valid := false.B
@@ -74,6 +104,11 @@ class DdrQosArbiter extends Module {
       .otherwise { io.render.aw.ready := io.axi.aw.ready }
     when(io.axi.aw.fire) { writeState := writeData }
   }
+
+  private val renderWriteGrant = io.axi.aw.fire && !writeOwner
+  private val scanoutWriteGrant = io.axi.aw.fire && writeOwner
+  io.renderGrant := renderReadGrant.asUInt +& renderWriteGrant.asUInt
+  io.scanoutGrant := scanoutReadGrant.asUInt +& scanoutWriteGrant.asUInt
 
   io.axi.w.valid := false.B
   io.axi.w.bits := 0.U.asTypeOf(new Axi4WriteData)

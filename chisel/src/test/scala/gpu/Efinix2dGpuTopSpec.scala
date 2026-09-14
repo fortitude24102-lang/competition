@@ -15,6 +15,7 @@ class Efinix2dGpuTopSpec extends AnyFunSpec with StableChiselSim {
         dut.io.apb.pwdata.poke(0.U)
         dut.io.vblank.poke(false.B)
         dut.io.scanoutLevel.poke(0.U)
+        dut.io.underflow_pulse_gpu.poke(false.B)
         dut.io.displayReady.poke(true.B)
         dut.io.axi.aw.ready.poke(true.B)
         dut.io.axi.w.ready.poke(true.B)

@@ -13,7 +13,7 @@ class CommandValidator extends Module {
   private val renderOp = command.op >= GpuOpcode.Fill.U && command.op <= GpuOpcode.Sparse.U
   private val denseSourceOp = command.op === GpuOpcode.Copy.U ||
     command.op === GpuOpcode.ColorKey.U || command.op === GpuOpcode.Alpha.U
-  private val sourceOp = denseSourceOp || command.op === GpuOpcode.Sparse.U
+  private val sparseOp = command.op === GpuOpcode.Sparse.U
   private val destinationOp = renderOp || command.op === GpuOpcode.Present.U
   private val legalOpcode = command.op <= GpuOpcode.Max.U
 
@@ -26,12 +26,16 @@ class CommandValidator extends Module {
 
   private val zeroSize = renderOp && (command.widthPixels === 0.U || command.heightPixels === 0.U)
   private val multiRow = command.heightPixels > 1.U
-  private val misaligned = (sourceOp && (command.srcAddr(0) || (multiRow && command.srcStride(0)))) ||
+  private val misaligned = (denseSourceOp && (command.srcAddr(0) || (multiRow && command.srcStride(0)))) ||
+    (sparseOp && command.srcAddr(1, 0).orR) ||
     (destinationOp && (command.dstAddr(0) || (multiRow && command.dstStride(0))))
   private val strideTooSmall = (renderOp && command.dstStride < rowBytes) ||
     (denseSourceOp && command.srcStride < rowBytes)
-  private val srcOutOfRange = sourceOp &&
+  private val denseSrcOutOfRange = denseSourceOp &&
     (command.srcAddr.pad(64) < ddrBase || srcEnd > ddrEnd || srcEnd <= command.srcAddr.pad(64))
+  private val sparseSrcEnd = command.srcAddr.pad(64) + 4.U
+  private val sparseSrcOutOfRange = sparseOp &&
+    (command.srcAddr.pad(64) < ddrBase || sparseSrcEnd > ddrEnd)
   private val dstOutOfRange = destinationOp &&
     (command.dstAddr.pad(64) < ddrBase || dstEnd > ddrEnd || dstEnd <= command.dstAddr.pad(64))
   private val regionsOverlap = command.srcAddr.pad(64) < dstEnd && command.dstAddr.pad(64) < srcEnd
@@ -52,7 +56,7 @@ class CommandValidator extends Module {
     io.error := GpuError.MisalignedAddress.U
   }.elsewhen(strideTooSmall) {
     io.error := GpuError.StrideTooSmall.U
-  }.elsewhen(srcOutOfRange || dstOutOfRange || invalidPresentBuffer) {
+  }.elsewhen(denseSrcOutOfRange || sparseSrcOutOfRange || dstOutOfRange || invalidPresentBuffer) {
     io.error := GpuError.AddressRange.U
   }.elsewhen(overlap) {
     io.error := GpuError.OverlappingCopy.U
