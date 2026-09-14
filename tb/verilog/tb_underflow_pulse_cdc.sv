@@ -109,11 +109,16 @@ module tb_underflow_pulse_cdc;
         $dumpfile("tb/verilog/underflow_pulse_cdc.vcd");
         $dumpvars(0, tb_underflow_pulse_cdc);
 
+        // Startup high is a baseline, not an underflow episode.
+        scale_underflow = 1'b1;
         wait_gpu(3);
         pixel_reset = 1'b0;
         wait_gpu(3);
         gpu_reset = 1'b0;
-        expect_pulses(0, "startup");
+        expect_pulses(0, "startup high baseline");
+        @(negedge pixel_clk);
+        scale_underflow = 1'b0;
+        wait_pixel(2);
 
         // A seven-cycle source episode still produces exactly one GPU pulse.
         begin_episode(7);
@@ -144,6 +149,7 @@ module tb_underflow_pulse_cdc;
         pixel_reset = 1'b1;
         wait_gpu(2);
         pixel_reset = 1'b0;
+        @(posedge pixel_clk);
         @(negedge pixel_clk);
         scale_underflow = 1'b1;
         wait_pixel(1);
@@ -166,6 +172,7 @@ module tb_underflow_pulse_cdc;
         gpu_reset = 1'b1;
         wait_gpu(2);
         gpu_reset = 1'b0;
+        @(posedge pixel_clk);
         @(negedge pixel_clk);
         scale_underflow = 1'b1;
         wait_pixel(1);
@@ -173,28 +180,46 @@ module tb_underflow_pulse_cdc;
         scale_underflow = 1'b0;
         expect_pulses(8, "episode during GPU reset release");
 
-        // Reset during an active episode suppresses a replay until the source goes low.
-        @(negedge pixel_clk);
-        scale_underflow = 1'b1;
-        expect_pulses(9, "ninth source episode");
+        // Form a pending release edge, then assert pixel reset for 1 ns.
+        // The pulse is shorter than one pixel period and must still discard
+        // the pending edge; a held-high level must not replay afterward.
         pixel_reset = 1'b1;
         wait_gpu(2);
         pixel_reset = 1'b0;
-        expect_pulses(9, "pixel reset while active");
+        @(negedge pixel_clk);
+        scale_underflow = 1'b1;
+        @(posedge pixel_clk);
+        #1 pixel_reset = 1'b1;
+        #1 pixel_reset = 1'b0;
+        expect_no_new_pulses(5, "short pixel reset stale-pending recovery");
         @(negedge pixel_clk);
         scale_underflow = 1'b0;
         wait_pixel(3);
         begin_episode(3);
-        expect_pulses(10, "episode after pixel reset rearm");
+        expect_pulses(9, "episode after short pixel reset rearm");
+
+        // Reset during an active episode suppresses a replay until the source goes low.
+        @(negedge pixel_clk);
+        scale_underflow = 1'b1;
+        expect_pulses(10, "tenth source episode");
+        pixel_reset = 1'b1;
+        wait_gpu(2);
+        pixel_reset = 1'b0;
+        expect_pulses(10, "pixel reset while active");
+        @(negedge pixel_clk);
+        scale_underflow = 1'b0;
+        wait_pixel(3);
+        begin_episode(3);
+        expect_pulses(11, "episode after pixel reset rearm");
 
         // A GPU reset during an active source level must baseline, not replay it.
         @(negedge pixel_clk);
         scale_underflow = 1'b1;
-        expect_pulses(11, "eleventh source episode");
+        expect_pulses(12, "twelfth source episode");
         gpu_reset = 1'b1;
         wait_gpu(2);
         gpu_reset = 1'b0;
-        expect_pulses(11, "GPU reset while active");
+        expect_pulses(12, "GPU reset while active");
 
         if (failures != 0)
             $fatal(1, "underflow CDC failures: %0d", failures);

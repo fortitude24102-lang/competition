@@ -63,11 +63,23 @@ module underflow_pulse_cdc #(
             gpu_reset_release <= {gpu_reset_release[0], 1'b0};
     end
 
-    // Keep history live through reset. A high level spanning reset cannot
-    // replay, while a rising edge during local-reset release is recorded in
-    // pixel_release_pending and committed once the counter is released.
+    // The first safe local-reset cycle always establishes a fresh baseline and
+    // clears stale pending state. A rising edge in the second, remaining local
+    // release cycle is recorded and committed once the counter is released.
+    // This works even if combined_reset was asserted for less than one pixel
+    // period because pixel_reset_release captures that assertion asynchronously.
     always @(posedge pixel_clk) begin
-        scale_underflow_prev <= scale_underflow;
+        if (pixel_reset_release[1]) begin
+            scale_underflow_prev <= scale_underflow;
+            if (pixel_reset_release[0]) begin
+                pixel_release_pending <= 1'b0;
+            end else if (scale_underflow && !scale_underflow_prev) begin
+                pixel_release_pending <= 1'b1;
+            end
+        end else begin
+            scale_underflow_prev <= scale_underflow;
+            pixel_release_pending <= 1'b0;
+        end
     end
 
     // pixel_event_gray is registered atomically with its next binary value.
@@ -82,22 +94,6 @@ module underflow_pulse_cdc #(
         end else if (pixel_release_pending || (scale_underflow && !scale_underflow_prev)) begin
             pixel_event_count <= pixel_event_count_next;
             pixel_event_gray <= pixel_event_gray_next;
-        end
-    end
-
-    // This synchronous release capture preserves a real line-scale episode
-    // that begins after external reset release but before pixel_reset_local
-    // drops. The two-pixel-clock release window can contain at most one such
-    // episode because scale_underflow is driven by a missing display line.
-    // Reset is expected to remain asserted for at least one pixel edge.
-    always @(posedge pixel_clk) begin
-        if (combined_reset)
-            pixel_release_pending <= 1'b0;
-        else if (pixel_reset_local) begin
-            if (scale_underflow && !scale_underflow_prev)
-                pixel_release_pending <= 1'b1;
-        end else begin
-            pixel_release_pending <= 1'b0;
         end
     end
 
