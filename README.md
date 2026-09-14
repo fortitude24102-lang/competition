@@ -65,9 +65,9 @@
 
 ```powershell
 ./scripts/test-efinix-gpu.ps1
-./scripts/test-efinix-verilog.ps1
+./scripts/test-efinix-verilog.ps1 -IcarusHome D:/FPGA/iverilog
 ./scripts/test-efinix-software.ps1
-./scripts/test-efinix-board.ps1 -EfinityHome D:/efinity -Flow map
+./scripts/test-efinix-board.ps1 -EfinityHome C:/efinity/efinity -Flow compile
 ```
 
 前三条脚本依次检查负责人 GPU、组员 A 的官方 HDMI/RGB565 边界和组员 B 的 Sapphire 软件接口；第四条检查派生工程的 Efinity 映射。最终完成还必须使用同一正式候选位流执行板上 DDR、CPU、LED、HDMI、性能和耐久验收。此前离线阶段的证据见 [A、B 离线推进记录](docs/efinix_2d_gpu/ab_offline_progress.md)。
