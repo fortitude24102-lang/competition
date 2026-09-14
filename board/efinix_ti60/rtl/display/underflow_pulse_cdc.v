@@ -21,7 +21,7 @@ module underflow_pulse_cdc #(
     reg [EVENT_COUNTER_WIDTH-1:0] pixel_event_count;
     // This register, rather than a combinational binary-to-Gray XOR network,
     // is the only source-domain signal that crosses to the GPU domain.
-    (* keep = "true" *) reg [EVENT_COUNTER_WIDTH-1:0] pixel_event_gray;
+    (* syn_keep = "true" *) reg [EVENT_COUNTER_WIDTH-1:0] pixel_event_gray;
     wire [EVENT_COUNTER_WIDTH-1:0] pixel_event_count_next;
     wire [EVENT_COUNTER_WIDTH-1:0] pixel_event_gray_next;
     (* async_reg = "true" *) reg [EVENT_COUNTER_WIDTH-1:0] gpu_gray_sync0;

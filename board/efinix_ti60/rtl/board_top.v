@@ -112,7 +112,7 @@ wire gpu_display_ready, gpu_vblank;
 wire [11:0] gpu_scanout_level;
 // GPU-clock-domain, active-high, one-cycle underflow episode indication.
 // The lead consumes this internal handoff when its counter port is available.
-wire gpu_underflow_pulse;
+(* syn_keep = "true" *) wire gpu_underflow_pulse;
 efinix_sapphire_adapter sapphire (
  .axi_clk(axi_clk),
  .core_clk(core_clk),

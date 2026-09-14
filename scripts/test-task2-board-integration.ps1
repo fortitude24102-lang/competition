@@ -1,4 +1,4 @@
-param()
+param([switch]$StaticOnly)
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
@@ -7,6 +7,7 @@ $projectFile = Join-Path $board 'efinix_2d_gpu.xml'
 $cdcRelative = 'rtl/display/underflow_pulse_cdc.v'
 $hdmiRelative = 'rtl/display/hdmi_subsystem.v'
 $boardTopRelative = 'rtl/board_top.v'
+$cdcSourcePath = Join-Path $board $cdcRelative
 $iverilog = 'D:\FPGA\iverilog\bin\iverilog.exe'
 $vvp = 'D:\FPGA\iverilog\bin\vvp.exe'
 
@@ -32,11 +33,16 @@ if ([Array]::IndexOf($sourceList, $boardTopRelative) -lt 0) {
 }
 
 $boardTop = Get-Content -Raw (Join-Path $board $boardTopRelative)
-if ($boardTop -notmatch '(?m)^\s*wire\s+gpu_underflow_pulse\s*;') {
-    throw 'FAIL board integration: board_top must declare gpu_underflow_pulse for the lead handoff.'
+if ($boardTop -notmatch '(?m)^\s*\(\*\s*syn_keep\s*=\s*"true"\s*\*\)\s*wire\s+gpu_underflow_pulse\s*;') {
+    throw 'FAIL board integration: the unconsumed lead handoff must be syn_keep until its counter port exists.'
 }
 if ($boardTop -notmatch '\.underflow_pulse_gpu\s*\(\s*gpu_underflow_pulse\s*\)') {
     throw 'FAIL board integration: hdmi_subsystem must drive gpu_underflow_pulse.'
+}
+
+$cdcSource = Get-Content -Raw $cdcSourcePath
+if ($cdcSource -notmatch '(?m)^\s*\(\*\s*syn_keep\s*=\s*"true"\s*\*\)\s*reg\s+\[EVENT_COUNTER_WIDTH-1:0\]\s+pixel_event_gray\s*;') {
+    throw 'FAIL constraints: Efinity must preserve every registered Gray source bit with syn_keep.'
 }
 
 $constraints = Get-Content -Raw (Join-Path $board 'efinix_2d_gpu.sdc')
@@ -45,6 +51,11 @@ if ($constraints -match '\bget_registers\b') {
 }
 if ($constraints -notmatch 'set_max_delay\s+6\.722689076[\s\S]*?get_cells\s+\{\*u_underflow_sync\*pixel_event_gray\*\}[\s\S]*?get_cells\s+\{\*u_underflow_sync\*gpu_gray_sync0\*\}') {
     throw 'FAIL constraints: registered Gray CDC path must use Efinity-compatible get_cells selectors.'
+}
+
+if ($StaticOnly) {
+    Write-Output 'PASS board project integration static checks'
+    return
 }
 
 $vvpOutput = Join-Path $env:TEMP 'task2-underflow-pulse-cdc.vvp'
