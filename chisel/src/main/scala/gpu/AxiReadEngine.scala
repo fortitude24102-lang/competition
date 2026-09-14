@@ -14,7 +14,8 @@ class AxiReadBeat extends Bundle {
   val last = Bool()
 }
 
-class AxiReadEngine extends Module {
+class AxiReadEngine(axiId: Int = 0) extends Module {
+  require(axiId >= 0 && axiId < 16)
   val io = IO(new Bundle {
     val request = Flipped(Decoupled(new AxiReadRequest))
     val data = Decoupled(new AxiReadBeat)
@@ -47,7 +48,7 @@ class AxiReadEngine extends Module {
 
   io.axiAr.valid := state === sendAddress
   io.axiAr.bits.addr := currentAddress
-  io.axiAr.bits.id := 0.U
+  io.axiAr.bits.id := axiId.U
   io.axiAr.bits.len := (burstBeats - 1.U)(7, 0)
   io.axiAr.bits.size := Axi4.WordSize.U
   io.axiAr.bits.burst := Axi4.Incrementing.U
@@ -85,7 +86,8 @@ class AxiReadEngine extends Module {
 
   when(io.axiR.fire) {
     val expectedLast = beatsLeftInBurst === 1.U
-    val beatError = io.axiR.bits.resp =/= Axi4.Okay.U || io.axiR.bits.last =/= expectedLast
+    val beatError = io.axiR.bits.id =/= axiId.U ||
+      io.axiR.bits.resp =/= Axi4.Okay.U || io.axiR.bits.last =/= expectedLast
     errorSeen := errorSeen || beatError
 
     when(remainingBeats === 1.U) {

@@ -34,6 +34,7 @@ class Efinix2dGpuTop extends Module {
   private val lastDoneTag = RegInit(0.U(16.W))
   private val lastError = RegInit(GpuError.None.U(8.W))
   private val irq = RegInit(false.B)
+  private val scanoutStarted = RegInit(false.B)
 
   regs.io.paddr := io.apb.paddr
   regs.io.psel := io.apb.psel
@@ -47,19 +48,31 @@ class Efinix2dGpuTop extends Module {
   render.io.command <> regs.io.command
   render.io.vblank := io.vblank
   regs.io.queueLevel := render.io.queueLevel
+  regs.io.queueHighWater := render.io.queueHighWater
   regs.io.queueFull := render.io.queueFull
   regs.io.queueEmpty := render.io.queueEmpty
   regs.io.engineBusy := render.io.busy
+  regs.io.irqPending := irq
   regs.io.lastDoneTag := lastDoneTag
   regs.io.lastError := lastError
   regs.io.frontBuffer := render.io.frontBase
   regs.io.backBuffer := render.io.backBase
+  regs.io.perfCycles := render.io.perfCycles
+  regs.io.perfPixels := render.io.perfPixels
+  regs.io.perfReadBytes := render.io.perfReadBytes
+  regs.io.perfWriteBytes := render.io.perfWriteBytes
+  regs.io.perfStalls := render.io.perfStalls
+  render.io.perfClear := regs.io.perfClear
 
   render.io.completion.ready := true.B
-  irq := false.B
+  when(regs.io.irqClear) { irq := false.B }
   when(render.io.completion.fire) {
     lastDoneTag := render.io.completion.bits.tag
-    lastError := render.io.completion.bits.error
+    // Preserve the first failure across later successful completions. This
+    // lets software validate a batch even if LAST_DONE advances by >1 tag.
+    when(lastError === GpuError.None.U && render.io.completion.bits.error =/= GpuError.None.U) {
+      lastError := render.io.completion.bits.error
+    }
     irq := true.B
   }
 
@@ -67,7 +80,8 @@ class Efinix2dGpuTop extends Module {
   ddr.io.scanout <> scanout.io.axi
   io.axi <> ddr.io.axi
 
-  scanout.io.enable := !render.io.swapPending
+  when(render.io.swapPending) { scanoutStarted := true.B }
+  scanout.io.enable := scanoutStarted && !render.io.swapPending
   scanout.io.frontBase := render.io.frontBase
   scanout.io.fifoLevel := io.scanoutLevel
   scanout.io.pixel.ready := io.displayReady

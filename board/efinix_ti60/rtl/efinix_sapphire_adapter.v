@@ -38,7 +38,9 @@ parameter                       DQS_CNT_WIDTH      = `DQS_CNT_WIDTH,       // = 
 parameter                       DRAM_WIDTH         = `DRAM_WIDTH,       // # of DQ per DQS   
 parameter                       DATA_WIDTH         = `DATA_WIDTH,
 parameter                       ADDR_WIDTH         = `ADDR_WIDTH,    
-parameter                       AXI_ID_WIDTH       = `AXI_ID_WIDTH,
+// Sapphire's DDR arbiter uses ID[7] to route responses between CPU and the
+// external GPU master.  The stock DDR3 demo's 4-bit default truncates it.
+parameter                       AXI_ID_WIDTH       = 8,
 parameter                       AXI_ADDR_WIDTH     = `AXI_ADDR_WIDTH,
 parameter                       AXI_DATA_WIDTH     = `AXI_DATA_WIDTH
 )
@@ -322,7 +324,7 @@ assign gpu_stream_reset = !sys_rst | gpu_reset;
 assign sys_rst       = pll_locked & user_pll_locked;
 
 //***************************************************************************
-ddr3_top                 u_ddr3_top
+ddr3_top #(.AXI_ID_WIDTH(AXI_ID_WIDTH)) u_ddr3_top
       (
       
     .axi_clk                (user_clk             ),
@@ -638,7 +640,6 @@ Efinix2dGpuTop u_efinix_2d_gpu (
     .jtagCtrl_reset                     (jtag_inst1_RESET                   )
 
 );
-
 
 //***************************************************************************
 

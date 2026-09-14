@@ -18,4 +18,16 @@ enum gpu_error golden_fill(const golden_surface *s, uint16_t x, uint16_t y,
 uint32_t golden_crc32(const void *data, size_t size);
 enum gpu_error golden_copy(const golden_surface *dst,uint16_t dx,uint16_t dy,
  const golden_surface *src,uint16_t sx,uint16_t sy,uint16_t w,uint16_t h);
+/* Transparent-sprite blit: pixels equal to color_key keep the destination
+ * background; every other foreground pixel is written. Mirrors golden_copy's
+ * alignment/stride/bounds and conservative bounding-span overlap rules. */
+enum gpu_error golden_color_key(const golden_surface *dst,uint16_t dx,uint16_t dy,
+ const golden_surface *src,uint16_t sx,uint16_t sy,uint16_t w,uint16_t h,
+ uint16_t color_key);
+/* Global-alpha sprite blit: reads foreground and background and writes the
+ * per-channel nearest-rounded blend using the rgb565.c reference formula,
+ * which is bit-exact with the RTL (fg*a + bg*(255-a) + 127) / 255. */
+enum gpu_error golden_alpha_blend(const golden_surface *dst,uint16_t dx,uint16_t dy,
+ const golden_surface *src,uint16_t sx,uint16_t sy,uint16_t w,uint16_t h,
+ uint8_t alpha);
 #endif

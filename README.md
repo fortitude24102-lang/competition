@@ -1,8 +1,18 @@
 # 易灵思 Ti60F225 2D 图像渲染加速器
 
-本项目参加 2026 年嵌入式 FPGA 赛道，唯一有效实施计划是 [`Efinix_2D图像渲染三人开发计划书_官方Demo版.docx`](docs/word/Efinix_2D图像渲染三人开发计划书_官方Demo版.docx)。
+本项目参加 2026 年嵌入式 FPGA 赛道，唯一有效实施计划是 [`Efinix_2D图像渲染三人开发计划书_官方Demo版.docx`](docs/word/Efinix_2D图像渲染三人开发计划书_官方Demo版.docx)。该文件现为三人三天收尾版，替代原二十五天排期，但保留原计划全部最终功能和验收结果。
 
-项目直接复用官方 Ti60F225 Demo：以 Sapphire RISC-V + DDR3 工程为主工程底座，以官方 HDMI TX 工程为显示输出底座。原有自研 Chisel CPU 仅保留为历史研究和回退参考，不进入本项目 25 天开发主线。
+项目直接复用官方 Ti60F225 Demo：以 Sapphire RISC-V + DDR3 工程为主工程底座，以官方 HDMI TX 工程为显示输出底座。原有自研 Chisel CPU 仅保留为历史研究和回退参考，不进入正式 2D GPU 主线。
+
+## 当前进度与后三天
+
+当前基线为主负责人完成原第 18 天、组员 A 完成原第 19 天、组员 B 完成原第 20 天；官方 Sapphire CPU、DDR3、8 个用户 LED 和 HDMI 已完成基础实机验证。
+
+- 第 1 天：完成 Sparse token、C 打包器、Chisel 解码与 Blit、Dense/Sparse CRC 和 DDR 字节比较，同时建立显示下溢同步与 Dense 压力基线。
+- 第 2 天：完成可配置的 FIFO 水位自适应 DDR QoS、APB 性能计数、板级接线以及固定轮询/自适应模式对比。
+- 第 3 天：统一生成 RTL 和正式位流，完成时序、启动、300 帧性能、Dense/Sparse 显示一致性、30 分钟耐久和三方封版。
+
+详细文件、输入、输出、依赖和逐日验收均以正式 Word 计划书为准。历史阶段记录只用于追溯，不再决定后续排期。
 
 ## 官方工程来源
 
@@ -33,6 +43,7 @@
 │  └─ src/test/scala/gpu/             # 负责人：各 Chisel 模块及系统测试
 ├─ generated/efinix_gpu/              # Chisel split-verilog 输出，一文件一模块
 ├─ sw/efinix_gpu/                     # 组员 B：Sapphire BSP 驱动、黄金模型、游戏 Demo
+├─ release/                           # 最终 bit/hex、固件、基准、视频和 SHA256 清单
 ├─ tb/verilog/                        # 组员 A：像素和 HDMI 自检 testbench
 ├─ tb/vectors/                        # 三人共用固定向量、CRC 和随机种子
 ├─ scripts/                           # 三条一键测试、生成和板级验收入口
@@ -48,7 +59,7 @@
 
 更详细的目录和复用边界见 [`docs/efinix_2d_gpu/directory_layout.md`](docs/efinix_2d_gpu/directory_layout.md)。
 
-## 离线测试
+## 测试入口
 
 在本工作树中执行：
 
@@ -59,4 +70,4 @@
 ./scripts/test-efinix-board.ps1 -EfinityHome D:/efinity -Flow map
 ```
 
-依次检查负责人 GPU、组员 A 的官方 HDMI/RGB565 边界、组员 B 的 Sapphire 软件接口，以及派生工程的 Efinity 映射。软件交叉编译和 Efinity 映射均不等同于开发板运行。测试依赖与本轮阶段状态见 [A、B 离线推进记录](docs/efinix_2d_gpu/ab_offline_progress.md)。
+前三条脚本依次检查负责人 GPU、组员 A 的官方 HDMI/RGB565 边界和组员 B 的 Sapphire 软件接口；第四条检查派生工程的 Efinity 映射。最终完成还必须使用同一正式候选位流执行板上 DDR、CPU、LED、HDMI、性能和耐久验收。此前离线阶段的证据见 [A、B 离线推进记录](docs/efinix_2d_gpu/ab_offline_progress.md)。

@@ -60,4 +60,4 @@ Chisel `PixelPipeExt` 对应上述平坦端口，加载真实 `.v/.vh`；`PixelP
 - `scripts/test-efinix-pixel-chisel.ps1`
 - 本文档
 
-COLOR_KEY、ALPHA、SPARSE和PRESENT并未在此实现，按后续原计划推进。所有改动未提交、未推送。
+本文记录的 Day6～8 时点尚未实现 COLOR_KEY、ALPHA、SPARSE 和 PRESENT；后续 Day14～15 已完成 PRESENT 与 COLOR_KEY，ALPHA 和 SPARSE 仍按原计划推进。

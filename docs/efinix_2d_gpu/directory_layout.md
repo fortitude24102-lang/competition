@@ -2,7 +2,9 @@
 
 ## 当前计划
 
-唯一有效计划：`docs/word/Efinix_2D图像渲染三人开发计划书_官方Demo版.docx`。
+唯一有效计划：`docs/word/Efinix_2D图像渲染三人开发计划书_官方Demo版.docx`。该文件已原位替换为三人三天收尾版；原二十五天排期不再执行，但最终功能、产物和验收要求不变。
+
+当前基线为主负责人完成原第 18 天、组员 A 完成原第 19 天、组员 B 完成原第 20 天。后续顺序固定为：第 1 天 Sparse 端到端，第 2 天自适应 QoS 与完整系统，第 3 天统一生成、上板、调优和封版。
 
 已删除的 `docs/superpowers/plans/2026-09-04-efinix-2d-gpu-*.md` 和 `docs/superpowers/specs/2026-09-04-efinix-2d-gpu-design.md` 属于旧的全自研 SoC 路线，不再执行。需要追溯时只通过 Git 历史查看，不能作为开发依据。
 
@@ -33,13 +35,13 @@ chisel/src/main/scala/gpu/
 ├─ PixelWritePacker.scala
 ├─ DenseBlitEngine.scala
 ├─ SparseDecoder.scala
+├─ SparseBlitEngine.scala
 ├─ RenderEngine.scala
 ├─ ScanoutDma.scala
 ├─ DdrQosArbiter.scala
 ├─ FrameSwapController.scala
 ├─ GpuPerfCounters.scala
 ├─ PixelPipeExt.scala
-├─ GpuSubsystem.scala
 ├─ Efinix2dGpuTop.scala
 └─ GenerateEfinix2dGpu.scala
 
@@ -48,10 +50,12 @@ chisel/src/test/scala/gpu/
 ├─ RenderEngineSpec.scala
 ├─ SparseDecoderSpec.scala
 ├─ DdrQosArbiterSpec.scala
+├─ GpuPerfCountersSpec.scala
+├─ Efinix2dGpuTopSpec.scala
 └─ GpuSystemSpec.scala
 ```
 
-负责人模块通过 APB 接收 Sapphire 命令，并把 Render AXI 和 Scanout AXI 经 QoS 仲裁合并为一个 32 位 AXI Master，连接官方 Sapphire external AXI Master 0。
+负责人模块通过 APB 接收 Sapphire 命令，并把 Render AXI 和 Scanout AXI 经 QoS 仲裁合并为一个 32 位 AXI Master，连接官方 Sapphire external AXI Master 0。当前 `Efinix2dGpuTop.scala` 已直接承担子系统连接职责，不再为形式新增空的 `GpuSubsystem.scala` 包装层。
 
 ## 组员 A 目录
 
@@ -85,7 +89,13 @@ sw/efinix_gpu/
 ├─ include/
 │  ├─ gpu_regs.h
 │  ├─ gpu.h
-│  └─ framebuffer.h
+│  ├─ framebuffer.h
+│  ├─ assets.h
+│  ├─ benchmark.h
+│  ├─ golden_renderer.h
+│  ├─ hud.h
+│  ├─ rgb565.h
+│  └─ sparse_format.h                 # 第 1 天新增
 ├─ src/                              # 驱动、黄金模型、资源、HUD、游戏和 benchmark
 ├─ tests/
 ├─ linker.ld
@@ -99,6 +109,7 @@ sw/efinix_gpu/
 ```text
 generated/efinix_gpu/                # Chisel split-verilog 输出
 board/efinix_ti60/output/            # bit、hex、Efinity 报告和板级日志
+release/                             # 最终候选 bit/hex、固件、基准、视频和清单
 docs/efinix_2d_gpu/                  # 接口、测试和验收记录
 scripts/test-efinix-gpu.ps1          # 负责人测试入口
 scripts/test-efinix-verilog.ps1      # 组员 A 测试入口
@@ -106,3 +117,5 @@ scripts/test-efinix-software.ps1     # 组员 B 测试入口
 ```
 
 原有 `chisel/src/main/scala/cpu/`、`chisel/src/main/scala/soc/`、`rtl/video/` 和旧软件驱动保留为历史基线，但不属于正式 Ti60F225 2D GPU 主线。
+
+尚未生成的第 1 至 3 天文件在此表示冻结后的目标位置，不代表功能已经完成。实际完成状态以测试结果和 `lead_acceptance.md`、`display_acceptance.md`、`software_acceptance.md` 为准。

@@ -1,4 +1,5 @@
 #include "golden_renderer.h"
+#include "rgb565.h"
 enum gpu_error golden_fill(const golden_surface *s, uint16_t x, uint16_t y,
                           uint16_t width, uint16_t height, uint16_t color) {
     if (!s || !s->pixels) return GPU_ERROR_ADDRESS_RANGE;
@@ -49,5 +50,65 @@ enum gpu_error golden_copy(const golden_surface *dst,uint16_t dx,uint16_t dy,
  if(start[0]<end[1] && start[1]<end[0]) return GPU_ERROR_OVERLAPPING_COPY;
  for(unsigned row=0;row<h;row++) for(unsigned byte=0;byte<w*2u;byte++)
   ((uint8_t *)start[1])[(size_t)row*dst->stride_bytes+byte]=((const uint8_t *)start[0])[(size_t)row*src->stride_bytes+byte];
+ return GPU_ERROR_NONE;
+}
+
+/* Shared src->dst rectangle validation for copy-like blits. On success it
+ * returns the first byte of each surface's rectangle through out params.
+ * Mirrors golden_copy's conservative bounding-span overlap contract. */
+static enum gpu_error blit_pair_validate(const golden_surface *dst,uint16_t dx,uint16_t dy,
+ const golden_surface *src,uint16_t sx,uint16_t sy,uint16_t w,uint16_t h,
+ uintptr_t *dst_base,uintptr_t *src_base) {
+ const golden_surface *s[2]={src,dst}; uint16_t x[2]={sx,dx},y[2]={sy,dy};
+ uintptr_t start[2],end[2];
+ if(!w || !h) return GPU_ERROR_ZERO_SIZE;
+ for(unsigned i=0;i<2;i++) {
+  if(!s[i] || !s[i]->pixels) return GPU_ERROR_ADDRESS_RANGE;
+  if(((uintptr_t)s[i]->pixels|s[i]->stride_bytes)&1) return GPU_ERROR_MISALIGNED_ADDRESS;
+  if(s[i]->stride_bytes<(uint32_t)s[i]->width*2) return GPU_ERROR_STRIDE_TOO_SMALL;
+  if(!s[i]->height || (uint32_t)x[i]+w>s[i]->width || (uint32_t)y[i]+h>s[i]->height) return GPU_ERROR_ADDRESS_RANGE;
+  uint64_t extent=(uint64_t)(s[i]->height-1)*s[i]->stride_bytes+s[i]->width*2u;
+  if(extent>s[i]->size_bytes || extent>UINTPTR_MAX-(uintptr_t)s[i]->pixels) return GPU_ERROR_ADDRESS_RANGE;
+  start[i]=(uintptr_t)s[i]->pixels+(size_t)y[i]*s[i]->stride_bytes+x[i]*2u;
+  end[i]=start[i]+(size_t)(h-1)*s[i]->stride_bytes+w*2u;
+ }
+ if(start[0]<end[1] && start[1]<end[0]) return GPU_ERROR_OVERLAPPING_COPY;
+ *dst_base=start[1]; *src_base=start[0];
+ return GPU_ERROR_NONE;
+}
+
+static uint16_t load_px(const uint8_t *p) { return (uint16_t)(p[0] | ((uint16_t)p[1]<<8)); }
+static void store_px(uint8_t *p,uint16_t v) { p[0]=(uint8_t)v; p[1]=(uint8_t)(v>>8); }
+
+enum gpu_error golden_color_key(const golden_surface *dst,uint16_t dx,uint16_t dy,
+ const golden_surface *src,uint16_t sx,uint16_t sy,uint16_t w,uint16_t h,
+ uint16_t color_key) {
+ uintptr_t db,sb; enum gpu_error e=blit_pair_validate(dst,dx,dy,src,sx,sy,w,h,&db,&sb);
+ if(e) return e;
+ for(uint32_t row=0;row<h;row++) {
+  const uint8_t *sp=(const uint8_t *)sb+(size_t)row*src->stride_bytes;
+  uint8_t *dp=(uint8_t *)db+(size_t)row*dst->stride_bytes;
+  for(uint32_t col=0;col<w;col++) {
+   uint16_t fg=load_px(sp+col*2u);
+   if(fg!=color_key) store_px(dp+col*2u,fg);
+  }
+ }
+ return GPU_ERROR_NONE;
+}
+
+enum gpu_error golden_alpha_blend(const golden_surface *dst,uint16_t dx,uint16_t dy,
+ const golden_surface *src,uint16_t sx,uint16_t sy,uint16_t w,uint16_t h,
+ uint8_t alpha) {
+ uintptr_t db,sb; enum gpu_error e=blit_pair_validate(dst,dx,dy,src,sx,sy,w,h,&db,&sb);
+ if(e) return e;
+ for(uint32_t row=0;row<h;row++) {
+  const uint8_t *sp=(const uint8_t *)sb+(size_t)row*src->stride_bytes;
+  uint8_t *dp=(uint8_t *)db+(size_t)row*dst->stride_bytes;
+  for(uint32_t col=0;col<w;col++) {
+   uint16_t fg=load_px(sp+col*2u);
+   uint16_t bg=load_px(dp+col*2u);
+   store_px(dp+col*2u,rgb565_global_alpha(fg,bg,alpha));
+  }
+ }
  return GPU_ERROR_NONE;
 }

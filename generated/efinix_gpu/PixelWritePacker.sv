@@ -54,7 +54,8 @@ module PixelWritePacker(	// src/main/scala/gpu/PixelWritePacker.scala:20:7
                 io_input_bits_rowLast,	// src/main/scala/gpu/PixelWritePacker.scala:21:14
                 io_output_ready,	// src/main/scala/gpu/PixelWritePacker.scala:21:14
   output        io_output_valid,	// src/main/scala/gpu/PixelWritePacker.scala:21:14
-  output [31:0] io_output_bits_data,	// src/main/scala/gpu/PixelWritePacker.scala:21:14
+  output [31:0] io_output_bits_address,	// src/main/scala/gpu/PixelWritePacker.scala:21:14
+                io_output_bits_data,	// src/main/scala/gpu/PixelWritePacker.scala:21:14
   output [3:0]  io_output_bits_strb	// src/main/scala/gpu/PixelWritePacker.scala:21:14
 );
 
@@ -63,54 +64,60 @@ module PixelWritePacker(	// src/main/scala/gpu/PixelWritePacker.scala:20:7
   reg  [31:0] openData;	// src/main/scala/gpu/PixelWritePacker.scala:28:29
   reg  [3:0]  openStrb;	// src/main/scala/gpu/PixelWritePacker.scala:29:29
   reg         outputValid;	// src/main/scala/gpu/PixelWritePacker.scala:32:36
+  reg  [31:0] outputBits_address;	// src/main/scala/gpu/PixelWritePacker.scala:33:31
   reg  [31:0] outputBits_data;	// src/main/scala/gpu/PixelWritePacker.scala:33:31
   reg  [3:0]  outputBits_strb;	// src/main/scala/gpu/PixelWritePacker.scala:33:31
   wire        _GEN = {io_input_bits_address[31:2], 2'h0} == openAddress;	// src/main/scala/gpu/PixelWritePacker.scala:27:32, :46:{33,55}, :47:29
   wire        io_input_ready_0 = ~outputValid & (~openValid | io_input_valid & _GEN);	// src/main/scala/gpu/PixelWritePacker.scala:26:34, :32:36, :37:18, :43:{8,22}, :44:21, :45:28, :47:{29,46}, :71:22
   always @(posedge clock) begin	// src/main/scala/gpu/PixelWritePacker.scala:20:7
     automatic logic        _GEN_0;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-    automatic logic        _GEN_1;	// src/main/scala/gpu/PixelWritePacker.scala:72:26
+    automatic logic        _GEN_1;	// src/main/scala/gpu/PixelWritePacker.scala:33:31, :45:28, :47:46
+    automatic logic        _GEN_2;	// src/main/scala/gpu/PixelWritePacker.scala:72:26
+    automatic logic [31:0] alignedAddress_1;	// src/main/scala/gpu/PixelWritePacker.scala:73:33
     automatic logic [31:0] packedData;	// src/main/scala/gpu/PixelWritePacker.scala:75:29
     automatic logic [3:0]  packedStrb;	// src/main/scala/gpu/PixelWritePacker.scala:76:29
-    automatic logic        _GEN_2;	// src/main/scala/gpu/PixelWritePacker.scala:77:20
-    automatic logic        _GEN_3;	// src/main/scala/gpu/PixelWritePacker.scala:33:31, :72:56, :77:46, :79:27
+    automatic logic        _GEN_3;	// src/main/scala/gpu/PixelWritePacker.scala:77:20
+    automatic logic        _GEN_4;	// src/main/scala/gpu/PixelWritePacker.scala:33:31, :72:56, :77:46, :78:30
     _GEN_0 = io_input_ready_0 & io_input_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/PixelWritePacker.scala:37:18, :43:22, :44:21
-    _GEN_1 = _GEN_0 & io_input_bits_writeEnable;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/PixelWritePacker.scala:72:26
+    _GEN_1 = io_input_valid & (~_GEN | _GEN_0);	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/PixelWritePacker.scala:33:31, :45:28, :47:{29,46}, :49:31, :62:30
+    _GEN_2 = _GEN_0 & io_input_bits_writeEnable;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/PixelWritePacker.scala:72:26
+    alignedAddress_1 = {io_input_bits_address[31:2], 2'h0};	// src/main/scala/gpu/PixelWritePacker.scala:73:{33,55}
     packedData =
       io_input_bits_address[1]
         ? {io_input_bits_pixel, 16'h0}
         : {16'h0, io_input_bits_pixel};	// src/main/scala/gpu/PixelWritePacker.scala:74:42, :75:{29,40}
     packedStrb = io_input_bits_address[1] ? 4'hC : 4'h3;	// src/main/scala/gpu/PixelWritePacker.scala:56:72, :74:42, :76:29
-    _GEN_2 = io_input_bits_address[1] | io_input_bits_rowLast;	// src/main/scala/gpu/PixelWritePacker.scala:74:42, :77:20
-    _GEN_3 = _GEN_1 & _GEN_2;	// src/main/scala/gpu/PixelWritePacker.scala:33:31, :72:{26,56}, :77:{20,46}, :79:27
+    _GEN_3 = io_input_bits_address[1] | io_input_bits_rowLast;	// src/main/scala/gpu/PixelWritePacker.scala:74:42, :77:20
+    _GEN_4 = _GEN_2 & _GEN_3;	// src/main/scala/gpu/PixelWritePacker.scala:33:31, :72:{26,56}, :77:{20,46}, :78:30
     if (reset) begin	// src/main/scala/gpu/PixelWritePacker.scala:20:7
       openValid <= 1'h0;	// src/main/scala/gpu/PixelWritePacker.scala:26:34
       outputValid <= 1'h0;	// src/main/scala/gpu/PixelWritePacker.scala:26:34, :32:36
     end
     else begin	// src/main/scala/gpu/PixelWritePacker.scala:20:7
-      automatic logic _GEN_4;	// src/main/scala/gpu/PixelWritePacker.scala:32:36, :39:24, :40:17
-      _GEN_4 = ~(io_output_ready & outputValid) & outputValid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/PixelWritePacker.scala:32:36, :39:24, :40:17
+      automatic logic _GEN_5;	// src/main/scala/gpu/PixelWritePacker.scala:32:36, :39:24, :40:17
+      _GEN_5 = ~(io_output_ready & outputValid) & outputValid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/PixelWritePacker.scala:32:36, :39:24, :40:17
       if (outputValid)	// src/main/scala/gpu/PixelWritePacker.scala:32:36
-        outputValid <= _GEN_4;	// src/main/scala/gpu/PixelWritePacker.scala:32:36, :39:24, :40:17
+        outputValid <= _GEN_5;	// src/main/scala/gpu/PixelWritePacker.scala:32:36, :39:24, :40:17
       else begin	// src/main/scala/gpu/PixelWritePacker.scala:32:36
         if (openValid)	// src/main/scala/gpu/PixelWritePacker.scala:26:34
           openValid <= ~io_input_valid | _GEN & ~_GEN_0;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/PixelWritePacker.scala:26:34, :45:28, :47:{29,46}, :49:31, :59:23, :67:21
         else	// src/main/scala/gpu/PixelWritePacker.scala:26:34
-          openValid <= _GEN_1 & ~_GEN_2;	// src/main/scala/gpu/PixelWritePacker.scala:26:34, :72:{26,56}, :77:{20,46}, :88:21
-        outputValid <=
-          openValid ? io_input_valid & (~_GEN | _GEN_0) | _GEN_4 : _GEN_3 | _GEN_4;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/PixelWritePacker.scala:26:34, :32:36, :33:31, :39:24, :40:17, :44:21, :45:28, :47:{29,46}, :49:31, :58:25, :66:23, :72:56, :77:46, :79:27, :82:23
+          openValid <= _GEN_2 & ~_GEN_3;	// src/main/scala/gpu/PixelWritePacker.scala:26:34, :72:{26,56}, :77:{20,46}, :88:21
+        outputValid <= openValid ? _GEN_1 | _GEN_5 : _GEN_4 | _GEN_5;	// src/main/scala/gpu/PixelWritePacker.scala:26:34, :32:36, :33:31, :39:24, :40:17, :44:21, :45:28, :47:46, :72:56, :77:46, :78:30, :82:23
       end
     end
-    if (outputValid | openValid | ~_GEN_1 | _GEN_2) begin	// src/main/scala/gpu/PixelWritePacker.scala:26:34, :27:32, :29:29, :32:36, :43:22, :44:21, :72:{26,56}, :77:{20,46}
+    if (outputValid | openValid | ~_GEN_2 | _GEN_3) begin	// src/main/scala/gpu/PixelWritePacker.scala:26:34, :27:32, :29:29, :32:36, :43:22, :44:21, :72:{26,56}, :77:{20,46}
     end
     else begin	// src/main/scala/gpu/PixelWritePacker.scala:29:29, :43:22, :44:21, :72:56, :77:46
-      openAddress <= {io_input_bits_address[31:2], 2'h0};	// src/main/scala/gpu/PixelWritePacker.scala:27:32, :73:{33,55}
+      openAddress <= alignedAddress_1;	// src/main/scala/gpu/PixelWritePacker.scala:27:32, :73:33
       openData <= packedData;	// src/main/scala/gpu/PixelWritePacker.scala:28:29, :75:29
       openStrb <= packedStrb;	// src/main/scala/gpu/PixelWritePacker.scala:29:29, :76:29
     end
     if (outputValid) begin	// src/main/scala/gpu/PixelWritePacker.scala:32:36
     end
     else if (openValid) begin	// src/main/scala/gpu/PixelWritePacker.scala:26:34
+      if (_GEN_1)	// src/main/scala/gpu/PixelWritePacker.scala:33:31, :45:28, :47:46
+        outputBits_address <= openAddress;	// src/main/scala/gpu/PixelWritePacker.scala:27:32, :33:31
       if (io_input_valid) begin	// src/main/scala/gpu/PixelWritePacker.scala:21:14
         if (_GEN) begin	// src/main/scala/gpu/PixelWritePacker.scala:47:29
           if (_GEN_0) begin	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
@@ -127,7 +134,8 @@ module PixelWritePacker(	// src/main/scala/gpu/PixelWritePacker.scala:20:7
         end
       end
     end
-    else if (_GEN_3) begin	// src/main/scala/gpu/PixelWritePacker.scala:33:31, :72:56, :77:46, :79:27
+    else if (_GEN_4) begin	// src/main/scala/gpu/PixelWritePacker.scala:33:31, :72:56, :77:46, :78:30
+      outputBits_address <= alignedAddress_1;	// src/main/scala/gpu/PixelWritePacker.scala:33:31, :73:33
       outputBits_data <= packedData;	// src/main/scala/gpu/PixelWritePacker.scala:33:31, :75:29
       outputBits_strb <= packedStrb;	// src/main/scala/gpu/PixelWritePacker.scala:33:31, :76:29
     end
@@ -150,6 +158,7 @@ module PixelWritePacker(	// src/main/scala/gpu/PixelWritePacker.scala:20:7
         openData = {_RANDOM[3'h1][31:1], _RANDOM[3'h2][0]};	// src/main/scala/gpu/PixelWritePacker.scala:20:7, :27:32, :28:29
         openStrb = _RANDOM[3'h2][4:1];	// src/main/scala/gpu/PixelWritePacker.scala:20:7, :28:29, :29:29
         outputValid = _RANDOM[3'h2][6];	// src/main/scala/gpu/PixelWritePacker.scala:20:7, :28:29, :32:36
+        outputBits_address = {_RANDOM[3'h2][31:7], _RANDOM[3'h3][6:0]};	// src/main/scala/gpu/PixelWritePacker.scala:20:7, :28:29, :33:31
         outputBits_data = {_RANDOM[3'h3][31:7], _RANDOM[3'h4][6:0]};	// src/main/scala/gpu/PixelWritePacker.scala:20:7, :33:31
         outputBits_strb = _RANDOM[3'h4][10:7];	// src/main/scala/gpu/PixelWritePacker.scala:20:7, :33:31
       `endif // RANDOMIZE_REG_INIT
@@ -160,6 +169,7 @@ module PixelWritePacker(	// src/main/scala/gpu/PixelWritePacker.scala:20:7
   `endif // ENABLE_INITIAL_REG_
   assign io_input_ready = io_input_ready_0;	// src/main/scala/gpu/PixelWritePacker.scala:20:7, :37:18, :43:22, :44:21
   assign io_output_valid = outputValid;	// src/main/scala/gpu/PixelWritePacker.scala:20:7, :32:36
+  assign io_output_bits_address = outputBits_address;	// src/main/scala/gpu/PixelWritePacker.scala:20:7, :33:31
   assign io_output_bits_data = outputBits_data;	// src/main/scala/gpu/PixelWritePacker.scala:20:7, :33:31
   assign io_output_bits_strb = outputBits_strb;	// src/main/scala/gpu/PixelWritePacker.scala:20:7, :33:31
 endmodule
