@@ -19,7 +19,8 @@ Efinity 静态实现结果；当前没有开发板，因此不把离线证据写
   `gpu_scanout_level -> io_scanoutLevel` 水位通路保持不变。
 - `scripts/test-task2-board-integration.ps1` 现在同时检查 CDC、完整端口路径、
   split-verilog 与 Efinity 清单顺序一致，以及每个生成的 `.sv/.v` 恰含一个 module。
-  静态检查与 Icarus 欠流 CDC 波形测试均通过。
+  静态检查、Icarus 欠流 CDC 波形测试，以及 64 位 GPU underflow 计数器的精确递增、
+  清零优先级和无旁路计数器污染检查均通过。
 - 本机没有 WSL/Verilator；GPU Scala 测试源码可以完整编译，39 项中 2 项纯合同测试
   通过，其余 37 项在断言执行前统一因 Chisel Windows 仿真后端找不到 Unix
   `which` 而停止。因此本次不把这些环境失败计作 RTL 回归通过，也没有以重复安装
@@ -67,7 +68,8 @@ QoS 收益和耐久运行仍属于现场验收，不由上述离线结果替代�
   接为内部信号 `gpu_underflow_pulse`，并用 Efinity `syn_keep` 临时保留整个 CDC 锥；
   该临时状态已被上面的 2026-09-15 主线增量接线取代。
 - 既有 12 位 `fifo_level -> gpu_scanout_level -> io_scanoutLevel` 通路保持不变。
-  未修改 Chisel、生成 GPU RTL、APB 地址、Sapphire 适配器端口或组员 B 软件。
+  2026-09-14 交接阶段未修改 Chisel、生成 GPU RTL、APB 地址、Sapphire 适配器端口或
+  组员 B 软件；生成 RTL 与适配器现已由上面的 2026-09-15 增量接线取代。
 - Efinity 工程 XML 已按依赖顺序加入 CDC 文件；SDC 用 Efinity 2026.1 支持的
   `get_cells` 把注册 Gray 源到第一同步级的最大延迟限制为一个像素周期
   `6.722689076 ns`，没有添加宽泛 false path。

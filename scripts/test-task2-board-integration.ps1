@@ -13,6 +13,8 @@ $sparseDecoderRelative = '../../generated/efinix_gpu/SparseDecoder.sv'
 $sparseBlitRelative = '../../generated/efinix_gpu/SparseBlitEngine.sv'
 $renderEngineRelative = '../../generated/efinix_gpu/RenderEngine.sv'
 $cdcSourcePath = Join-Path $board $cdcRelative
+$perfSourcePath = Join-Path $projectRoot 'generated/efinix_gpu/GpuPerfCounters.sv'
+$perfTestbenchPath = Join-Path $projectRoot 'tb/verilog/tb_gpu_perf_underflow.sv'
 $iverilog = 'D:\FPGA\iverilog\bin\iverilog.exe'
 $vvp = 'D:\FPGA\iverilog\bin\vvp.exe'
 
@@ -71,6 +73,16 @@ foreach ($generatedFile in $generatedFileList) {
         throw "FAIL generated integration: $generatedFile contains $moduleCount module declarations; expected one."
     }
 }
+$generatedDirectoryFiles = @(
+    Get-ChildItem -LiteralPath $generatedRoot -File |
+        Where-Object { $_.Extension -in '.sv', '.v' } |
+        ForEach-Object { $_.Name } |
+        Sort-Object
+)
+$listedGeneratedFiles = @($generatedFileList | Sort-Object)
+if (($generatedDirectoryFiles -join "`n") -ne ($listedGeneratedFiles -join "`n")) {
+    throw 'FAIL generated integration: generated directory contains missing or stale module files outside filelist.f.'
+}
 
 $boardTop = Get-Content -Raw (Join-Path $board $boardTopRelative)
 if ($boardTop -match '(?m)^\s*\(\*\s*syn_keep\s*=\s*"true"\s*\*\)\s*wire\s+gpu_underflow_pulse\s*;') {
@@ -94,6 +106,23 @@ if ($adapter -notmatch '\.io_underflow_pulse_gpu\s*\(\s*gpu_underflow_pulse_gpu\
 $generatedTop = Get-Content -Raw (Join-Path $generatedRoot 'Efinix2dGpuTop.sv')
 if ($generatedTop -notmatch '(?m)^\s*input\s+io_underflow_pulse_gpu\s*[,)]') {
     throw 'FAIL generated integration: generated top lacks io_underflow_pulse_gpu.'
+}
+if ($generatedTop -notmatch '\.io_underflowPulse\s*\(\s*io_underflow_pulse_gpu\s*\)') {
+    throw 'FAIL generated integration: generated top does not route the underflow input into RenderEngine.'
+}
+if ($generatedTop -notmatch '\.io_perfUnderflows\s*\(\s*_render_io_perfUnderflows\s*\)') {
+    throw 'FAIL generated integration: generated top does not expose RenderEngine underflows to APB registers.'
+}
+$generatedRender = Get-Content -Raw (Join-Path $generatedRoot 'RenderEngine.sv')
+if ($generatedRender -notmatch '(?s)GpuPerfCounters\s+perf\s*\(.*?\.io_underflow\s*\(\s*io_underflowPulse\s*\).*?\.io_underflows\s*\(\s*io_perfUnderflows\s*\).*?\);') {
+    throw 'FAIL generated integration: RenderEngine underflow input/output is not connected through GpuPerfCounters.'
+}
+$generatedPerf = Get-Content -Raw $perfSourcePath
+if ($generatedPerf -notmatch '(?m)^\s*output\s+\[63:0\]\s+io_cycles[\s\S]*?io_underflows' -or
+    $generatedPerf -notmatch '(?m)^\s*reg\s+\[63:0\]\s+underflows\s*;' -or
+    $generatedPerf -notmatch '(?s)if\s*\(io_underflow\).*?underflows\s*<=\s*underflows\s*\+\s*64''h1\s*;' -or
+    $generatedPerf -notmatch 'assign\s+io_underflows\s*=\s*underflows\s*;') {
+    throw 'FAIL generated integration: GpuPerfCounters lacks the 64-bit underflow increment/output contract.'
 }
 if (!(Test-Path -LiteralPath (Join-Path $generatedRoot 'SparseDecoder.sv')) -or
     !(Test-Path -LiteralPath (Join-Path $generatedRoot 'SparseBlitEngine.sv'))) {
@@ -126,4 +155,10 @@ if ($LASTEXITCODE -ne 0) { throw "FAIL pulse elaboration: iverilog exited $LASTE
 & $vvp $vvpOutput
 if ($LASTEXITCODE -ne 0) { throw "FAIL pulse behavior: vvp exited $LASTEXITCODE." }
 
-Write-Output 'PASS board project integration and underflow CDC pulse behavior'
+$perfVvpOutput = Join-Path $env:TEMP 'task2-gpu-perf-underflow.vvp'
+& $iverilog -g2012 -DSYNTHESIS -s tb_gpu_perf_underflow -o $perfVvpOutput $perfSourcePath $perfTestbenchPath
+if ($LASTEXITCODE -ne 0) { throw "FAIL performance counter elaboration: iverilog exited $LASTEXITCODE." }
+& $vvp $perfVvpOutput
+if ($LASTEXITCODE -ne 0) { throw "FAIL performance counter behavior: vvp exited $LASTEXITCODE." }
+
+Write-Output 'PASS board integration, underflow CDC pulse behavior, and 64-bit GPU counter behavior'
