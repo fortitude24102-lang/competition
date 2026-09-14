@@ -7,6 +7,7 @@ module tb_underflow_pulse_cdc;
     reg scale_underflow = 1'b0;
     wire underflow_pulse_gpu;
     integer pulse_count = 0;
+    integer failures = 0;
     reg previous_pulse = 1'b0;
 
     underflow_pulse_cdc dut (
@@ -19,12 +20,16 @@ module tb_underflow_pulse_cdc;
     );
 
     always #7 pixel_clk = ~pixel_clk;
-    always #5 gpu_clk = ~gpu_clk;
+    // A deliberately slower GPU clock makes a pair of valid source episodes
+    // arrive before the destination can observe either transition.
+    always #50 gpu_clk = ~gpu_clk;
 
     always @(posedge gpu_clk) begin
         if (!gpu_reset && underflow_pulse_gpu) begin
-            if (previous_pulse)
-                $fatal(1, "underflow pulse was wider than one GPU clock");
+            if (previous_pulse) begin
+                $display("FAIL underflow pulse was wider than one GPU clock");
+                failures = failures + 1;
+            end
             pulse_count = pulse_count + 1;
         end
         previous_pulse = underflow_pulse_gpu;
@@ -41,8 +46,28 @@ module tb_underflow_pulse_cdc;
     task automatic expect_pulses(input integer expected, input [8*48-1:0] phase);
         begin
             wait_gpu(10);
-            if (pulse_count != expected)
-                $fatal(1, "%0s: got %0d GPU pulses, expected %0d", phase, pulse_count, expected);
+            if (pulse_count != expected) begin
+                $display("FAIL %0s: got %0d GPU pulses, expected %0d", phase, pulse_count, expected);
+                failures = failures + 1;
+            end
+        end
+    endtask
+
+    task automatic begin_close_episodes;
+        begin
+            // The rising edges are 28 ns apart, inside one 100 ns GPU cycle.
+            @(posedge gpu_clk);
+            @(negedge pixel_clk);
+            scale_underflow = 1'b1;
+            wait_pixel(1);
+            @(negedge pixel_clk);
+            scale_underflow = 1'b0;
+            wait_pixel(1);
+            @(negedge pixel_clk);
+            scale_underflow = 1'b1;
+            wait_pixel(1);
+            @(negedge pixel_clk);
+            scale_underflow = 1'b0;
         end
     endtask
 
@@ -75,45 +100,61 @@ module tb_underflow_pulse_cdc;
         begin_episode(4);
         expect_pulses(2, "separate source episode");
 
-        // Independent idle resets must not replay an old toggle.
+        // Two separate episodes before one GPU observation must both survive.
+        begin_close_episodes();
+        expect_pulses(4, "closely spaced separate source episodes");
+
+        // Independent resets must not replay an old event count.
         pixel_reset = 1'b1;
-        wait_gpu(3);
+        wait_gpu(2);
         pixel_reset = 1'b0;
-        expect_pulses(2, "pixel reset while idle");
+        @(negedge pixel_clk);
+        scale_underflow = 1'b1;
+        wait_pixel(1);
+        @(negedge pixel_clk);
+        scale_underflow = 1'b0;
+        expect_pulses(5, "episode immediately after pixel reset");
         gpu_reset = 1'b1;
-        wait_gpu(3);
+        wait_gpu(2);
         gpu_reset = 1'b0;
-        expect_pulses(2, "GPU reset while idle");
+        @(negedge pixel_clk);
+        scale_underflow = 1'b1;
+        wait_pixel(1);
+        @(negedge pixel_clk);
+        scale_underflow = 1'b0;
+        expect_pulses(6, "episode immediately after GPU reset");
 
         // Reset during an active episode suppresses a replay until the source goes low.
         @(negedge pixel_clk);
         scale_underflow = 1'b1;
-        expect_pulses(3, "third source episode");
+        expect_pulses(7, "seventh source episode");
         pixel_reset = 1'b1;
-        wait_gpu(3);
+        wait_gpu(2);
         pixel_reset = 1'b0;
-        expect_pulses(3, "pixel reset while active");
+        expect_pulses(7, "pixel reset while active");
         @(negedge pixel_clk);
         scale_underflow = 1'b0;
         wait_pixel(3);
         begin_episode(3);
-        expect_pulses(4, "episode after pixel reset rearm");
+        expect_pulses(8, "episode after pixel reset rearm");
 
         // A GPU reset during an active source level must baseline, not replay it.
         @(negedge pixel_clk);
         scale_underflow = 1'b1;
-        expect_pulses(5, "fifth source episode");
+        expect_pulses(9, "ninth source episode");
         gpu_reset = 1'b1;
-        wait_gpu(3);
+        wait_gpu(2);
         gpu_reset = 1'b0;
-        expect_pulses(5, "GPU reset while active");
+        expect_pulses(9, "GPU reset while active");
 
-        $display("PASS underflow CDC: one GPU pulse per episode and independent resets suppress replay");
+        if (failures != 0)
+            $fatal(1, "underflow CDC failures: %0d", failures);
+        $display("PASS underflow CDC: burst episodes queue and resets preserve new events without replay");
         $finish;
     end
 
     initial begin
-        #5000;
+        #20000;
         $fatal(1, "underflow CDC timeout");
     end
 endmodule
