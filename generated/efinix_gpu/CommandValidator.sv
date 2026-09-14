@@ -14,44 +14,48 @@ module CommandValidator(	// src/main/scala/gpu/CommandValidator.scala:5:7
   wire         _overlap_T = io_command_op == 4'h2;	// src/main/scala/gpu/CommandValidator.scala:14:42
   wire         _overlap_T_1 = io_command_op == 4'h4;	// src/main/scala/gpu/CommandValidator.scala:15:55
   wire         denseSourceOp = _overlap_T | io_command_op == 4'h3 | _overlap_T_1;	// src/main/scala/gpu/CommandValidator.scala:14:{42,63}, :15:{16,41,55}
-  wire         sourceOp = denseSourceOp | io_command_op == 4'h5;	// src/main/scala/gpu/CommandValidator.scala:13:71, :14:63, :15:41, :16:{40,54}
+  wire         sparseOp = io_command_op == 4'h5;	// src/main/scala/gpu/CommandValidator.scala:13:71, :16:37
   wire         _invalidPresentBuffer_T = io_command_op == 4'h6;	// src/main/scala/gpu/CommandValidator.scala:17:54
   wire         destinationOp = renderOp | _invalidPresentBuffer_T;	// src/main/scala/gpu/CommandValidator.scala:13:57, :17:{40,54}
   wire [63:0]  _GEN = {47'h0, io_command_widthPixels, 1'h0};	// src/main/scala/gpu/CommandValidator.scala:13:71, :20:56
-  wire [127:0] _GEN_0 = {112'h0, io_command_heightPixels - 16'h1};	// src/main/scala/gpu/CommandValidator.scala:21:54, :22:65
-  wire [127:0] _GEN_1 = {96'h0, io_command_srcAddr};	// src/main/scala/gpu/CommandValidator.scala:22:{43,48}
-  wire [127:0] _GEN_2 = {111'h0, io_command_widthPixels, 1'h0};	// src/main/scala/gpu/CommandValidator.scala:13:71, :20:56, :22:93
-  wire [127:0] _srcEnd_T_5 = _GEN_2 + _GEN_1 + _GEN_0 * {96'h0, io_command_srcStride};	// src/main/scala/gpu/CommandValidator.scala:20:56, :22:{43,48,65,93}
-  wire [127:0] _GEN_3 = {96'h0, io_command_dstAddr};	// src/main/scala/gpu/CommandValidator.scala:23:{43,48}
-  wire [127:0] _dstEnd_T_5 = _GEN_2 + _GEN_3 + _GEN_0 * {96'h0, io_command_dstStride};	// src/main/scala/gpu/CommandValidator.scala:20:56, :22:{65,93}, :23:{43,48,65,93}
+  wire [63:0]  _GEN_0 = {32'h0, io_command_srcAddr};	// src/main/scala/gpu/CommandValidator.scala:22:43
+  wire [127:0] _GEN_1 = {112'h0, io_command_heightPixels - 16'h1};	// src/main/scala/gpu/CommandValidator.scala:21:54, :22:65
+  wire [127:0] _GEN_2 = {96'h0, io_command_srcAddr};	// src/main/scala/gpu/CommandValidator.scala:22:{43,48}
+  wire [127:0] _GEN_3 = {111'h0, io_command_widthPixels, 1'h0};	// src/main/scala/gpu/CommandValidator.scala:13:71, :20:56, :22:93
+  wire [127:0] _srcEnd_T_5 = _GEN_3 + _GEN_2 + _GEN_1 * {96'h0, io_command_srcStride};	// src/main/scala/gpu/CommandValidator.scala:20:56, :22:{43,48,65,93}
+  wire [127:0] _GEN_4 = {96'h0, io_command_dstAddr};	// src/main/scala/gpu/CommandValidator.scala:23:{43,48}
+  wire [127:0] _dstEnd_T_5 = _GEN_3 + _GEN_4 + _GEN_1 * {96'h0, io_command_dstStride};	// src/main/scala/gpu/CommandValidator.scala:20:56, :22:{65,93}, :23:{43,48,65,93}
   assign io_error =
     io_command_op > 4'h6
       ? 8'h1
       : renderOp & (io_command_widthPixels == 16'h0 | io_command_heightPixels == 16'h0)
           ? 8'h2
-          : sourceOp
+          : denseSourceOp
             & (io_command_srcAddr[0] | (|(io_command_heightPixels[15:1]))
-               & io_command_srcStride[0]) | destinationOp
+               & io_command_srcStride[0]) | sparseOp & (|(io_command_srcAddr[1:0]))
+            | destinationOp
             & (io_command_dstAddr[0] | (|(io_command_heightPixels[15:1]))
                & io_command_dstStride[0])
               ? 8'h3
               : renderOp & {32'h0, io_command_dstStride} < _GEN | denseSourceOp
                 & {32'h0, io_command_srcStride} < _GEN
                   ? 8'h4
-                  : sourceOp
-                    & ({32'h0, io_command_srcAddr} < 64'h2000000
-                       | _srcEnd_T_5 > 128'h10000000 | _srcEnd_T_5 <= _GEN_1)
+                  : denseSourceOp
+                    & (_GEN_0 < 64'h2000000 | _srcEnd_T_5 > 128'h10000000
+                       | _srcEnd_T_5 <= _GEN_2) | sparseOp
+                    & (_GEN_0 < 64'h2000000
+                       | {31'h0, {1'h0, io_command_srcAddr} + 33'h4} > 64'h10000000)
                     | destinationOp
                     & ({32'h0, io_command_dstAddr} < 64'h2000000
-                       | _dstEnd_T_5 > 128'h10000000 | _dstEnd_T_5 <= _GEN_3)
+                       | _dstEnd_T_5 > 128'h10000000 | _dstEnd_T_5 <= _GEN_4)
                     | _invalidPresentBuffer_T & io_command_dstAddr != 32'h2000000
                     & io_command_dstAddr != 32'h2200000
                       ? 8'h5
-                      : (_overlap_T | _overlap_T_1) & _GEN_1 < _dstEnd_T_5
-                        & _GEN_3 < _srcEnd_T_5
+                      : (_overlap_T | _overlap_T_1) & _GEN_2 < _dstEnd_T_5
+                        & _GEN_4 < _srcEnd_T_5
                         & ~(_overlap_T_1 & io_command_srcAddr == io_command_dstAddr
                             & io_command_srcStride == io_command_dstStride)
                           ? 8'h6
-                          : 8'h0;	// src/main/scala/gpu/CommandValidator.scala:5:7, :13:57, :14:{42,63}, :15:{41,55}, :16:40, :17:{40,54}, :18:40, :20:56, :21:54, :22:{43,48,88,93}, :23:{43,48,88,93}, :27:{35,59,67,91}, :28:47, :29:{38,57,61,74,94,101}, :30:{20,39,43,56,76}, :31:{42,63,75}, :32:{20,41}, :33:40, :34:{30,40,50,59,69}, :35:45, :36:{30,40,50,59,69}, :37:{56,65,92}, :38:67, :39:{21,41,62}, :40:{58,95}, :41:{20,23}, :42:73, :43:{21,53}, :44:21, :46:12, :47:{8,22}, :48:14, :49:24, :50:14, :51:26, :52:14, :53:30, :54:14, :55:{28,45,70}, :56:14, :57:23, :58:14
+                          : 8'h0;	// src/main/scala/gpu/CommandValidator.scala:5:7, :13:{57,71}, :14:{42,63}, :15:{41,55}, :16:37, :17:{40,54}, :18:40, :20:56, :21:54, :22:{43,48,88,93}, :23:{43,48,88,93}, :27:{35,59,67,91}, :28:47, :29:{43,62,66,79,99,106}, :30:{15,33,40,45}, :31:{20,39,43,56,76}, :32:{42,63,75}, :33:{20,41}, :34:50, :35:{30,40,50,59,69}, :36:54, :37:46, :38:{30,40,56}, :39:45, :40:{30,40,50,59,69}, :41:{56,65,92}, :42:67, :43:{21,41,62}, :44:{58,95}, :45:{20,23}, :46:73, :47:{21,53}, :48:21, :50:12, :51:{8,22}, :52:14, :53:24, :54:14, :55:26, :56:14, :57:30, :58:14, :59:{33,56,73,98}, :60:14, :61:23, :62:14
 endmodule
 

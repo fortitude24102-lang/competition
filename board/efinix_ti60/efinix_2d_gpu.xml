@@ -53,6 +53,8 @@
     <efx:design_file name="../../generated/efinix_gpu/AxiWriteEngine.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/RRArbiter2_Axi4Address.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/DenseBlitEngine.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/SparseDecoder.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/SparseBlitEngine.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/FrameSwapController.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/gpu_pixel_copy.v" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/gpu_pixel_fill.v" version="default" library="default" />
@@ -61,7 +63,7 @@
     <efx:design_file name="../../generated/efinix_gpu/gpu_pixel_pipe.v" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/PixelPipeHarness.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/GpuPerfCounters.sv" version="default" library="default" />
-    <efx:design_file name="../../generated/efinix_gpu/Arbiter3_GpuCompletion.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/Arbiter4_GpuCompletion.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/RenderEngine.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/ScanoutDma.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/DdrQosArbiter.sv" version="default" library="default" />

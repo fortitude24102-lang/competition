@@ -3,6 +3,59 @@
 日期：2026-09-14。分支：`A-work`。本记录只证明 Windows Icarus 仿真和
 Efinity 静态实现结果；当前没有开发板，因此不把离线证据写成上板结论。
 
+## 2026-09-15 主线增量收尾
+
+已把主线 `3032c45`（Sparse 渲染和自适应 DDR QoS）合入 `A-work`，并完成该版本
+对组员 A 接口的新依赖：
+
+- 用锁定的 Chisel 7.7.0 / Scala 2.13.18 / sbt 1.12.4 重新生成
+  `generated/efinix_gpu/`。生成物新增 `SparseDecoder.sv`、
+  `SparseBlitEngine.sv`、`Arbiter4_GpuCompletion.sv` 和顶层
+  `io_underflow_pulse_gpu`，同时更新 QoS 与性能计数器 RTL；旧的三路 completion
+  仲裁文件已从生成物和 Efinity 清单移除。
+- `gpu_underflow_pulse` 现在经 `efinix_sapphire_adapter` 接入
+  `Efinix2dGpuTop.io_underflow_pulse_gpu`，由 GPU 域 64 位 underflow 性能计数器消费；
+  已移除板级悬空交接阶段的临时 `syn_keep`。既有
+  `gpu_scanout_level -> io_scanoutLevel` 水位通路保持不变。
+- `scripts/test-task2-board-integration.ps1` 现在同时检查 CDC、完整端口路径、
+  split-verilog 与 Efinity 清单顺序一致，以及每个生成的 `.sv/.v` 恰含一个 module。
+  静态检查与 Icarus 欠流 CDC 波形测试均通过。
+- 本机没有 WSL/Verilator；GPU Scala 测试源码可以完整编译，39 项中 2 项纯合同测试
+  通过，其余 37 项在断言执行前统一因 Chisel Windows 仿真后端找不到 Unix
+  `which` 而停止。因此本次不把这些环境失败计作 RTL 回归通过，也没有以重复安装
+  仿真环境替代用户指定的 Icarus 验证。
+
+增量最终候选命令：
+
+```powershell
+./scripts/test-efinix-board.ps1 `
+  -EfinityHome C:/efinity/efinity `
+  -OutputDirectory D:/efinity_builds/efinix_2d_gpu_member_a_main3032c45_20260915_r1 `
+  -Flow compile
+```
+
+Efinity 2026.1.132 的 `map/interface/pnr/pgm` 全部 PASS，生成位流
+`outflow/efinix_2d_gpu.bit`，大小 2,129,658 字节，SHA-256：
+`8866f2748e9941b8a06a9d9d859b62561180285768a2f90bb73933eb57c6060f`。
+CDC 报告为 `No Synchronizer warnings to report`；映射网表保留 16/16 个注册 Gray
+源位，且 `gpu_underflow_pulse` 直接作为 GPU underflow 计数器寄存器的时钟使能。
+
+增量候选静态时序均为正裕量：
+
+| 时钟 | Setup 裕量 (ns) | Hold 裕量 (ns) |
+|---|---:|---:|
+| `core_clk` 100 MHz | 1.730 | 0.026 |
+| `sdram_clk` 400 MHz | 0.276 | 0.097 |
+| `rx_cal_clk` 400 MHz | 0.297 | 0.027 |
+| `tx_cal_clk` 400 MHz | 0.354 | 0.091 |
+| `tx_cal_clk_90edge` 400 MHz | 0.249 | 0.072 |
+| `hdmi_tx_slow_clk` 148.743 MHz | 2.521 | 0.012 |
+
+顶层映射估算为 13,869 FF、749 SRL、2,948 ADD、14,276 LUT、95 RAM、
+16 DSP/MULT。当前仍无开发板，故下载、真实 DDR/HDMI、Sparse/Dense 实屏一致性、
+QoS 收益和耐久运行仍属于现场验收，不由上述离线结果替代。组员 B 的 C 资源与寄存器
+定义不参与本次 A 的 RTL 生成和时序收敛，因此未越界代做。
+
 ## 交付结果
 
 - `underflow_pulse_cdc.v` 将显示域欠流“段”通过 16 位注册 Gray 事件计数器送到
@@ -10,9 +63,9 @@ Efinity 静态实现结果；当前没有开发板，因此不把离线证据写
   输出每个事件一个 GPU 周期高脉冲，队列脉冲之间强制一个低周期。
 - 两个时钟域都采用异步置位、同步释放的本地复位。启动高电平、跨复位保持高电平、
   1 ns 短复位和释放窗口内真实新事件均有专项测试。
-- `hdmi_subsystem.underflow_pulse_gpu` 在 `board_top` 接为内部信号
-  `gpu_underflow_pulse`。在负责人加入性能计数器输入前，该线用 Efinity
-  `syn_keep` 保留整个 CDC 锥；负责人接入 GPU 时钟域计数器后可移除该临时保留属性。
+- 在 2026-09-14 交接阶段，`hdmi_subsystem.underflow_pulse_gpu` 在 `board_top`
+  接为内部信号 `gpu_underflow_pulse`，并用 Efinity `syn_keep` 临时保留整个 CDC 锥；
+  该临时状态已被上面的 2026-09-15 主线增量接线取代。
 - 既有 12 位 `fifo_level -> gpu_scanout_level -> io_scanoutLevel` 通路保持不变。
   未修改 Chisel、生成 GPU RTL、APB 地址、Sapphire 适配器端口或组员 B 软件。
 - Efinity 工程 XML 已按依赖顺序加入 CDC 文件；SDC 用 Efinity 2026.1 支持的
@@ -91,14 +144,16 @@ Efinity 官方 `syn_keep`，上述网表、CDC 和时序结果均来自修正后
 
 ## 负责人集成合同
 
-- 信号：`board_top.gpu_underflow_pulse`。
+- 信号：`board_top.gpu_underflow_pulse`，经
+  `efinix_sapphire_adapter.gpu_underflow_pulse_gpu` 接到
+  `Efinix2dGpuTop.io_underflow_pulse_gpu`。
 - 时钟域：`gpu_stream_clk`；高有效；每个已交付欠流事件一个 GPU 周期。
 - 排队规则：相邻输出脉冲之间至少一个低周期；16 位模计数最多允许 65,535 个未消费事件，
   环境不得让待处理数回绕。
 - 复位规则：任一外部复位有效时输出为低；复位期间保持高的源电平不会在恢复后重放，
   释放窗口内真实新上升沿会保留。
-- 负责人操作：在生成核心提供 GPU 时钟域欠流计数器增量输入后，直接消费该内部信号；
-  不应把它绕经 `efinix_sapphire_adapter`。接线完成且确认不再被优化后可移除板级 `syn_keep`。
+- 负责人操作：无需再补接端口或保留板级 `syn_keep`；合入本次生成 RTL、适配器、
+  `board_top` 与 Efinity XML 即可。映射网表已证明该脉冲被 64 位性能计数器消费。
 
 ## 仍需开发板验证
 

@@ -12,7 +12,7 @@
 - 第 2 天：完成可配置的 FIFO 水位自适应 DDR QoS、APB 性能计数、板级接线以及固定轮询/自适应模式对比。
 - 第 3 天：统一生成 RTL 和正式位流，完成时序、启动、300 帧性能、Dense/Sparse 显示一致性、30 分钟耐久和三方封版。
 
-当前主负责人已完成第 1、2 天的 Chisel 源码与仿真用例；`generated/efinix_gpu/`、官方 Efinity 工程接线和正式位流仍保持上一版，等待组员 A 提交 `underflow_pulse_gpu` CDC 接口、组员 B 提交 Sparse 资源与 C 寄存器定义后，统一在第 3 天生成。此依赖完成前不要把当前 Chisel 顶层直接用于上板构建。
+当前主负责人已完成第 1、2 天的 Chisel 源码与仿真用例。`A-work` 已基于主线 `3032c45` 完成 `underflow_pulse_gpu` CDC 接入、统一生成 `generated/efinix_gpu/`、更新官方 Efinity 工程源清单，并通过完整 Efinity compile；组员 B 的 Sparse 资源、C 寄存器定义和板上基准仍需独立合入。主负责人可从 `A-work` 取用 A 的板级接线、生成 RTL、工程 XML 与离线验收记录。
 
 详细文件、输入、输出、依赖和逐日验收均以正式 Word 计划书为准。历史阶段记录只用于追溯，不再决定后续排期。
 

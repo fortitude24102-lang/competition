@@ -11,6 +11,8 @@ PixelWritePacker.sv
 AxiWriteEngine.sv
 RRArbiter2_Axi4Address.sv
 DenseBlitEngine.sv
+SparseDecoder.sv
+SparseBlitEngine.sv
 FrameSwapController.sv
 ./gpu_pixel_copy.v
 ./gpu_pixel_fill.v
@@ -20,7 +22,7 @@ FrameSwapController.sv
 ./gpu_pixel_contract.vh
 PixelPipeHarness.sv
 GpuPerfCounters.sv
-Arbiter3_GpuCompletion.sv
+Arbiter4_GpuCompletion.sv
 RenderEngine.sv
 ScanoutDma.sv
 DdrQosArbiter.sv

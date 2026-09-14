@@ -41,4 +41,4 @@ module gpu_pixel_pipe(
       endcase
     end
   end
-endmodule	// src/main/scala/gpu/PixelPipeExt.scala:7:7
+endmodule	// src/main/scala/gpu/PixelPipeExt.scala:7:7
