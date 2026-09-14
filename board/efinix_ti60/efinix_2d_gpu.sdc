@@ -316,5 +316,5 @@ create_clock -period 1.344537815 hdmi_tx_fast_clk
 # Reset-release synchronizers use async_reg attributes; no broad false paths
 # are applied, so ordinary functional timing remains visible to STA.
 set_max_delay 6.722689076 \
-  -from [get_registers -hierarchical {*u_underflow_sync*pixel_event_gray*}] \
-  -to [get_registers -hierarchical {*u_underflow_sync*gpu_gray_sync0*}]
+  -from [get_cells {*u_underflow_sync*pixel_event_gray*}] \
+  -to [get_cells {*u_underflow_sync*gpu_gray_sync0*}]

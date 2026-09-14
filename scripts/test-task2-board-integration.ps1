@@ -39,6 +39,14 @@ if ($boardTop -notmatch '\.underflow_pulse_gpu\s*\(\s*gpu_underflow_pulse\s*\)')
     throw 'FAIL board integration: hdmi_subsystem must drive gpu_underflow_pulse.'
 }
 
+$constraints = Get-Content -Raw (Join-Path $board 'efinix_2d_gpu.sdc')
+if ($constraints -match '\bget_registers\b') {
+    throw 'FAIL constraints: Efinity 2026.1 does not provide the get_registers SDC command.'
+}
+if ($constraints -notmatch 'set_max_delay\s+6\.722689076[\s\S]*?get_cells\s+\{\*u_underflow_sync\*pixel_event_gray\*\}[\s\S]*?get_cells\s+\{\*u_underflow_sync\*gpu_gray_sync0\*\}') {
+    throw 'FAIL constraints: registered Gray CDC path must use Efinity-compatible get_cells selectors.'
+}
+
 $vvpOutput = Join-Path $env:TEMP 'task2-underflow-pulse-cdc.vvp'
 & $iverilog -g2012 -s tb_underflow_pulse_cdc -o $vvpOutput `
     (Join-Path $board $cdcRelative) `
