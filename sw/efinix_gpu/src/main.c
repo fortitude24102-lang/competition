@@ -8,13 +8,17 @@
 #include "soc.h"
 #include "vexriscv.h"
 uint64_t gpu_platform_cycles(void) {
- uint32_t hi,lo,again;
- do { __asm__ volatile("rdcycleh %0" : "=r"(hi)); __asm__ volatile("rdcycle %0" : "=r"(lo)); __asm__ volatile("rdcycleh %0" : "=r"(again)); } while(hi!=again);
- return ((uint64_t)hi<<32)|lo;
+ return clint_getTime(BSP_CLINT);
 }
 void gpu_platform_sync(void) {
  __asm__ volatile("fence iorw,iorw" ::: "memory");
- soc_write_buffer_flush();
+ /*
+  * The official Ti60 Sapphire image exposes the standard VexRiscv cache
+  * controls, but it does not implement the optional Efinix write-buffer CSR
+  * (0x810) used by soc_write_buffer_flush().  Executing that CSR traps to
+  * mtvec=0 and makes the application appear to reset.  The fence plus cache
+  * invalidate is sufficient for the uncached GPU/DDR sharing path used here.
+  */
  data_cache_invalidate_all();
  __asm__ volatile("fence iorw,iorw" ::: "memory");
 }
