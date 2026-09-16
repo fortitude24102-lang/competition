@@ -20,5 +20,7 @@ typedef struct {
 void game_init(game_state *game);
 void game_step(game_state *game,unsigned input,uint32_t delta_ms);
 int game_build_commands(const game_state *game,uint32_t destination,game_command_stream *stream);
+int game_build_commands_mode(const game_state *game,uint32_t destination,int sparse_player,
+                             game_command_stream *stream);
 int game_submit_commands(gpu_device *device,const game_command_stream *stream,int batch_mode,uint32_t poll_limit);
 #endif

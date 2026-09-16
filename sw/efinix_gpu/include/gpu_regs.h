@@ -26,6 +26,10 @@
 #define GPU_STATUS_IRQ_PENDING (1u << 13)
 #define GPU_PERF_CONTROL_SNAPSHOT 1u
 #define GPU_PERF_CONTROL_CLEAR (1u << 1)
+#define GPU_QOS_LOW_MASK 0x00000fffu
+#define GPU_QOS_HIGH_SHIFT 16u
+#define GPU_QOS_HIGH_MASK 0x0fff0000u
+#define GPU_QOS_ADAPTIVE (1u << 31)
 #define GPU_OP_MASK 0x0fu
 #define GPU_WIDTH_MASK 0xffffu
 #define GPU_HEIGHT_SHIFT 16u
@@ -36,8 +40,7 @@
 #define GPU_TAG_MASK 0xffffu
 #define GPU_LAST_DONE_MASK 0xffffu
 #define GPU_ERROR_MASK 0xffu
-/* QOS_WATERMARKS remains reserved until Day21. PERF_CONTROL and PERF_* are
- * active from lead Day18. FRONT/BACK report the vblank-controlled swap state. */
+/* FRONT/BACK report the vblank-controlled swap state. */
 #define GPU_REG_ID 0x0000u
 #define GPU_REG_VERSION 0x0004u
 #define GPU_REG_STATUS 0x0008u
@@ -68,6 +71,12 @@
 #define GPU_REG_PERF_WRITE_BYTES_HI 0x006cu
 #define GPU_REG_PERF_STALLS_LO 0x0070u
 #define GPU_REG_PERF_STALLS_HI 0x0074u
+#define GPU_REG_PERF_UNDERFLOWS_LO 0x0078u
+#define GPU_REG_PERF_UNDERFLOWS_HI 0x007cu
+#define GPU_REG_PERF_RENDER_GRANTS_LO 0x0080u
+#define GPU_REG_PERF_RENDER_GRANTS_HI 0x0084u
+#define GPU_REG_PERF_SCANOUT_GRANTS_LO 0x0088u
+#define GPU_REG_PERF_SCANOUT_GRANTS_HI 0x008cu
 typedef struct {
     uint32_t id;
     uint32_t version;
@@ -99,6 +108,12 @@ typedef struct {
     uint32_t perf_write_bytes_hi;
     uint32_t perf_stalls_lo;
     uint32_t perf_stalls_hi;
+    uint32_t perf_underflows_lo;
+    uint32_t perf_underflows_hi;
+    uint32_t perf_render_grants_lo;
+    uint32_t perf_render_grants_hi;
+    uint32_t perf_scanout_grants_lo;
+    uint32_t perf_scanout_grants_hi;
 } gpu_register_layout;
 _Static_assert(offsetof(gpu_register_layout, id) == GPU_REG_ID, "register offset");
 _Static_assert(offsetof(gpu_register_layout, version) == GPU_REG_VERSION, "register offset");
@@ -130,5 +145,11 @@ _Static_assert(offsetof(gpu_register_layout, perf_write_bytes_lo) == GPU_REG_PER
 _Static_assert(offsetof(gpu_register_layout, perf_write_bytes_hi) == GPU_REG_PERF_WRITE_BYTES_HI, "register offset");
 _Static_assert(offsetof(gpu_register_layout, perf_stalls_lo) == GPU_REG_PERF_STALLS_LO, "register offset");
 _Static_assert(offsetof(gpu_register_layout, perf_stalls_hi) == GPU_REG_PERF_STALLS_HI, "register offset");
-_Static_assert(sizeof(gpu_register_layout) == 0x78, "register extent");
+_Static_assert(offsetof(gpu_register_layout, perf_underflows_lo) == GPU_REG_PERF_UNDERFLOWS_LO, "register offset");
+_Static_assert(offsetof(gpu_register_layout, perf_underflows_hi) == GPU_REG_PERF_UNDERFLOWS_HI, "register offset");
+_Static_assert(offsetof(gpu_register_layout, perf_render_grants_lo) == GPU_REG_PERF_RENDER_GRANTS_LO, "register offset");
+_Static_assert(offsetof(gpu_register_layout, perf_render_grants_hi) == GPU_REG_PERF_RENDER_GRANTS_HI, "register offset");
+_Static_assert(offsetof(gpu_register_layout, perf_scanout_grants_lo) == GPU_REG_PERF_SCANOUT_GRANTS_LO, "register offset");
+_Static_assert(offsetof(gpu_register_layout, perf_scanout_grants_hi) == GPU_REG_PERF_SCANOUT_GRANTS_HI, "register offset");
+_Static_assert(sizeof(gpu_register_layout) == 0x90, "register extent");
 #endif
