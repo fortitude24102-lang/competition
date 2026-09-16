@@ -12,7 +12,9 @@
 - 第 2 天：完成可配置的 FIFO 水位自适应 DDR QoS、APB 性能计数、板级接线以及固定轮询/自适应模式对比。
 - 第 3 天：统一生成 RTL 和正式位流，完成时序、启动、300 帧性能、Dense/Sparse 显示一致性、30 分钟耐久和三方封版。
 
-当前主负责人已完成第 1、2 天的 Chisel 源码与仿真用例；`generated/efinix_gpu/`、官方 Efinity 工程接线和正式位流仍保持上一版，等待组员 A 提交 `underflow_pulse_gpu` CDC 接口、组员 B 提交 Sparse 资源与 C 寄存器定义后，统一在第 3 天生成。此依赖完成前不要把当前 Chisel 顶层直接用于上板构建。
+组员 B 三天任务的离线实现和交叉构建已完成：Sparse pack/资源/驱动、QoS 与性能快照 API、HUD、受控 300 帧流程、Sanitizer 测试和 RV32 ELF/BIN/HEX 均已生成；板级验收仍待依赖补齐。主负责人也已重新生成拆分 RTL，并单轮通过 39/39 GPU 测试和完整 Verilog 回归。
+
+当前唯一硬依赖在 A-work：仍缺计划要求的 `underflow_pulse_gpu` 跨时钟单周期脉冲，以及从 HDMI 子系统到 `efinix_sapphire_adapter.v` 的连接。正式 Efinity 位流、300 帧板测、耐久、UART/CSV 和最终 SHA256 清单必须等该接口到位；当前不得用悬空输入或旧位流封版。
 
 详细文件、输入、输出、依赖和逐日验收均以正式 Word 计划书为准。历史阶段记录只用于追溯，不再决定后续排期。
 
@@ -72,4 +74,4 @@
 ./scripts/test-efinix-board.ps1 -EfinityHome D:/efinity -Flow map
 ```
 
-前三条脚本依次检查负责人 GPU、组员 A 的官方 HDMI/RGB565 边界和组员 B 的 Sapphire 软件接口；第四条检查派生工程的 Efinity 映射。最终完成还必须使用同一正式候选位流执行板上 DDR、CPU、LED、HDMI、性能和耐久验收。此前离线阶段的证据见 [A、B 离线推进记录](docs/efinix_2d_gpu/ab_offline_progress.md)。
+前三条脚本依次检查负责人 GPU、组员 A 的官方 HDMI/RGB565 边界和组员 B 的 Sapphire 软件接口；第四条检查派生工程的 Efinity 映射。最终完成还必须使用同一正式候选位流执行板上 DDR、CPU、LED、HDMI、性能和耐久验收。当前收尾证据见 [负责人验收](docs/efinix_2d_gpu/lead_acceptance.md) 和 [组员 B 验收](docs/efinix_2d_gpu/software_acceptance.md)。

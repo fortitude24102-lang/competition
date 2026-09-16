@@ -46,115 +46,138 @@
 module DdrQosArbiter(	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   input         clock,	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
                 reset,	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
-  output        io_render_aw_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input         io_render_aw_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input  [31:0] io_render_aw_bits_addr,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input  [7:0]  io_render_aw_bits_len,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output        io_render_w_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input         io_render_w_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input  [31:0] io_render_w_bits_data,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input  [3:0]  io_render_w_bits_strb,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input         io_render_w_bits_last,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-                io_render_b_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output        io_render_b_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [3:0]  io_render_b_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [1:0]  io_render_b_bits_resp,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output        io_render_ar_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input         io_render_ar_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input  [31:0] io_render_ar_bits_addr,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input  [3:0]  io_render_ar_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input  [7:0]  io_render_ar_bits_len,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input         io_render_r_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output        io_render_r_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [3:0]  io_render_r_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [31:0] io_render_r_bits_data,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [1:0]  io_render_r_bits_resp,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output        io_render_r_bits_last,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-                io_scanout_ar_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input         io_scanout_ar_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input  [31:0] io_scanout_ar_bits_addr,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input  [7:0]  io_scanout_ar_bits_len,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input         io_scanout_r_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output        io_scanout_r_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [3:0]  io_scanout_r_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [31:0] io_scanout_r_bits_data,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [1:0]  io_scanout_r_bits_resp,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output        io_scanout_r_bits_last,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input         io_axi_aw_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output        io_axi_aw_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [31:0] io_axi_aw_bits_addr,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [7:0]  io_axi_aw_bits_len,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [2:0]  io_axi_aw_bits_size,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [1:0]  io_axi_aw_bits_burst,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input         io_axi_w_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output        io_axi_w_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [31:0] io_axi_w_bits_data,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [3:0]  io_axi_w_bits_strb,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output        io_axi_w_bits_last,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-                io_axi_b_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input         io_axi_b_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input  [3:0]  io_axi_b_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input  [1:0]  io_axi_b_bits_resp,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input         io_axi_ar_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output        io_axi_ar_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [31:0] io_axi_ar_bits_addr,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [3:0]  io_axi_ar_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [7:0]  io_axi_ar_bits_len,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [2:0]  io_axi_ar_bits_size,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output [1:0]  io_axi_ar_bits_burst,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  output        io_axi_r_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input         io_axi_r_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input  [3:0]  io_axi_r_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input  [31:0] io_axi_r_bits_data,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input  [1:0]  io_axi_r_bits_resp,	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
-  input         io_axi_r_bits_last	// src/main/scala/gpu/DdrQosArbiter.scala:8:14
+  output        io_render_aw_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input         io_render_aw_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input  [31:0] io_render_aw_bits_addr,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input  [7:0]  io_render_aw_bits_len,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output        io_render_w_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input         io_render_w_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input  [31:0] io_render_w_bits_data,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input  [3:0]  io_render_w_bits_strb,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input         io_render_w_bits_last,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+                io_render_b_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output        io_render_b_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [3:0]  io_render_b_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [1:0]  io_render_b_bits_resp,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output        io_render_ar_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input         io_render_ar_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input  [31:0] io_render_ar_bits_addr,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input  [3:0]  io_render_ar_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input  [7:0]  io_render_ar_bits_len,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input         io_render_r_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output        io_render_r_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [3:0]  io_render_r_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [31:0] io_render_r_bits_data,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [1:0]  io_render_r_bits_resp,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output        io_render_r_bits_last,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+                io_scanout_ar_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input         io_scanout_ar_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input  [31:0] io_scanout_ar_bits_addr,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input  [7:0]  io_scanout_ar_bits_len,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input         io_scanout_r_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output        io_scanout_r_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [3:0]  io_scanout_r_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [31:0] io_scanout_r_bits_data,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [1:0]  io_scanout_r_bits_resp,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output        io_scanout_r_bits_last,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input         io_axi_aw_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output        io_axi_aw_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [31:0] io_axi_aw_bits_addr,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [7:0]  io_axi_aw_bits_len,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [2:0]  io_axi_aw_bits_size,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [1:0]  io_axi_aw_bits_burst,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input         io_axi_w_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output        io_axi_w_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [31:0] io_axi_w_bits_data,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [3:0]  io_axi_w_bits_strb,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output        io_axi_w_bits_last,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+                io_axi_b_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input         io_axi_b_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input  [3:0]  io_axi_b_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input  [1:0]  io_axi_b_bits_resp,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input         io_axi_ar_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output        io_axi_ar_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [31:0] io_axi_ar_bits_addr,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [3:0]  io_axi_ar_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [7:0]  io_axi_ar_bits_len,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [2:0]  io_axi_ar_bits_size,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [1:0]  io_axi_ar_bits_burst,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output        io_axi_r_ready,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input         io_axi_r_valid,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input  [3:0]  io_axi_r_bits_id,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input  [31:0] io_axi_r_bits_data,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input  [1:0]  io_axi_r_bits_resp,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input         io_axi_r_bits_last,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input  [11:0] io_scanoutLevel,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+                io_lowWatermark,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+                io_highWatermark,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  input         io_adaptiveEnable,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+  output [1:0]  io_renderGrant,	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
+                io_scanoutGrant	// src/main/scala/gpu/DdrQosArbiter.scala:9:14
 );
 
-  reg  [1:0] readState;	// src/main/scala/gpu/DdrQosArbiter.scala:16:34
-  reg  [1:0] writeState;	// src/main/scala/gpu/DdrQosArbiter.scala:17:35
-  reg        readOwner;	// src/main/scala/gpu/DdrQosArbiter.scala:18:34
-  reg        nextReadOwner;	// src/main/scala/gpu/DdrQosArbiter.scala:20:38
-  wire       _GEN = readState == 2'h1;	// src/main/scala/gpu/DdrQosArbiter.scala:16:34, :39:18
+  reg  [1:0] readState;	// src/main/scala/gpu/DdrQosArbiter.scala:24:34
+  reg  [1:0] writeState;	// src/main/scala/gpu/DdrQosArbiter.scala:25:35
+  reg        readOwner;	// src/main/scala/gpu/DdrQosArbiter.scala:26:34
+  reg        nextReadOwner;	// src/main/scala/gpu/DdrQosArbiter.scala:28:38
+  reg        scanoutPriority;	// src/main/scala/gpu/DdrQosArbiter.scala:30:40
+  reg  [3:0] renderWait;	// src/main/scala/gpu/DdrQosArbiter.scala:31:35
+  wire       _GEN = readState == 2'h1;	// src/main/scala/gpu/DdrQosArbiter.scala:24:34, :61:18
   wire       io_axi_ar_valid_0 =
-    _GEN & (readOwner ? io_scanout_ar_valid : io_render_ar_valid);	// src/main/scala/gpu/DdrQosArbiter.scala:18:34, :35:19, :39:{18,35}, :40:{21,27}
-  wire       _GEN_0 = readState == 2'h2;	// src/main/scala/gpu/DdrQosArbiter.scala:16:34, :44:38, :52:18
+    _GEN & (readOwner ? io_scanout_ar_valid : io_render_ar_valid);	// src/main/scala/gpu/DdrQosArbiter.scala:26:34, :57:19, :61:{18,35}, :62:{21,27}
+  wire       _scanoutReadGrant_T = io_axi_ar_ready & io_axi_ar_valid_0;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DdrQosArbiter.scala:57:19, :61:35, :62:21
+  wire       renderReadGrant = _scanoutReadGrant_T & ~readOwner;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DdrQosArbiter.scala:26:34, :69:{48,51}
+  wire       scanoutReadGrant = _scanoutReadGrant_T & readOwner;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DdrQosArbiter.scala:26:34, :70:49
+  wire       _GEN_0 = readState == 2'h2;	// src/main/scala/gpu/DdrQosArbiter.scala:24:34, :66:38, :82:18
   wire       io_axi_r_ready_0 =
-    _GEN_0 & (readOwner ? io_scanout_r_ready : io_render_r_ready);	// src/main/scala/gpu/DdrQosArbiter.scala:18:34, :51:18, :52:{18,32}, :53:21, :55:22, :58:22
-  wire       _GEN_1 = writeState == 2'h1;	// src/main/scala/gpu/DdrQosArbiter.scala:17:35, :70:19
-  wire       io_axi_aw_valid_0 = _GEN_1 & io_render_aw_valid;	// src/main/scala/gpu/DdrQosArbiter.scala:66:19, :70:{19,37}, :71:21
-  wire       _GEN_2 = writeState == 2'h2;	// src/main/scala/gpu/DdrQosArbiter.scala:17:35, :44:38, :82:19
-  wire       io_axi_w_valid_0 = _GEN_2 & io_render_w_valid;	// src/main/scala/gpu/DdrQosArbiter.scala:78:18, :82:{19,34}, :83:20
-  wire       io_axi_w_bits_last_0 = _GEN_2 & io_render_w_bits_last;	// src/main/scala/gpu/DdrQosArbiter.scala:79:17, :82:{19,34}, :84:19
-  wire       io_axi_b_ready_0 = (&writeState) & io_render_b_ready;	// src/main/scala/gpu/DdrQosArbiter.scala:17:35, :94:18, :95:{19,38}, :96:22
+    _GEN_0 & (readOwner ? io_scanout_r_ready : io_render_r_ready);	// src/main/scala/gpu/DdrQosArbiter.scala:26:34, :81:18, :82:{18,32}, :83:21, :85:22, :88:22
+  wire       _GEN_1 = writeState == 2'h1;	// src/main/scala/gpu/DdrQosArbiter.scala:25:35, :100:19
+  wire       io_axi_aw_valid_0 = _GEN_1 & io_render_aw_valid;	// src/main/scala/gpu/DdrQosArbiter.scala:96:19, :100:{19,37}, :101:21
+  wire       _GEN_2 = writeState == 2'h2;	// src/main/scala/gpu/DdrQosArbiter.scala:25:35, :66:38, :117:19
+  wire       io_axi_w_valid_0 = _GEN_2 & io_render_w_valid;	// src/main/scala/gpu/DdrQosArbiter.scala:113:18, :117:{19,34}, :118:20
+  wire       io_axi_w_bits_last_0 = _GEN_2 & io_render_w_bits_last;	// src/main/scala/gpu/DdrQosArbiter.scala:114:17, :117:{19,34}, :119:19
+  wire       io_axi_b_ready_0 = (&writeState) & io_render_b_ready;	// src/main/scala/gpu/DdrQosArbiter.scala:25:35, :129:18, :130:{19,38}, :131:22
   always @(posedge clock) begin	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
     if (reset) begin	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
-      readState <= 2'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:16:34
-      writeState <= 2'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:17:35
-      readOwner <= 1'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :18:34
-      nextReadOwner <= 1'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :20:38
+      readState <= 2'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:24:34
+      writeState <= 2'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:25:35
+      readOwner <= 1'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :26:34
+      nextReadOwner <= 1'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :28:38
+      scanoutPriority <= 1'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :30:40
+      renderWait <= 4'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:31:35
     end
     else begin	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
-      automatic logic _GEN_3;	// src/main/scala/gpu/DdrQosArbiter.scala:26:31
-      _GEN_3 = readState == 2'h0 & (io_render_ar_valid | io_scanout_ar_valid);	// src/main/scala/gpu/DdrQosArbiter.scala:16:34, :26:{18,31,54}
-      if (_GEN_0 & io_axi_r_ready_0 & io_axi_r_valid & io_axi_r_bits_last) begin	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DdrQosArbiter.scala:20:38, :51:18, :52:{18,32}, :53:21, :60:{24,47}, :61:21
-        readState <= 2'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:16:34
-        nextReadOwner <= ~readOwner;	// src/main/scala/gpu/DdrQosArbiter.scala:18:34, :20:38, :61:24
+      automatic logic _GEN_3;	// src/main/scala/gpu/DdrQosArbiter.scala:48:31
+      _GEN_3 = readState == 2'h0 & (io_render_ar_valid | io_scanout_ar_valid);	// src/main/scala/gpu/DdrQosArbiter.scala:24:34, :48:{18,31,54}
+      if (_GEN_0 & io_axi_r_ready_0 & io_axi_r_valid & io_axi_r_bits_last) begin	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DdrQosArbiter.scala:28:38, :81:18, :82:{18,32}, :83:21, :90:{24,47}, :91:21
+        readState <= 2'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:24:34
+        nextReadOwner <= ~readOwner;	// src/main/scala/gpu/DdrQosArbiter.scala:26:34, :28:38, :69:51
       end
-      else if (_GEN & io_axi_ar_ready & io_axi_ar_valid_0)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DdrQosArbiter.scala:26:79, :35:19, :39:{18,35}, :40:21, :44:{26,38}
-        readState <= 2'h2;	// src/main/scala/gpu/DdrQosArbiter.scala:16:34, :44:38
-      else if (_GEN_3)	// src/main/scala/gpu/DdrQosArbiter.scala:26:31
-        readState <= 2'h1;	// src/main/scala/gpu/DdrQosArbiter.scala:16:34
-      if ((&writeState) & io_axi_b_ready_0 & io_axi_b_valid)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DdrQosArbiter.scala:17:35, :82:34, :94:18, :95:{19,38}, :96:22, :103:25, :105:18
-        writeState <= 2'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:17:35
-      else if (_GEN_2 & io_axi_w_ready & io_axi_w_valid_0 & io_axi_w_bits_last_0)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DdrQosArbiter.scala:70:37, :78:18, :79:17, :82:{19,34}, :83:20, :84:19, :87:{24,47,60}
-        writeState <= 2'h3;	// src/main/scala/gpu/DdrQosArbiter.scala:17:35, :87:60
-      else if (_GEN_1 & io_axi_aw_ready & io_axi_aw_valid_0)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DdrQosArbiter.scala:30:81, :66:19, :70:{19,37}, :71:21, :75:{26,39}
-        writeState <= 2'h2;	// src/main/scala/gpu/DdrQosArbiter.scala:17:35, :44:38
-      else if (writeState == 2'h0 & io_render_aw_valid)	// src/main/scala/gpu/DdrQosArbiter.scala:17:35, :30:{19,33}
-        writeState <= 2'h1;	// src/main/scala/gpu/DdrQosArbiter.scala:17:35
-      if (_GEN_3)	// src/main/scala/gpu/DdrQosArbiter.scala:26:31
+      else if (_GEN & io_axi_ar_ready & io_axi_ar_valid_0)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DdrQosArbiter.scala:48:79, :57:19, :61:{18,35}, :62:21, :66:{26,38}
+        readState <= 2'h2;	// src/main/scala/gpu/DdrQosArbiter.scala:24:34, :66:38
+      else if (_GEN_3)	// src/main/scala/gpu/DdrQosArbiter.scala:48:31
+        readState <= 2'h1;	// src/main/scala/gpu/DdrQosArbiter.scala:24:34
+      if ((&writeState) & io_axi_b_ready_0 & io_axi_b_valid)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DdrQosArbiter.scala:25:35, :117:34, :129:18, :130:{19,38}, :131:22, :138:25, :140:18
+        writeState <= 2'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:25:35
+      else if (_GEN_2 & io_axi_w_ready & io_axi_w_valid_0 & io_axi_w_bits_last_0)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DdrQosArbiter.scala:100:37, :113:18, :114:17, :117:{19,34}, :118:20, :119:19, :122:{24,47,60}
+        writeState <= 2'h3;	// src/main/scala/gpu/DdrQosArbiter.scala:25:35, :122:60
+      else if (_GEN_1 & io_axi_aw_ready & io_axi_aw_valid_0)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DdrQosArbiter.scala:52:81, :96:19, :100:{19,37}, :101:21, :105:{26,39}
+        writeState <= 2'h2;	// src/main/scala/gpu/DdrQosArbiter.scala:25:35, :66:38
+      else if (writeState == 2'h0 & io_render_aw_valid)	// src/main/scala/gpu/DdrQosArbiter.scala:25:35, :52:{19,33}
+        writeState <= 2'h1;	// src/main/scala/gpu/DdrQosArbiter.scala:25:35
+      if (_GEN_3)	// src/main/scala/gpu/DdrQosArbiter.scala:48:31
         readOwner <=
-          io_render_ar_valid & io_scanout_ar_valid ? nextReadOwner : io_scanout_ar_valid;	// src/main/scala/gpu/DdrQosArbiter.scala:18:34, :20:38, :24:{8,21}
+          io_render_ar_valid & io_scanout_ar_valid
+            ? (io_adaptiveEnable & scanoutPriority ? ~(renderWait[3]) : nextReadOwner)
+            : io_scanout_ar_valid;	// src/main/scala/gpu/DdrQosArbiter.scala:26:34, :28:38, :30:40, :31:35, :42:40, :43:{35,54,74}, :46:{8,21}
+      scanoutPriority <=
+        io_adaptiveEnable
+        & (io_scanoutLevel <= io_lowWatermark | io_scanoutLevel < io_highWatermark
+           & scanoutPriority);	// src/main/scala/gpu/DdrQosArbiter.scala:30:40, :33:28, :34:21, :35:{30,50}, :36:21, :37:{30,51}, :38:21
+      if (~io_render_ar_valid | renderReadGrant)	// src/main/scala/gpu/DdrQosArbiter.scala:69:48, :71:{8,28}
+        renderWait <= 4'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:31:35
+      else if (scanoutReadGrant & ~(renderWait[3]))	// src/main/scala/gpu/DdrQosArbiter.scala:31:35, :42:40, :43:74, :70:49, :73:{31,45}
+        renderWait <= renderWait + 4'h1;	// src/main/scala/gpu/DdrQosArbiter.scala:31:35, :74:30
     end
   end // always @(posedge)
   `ifdef ENABLE_INITIAL_REG_	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
@@ -168,51 +191,56 @@ module DdrQosArbiter(	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
       `endif // INIT_RANDOM_PROLOG_
       `ifdef RANDOMIZE_REG_INIT	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
         _RANDOM[/*Zero width*/ 1'b0] = `RANDOM;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
-        readState = _RANDOM[/*Zero width*/ 1'b0][1:0];	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :16:34
-        writeState = _RANDOM[/*Zero width*/ 1'b0][3:2];	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :16:34, :17:35
-        readOwner = _RANDOM[/*Zero width*/ 1'b0][4];	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :16:34, :18:34
-        nextReadOwner = _RANDOM[/*Zero width*/ 1'b0][6];	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :16:34, :20:38
+        readState = _RANDOM[/*Zero width*/ 1'b0][1:0];	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :24:34
+        writeState = _RANDOM[/*Zero width*/ 1'b0][3:2];	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :24:34, :25:35
+        readOwner = _RANDOM[/*Zero width*/ 1'b0][4];	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :24:34, :26:34
+        nextReadOwner = _RANDOM[/*Zero width*/ 1'b0][6];	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :24:34, :28:38
+        scanoutPriority = _RANDOM[/*Zero width*/ 1'b0][8];	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :24:34, :30:40
+        renderWait = _RANDOM[/*Zero width*/ 1'b0][12:9];	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :24:34, :31:35
       `endif // RANDOMIZE_REG_INIT
     end // initial
     `ifdef FIRRTL_AFTER_INITIAL	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
       `FIRRTL_AFTER_INITIAL	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
     `endif // FIRRTL_AFTER_INITIAL
   `endif // ENABLE_INITIAL_REG_
-  assign io_render_aw_ready = _GEN_1 & io_axi_aw_ready;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :68:22, :70:{19,37}, :73:22
-  assign io_render_w_ready = _GEN_2 & io_axi_w_ready;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :80:21, :82:{19,34}, :85:22
-  assign io_render_b_valid = (&writeState) & io_axi_b_valid;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :17:35, :90:21, :95:{19,38}, :96:22
+  assign io_render_aw_ready = _GEN_1 & io_axi_aw_ready;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :98:22, :100:{19,37}, :103:22
+  assign io_render_w_ready = _GEN_2 & io_axi_w_ready;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :115:21, :117:{19,34}, :120:22
+  assign io_render_b_valid = (&writeState) & io_axi_b_valid;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :25:35, :125:21, :130:{19,38}, :131:22
   assign io_render_b_bits_id = io_axi_b_bits_id;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   assign io_render_b_bits_resp = io_axi_b_bits_resp;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
-  assign io_render_ar_ready = _GEN & ~readOwner & io_axi_ar_ready;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :18:34, :37:22, :39:{18,35}, :42:21, :43:39
-  assign io_render_r_valid = _GEN_0 & ~readOwner & io_axi_r_valid;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :18:34, :37:22, :42:21, :43:39, :47:21, :52:{18,32}, :53:21, :57:25
+  assign io_render_ar_ready = _GEN & ~readOwner & io_axi_ar_ready;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :26:34, :59:22, :61:{18,35}, :64:21, :65:39
+  assign io_render_r_valid = _GEN_0 & ~readOwner & io_axi_r_valid;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :26:34, :59:22, :64:21, :65:39, :77:21, :82:{18,32}, :83:21, :87:25
   assign io_render_r_bits_id = io_axi_r_bits_id;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   assign io_render_r_bits_data = io_axi_r_bits_data;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   assign io_render_r_bits_resp = io_axi_r_bits_resp;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   assign io_render_r_bits_last = io_axi_r_bits_last;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
-  assign io_scanout_ar_ready = _GEN & readOwner & io_axi_ar_ready;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :18:34, :38:23, :39:{18,35}, :42:{21,43}
-  assign io_scanout_r_valid = _GEN_0 & readOwner & io_axi_r_valid;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :18:34, :49:22, :52:{18,32}, :53:21, :54:26
+  assign io_scanout_ar_ready = _GEN & readOwner & io_axi_ar_ready;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :26:34, :60:23, :61:{18,35}, :64:{21,43}
+  assign io_scanout_r_valid = _GEN_0 & readOwner & io_axi_r_valid;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :26:34, :79:22, :82:{18,32}, :83:21, :84:26
   assign io_scanout_r_bits_id = io_axi_r_bits_id;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   assign io_scanout_r_bits_data = io_axi_r_bits_data;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   assign io_scanout_r_bits_resp = io_axi_r_bits_resp;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
   assign io_scanout_r_bits_last = io_axi_r_bits_last;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7
-  assign io_axi_aw_valid = io_axi_aw_valid_0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :66:19, :70:37, :71:21
-  assign io_axi_aw_bits_addr = _GEN_1 ? io_render_aw_bits_addr : 32'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :67:18, :70:{19,37}, :72:20
-  assign io_axi_aw_bits_len = _GEN_1 ? io_render_aw_bits_len : 8'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :67:18, :70:{19,37}, :72:20
-  assign io_axi_aw_bits_size = {1'h0, _GEN_1, 1'h0};	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :67:18, :70:{19,37}, :72:20
-  assign io_axi_aw_bits_burst = {1'h0, _GEN_1};	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :67:18, :70:{19,37}, :72:20
-  assign io_axi_w_valid = io_axi_w_valid_0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :78:18, :82:34, :83:20
-  assign io_axi_w_bits_data = _GEN_2 ? io_render_w_bits_data : 32'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :79:17, :82:{19,34}, :84:19
-  assign io_axi_w_bits_strb = _GEN_2 ? io_render_w_bits_strb : 4'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :79:17, :82:{19,34}, :84:19
-  assign io_axi_w_bits_last = io_axi_w_bits_last_0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :79:17, :82:34, :84:19
-  assign io_axi_b_ready = io_axi_b_ready_0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :94:18, :95:38, :96:22
-  assign io_axi_ar_valid = io_axi_ar_valid_0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :35:19, :39:35, :40:21
+  assign io_axi_aw_valid = io_axi_aw_valid_0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :96:19, :100:37, :101:21
+  assign io_axi_aw_bits_addr = _GEN_1 ? io_render_aw_bits_addr : 32'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :97:18, :100:{19,37}, :102:20
+  assign io_axi_aw_bits_len = _GEN_1 ? io_render_aw_bits_len : 8'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :97:18, :100:{19,37}, :102:20
+  assign io_axi_aw_bits_size = {1'h0, _GEN_1, 1'h0};	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :97:18, :100:{19,37}, :102:20
+  assign io_axi_aw_bits_burst = {1'h0, _GEN_1};	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :97:18, :100:{19,37}, :102:20
+  assign io_axi_w_valid = io_axi_w_valid_0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :113:18, :117:34, :118:20
+  assign io_axi_w_bits_data = _GEN_2 ? io_render_w_bits_data : 32'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :114:17, :117:{19,34}, :119:19
+  assign io_axi_w_bits_strb = _GEN_2 ? io_render_w_bits_strb : 4'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :114:17, :117:{19,34}, :119:19
+  assign io_axi_w_bits_last = io_axi_w_bits_last_0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :114:17, :117:34, :119:19
+  assign io_axi_b_ready = io_axi_b_ready_0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :129:18, :130:38, :131:22
+  assign io_axi_ar_valid = io_axi_ar_valid_0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :57:19, :61:35, :62:21
   assign io_axi_ar_bits_addr =
-    _GEN ? (readOwner ? io_scanout_ar_bits_addr : io_render_ar_bits_addr) : 32'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :18:34, :36:18, :39:{18,35}, :41:{20,26}
-  assign io_axi_ar_bits_id = ~_GEN | readOwner ? 4'h0 : io_render_ar_bits_id;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :18:34, :36:18, :39:{18,35}, :41:20
+    _GEN ? (readOwner ? io_scanout_ar_bits_addr : io_render_ar_bits_addr) : 32'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :26:34, :58:18, :61:{18,35}, :63:{20,26}
+  assign io_axi_ar_bits_id = ~_GEN | readOwner ? 4'h0 : io_render_ar_bits_id;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :26:34, :58:18, :61:{18,35}, :63:20
   assign io_axi_ar_bits_len =
-    _GEN ? (readOwner ? io_scanout_ar_bits_len : io_render_ar_bits_len) : 8'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :18:34, :36:18, :39:{18,35}, :41:{20,26}
-  assign io_axi_ar_bits_size = {1'h0, _GEN, 1'h0};	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :36:18, :39:{18,35}, :41:20
-  assign io_axi_ar_bits_burst = {1'h0, _GEN};	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :36:18, :39:{18,35}, :41:20
-  assign io_axi_r_ready = io_axi_r_ready_0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :51:18, :52:32, :53:21
+    _GEN ? (readOwner ? io_scanout_ar_bits_len : io_render_ar_bits_len) : 8'h0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :26:34, :58:18, :61:{18,35}, :63:{20,26}
+  assign io_axi_ar_bits_size = {1'h0, _GEN, 1'h0};	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :58:18, :61:{18,35}, :63:20
+  assign io_axi_ar_bits_burst = {1'h0, _GEN};	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :58:18, :61:{18,35}, :63:20
+  assign io_axi_r_ready = io_axi_r_ready_0;	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :81:18, :82:32, :83:21
+  assign io_renderGrant =
+    {1'h0, renderReadGrant} + {1'h0, io_axi_aw_ready & io_axi_aw_valid_0};	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DdrQosArbiter.scala:7:7, :69:48, :96:19, :100:37, :101:21, :110:44
+  assign io_scanoutGrant = {1'h0, scanoutReadGrant};	// src/main/scala/gpu/DdrQosArbiter.scala:7:7, :70:49, :109:50, :111:46
 endmodule
 

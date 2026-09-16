@@ -62,7 +62,10 @@ module RenderEngine(	// src/main/scala/gpu/RenderEngine.scala:7:7
                 io_command_bits_tag,	// src/main/scala/gpu/RenderEngine.scala:8:14
   input         io_vblank,	// src/main/scala/gpu/RenderEngine.scala:8:14
                 io_perfClear,	// src/main/scala/gpu/RenderEngine.scala:8:14
-                io_axi_aw_ready,	// src/main/scala/gpu/RenderEngine.scala:8:14
+                io_underflowPulse,	// src/main/scala/gpu/RenderEngine.scala:8:14
+  input  [1:0]  io_renderGrant,	// src/main/scala/gpu/RenderEngine.scala:8:14
+                io_scanoutGrant,	// src/main/scala/gpu/RenderEngine.scala:8:14
+  input         io_axi_aw_ready,	// src/main/scala/gpu/RenderEngine.scala:8:14
   output        io_axi_aw_valid,	// src/main/scala/gpu/RenderEngine.scala:8:14
   output [31:0] io_axi_aw_bits_addr,	// src/main/scala/gpu/RenderEngine.scala:8:14
   output [7:0]  io_axi_aw_bits_len,	// src/main/scala/gpu/RenderEngine.scala:8:14
@@ -101,107 +104,152 @@ module RenderEngine(	// src/main/scala/gpu/RenderEngine.scala:7:7
                 io_perfPixels,	// src/main/scala/gpu/RenderEngine.scala:8:14
                 io_perfReadBytes,	// src/main/scala/gpu/RenderEngine.scala:8:14
                 io_perfWriteBytes,	// src/main/scala/gpu/RenderEngine.scala:8:14
-                io_perfStalls	// src/main/scala/gpu/RenderEngine.scala:8:14
+                io_perfStalls,	// src/main/scala/gpu/RenderEngine.scala:8:14
+                io_perfUnderflows,	// src/main/scala/gpu/RenderEngine.scala:8:14
+                io_perfRenderGrants,	// src/main/scala/gpu/RenderEngine.scala:8:14
+                io_perfScanoutGrants	// src/main/scala/gpu/RenderEngine.scala:8:14
 );
 
-  wire        _completions_io_in_1_ready;	// src/main/scala/gpu/RenderEngine.scala:35:35
-  wire        _completions_io_in_2_ready;	// src/main/scala/gpu/RenderEngine.scala:35:35
-  wire        _completions_io_out_valid;	// src/main/scala/gpu/RenderEngine.scala:35:35
-  wire        _pixel_io_input_ready;	// src/main/scala/gpu/RenderEngine.scala:33:29
-  wire        _pixel_io_output_valid;	// src/main/scala/gpu/RenderEngine.scala:33:29
-  wire [15:0] _pixel_io_output_bits_pixel;	// src/main/scala/gpu/RenderEngine.scala:33:29
-  wire        _pixel_io_output_bits_writeEnable;	// src/main/scala/gpu/RenderEngine.scala:33:29
-  wire        _swap_io_present_ready;	// src/main/scala/gpu/RenderEngine.scala:32:28
-  wire        _swap_io_completion_valid;	// src/main/scala/gpu/RenderEngine.scala:32:28
-  wire [15:0] _swap_io_completion_bits_tag;	// src/main/scala/gpu/RenderEngine.scala:32:28
-  wire        _swap_io_pending;	// src/main/scala/gpu/RenderEngine.scala:32:28
-  wire        _blit_io_command_ready;	// src/main/scala/gpu/RenderEngine.scala:31:28
-  wire        _blit_io_pixelRequest_valid;	// src/main/scala/gpu/RenderEngine.scala:31:28
-  wire [2:0]  _blit_io_pixelRequest_bits_op;	// src/main/scala/gpu/RenderEngine.scala:31:28
-  wire [15:0] _blit_io_pixelRequest_bits_foreground;	// src/main/scala/gpu/RenderEngine.scala:31:28
-  wire [15:0] _blit_io_pixelRequest_bits_background;	// src/main/scala/gpu/RenderEngine.scala:31:28
-  wire [15:0] _blit_io_pixelRequest_bits_fillColor;	// src/main/scala/gpu/RenderEngine.scala:31:28
-  wire [15:0] _blit_io_pixelRequest_bits_colorKey;	// src/main/scala/gpu/RenderEngine.scala:31:28
-  wire [7:0]  _blit_io_pixelRequest_bits_alpha;	// src/main/scala/gpu/RenderEngine.scala:31:28
-  wire        _blit_io_pixelResult_ready;	// src/main/scala/gpu/RenderEngine.scala:31:28
-  wire        _blit_io_axi_aw_valid;	// src/main/scala/gpu/RenderEngine.scala:31:28
-  wire        _blit_io_axi_w_valid;	// src/main/scala/gpu/RenderEngine.scala:31:28
-  wire [3:0]  _blit_io_axi_w_bits_strb;	// src/main/scala/gpu/RenderEngine.scala:31:28
-  wire        _blit_io_axi_b_ready;	// src/main/scala/gpu/RenderEngine.scala:31:28
-  wire        _blit_io_axi_ar_valid;	// src/main/scala/gpu/RenderEngine.scala:31:28
-  wire        _blit_io_axi_r_ready;	// src/main/scala/gpu/RenderEngine.scala:31:28
-  wire        _blit_io_completion_valid;	// src/main/scala/gpu/RenderEngine.scala:31:28
-  wire [15:0] _blit_io_completion_bits_tag;	// src/main/scala/gpu/RenderEngine.scala:31:28
-  wire [7:0]  _blit_io_completion_bits_error;	// src/main/scala/gpu/RenderEngine.scala:31:28
-  wire [7:0]  _validator_io_error;	// src/main/scala/gpu/RenderEngine.scala:30:33
-  wire        _queue_io_deq_valid;	// src/main/scala/gpu/RenderEngine.scala:29:29
-  wire [3:0]  _queue_io_deq_bits_op;	// src/main/scala/gpu/RenderEngine.scala:29:29
-  wire [31:0] _queue_io_deq_bits_srcAddr;	// src/main/scala/gpu/RenderEngine.scala:29:29
-  wire [31:0] _queue_io_deq_bits_dstAddr;	// src/main/scala/gpu/RenderEngine.scala:29:29
-  wire [15:0] _queue_io_deq_bits_widthPixels;	// src/main/scala/gpu/RenderEngine.scala:29:29
-  wire [15:0] _queue_io_deq_bits_heightPixels;	// src/main/scala/gpu/RenderEngine.scala:29:29
-  wire [31:0] _queue_io_deq_bits_srcStride;	// src/main/scala/gpu/RenderEngine.scala:29:29
-  wire [31:0] _queue_io_deq_bits_dstStride;	// src/main/scala/gpu/RenderEngine.scala:29:29
-  wire [15:0] _queue_io_deq_bits_color;	// src/main/scala/gpu/RenderEngine.scala:29:29
-  wire [15:0] _queue_io_deq_bits_colorKey;	// src/main/scala/gpu/RenderEngine.scala:29:29
-  wire [7:0]  _queue_io_deq_bits_alpha;	// src/main/scala/gpu/RenderEngine.scala:29:29
-  wire [15:0] _queue_io_deq_bits_tag;	// src/main/scala/gpu/RenderEngine.scala:29:29
-  wire        _queue_io_empty;	// src/main/scala/gpu/RenderEngine.scala:29:29
-  reg         completionGap;	// src/main/scala/gpu/RenderEngine.scala:36:38
-  reg         headValidated;	// src/main/scala/gpu/RenderEngine.scala:37:38
-  reg  [3:0]  headCommand_op;	// src/main/scala/gpu/RenderEngine.scala:38:32
-  reg  [31:0] headCommand_srcAddr;	// src/main/scala/gpu/RenderEngine.scala:38:32
-  reg  [31:0] headCommand_dstAddr;	// src/main/scala/gpu/RenderEngine.scala:38:32
-  reg  [15:0] headCommand_widthPixels;	// src/main/scala/gpu/RenderEngine.scala:38:32
-  reg  [15:0] headCommand_heightPixels;	// src/main/scala/gpu/RenderEngine.scala:38:32
-  reg  [31:0] headCommand_srcStride;	// src/main/scala/gpu/RenderEngine.scala:38:32
-  reg  [31:0] headCommand_dstStride;	// src/main/scala/gpu/RenderEngine.scala:38:32
-  reg  [15:0] headCommand_color;	// src/main/scala/gpu/RenderEngine.scala:38:32
-  reg  [15:0] headCommand_colorKey;	// src/main/scala/gpu/RenderEngine.scala:38:32
-  reg  [7:0]  headCommand_alpha;	// src/main/scala/gpu/RenderEngine.scala:38:32
-  reg  [15:0] headCommand_tag;	// src/main/scala/gpu/RenderEngine.scala:38:32
-  reg  [7:0]  headError;	// src/main/scala/gpu/RenderEngine.scala:39:30
-  wire        headValid = _queue_io_deq_valid & headValidated;	// src/main/scala/gpu/RenderEngine.scala:29:29, :37:38, :49:46
+  wire        _completions_io_in_1_ready;	// src/main/scala/gpu/RenderEngine.scala:42:35
+  wire        _completions_io_in_2_ready;	// src/main/scala/gpu/RenderEngine.scala:42:35
+  wire        _completions_io_in_3_ready;	// src/main/scala/gpu/RenderEngine.scala:42:35
+  wire        _completions_io_out_valid;	// src/main/scala/gpu/RenderEngine.scala:42:35
+  wire        _pixel_io_input_ready;	// src/main/scala/gpu/RenderEngine.scala:40:29
+  wire        _pixel_io_output_valid;	// src/main/scala/gpu/RenderEngine.scala:40:29
+  wire [15:0] _pixel_io_output_bits_pixel;	// src/main/scala/gpu/RenderEngine.scala:40:29
+  wire        _pixel_io_output_bits_writeEnable;	// src/main/scala/gpu/RenderEngine.scala:40:29
+  wire        _swap_io_present_ready;	// src/main/scala/gpu/RenderEngine.scala:39:28
+  wire        _swap_io_completion_valid;	// src/main/scala/gpu/RenderEngine.scala:39:28
+  wire [15:0] _swap_io_completion_bits_tag;	// src/main/scala/gpu/RenderEngine.scala:39:28
+  wire        _swap_io_pending;	// src/main/scala/gpu/RenderEngine.scala:39:28
+  wire        _sparse_io_command_ready;	// src/main/scala/gpu/RenderEngine.scala:38:30
+  wire        _sparse_io_axi_aw_valid;	// src/main/scala/gpu/RenderEngine.scala:38:30
+  wire [31:0] _sparse_io_axi_aw_bits_addr;	// src/main/scala/gpu/RenderEngine.scala:38:30
+  wire [7:0]  _sparse_io_axi_aw_bits_len;	// src/main/scala/gpu/RenderEngine.scala:38:30
+  wire        _sparse_io_axi_w_valid;	// src/main/scala/gpu/RenderEngine.scala:38:30
+  wire [31:0] _sparse_io_axi_w_bits_data;	// src/main/scala/gpu/RenderEngine.scala:38:30
+  wire [3:0]  _sparse_io_axi_w_bits_strb;	// src/main/scala/gpu/RenderEngine.scala:38:30
+  wire        _sparse_io_axi_w_bits_last;	// src/main/scala/gpu/RenderEngine.scala:38:30
+  wire        _sparse_io_axi_b_ready;	// src/main/scala/gpu/RenderEngine.scala:38:30
+  wire        _sparse_io_axi_ar_valid;	// src/main/scala/gpu/RenderEngine.scala:38:30
+  wire [31:0] _sparse_io_axi_ar_bits_addr;	// src/main/scala/gpu/RenderEngine.scala:38:30
+  wire [7:0]  _sparse_io_axi_ar_bits_len;	// src/main/scala/gpu/RenderEngine.scala:38:30
+  wire        _sparse_io_axi_r_ready;	// src/main/scala/gpu/RenderEngine.scala:38:30
+  wire        _sparse_io_completion_valid;	// src/main/scala/gpu/RenderEngine.scala:38:30
+  wire [15:0] _sparse_io_completion_bits_tag;	// src/main/scala/gpu/RenderEngine.scala:38:30
+  wire [7:0]  _sparse_io_completion_bits_error;	// src/main/scala/gpu/RenderEngine.scala:38:30
+  wire        _sparse_io_busy;	// src/main/scala/gpu/RenderEngine.scala:38:30
+  wire        _sparse_io_pixelDone;	// src/main/scala/gpu/RenderEngine.scala:38:30
+  wire        _blit_io_command_ready;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire        _blit_io_pixelRequest_valid;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire [2:0]  _blit_io_pixelRequest_bits_op;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire [15:0] _blit_io_pixelRequest_bits_foreground;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire [15:0] _blit_io_pixelRequest_bits_background;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire [15:0] _blit_io_pixelRequest_bits_fillColor;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire [15:0] _blit_io_pixelRequest_bits_colorKey;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire [7:0]  _blit_io_pixelRequest_bits_alpha;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire        _blit_io_pixelResult_ready;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire        _blit_io_axi_aw_valid;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire [31:0] _blit_io_axi_aw_bits_addr;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire [7:0]  _blit_io_axi_aw_bits_len;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire        _blit_io_axi_w_valid;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire [31:0] _blit_io_axi_w_bits_data;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire [3:0]  _blit_io_axi_w_bits_strb;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire        _blit_io_axi_w_bits_last;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire        _blit_io_axi_b_ready;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire        _blit_io_axi_ar_valid;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire [31:0] _blit_io_axi_ar_bits_addr;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire [3:0]  _blit_io_axi_ar_bits_id;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire [7:0]  _blit_io_axi_ar_bits_len;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire        _blit_io_axi_r_ready;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire        _blit_io_completion_valid;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire [15:0] _blit_io_completion_bits_tag;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire [7:0]  _blit_io_completion_bits_error;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire [7:0]  _validator_io_error;	// src/main/scala/gpu/RenderEngine.scala:36:33
+  wire        _queue_io_deq_valid;	// src/main/scala/gpu/RenderEngine.scala:35:29
+  wire [3:0]  _queue_io_deq_bits_op;	// src/main/scala/gpu/RenderEngine.scala:35:29
+  wire [31:0] _queue_io_deq_bits_srcAddr;	// src/main/scala/gpu/RenderEngine.scala:35:29
+  wire [31:0] _queue_io_deq_bits_dstAddr;	// src/main/scala/gpu/RenderEngine.scala:35:29
+  wire [15:0] _queue_io_deq_bits_widthPixels;	// src/main/scala/gpu/RenderEngine.scala:35:29
+  wire [15:0] _queue_io_deq_bits_heightPixels;	// src/main/scala/gpu/RenderEngine.scala:35:29
+  wire [31:0] _queue_io_deq_bits_srcStride;	// src/main/scala/gpu/RenderEngine.scala:35:29
+  wire [31:0] _queue_io_deq_bits_dstStride;	// src/main/scala/gpu/RenderEngine.scala:35:29
+  wire [15:0] _queue_io_deq_bits_color;	// src/main/scala/gpu/RenderEngine.scala:35:29
+  wire [15:0] _queue_io_deq_bits_colorKey;	// src/main/scala/gpu/RenderEngine.scala:35:29
+  wire [7:0]  _queue_io_deq_bits_alpha;	// src/main/scala/gpu/RenderEngine.scala:35:29
+  wire [15:0] _queue_io_deq_bits_tag;	// src/main/scala/gpu/RenderEngine.scala:35:29
+  wire        _queue_io_empty;	// src/main/scala/gpu/RenderEngine.scala:35:29
+  reg         completionGap;	// src/main/scala/gpu/RenderEngine.scala:43:38
+  reg         headValidated;	// src/main/scala/gpu/RenderEngine.scala:44:38
+  reg  [3:0]  headCommand_op;	// src/main/scala/gpu/RenderEngine.scala:45:32
+  reg  [31:0] headCommand_srcAddr;	// src/main/scala/gpu/RenderEngine.scala:45:32
+  reg  [31:0] headCommand_dstAddr;	// src/main/scala/gpu/RenderEngine.scala:45:32
+  reg  [15:0] headCommand_widthPixels;	// src/main/scala/gpu/RenderEngine.scala:45:32
+  reg  [15:0] headCommand_heightPixels;	// src/main/scala/gpu/RenderEngine.scala:45:32
+  reg  [31:0] headCommand_srcStride;	// src/main/scala/gpu/RenderEngine.scala:45:32
+  reg  [31:0] headCommand_dstStride;	// src/main/scala/gpu/RenderEngine.scala:45:32
+  reg  [15:0] headCommand_color;	// src/main/scala/gpu/RenderEngine.scala:45:32
+  reg  [15:0] headCommand_colorKey;	// src/main/scala/gpu/RenderEngine.scala:45:32
+  reg  [7:0]  headCommand_alpha;	// src/main/scala/gpu/RenderEngine.scala:45:32
+  reg  [15:0] headCommand_tag;	// src/main/scala/gpu/RenderEngine.scala:45:32
+  reg  [7:0]  headError;	// src/main/scala/gpu/RenderEngine.scala:46:30
+  wire        headValid = _queue_io_deq_valid & headValidated;	// src/main/scala/gpu/RenderEngine.scala:35:29, :44:38, :56:46
   wire        dense =
     headCommand_op == 4'h1 | headCommand_op == 4'h2 | headCommand_op == 4'h3
-    | headCommand_op == 4'h4;	// src/main/scala/gpu/RenderEngine.scala:7:7, :38:32, :50:{38,59}, :51:{20,41}, :52:{20,45}, :53:20
-  wire        present = headCommand_op == 4'h6;	// src/main/scala/gpu/RenderEngine.scala:38:32, :54:40
-  wire        rejected = (|headError) | ~(dense | present);	// src/main/scala/gpu/RenderEngine.scala:39:30, :50:59, :51:41, :52:45, :54:40, :55:{36,56,59,67}
-  wire        engineIdle = _blit_io_command_ready & _swap_io_present_ready;	// src/main/scala/gpu/RenderEngine.scala:31:28, :32:28, :57:50
-  wire        _swap_io_present_valid_T_1 = headError == 8'h0;	// src/main/scala/gpu/RenderEngine.scala:39:30, :55:36, :61:15
+    | headCommand_op == 4'h4;	// src/main/scala/gpu/RenderEngine.scala:7:7, :45:32, :57:{38,59}, :58:{20,41}, :59:{20,45}, :60:20
+  wire        present = headCommand_op == 4'h6;	// src/main/scala/gpu/RenderEngine.scala:45:32, :61:40
+  wire        sparseOp = headCommand_op == 4'h5;	// src/main/scala/gpu/RenderEngine.scala:45:32, :62:41
+  wire        rejected = (|headError) | ~(dense | sparseOp | present);	// src/main/scala/gpu/RenderEngine.scala:46:30, :57:59, :58:41, :59:45, :61:40, :62:41, :63:{36,56,59,67,79}
+  wire        engineIdle =
+    _blit_io_command_ready & _sparse_io_command_ready & _swap_io_present_ready;	// src/main/scala/gpu/RenderEngine.scala:37:28, :38:30, :39:28, :65:{50,77}
+  wire        _swap_io_present_valid_T_1 = headError == 8'h0;	// src/main/scala/gpu/RenderEngine.scala:46:30, :63:36, :69:15
   wire        queue_io_deq_ready =
     headValid
     & (rejected
          ? engineIdle & ~completionGap
-         : (present ? _swap_io_present_ready : _blit_io_command_ready) & engineIdle
-           & ~completionGap);	// src/main/scala/gpu/RenderEngine.scala:31:28, :32:28, :36:38, :49:46, :54:40, :55:56, :57:50, :58:72, :72:30, :74:46, :75:{8,64,78}, :77:35
+         : (present
+              ? _swap_io_present_ready
+              : sparseOp ? _sparse_io_command_ready : _blit_io_command_ready) & engineIdle
+           & ~completionGap);	// src/main/scala/gpu/RenderEngine.scala:37:28, :38:30, :39:28, :43:38, :56:46, :61:40, :62:41, :63:56, :65:{50,77}, :66:72, :83:30, :85:46, :86:{8,44,104}, :87:18, :89:35
+  wire        io_axi_aw_valid_0 =
+    _sparse_io_busy ? _sparse_io_axi_aw_valid : _blit_io_axi_aw_valid;	// src/main/scala/gpu/RenderEngine.scala:37:28, :38:30, :108:25
+  wire        io_axi_w_valid_0 =
+    _sparse_io_busy ? _sparse_io_axi_w_valid : _blit_io_axi_w_valid;	// src/main/scala/gpu/RenderEngine.scala:37:28, :38:30, :112:24
+  wire [3:0]  io_axi_w_bits_strb_0 =
+    _sparse_io_busy ? _sparse_io_axi_w_bits_strb : _blit_io_axi_w_bits_strb;	// src/main/scala/gpu/RenderEngine.scala:37:28, :38:30, :113:23
+  wire        io_axi_b_ready_0 =
+    _sparse_io_busy ? _sparse_io_axi_b_ready : _blit_io_axi_b_ready;	// src/main/scala/gpu/RenderEngine.scala:37:28, :38:30, :120:24
+  wire        io_axi_ar_valid_0 =
+    _sparse_io_busy ? _sparse_io_axi_ar_valid : _blit_io_axi_ar_valid;	// src/main/scala/gpu/RenderEngine.scala:37:28, :38:30, :121:25
+  wire        io_axi_r_ready_0 =
+    _sparse_io_busy ? _sparse_io_axi_r_ready : _blit_io_axi_r_ready;	// src/main/scala/gpu/RenderEngine.scala:37:28, :38:30, :129:24
   wire        io_busy_0 =
-    ~_queue_io_empty | headValidated | ~_blit_io_command_ready | _swap_io_pending
-    | _completions_io_out_valid;	// src/main/scala/gpu/RenderEngine.scala:29:29, :31:28, :32:28, :35:35, :37:38, :93:{14,30,47,50,73,92}
+    ~_queue_io_empty | headValidated | ~_blit_io_command_ready | _sparse_io_busy
+    | _swap_io_pending | _completions_io_out_valid;	// src/main/scala/gpu/RenderEngine.scala:35:29, :37:28, :38:30, :39:28, :42:35, :44:38, :131:{14,30,47,50,73,91}, :132:21
   always @(posedge clock) begin	// src/main/scala/gpu/RenderEngine.scala:7:7
-    automatic logic _GEN;	// src/main/scala/gpu/RenderEngine.scala:43:27
-    _GEN = _queue_io_deq_valid & ~headValidated;	// src/main/scala/gpu/RenderEngine.scala:29:29, :37:38, :43:{27,30}
+    automatic logic _GEN;	// src/main/scala/gpu/RenderEngine.scala:50:27
+    _GEN = _queue_io_deq_valid & ~headValidated;	// src/main/scala/gpu/RenderEngine.scala:35:29, :44:38, :50:{27,30}
     if (reset) begin	// src/main/scala/gpu/RenderEngine.scala:7:7
-      completionGap <= 1'h0;	// src/main/scala/gpu/RenderEngine.scala:36:38
-      headValidated <= 1'h0;	// src/main/scala/gpu/RenderEngine.scala:37:38
+      completionGap <= 1'h0;	// src/main/scala/gpu/RenderEngine.scala:43:38
+      headValidated <= 1'h0;	// src/main/scala/gpu/RenderEngine.scala:44:38
     end
     else begin	// src/main/scala/gpu/RenderEngine.scala:7:7
-      completionGap <= _completions_io_out_valid;	// src/main/scala/gpu/RenderEngine.scala:35:35, :36:38
-      headValidated <= ~queue_io_deq_ready & (_GEN | headValidated);	// src/main/scala/gpu/RenderEngine.scala:37:38, :43:{27,46}, :46:19, :77:35, :78:{27,43}
+      completionGap <= _completions_io_out_valid;	// src/main/scala/gpu/RenderEngine.scala:42:35, :43:38
+      headValidated <= ~queue_io_deq_ready & (_GEN | headValidated);	// src/main/scala/gpu/RenderEngine.scala:44:38, :50:{27,46}, :53:19, :89:35, :90:{27,43}
     end
-    if (_GEN) begin	// src/main/scala/gpu/RenderEngine.scala:43:27
-      headCommand_op <= _queue_io_deq_bits_op;	// src/main/scala/gpu/RenderEngine.scala:29:29, :38:32
-      headCommand_srcAddr <= _queue_io_deq_bits_srcAddr;	// src/main/scala/gpu/RenderEngine.scala:29:29, :38:32
-      headCommand_dstAddr <= _queue_io_deq_bits_dstAddr;	// src/main/scala/gpu/RenderEngine.scala:29:29, :38:32
-      headCommand_widthPixels <= _queue_io_deq_bits_widthPixels;	// src/main/scala/gpu/RenderEngine.scala:29:29, :38:32
-      headCommand_heightPixels <= _queue_io_deq_bits_heightPixels;	// src/main/scala/gpu/RenderEngine.scala:29:29, :38:32
-      headCommand_srcStride <= _queue_io_deq_bits_srcStride;	// src/main/scala/gpu/RenderEngine.scala:29:29, :38:32
-      headCommand_dstStride <= _queue_io_deq_bits_dstStride;	// src/main/scala/gpu/RenderEngine.scala:29:29, :38:32
-      headCommand_color <= _queue_io_deq_bits_color;	// src/main/scala/gpu/RenderEngine.scala:29:29, :38:32
-      headCommand_colorKey <= _queue_io_deq_bits_colorKey;	// src/main/scala/gpu/RenderEngine.scala:29:29, :38:32
-      headCommand_alpha <= _queue_io_deq_bits_alpha;	// src/main/scala/gpu/RenderEngine.scala:29:29, :38:32
-      headCommand_tag <= _queue_io_deq_bits_tag;	// src/main/scala/gpu/RenderEngine.scala:29:29, :38:32
-      headError <= _validator_io_error;	// src/main/scala/gpu/RenderEngine.scala:30:33, :39:30
+    if (_GEN) begin	// src/main/scala/gpu/RenderEngine.scala:50:27
+      headCommand_op <= _queue_io_deq_bits_op;	// src/main/scala/gpu/RenderEngine.scala:35:29, :45:32
+      headCommand_srcAddr <= _queue_io_deq_bits_srcAddr;	// src/main/scala/gpu/RenderEngine.scala:35:29, :45:32
+      headCommand_dstAddr <= _queue_io_deq_bits_dstAddr;	// src/main/scala/gpu/RenderEngine.scala:35:29, :45:32
+      headCommand_widthPixels <= _queue_io_deq_bits_widthPixels;	// src/main/scala/gpu/RenderEngine.scala:35:29, :45:32
+      headCommand_heightPixels <= _queue_io_deq_bits_heightPixels;	// src/main/scala/gpu/RenderEngine.scala:35:29, :45:32
+      headCommand_srcStride <= _queue_io_deq_bits_srcStride;	// src/main/scala/gpu/RenderEngine.scala:35:29, :45:32
+      headCommand_dstStride <= _queue_io_deq_bits_dstStride;	// src/main/scala/gpu/RenderEngine.scala:35:29, :45:32
+      headCommand_color <= _queue_io_deq_bits_color;	// src/main/scala/gpu/RenderEngine.scala:35:29, :45:32
+      headCommand_colorKey <= _queue_io_deq_bits_colorKey;	// src/main/scala/gpu/RenderEngine.scala:35:29, :45:32
+      headCommand_alpha <= _queue_io_deq_bits_alpha;	// src/main/scala/gpu/RenderEngine.scala:35:29, :45:32
+      headCommand_tag <= _queue_io_deq_bits_tag;	// src/main/scala/gpu/RenderEngine.scala:35:29, :45:32
+      headError <= _validator_io_error;	// src/main/scala/gpu/RenderEngine.scala:36:33, :46:30
     end
   end // always @(posedge)
   `ifdef ENABLE_INITIAL_REG_	// src/main/scala/gpu/RenderEngine.scala:7:7
@@ -217,27 +265,27 @@ module RenderEngine(	// src/main/scala/gpu/RenderEngine.scala:7:7
         for (logic [3:0] i = 4'h0; i < 4'h8; i += 4'h1) begin
           _RANDOM[i[2:0]] = `RANDOM;	// src/main/scala/gpu/RenderEngine.scala:7:7
         end	// src/main/scala/gpu/RenderEngine.scala:7:7
-        completionGap = _RANDOM[3'h0][0];	// src/main/scala/gpu/RenderEngine.scala:7:7, :36:38
-        headValidated = _RANDOM[3'h0][1];	// src/main/scala/gpu/RenderEngine.scala:7:7, :36:38, :37:38
-        headCommand_op = _RANDOM[3'h0][5:2];	// src/main/scala/gpu/RenderEngine.scala:7:7, :36:38, :38:32
-        headCommand_srcAddr = {_RANDOM[3'h0][31:6], _RANDOM[3'h1][5:0]};	// src/main/scala/gpu/RenderEngine.scala:7:7, :36:38, :38:32
-        headCommand_dstAddr = {_RANDOM[3'h1][31:6], _RANDOM[3'h2][5:0]};	// src/main/scala/gpu/RenderEngine.scala:7:7, :38:32
-        headCommand_widthPixels = _RANDOM[3'h2][21:6];	// src/main/scala/gpu/RenderEngine.scala:7:7, :38:32
-        headCommand_heightPixels = {_RANDOM[3'h2][31:22], _RANDOM[3'h3][5:0]};	// src/main/scala/gpu/RenderEngine.scala:7:7, :38:32
-        headCommand_srcStride = {_RANDOM[3'h3][31:6], _RANDOM[3'h4][5:0]};	// src/main/scala/gpu/RenderEngine.scala:7:7, :38:32
-        headCommand_dstStride = {_RANDOM[3'h4][31:6], _RANDOM[3'h5][5:0]};	// src/main/scala/gpu/RenderEngine.scala:7:7, :38:32
-        headCommand_color = _RANDOM[3'h5][21:6];	// src/main/scala/gpu/RenderEngine.scala:7:7, :38:32
-        headCommand_colorKey = {_RANDOM[3'h5][31:22], _RANDOM[3'h6][5:0]};	// src/main/scala/gpu/RenderEngine.scala:7:7, :38:32
-        headCommand_alpha = _RANDOM[3'h6][13:6];	// src/main/scala/gpu/RenderEngine.scala:7:7, :38:32
-        headCommand_tag = {_RANDOM[3'h6][31:30], _RANDOM[3'h7][13:0]};	// src/main/scala/gpu/RenderEngine.scala:7:7, :38:32
-        headError = _RANDOM[3'h7][21:14];	// src/main/scala/gpu/RenderEngine.scala:7:7, :38:32, :39:30
+        completionGap = _RANDOM[3'h0][0];	// src/main/scala/gpu/RenderEngine.scala:7:7, :43:38
+        headValidated = _RANDOM[3'h0][1];	// src/main/scala/gpu/RenderEngine.scala:7:7, :43:38, :44:38
+        headCommand_op = _RANDOM[3'h0][5:2];	// src/main/scala/gpu/RenderEngine.scala:7:7, :43:38, :45:32
+        headCommand_srcAddr = {_RANDOM[3'h0][31:6], _RANDOM[3'h1][5:0]};	// src/main/scala/gpu/RenderEngine.scala:7:7, :43:38, :45:32
+        headCommand_dstAddr = {_RANDOM[3'h1][31:6], _RANDOM[3'h2][5:0]};	// src/main/scala/gpu/RenderEngine.scala:7:7, :45:32
+        headCommand_widthPixels = _RANDOM[3'h2][21:6];	// src/main/scala/gpu/RenderEngine.scala:7:7, :45:32
+        headCommand_heightPixels = {_RANDOM[3'h2][31:22], _RANDOM[3'h3][5:0]};	// src/main/scala/gpu/RenderEngine.scala:7:7, :45:32
+        headCommand_srcStride = {_RANDOM[3'h3][31:6], _RANDOM[3'h4][5:0]};	// src/main/scala/gpu/RenderEngine.scala:7:7, :45:32
+        headCommand_dstStride = {_RANDOM[3'h4][31:6], _RANDOM[3'h5][5:0]};	// src/main/scala/gpu/RenderEngine.scala:7:7, :45:32
+        headCommand_color = _RANDOM[3'h5][21:6];	// src/main/scala/gpu/RenderEngine.scala:7:7, :45:32
+        headCommand_colorKey = {_RANDOM[3'h5][31:22], _RANDOM[3'h6][5:0]};	// src/main/scala/gpu/RenderEngine.scala:7:7, :45:32
+        headCommand_alpha = _RANDOM[3'h6][13:6];	// src/main/scala/gpu/RenderEngine.scala:7:7, :45:32
+        headCommand_tag = {_RANDOM[3'h6][31:30], _RANDOM[3'h7][13:0]};	// src/main/scala/gpu/RenderEngine.scala:7:7, :45:32
+        headError = _RANDOM[3'h7][21:14];	// src/main/scala/gpu/RenderEngine.scala:7:7, :45:32, :46:30
       `endif // RANDOMIZE_REG_INIT
     end // initial
     `ifdef FIRRTL_AFTER_INITIAL	// src/main/scala/gpu/RenderEngine.scala:7:7
       `FIRRTL_AFTER_INITIAL	// src/main/scala/gpu/RenderEngine.scala:7:7
     `endif // FIRRTL_AFTER_INITIAL
   `endif // ENABLE_INITIAL_REG_
-  CommandQueue queue (	// src/main/scala/gpu/RenderEngine.scala:29:29
+  CommandQueue queue (	// src/main/scala/gpu/RenderEngine.scala:35:29
     .clock                    (clock),
     .reset                    (reset),
     .io_enq_ready             (io_command_ready),
@@ -254,7 +302,7 @@ module RenderEngine(	// src/main/scala/gpu/RenderEngine.scala:7:7
     .io_enq_bits_alpha        (io_command_bits_alpha),
     .io_enq_bits_flags        (io_command_bits_flags),
     .io_enq_bits_tag          (io_command_bits_tag),
-    .io_deq_ready             (queue_io_deq_ready),	// src/main/scala/gpu/RenderEngine.scala:77:35
+    .io_deq_ready             (queue_io_deq_ready),	// src/main/scala/gpu/RenderEngine.scala:89:35
     .io_deq_valid             (_queue_io_deq_valid),
     .io_deq_bits_op           (_queue_io_deq_bits_op),
     .io_deq_bits_srcAddr      (_queue_io_deq_bits_srcAddr),
@@ -271,36 +319,36 @@ module RenderEngine(	// src/main/scala/gpu/RenderEngine.scala:7:7
     .io_highWater             (io_queueHighWater),
     .io_full                  (io_queueFull),
     .io_empty                 (_queue_io_empty)
-  );	// src/main/scala/gpu/RenderEngine.scala:29:29
-  CommandValidator validator (	// src/main/scala/gpu/RenderEngine.scala:30:33
-    .io_command_op           (_queue_io_deq_bits_op),	// src/main/scala/gpu/RenderEngine.scala:29:29
-    .io_command_srcAddr      (_queue_io_deq_bits_srcAddr),	// src/main/scala/gpu/RenderEngine.scala:29:29
-    .io_command_dstAddr      (_queue_io_deq_bits_dstAddr),	// src/main/scala/gpu/RenderEngine.scala:29:29
-    .io_command_widthPixels  (_queue_io_deq_bits_widthPixels),	// src/main/scala/gpu/RenderEngine.scala:29:29
-    .io_command_heightPixels (_queue_io_deq_bits_heightPixels),	// src/main/scala/gpu/RenderEngine.scala:29:29
-    .io_command_srcStride    (_queue_io_deq_bits_srcStride),	// src/main/scala/gpu/RenderEngine.scala:29:29
-    .io_command_dstStride    (_queue_io_deq_bits_dstStride),	// src/main/scala/gpu/RenderEngine.scala:29:29
+  );	// src/main/scala/gpu/RenderEngine.scala:35:29
+  CommandValidator validator (	// src/main/scala/gpu/RenderEngine.scala:36:33
+    .io_command_op           (_queue_io_deq_bits_op),	// src/main/scala/gpu/RenderEngine.scala:35:29
+    .io_command_srcAddr      (_queue_io_deq_bits_srcAddr),	// src/main/scala/gpu/RenderEngine.scala:35:29
+    .io_command_dstAddr      (_queue_io_deq_bits_dstAddr),	// src/main/scala/gpu/RenderEngine.scala:35:29
+    .io_command_widthPixels  (_queue_io_deq_bits_widthPixels),	// src/main/scala/gpu/RenderEngine.scala:35:29
+    .io_command_heightPixels (_queue_io_deq_bits_heightPixels),	// src/main/scala/gpu/RenderEngine.scala:35:29
+    .io_command_srcStride    (_queue_io_deq_bits_srcStride),	// src/main/scala/gpu/RenderEngine.scala:35:29
+    .io_command_dstStride    (_queue_io_deq_bits_dstStride),	// src/main/scala/gpu/RenderEngine.scala:35:29
     .io_error                (_validator_io_error)
-  );	// src/main/scala/gpu/RenderEngine.scala:30:33
-  DenseBlitEngine blit (	// src/main/scala/gpu/RenderEngine.scala:31:28
+  );	// src/main/scala/gpu/RenderEngine.scala:36:33
+  DenseBlitEngine blit (	// src/main/scala/gpu/RenderEngine.scala:37:28
     .clock                           (clock),
     .reset                           (reset),
     .io_command_ready                (_blit_io_command_ready),
     .io_command_valid
-      (headValid & dense & _swap_io_present_valid_T_1 & _swap_io_present_ready
-       & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:32:28, :36:38, :49:46, :50:59, :51:41, :52:45, :58:72, :61:15, :66:{38,47,80}, :67:27
-    .io_command_bits_op              (headCommand_op),	// src/main/scala/gpu/RenderEngine.scala:38:32
-    .io_command_bits_srcAddr         (headCommand_srcAddr),	// src/main/scala/gpu/RenderEngine.scala:38:32
-    .io_command_bits_dstAddr         (headCommand_dstAddr),	// src/main/scala/gpu/RenderEngine.scala:38:32
-    .io_command_bits_widthPixels     (headCommand_widthPixels),	// src/main/scala/gpu/RenderEngine.scala:38:32
-    .io_command_bits_heightPixels    (headCommand_heightPixels),	// src/main/scala/gpu/RenderEngine.scala:38:32
-    .io_command_bits_srcStride       (headCommand_srcStride),	// src/main/scala/gpu/RenderEngine.scala:38:32
-    .io_command_bits_dstStride       (headCommand_dstStride),	// src/main/scala/gpu/RenderEngine.scala:38:32
-    .io_command_bits_color           (headCommand_color),	// src/main/scala/gpu/RenderEngine.scala:38:32
-    .io_command_bits_colorKey        (headCommand_colorKey),	// src/main/scala/gpu/RenderEngine.scala:38:32
-    .io_command_bits_alpha           (headCommand_alpha),	// src/main/scala/gpu/RenderEngine.scala:38:32
-    .io_command_bits_tag             (headCommand_tag),	// src/main/scala/gpu/RenderEngine.scala:38:32
-    .io_pixelRequest_ready           (_pixel_io_input_ready),	// src/main/scala/gpu/RenderEngine.scala:33:29
+      (headValid & dense & _swap_io_present_valid_T_1 & _sparse_io_command_ready
+       & _swap_io_present_ready & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:38:30, :39:28, :43:38, :56:46, :57:59, :58:41, :59:45, :66:72, :69:15, :74:{38,47,80}, :75:{29,54}
+    .io_command_bits_op              (headCommand_op),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_command_bits_srcAddr         (headCommand_srcAddr),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_command_bits_dstAddr         (headCommand_dstAddr),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_command_bits_widthPixels     (headCommand_widthPixels),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_command_bits_heightPixels    (headCommand_heightPixels),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_command_bits_srcStride       (headCommand_srcStride),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_command_bits_dstStride       (headCommand_dstStride),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_command_bits_color           (headCommand_color),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_command_bits_colorKey        (headCommand_colorKey),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_command_bits_alpha           (headCommand_alpha),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_command_bits_tag             (headCommand_tag),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_pixelRequest_ready           (_pixel_io_input_ready),	// src/main/scala/gpu/RenderEngine.scala:40:29
     .io_pixelRequest_valid           (_blit_io_pixelRequest_valid),
     .io_pixelRequest_bits_op         (_blit_io_pixelRequest_bits_op),
     .io_pixelRequest_bits_foreground (_blit_io_pixelRequest_bits_foreground),
@@ -309,117 +357,183 @@ module RenderEngine(	// src/main/scala/gpu/RenderEngine.scala:7:7
     .io_pixelRequest_bits_colorKey   (_blit_io_pixelRequest_bits_colorKey),
     .io_pixelRequest_bits_alpha      (_blit_io_pixelRequest_bits_alpha),
     .io_pixelResult_ready            (_blit_io_pixelResult_ready),
-    .io_pixelResult_valid            (_pixel_io_output_valid),	// src/main/scala/gpu/RenderEngine.scala:33:29
-    .io_pixelResult_bits_pixel       (_pixel_io_output_bits_pixel),	// src/main/scala/gpu/RenderEngine.scala:33:29
-    .io_pixelResult_bits_writeEnable (_pixel_io_output_bits_writeEnable),	// src/main/scala/gpu/RenderEngine.scala:33:29
-    .io_axi_aw_ready                 (io_axi_aw_ready),
+    .io_pixelResult_valid            (_pixel_io_output_valid),	// src/main/scala/gpu/RenderEngine.scala:40:29
+    .io_pixelResult_bits_pixel       (_pixel_io_output_bits_pixel),	// src/main/scala/gpu/RenderEngine.scala:40:29
+    .io_pixelResult_bits_writeEnable (_pixel_io_output_bits_writeEnable),	// src/main/scala/gpu/RenderEngine.scala:40:29
+    .io_axi_aw_ready                 (io_axi_aw_ready & ~_sparse_io_busy),	// src/main/scala/gpu/RenderEngine.scala:38:30, :111:{43,46}
     .io_axi_aw_valid                 (_blit_io_axi_aw_valid),
-    .io_axi_aw_bits_addr             (io_axi_aw_bits_addr),
-    .io_axi_aw_bits_len              (io_axi_aw_bits_len),
-    .io_axi_w_ready                  (io_axi_w_ready),
+    .io_axi_aw_bits_addr             (_blit_io_axi_aw_bits_addr),
+    .io_axi_aw_bits_len              (_blit_io_axi_aw_bits_len),
+    .io_axi_w_ready                  (io_axi_w_ready & ~_sparse_io_busy),	// src/main/scala/gpu/RenderEngine.scala:38:30, :111:46, :115:41
     .io_axi_w_valid                  (_blit_io_axi_w_valid),
-    .io_axi_w_bits_data              (io_axi_w_bits_data),
+    .io_axi_w_bits_data              (_blit_io_axi_w_bits_data),
     .io_axi_w_bits_strb              (_blit_io_axi_w_bits_strb),
-    .io_axi_w_bits_last              (io_axi_w_bits_last),
+    .io_axi_w_bits_last              (_blit_io_axi_w_bits_last),
     .io_axi_b_ready                  (_blit_io_axi_b_ready),
-    .io_axi_b_valid                  (io_axi_b_valid),
+    .io_axi_b_valid                  (io_axi_b_valid & ~_sparse_io_busy),	// src/main/scala/gpu/RenderEngine.scala:38:30, :111:46, :118:41
     .io_axi_b_bits_id                (io_axi_b_bits_id),
     .io_axi_b_bits_resp              (io_axi_b_bits_resp),
-    .io_axi_ar_ready                 (io_axi_ar_ready),
+    .io_axi_ar_ready                 (io_axi_ar_ready & ~_sparse_io_busy),	// src/main/scala/gpu/RenderEngine.scala:38:30, :111:46, :124:43
     .io_axi_ar_valid                 (_blit_io_axi_ar_valid),
-    .io_axi_ar_bits_addr             (io_axi_ar_bits_addr),
-    .io_axi_ar_bits_id               (io_axi_ar_bits_id),
-    .io_axi_ar_bits_len              (io_axi_ar_bits_len),
+    .io_axi_ar_bits_addr             (_blit_io_axi_ar_bits_addr),
+    .io_axi_ar_bits_id               (_blit_io_axi_ar_bits_id),
+    .io_axi_ar_bits_len              (_blit_io_axi_ar_bits_len),
     .io_axi_r_ready                  (_blit_io_axi_r_ready),
-    .io_axi_r_valid                  (io_axi_r_valid),
+    .io_axi_r_valid                  (io_axi_r_valid & ~_sparse_io_busy),	// src/main/scala/gpu/RenderEngine.scala:38:30, :111:46, :127:41
     .io_axi_r_bits_id                (io_axi_r_bits_id),
     .io_axi_r_bits_data              (io_axi_r_bits_data),
     .io_axi_r_bits_resp              (io_axi_r_bits_resp),
     .io_axi_r_bits_last              (io_axi_r_bits_last),
-    .io_completion_ready             (_completions_io_in_1_ready & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:35:35, :36:38, :58:72, :82:58
+    .io_completion_ready             (_completions_io_in_1_ready & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:42:35, :43:38, :66:72, :94:58
     .io_completion_valid             (_blit_io_completion_valid),
     .io_completion_bits_tag          (_blit_io_completion_bits_tag),
     .io_completion_bits_error        (_blit_io_completion_bits_error)
-  );	// src/main/scala/gpu/RenderEngine.scala:31:28
-  FrameSwapController swap (	// src/main/scala/gpu/RenderEngine.scala:32:28
+  );	// src/main/scala/gpu/RenderEngine.scala:37:28
+  SparseBlitEngine sparse (	// src/main/scala/gpu/RenderEngine.scala:38:30
+    .clock                        (clock),
+    .reset                        (reset),
+    .io_command_ready             (_sparse_io_command_ready),
+    .io_command_valid
+      (headValid & sparseOp & _swap_io_present_valid_T_1 & _blit_io_command_ready
+       & _swap_io_present_ready & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:37:28, :39:28, :43:38, :56:46, :62:41, :66:72, :69:15, :77:{40,52,85}, :78:{27,52}
+    .io_command_bits_srcAddr      (headCommand_srcAddr),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_command_bits_dstAddr      (headCommand_dstAddr),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_command_bits_widthPixels  (headCommand_widthPixels),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_command_bits_heightPixels (headCommand_heightPixels),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_command_bits_dstStride    (headCommand_dstStride),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_command_bits_tag          (headCommand_tag),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_axi_aw_ready              (io_axi_aw_ready & _sparse_io_busy),	// src/main/scala/gpu/RenderEngine.scala:38:30, :110:45
+    .io_axi_aw_valid              (_sparse_io_axi_aw_valid),
+    .io_axi_aw_bits_addr          (_sparse_io_axi_aw_bits_addr),
+    .io_axi_aw_bits_len           (_sparse_io_axi_aw_bits_len),
+    .io_axi_w_ready               (io_axi_w_ready & _sparse_io_busy),	// src/main/scala/gpu/RenderEngine.scala:38:30, :114:43
+    .io_axi_w_valid               (_sparse_io_axi_w_valid),
+    .io_axi_w_bits_data           (_sparse_io_axi_w_bits_data),
+    .io_axi_w_bits_strb           (_sparse_io_axi_w_bits_strb),
+    .io_axi_w_bits_last           (_sparse_io_axi_w_bits_last),
+    .io_axi_b_ready               (_sparse_io_axi_b_ready),
+    .io_axi_b_valid               (io_axi_b_valid & _sparse_io_busy),	// src/main/scala/gpu/RenderEngine.scala:38:30, :116:43
+    .io_axi_b_bits_id             (io_axi_b_bits_id),
+    .io_axi_b_bits_resp           (io_axi_b_bits_resp),
+    .io_axi_ar_ready              (io_axi_ar_ready & _sparse_io_busy),	// src/main/scala/gpu/RenderEngine.scala:38:30, :123:45
+    .io_axi_ar_valid              (_sparse_io_axi_ar_valid),
+    .io_axi_ar_bits_addr          (_sparse_io_axi_ar_bits_addr),
+    .io_axi_ar_bits_len           (_sparse_io_axi_ar_bits_len),
+    .io_axi_r_ready               (_sparse_io_axi_r_ready),
+    .io_axi_r_valid               (io_axi_r_valid & _sparse_io_busy),	// src/main/scala/gpu/RenderEngine.scala:38:30, :125:43
+    .io_axi_r_bits_id             (io_axi_r_bits_id),
+    .io_axi_r_bits_data           (io_axi_r_bits_data),
+    .io_axi_r_bits_resp           (io_axi_r_bits_resp),
+    .io_axi_r_bits_last           (io_axi_r_bits_last),
+    .io_completion_ready          (_completions_io_in_2_ready & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:42:35, :43:38, :66:72, :97:60
+    .io_completion_valid          (_sparse_io_completion_valid),
+    .io_completion_bits_tag       (_sparse_io_completion_bits_tag),
+    .io_completion_bits_error     (_sparse_io_completion_bits_error),
+    .io_busy                      (_sparse_io_busy),
+    .io_pixelDone                 (_sparse_io_pixelDone)
+  );	// src/main/scala/gpu/RenderEngine.scala:38:30
+  FrameSwapController swap (	// src/main/scala/gpu/RenderEngine.scala:39:28
     .clock                   (clock),
     .reset                   (reset),
     .io_present_ready        (_swap_io_present_ready),
     .io_present_valid
       (headValid & present & _swap_io_present_valid_T_1 & _blit_io_command_ready
-       & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:31:28, :36:38, :49:46, :54:40, :58:72, :61:15, :69:{38,49,82}, :70:27
-    .io_present_bits_dstAddr (headCommand_dstAddr),	// src/main/scala/gpu/RenderEngine.scala:38:32
-    .io_present_bits_tag     (headCommand_tag),	// src/main/scala/gpu/RenderEngine.scala:38:32
+       & _sparse_io_command_ready & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:37:28, :38:30, :43:38, :56:46, :61:40, :66:72, :69:15, :80:{38,49,82}, :81:{27,54}
+    .io_present_bits_dstAddr (headCommand_dstAddr),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_present_bits_tag     (headCommand_tag),	// src/main/scala/gpu/RenderEngine.scala:45:32
     .io_vblank               (io_vblank),
-    .io_completion_ready     (_completions_io_in_2_ready & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:35:35, :36:38, :58:72, :85:58
+    .io_completion_ready     (_completions_io_in_3_ready & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:42:35, :43:38, :66:72, :100:58
     .io_completion_valid     (_swap_io_completion_valid),
     .io_completion_bits_tag  (_swap_io_completion_bits_tag),
     .io_frontBase            (io_frontBase),
     .io_backBase             (io_backBase),
     .io_pending              (_swap_io_pending)
-  );	// src/main/scala/gpu/RenderEngine.scala:32:28
-  PixelPipeHarness pixel (	// src/main/scala/gpu/RenderEngine.scala:33:29
+  );	// src/main/scala/gpu/RenderEngine.scala:39:28
+  PixelPipeHarness pixel (	// src/main/scala/gpu/RenderEngine.scala:40:29
     .clock                      (clock),
     .reset                      (reset),
     .io_input_ready             (_pixel_io_input_ready),
-    .io_input_valid             (_blit_io_pixelRequest_valid),	// src/main/scala/gpu/RenderEngine.scala:31:28
-    .io_input_bits_op           (_blit_io_pixelRequest_bits_op),	// src/main/scala/gpu/RenderEngine.scala:31:28
-    .io_input_bits_foreground   (_blit_io_pixelRequest_bits_foreground),	// src/main/scala/gpu/RenderEngine.scala:31:28
-    .io_input_bits_background   (_blit_io_pixelRequest_bits_background),	// src/main/scala/gpu/RenderEngine.scala:31:28
-    .io_input_bits_fillColor    (_blit_io_pixelRequest_bits_fillColor),	// src/main/scala/gpu/RenderEngine.scala:31:28
-    .io_input_bits_colorKey     (_blit_io_pixelRequest_bits_colorKey),	// src/main/scala/gpu/RenderEngine.scala:31:28
-    .io_input_bits_alpha        (_blit_io_pixelRequest_bits_alpha),	// src/main/scala/gpu/RenderEngine.scala:31:28
-    .io_output_ready            (_blit_io_pixelResult_ready),	// src/main/scala/gpu/RenderEngine.scala:31:28
+    .io_input_valid             (_blit_io_pixelRequest_valid),	// src/main/scala/gpu/RenderEngine.scala:37:28
+    .io_input_bits_op           (_blit_io_pixelRequest_bits_op),	// src/main/scala/gpu/RenderEngine.scala:37:28
+    .io_input_bits_foreground   (_blit_io_pixelRequest_bits_foreground),	// src/main/scala/gpu/RenderEngine.scala:37:28
+    .io_input_bits_background   (_blit_io_pixelRequest_bits_background),	// src/main/scala/gpu/RenderEngine.scala:37:28
+    .io_input_bits_fillColor    (_blit_io_pixelRequest_bits_fillColor),	// src/main/scala/gpu/RenderEngine.scala:37:28
+    .io_input_bits_colorKey     (_blit_io_pixelRequest_bits_colorKey),	// src/main/scala/gpu/RenderEngine.scala:37:28
+    .io_input_bits_alpha        (_blit_io_pixelRequest_bits_alpha),	// src/main/scala/gpu/RenderEngine.scala:37:28
+    .io_output_ready            (_blit_io_pixelResult_ready),	// src/main/scala/gpu/RenderEngine.scala:37:28
     .io_output_valid            (_pixel_io_output_valid),
     .io_output_bits_pixel       (_pixel_io_output_bits_pixel),
     .io_output_bits_writeEnable (_pixel_io_output_bits_writeEnable)
-  );	// src/main/scala/gpu/RenderEngine.scala:33:29
-  GpuPerfCounters perf (	// src/main/scala/gpu/RenderEngine.scala:34:28
-    .clock          (clock),
-    .reset          (reset),
-    .io_clear       (io_perfClear),
-    .io_active      (io_busy_0),	// src/main/scala/gpu/RenderEngine.scala:93:{30,47,73,92}
-    .io_pixelDone   (_blit_io_pixelResult_ready & _pixel_io_output_valid),	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/RenderEngine.scala:31:28, :33:29
-    .io_readBeat    (_blit_io_axi_r_ready & io_axi_r_valid),	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/RenderEngine.scala:31:28
-    .io_writeStrobe
-      (io_axi_w_ready & _blit_io_axi_w_valid ? _blit_io_axi_w_bits_strb : 4'h0),	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/RenderEngine.scala:7:7, :31:28, :107:29
+  );	// src/main/scala/gpu/RenderEngine.scala:40:29
+  GpuPerfCounters perf (	// src/main/scala/gpu/RenderEngine.scala:41:28
+    .clock            (clock),
+    .reset            (reset),
+    .io_clear         (io_perfClear),
+    .io_active        (io_busy_0),	// src/main/scala/gpu/RenderEngine.scala:131:{30,47,73,91}, :132:21
+    .io_pixelDone
+      (_blit_io_pixelResult_ready & _pixel_io_output_valid | _sparse_io_pixelDone),	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/RenderEngine.scala:37:28, :38:30, :40:29, :144:49
+    .io_readBeat      (io_axi_r_ready_0 & io_axi_r_valid),	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/RenderEngine.scala:129:24
+    .io_writeStrobe   (io_axi_w_ready & io_axi_w_valid_0 ? io_axi_w_bits_strb_0 : 4'h0),	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/RenderEngine.scala:7:7, :112:24, :113:23, :146:29
     .io_stalled
       (io_busy_0
-       & (_blit_io_axi_aw_valid & ~io_axi_aw_ready | _blit_io_axi_w_valid
-          & ~io_axi_w_ready | io_axi_b_valid & ~_blit_io_axi_b_ready
-          | _blit_io_axi_ar_valid & ~io_axi_ar_ready | io_axi_r_valid
-          & ~_blit_io_axi_r_ready | _blit_io_pixelRequest_valid & ~_pixel_io_input_ready
-          | _pixel_io_output_valid & ~_blit_io_pixelResult_ready)),	// src/main/scala/gpu/RenderEngine.scala:31:28, :33:29, :93:{30,47,73,92}, :95:{27,30,53}, :96:{28,31,53}, :97:{28,31,53}, :98:{29,32,55}, :99:{28,31}, :101:{33,36,65}, :102:{34,37}, :108:{30,45}
-    .io_cycles      (io_perfCycles),
-    .io_pixels      (io_perfPixels),
-    .io_readBytes   (io_perfReadBytes),
-    .io_writeBytes  (io_perfWriteBytes),
-    .io_stalls      (io_perfStalls)
-  );	// src/main/scala/gpu/RenderEngine.scala:34:28
-  Arbiter3_GpuCompletion completions (	// src/main/scala/gpu/RenderEngine.scala:35:35
-    .io_in_0_valid      (headValid & rejected & engineIdle & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:36:38, :49:46, :55:56, :57:50, :58:{43,55,69,72}
-    .io_in_0_bits_tag   (headCommand_tag),	// src/main/scala/gpu/RenderEngine.scala:38:32
-    .io_in_0_bits_error (_swap_io_present_valid_T_1 ? 8'h1 : headError),	// src/main/scala/gpu/RenderEngine.scala:39:30, :60:41, :61:15
+       & (io_axi_aw_valid_0 & ~io_axi_aw_ready | io_axi_w_valid_0 & ~io_axi_w_ready
+          | io_axi_b_valid & ~io_axi_b_ready_0 | io_axi_ar_valid_0 & ~io_axi_ar_ready
+          | io_axi_r_valid & ~io_axi_r_ready_0 | _blit_io_pixelRequest_valid
+          & ~_pixel_io_input_ready | _pixel_io_output_valid
+          & ~_blit_io_pixelResult_ready)),	// src/main/scala/gpu/RenderEngine.scala:37:28, :40:29, :108:25, :112:24, :120:24, :121:25, :129:24, :131:{30,47,73,91}, :132:21, :134:{22,25,43}, :135:{23,26,43}, :136:{23,26,43}, :137:{24,27,45}, :138:{23,26}, :140:{33,36,65}, :141:{34,37}, :147:{30,45}
+    .io_underflow     (io_underflowPulse),
+    .io_renderGrant   (io_renderGrant),
+    .io_scanoutGrant  (io_scanoutGrant),
+    .io_cycles        (io_perfCycles),
+    .io_pixels        (io_perfPixels),
+    .io_readBytes     (io_perfReadBytes),
+    .io_writeBytes    (io_perfWriteBytes),
+    .io_stalls        (io_perfStalls),
+    .io_underflows    (io_perfUnderflows),
+    .io_renderGrants  (io_perfRenderGrants),
+    .io_scanoutGrants (io_perfScanoutGrants)
+  );	// src/main/scala/gpu/RenderEngine.scala:41:28
+  Arbiter4_GpuCompletion completions (	// src/main/scala/gpu/RenderEngine.scala:42:35
+    .io_in_0_valid      (headValid & rejected & engineIdle & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:43:38, :56:46, :63:56, :65:{50,77}, :66:{43,55,69,72}
+    .io_in_0_bits_tag   (headCommand_tag),	// src/main/scala/gpu/RenderEngine.scala:45:32
+    .io_in_0_bits_error (_swap_io_present_valid_T_1 ? 8'h1 : headError),	// src/main/scala/gpu/RenderEngine.scala:46:30, :68:41, :69:15
     .io_in_1_ready      (_completions_io_in_1_ready),
-    .io_in_1_valid      (_blit_io_completion_valid & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:31:28, :36:38, :58:72, :80:58
-    .io_in_1_bits_tag   (_blit_io_completion_bits_tag),	// src/main/scala/gpu/RenderEngine.scala:31:28
-    .io_in_1_bits_error (_blit_io_completion_bits_error),	// src/main/scala/gpu/RenderEngine.scala:31:28
+    .io_in_1_valid      (_blit_io_completion_valid & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:37:28, :43:38, :66:72, :92:58
+    .io_in_1_bits_tag   (_blit_io_completion_bits_tag),	// src/main/scala/gpu/RenderEngine.scala:37:28
+    .io_in_1_bits_error (_blit_io_completion_bits_error),	// src/main/scala/gpu/RenderEngine.scala:37:28
     .io_in_2_ready      (_completions_io_in_2_ready),
-    .io_in_2_valid      (_swap_io_completion_valid & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:32:28, :36:38, :58:72, :83:58
-    .io_in_2_bits_tag   (_swap_io_completion_bits_tag),	// src/main/scala/gpu/RenderEngine.scala:32:28
+    .io_in_2_valid      (_sparse_io_completion_valid & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:38:30, :43:38, :66:72, :95:60
+    .io_in_2_bits_tag   (_sparse_io_completion_bits_tag),	// src/main/scala/gpu/RenderEngine.scala:38:30
+    .io_in_2_bits_error (_sparse_io_completion_bits_error),	// src/main/scala/gpu/RenderEngine.scala:38:30
+    .io_in_3_ready      (_completions_io_in_3_ready),
+    .io_in_3_valid      (_swap_io_completion_valid & ~completionGap),	// src/main/scala/gpu/RenderEngine.scala:39:28, :43:38, :66:72, :98:58
+    .io_in_3_bits_tag   (_swap_io_completion_bits_tag),	// src/main/scala/gpu/RenderEngine.scala:39:28
     .io_out_valid       (_completions_io_out_valid),
     .io_out_bits_tag    (io_completion_bits_tag),
     .io_out_bits_error  (io_completion_bits_error)
-  );	// src/main/scala/gpu/RenderEngine.scala:35:35
-  assign io_axi_aw_valid = _blit_io_axi_aw_valid;	// src/main/scala/gpu/RenderEngine.scala:7:7, :31:28
-  assign io_axi_w_valid = _blit_io_axi_w_valid;	// src/main/scala/gpu/RenderEngine.scala:7:7, :31:28
-  assign io_axi_w_bits_strb = _blit_io_axi_w_bits_strb;	// src/main/scala/gpu/RenderEngine.scala:7:7, :31:28
-  assign io_axi_b_ready = _blit_io_axi_b_ready;	// src/main/scala/gpu/RenderEngine.scala:7:7, :31:28
-  assign io_axi_ar_valid = _blit_io_axi_ar_valid;	// src/main/scala/gpu/RenderEngine.scala:7:7, :31:28
-  assign io_axi_r_ready = _blit_io_axi_r_ready;	// src/main/scala/gpu/RenderEngine.scala:7:7, :31:28
-  assign io_completion_valid = _completions_io_out_valid;	// src/main/scala/gpu/RenderEngine.scala:7:7, :35:35
-  assign io_busy = io_busy_0;	// src/main/scala/gpu/RenderEngine.scala:7:7, :93:{30,47,73,92}
-  assign io_queueEmpty = _queue_io_empty;	// src/main/scala/gpu/RenderEngine.scala:7:7, :29:29
-  assign io_swapPending = _swap_io_pending;	// src/main/scala/gpu/RenderEngine.scala:7:7, :32:28
+  );	// src/main/scala/gpu/RenderEngine.scala:42:35
+  assign io_axi_aw_valid = io_axi_aw_valid_0;	// src/main/scala/gpu/RenderEngine.scala:7:7, :108:25
+  assign io_axi_aw_bits_addr =
+    _sparse_io_busy ? _sparse_io_axi_aw_bits_addr : _blit_io_axi_aw_bits_addr;	// src/main/scala/gpu/RenderEngine.scala:7:7, :37:28, :38:30, :109:24
+  assign io_axi_aw_bits_len =
+    _sparse_io_busy ? _sparse_io_axi_aw_bits_len : _blit_io_axi_aw_bits_len;	// src/main/scala/gpu/RenderEngine.scala:7:7, :37:28, :38:30, :109:24
+  assign io_axi_w_valid = io_axi_w_valid_0;	// src/main/scala/gpu/RenderEngine.scala:7:7, :112:24
+  assign io_axi_w_bits_data =
+    _sparse_io_busy ? _sparse_io_axi_w_bits_data : _blit_io_axi_w_bits_data;	// src/main/scala/gpu/RenderEngine.scala:7:7, :37:28, :38:30, :113:23
+  assign io_axi_w_bits_strb = io_axi_w_bits_strb_0;	// src/main/scala/gpu/RenderEngine.scala:7:7, :113:23
+  assign io_axi_w_bits_last =
+    _sparse_io_busy ? _sparse_io_axi_w_bits_last : _blit_io_axi_w_bits_last;	// src/main/scala/gpu/RenderEngine.scala:7:7, :37:28, :38:30, :113:23
+  assign io_axi_b_ready = io_axi_b_ready_0;	// src/main/scala/gpu/RenderEngine.scala:7:7, :120:24
+  assign io_axi_ar_valid = io_axi_ar_valid_0;	// src/main/scala/gpu/RenderEngine.scala:7:7, :121:25
+  assign io_axi_ar_bits_addr =
+    _sparse_io_busy ? _sparse_io_axi_ar_bits_addr : _blit_io_axi_ar_bits_addr;	// src/main/scala/gpu/RenderEngine.scala:7:7, :37:28, :38:30, :122:24
+  assign io_axi_ar_bits_id = _sparse_io_busy ? 4'h0 : _blit_io_axi_ar_bits_id;	// src/main/scala/gpu/RenderEngine.scala:7:7, :37:28, :38:30, :122:24
+  assign io_axi_ar_bits_len =
+    _sparse_io_busy ? _sparse_io_axi_ar_bits_len : _blit_io_axi_ar_bits_len;	// src/main/scala/gpu/RenderEngine.scala:7:7, :37:28, :38:30, :122:24
+  assign io_axi_r_ready = io_axi_r_ready_0;	// src/main/scala/gpu/RenderEngine.scala:7:7, :129:24
+  assign io_completion_valid = _completions_io_out_valid;	// src/main/scala/gpu/RenderEngine.scala:7:7, :42:35
+  assign io_busy = io_busy_0;	// src/main/scala/gpu/RenderEngine.scala:7:7, :131:{30,47,73,91}, :132:21
+  assign io_queueEmpty = _queue_io_empty;	// src/main/scala/gpu/RenderEngine.scala:7:7, :35:29
+  assign io_swapPending = _swap_io_pending;	// src/main/scala/gpu/RenderEngine.scala:7:7, :39:28
 endmodule
 

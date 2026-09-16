@@ -52,48 +52,69 @@ module GpuPerfCounters(	// src/main/scala/gpu/GpuPerfCounters.scala:7:7
                 io_readBeat,	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
   input  [3:0]  io_writeStrobe,	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
   input         io_stalled,	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
+                io_underflow,	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
+  input  [1:0]  io_renderGrant,	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
+                io_scanoutGrant,	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
   output [63:0] io_cycles,	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
                 io_pixels,	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
                 io_readBytes,	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
                 io_writeBytes,	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
-                io_stalls	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
+                io_stalls,	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
+                io_underflows,	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
+                io_renderGrants,	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
+                io_scanoutGrants	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
 );
 
-  reg [63:0] cycles;	// src/main/scala/gpu/GpuPerfCounters.scala:22:31
-  reg [63:0] pixels;	// src/main/scala/gpu/GpuPerfCounters.scala:23:31
-  reg [63:0] readBytes;	// src/main/scala/gpu/GpuPerfCounters.scala:24:34
-  reg [63:0] writeBytes;	// src/main/scala/gpu/GpuPerfCounters.scala:25:35
-  reg [63:0] stalls;	// src/main/scala/gpu/GpuPerfCounters.scala:26:31
+  reg [63:0] cycles;	// src/main/scala/gpu/GpuPerfCounters.scala:28:31
+  reg [63:0] pixels;	// src/main/scala/gpu/GpuPerfCounters.scala:29:31
+  reg [63:0] readBytes;	// src/main/scala/gpu/GpuPerfCounters.scala:30:34
+  reg [63:0] writeBytes;	// src/main/scala/gpu/GpuPerfCounters.scala:31:35
+  reg [63:0] stalls;	// src/main/scala/gpu/GpuPerfCounters.scala:32:31
+  reg [63:0] underflows;	// src/main/scala/gpu/GpuPerfCounters.scala:33:35
+  reg [63:0] renderGrants;	// src/main/scala/gpu/GpuPerfCounters.scala:34:37
+  reg [63:0] scanoutGrants;	// src/main/scala/gpu/GpuPerfCounters.scala:35:38
   always @(posedge clock) begin	// src/main/scala/gpu/GpuPerfCounters.scala:7:7
     if (reset) begin	// src/main/scala/gpu/GpuPerfCounters.scala:7:7
-      cycles <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:22:31
-      pixels <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:23:31
-      readBytes <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:24:34
-      writeBytes <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:25:35
-      stalls <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:26:31
+      cycles <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:28:31
+      pixels <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:29:31
+      readBytes <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:30:34
+      writeBytes <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:31:35
+      stalls <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:32:31
+      underflows <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:33:35
+      renderGrants <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:34:37
+      scanoutGrants <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:35:38
     end
     else if (io_clear) begin	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
-      cycles <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:22:31
-      pixels <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:23:31
-      readBytes <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:24:34
-      writeBytes <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:25:35
-      stalls <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:26:31
+      cycles <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:28:31
+      pixels <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:29:31
+      readBytes <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:30:34
+      writeBytes <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:31:35
+      stalls <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:32:31
+      underflows <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:33:35
+      renderGrants <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:34:37
+      scanoutGrants <= 64'h0;	// src/main/scala/gpu/GpuPerfCounters.scala:35:38
     end
     else begin	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
       if (io_active)	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
-        cycles <= cycles + 64'h1;	// src/main/scala/gpu/GpuPerfCounters.scala:22:31, :35:40
+        cycles <= cycles + 64'h1;	// src/main/scala/gpu/GpuPerfCounters.scala:28:31, :47:40
       if (io_pixelDone)	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
-        pixels <= pixels + 64'h1;	// src/main/scala/gpu/GpuPerfCounters.scala:23:31, :36:43
+        pixels <= pixels + 64'h1;	// src/main/scala/gpu/GpuPerfCounters.scala:29:31, :48:43
       if (io_readBeat)	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
-        readBytes <= readBytes + 64'h4;	// src/main/scala/gpu/GpuPerfCounters.scala:24:34, :37:48
-      if (|io_writeStrobe)	// src/main/scala/gpu/GpuPerfCounters.scala:38:25
+        readBytes <= readBytes + 64'h4;	// src/main/scala/gpu/GpuPerfCounters.scala:30:34, :49:48
+      if (|io_writeStrobe)	// src/main/scala/gpu/GpuPerfCounters.scala:50:25
         writeBytes <=
           writeBytes
           + {61'h0,
              {1'h0, {1'h0, io_writeStrobe[0]} + {1'h0, io_writeStrobe[1]}}
-               + {1'h0, {1'h0, io_writeStrobe[2]} + {1'h0, io_writeStrobe[3]}}};	// src/main/scala/gpu/GpuPerfCounters.scala:25:35, :35:40, :38:{57,67}
+               + {1'h0, {1'h0, io_writeStrobe[2]} + {1'h0, io_writeStrobe[3]}}};	// src/main/scala/gpu/GpuPerfCounters.scala:31:35, :47:40, :50:{57,67}
       if (io_stalled)	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
-        stalls <= stalls + 64'h1;	// src/main/scala/gpu/GpuPerfCounters.scala:26:31, :39:41
+        stalls <= stalls + 64'h1;	// src/main/scala/gpu/GpuPerfCounters.scala:32:31, :51:41
+      if (io_underflow)	// src/main/scala/gpu/GpuPerfCounters.scala:8:14
+        underflows <= underflows + 64'h1;	// src/main/scala/gpu/GpuPerfCounters.scala:33:35, :52:51
+      if (|io_renderGrant)	// src/main/scala/gpu/GpuPerfCounters.scala:53:25
+        renderGrants <= renderGrants + {62'h0, io_renderGrant};	// src/main/scala/gpu/GpuPerfCounters.scala:34:37, :53:61
+      if (|io_scanoutGrant)	// src/main/scala/gpu/GpuPerfCounters.scala:54:26
+        scanoutGrants <= scanoutGrants + {62'h0, io_scanoutGrant};	// src/main/scala/gpu/GpuPerfCounters.scala:35:38, :54:64
     end
   end // always @(posedge)
   `ifdef ENABLE_INITIAL_REG_	// src/main/scala/gpu/GpuPerfCounters.scala:7:7
@@ -101,29 +122,35 @@ module GpuPerfCounters(	// src/main/scala/gpu/GpuPerfCounters.scala:7:7
       `FIRRTL_BEFORE_INITIAL	// src/main/scala/gpu/GpuPerfCounters.scala:7:7
     `endif // FIRRTL_BEFORE_INITIAL
     initial begin	// src/main/scala/gpu/GpuPerfCounters.scala:7:7
-      automatic logic [31:0] _RANDOM[0:9];	// src/main/scala/gpu/GpuPerfCounters.scala:7:7
+      automatic logic [31:0] _RANDOM[0:15];	// src/main/scala/gpu/GpuPerfCounters.scala:7:7
       `ifdef INIT_RANDOM_PROLOG_	// src/main/scala/gpu/GpuPerfCounters.scala:7:7
         `INIT_RANDOM_PROLOG_	// src/main/scala/gpu/GpuPerfCounters.scala:7:7
       `endif // INIT_RANDOM_PROLOG_
       `ifdef RANDOMIZE_REG_INIT	// src/main/scala/gpu/GpuPerfCounters.scala:7:7
-        for (logic [3:0] i = 4'h0; i < 4'hA; i += 4'h1) begin
-          _RANDOM[i] = `RANDOM;	// src/main/scala/gpu/GpuPerfCounters.scala:7:7
+        for (logic [4:0] i = 5'h0; i < 5'h10; i += 5'h1) begin
+          _RANDOM[i[3:0]] = `RANDOM;	// src/main/scala/gpu/GpuPerfCounters.scala:7:7
         end	// src/main/scala/gpu/GpuPerfCounters.scala:7:7
-        cycles = {_RANDOM[4'h0], _RANDOM[4'h1]};	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :22:31
-        pixels = {_RANDOM[4'h2], _RANDOM[4'h3]};	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :23:31
-        readBytes = {_RANDOM[4'h4], _RANDOM[4'h5]};	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :24:34
-        writeBytes = {_RANDOM[4'h6], _RANDOM[4'h7]};	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :25:35
-        stalls = {_RANDOM[4'h8], _RANDOM[4'h9]};	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :26:31
+        cycles = {_RANDOM[4'h0], _RANDOM[4'h1]};	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :28:31
+        pixels = {_RANDOM[4'h2], _RANDOM[4'h3]};	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :29:31
+        readBytes = {_RANDOM[4'h4], _RANDOM[4'h5]};	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :30:34
+        writeBytes = {_RANDOM[4'h6], _RANDOM[4'h7]};	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :31:35
+        stalls = {_RANDOM[4'h8], _RANDOM[4'h9]};	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :32:31
+        underflows = {_RANDOM[4'hA], _RANDOM[4'hB]};	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :33:35
+        renderGrants = {_RANDOM[4'hC], _RANDOM[4'hD]};	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :34:37
+        scanoutGrants = {_RANDOM[4'hE], _RANDOM[4'hF]};	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :35:38
       `endif // RANDOMIZE_REG_INIT
     end // initial
     `ifdef FIRRTL_AFTER_INITIAL	// src/main/scala/gpu/GpuPerfCounters.scala:7:7
       `FIRRTL_AFTER_INITIAL	// src/main/scala/gpu/GpuPerfCounters.scala:7:7
     `endif // FIRRTL_AFTER_INITIAL
   `endif // ENABLE_INITIAL_REG_
-  assign io_cycles = cycles;	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :22:31
-  assign io_pixels = pixels;	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :23:31
-  assign io_readBytes = readBytes;	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :24:34
-  assign io_writeBytes = writeBytes;	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :25:35
-  assign io_stalls = stalls;	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :26:31
+  assign io_cycles = cycles;	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :28:31
+  assign io_pixels = pixels;	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :29:31
+  assign io_readBytes = readBytes;	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :30:34
+  assign io_writeBytes = writeBytes;	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :31:35
+  assign io_stalls = stalls;	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :32:31
+  assign io_underflows = underflows;	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :33:35
+  assign io_renderGrants = renderGrants;	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :34:37
+  assign io_scanoutGrants = scanoutGrants;	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :35:38
 endmodule
 
