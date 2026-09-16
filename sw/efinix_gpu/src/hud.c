@@ -45,15 +45,17 @@ static int append_number(hud_command_stream *s,uint32_t dst,uint32_t stride,
 int hud_build_metrics(uint32_t dst,uint32_t stride,uint16_t x,uint16_t y,
  const hud_metrics *m,hud_command_stream *s) {
  if(!m || !s || (dst!=GPU_FRAMEBUFFER_A && dst!=GPU_FRAMEBUFFER_B) || stride<1280 || (stride&1u) ||
-  (uint32_t)x+127u>GPU_FRAME_WIDTH || (uint32_t)y+5u>GPU_FRAME_HEIGHT)
+  (uint32_t)x+151u>GPU_FRAME_WIDTH || (uint32_t)y+5u>GPU_FRAME_HEIGHT)
   return GPU_DRIVER_ARGUMENT;
  *s=(hud_command_stream){0};
- const unsigned values[6]={m->fps,m->sprite_count,m->cpu_busy_permille,
-  m->queue_high_watermark,m->underflow_count,m->error_code};
- for(unsigned i=0;i<6;i++) {
+ const unsigned values[7]={m->fps,m->sprite_count,m->cpu_busy_permille,
+  m->queue_high_watermark,m->underflow_count,m->render_stalls,m->error_code};
+ for(unsigned i=0;i<7;i++) {
   uint16_t color=i>=4 && values[i] ? 0xf800 : 0xffff;
   int e=append_number(s,dst,stride,(uint16_t)(x+i*20u),y,values[i],color);
   if(e) return e;
  }
- return append_fill(s,dst,stride,(uint16_t)(x+124u),y,3,5,m->batch_mode?0x07e0:0x001f);
+ int e=append_fill(s,dst,stride,(uint16_t)(x+144u),y,3,5,m->batch_mode?0x07e0:0x001f);
+ if(e) return e;
+ return append_fill(s,dst,stride,(uint16_t)(x+148u),y,3,5,m->qos_adaptive?0x07e0:0xf800);
 }

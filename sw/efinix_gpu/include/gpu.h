@@ -30,6 +30,14 @@ static inline uint32_t gpu_pack_color_key(uint16_t color, uint16_t key) {
 static inline uint32_t gpu_pack_alpha_flags(uint8_t alpha, uint16_t flags) {
     return (uint32_t)alpha | ((uint32_t)flags << GPU_FLAGS_SHIFT);
 }
+static inline uint32_t gpu_pack_qos(uint16_t low, uint16_t high, int adaptive) {
+    return (uint32_t)low | ((uint32_t)high << GPU_QOS_HIGH_SHIFT) |
+           (adaptive ? GPU_QOS_ADAPTIVE : 0u);
+}
+typedef struct {
+ uint64_t cycles, pixels, read_bytes, write_bytes, stalls;
+ uint64_t underflows, render_grants, scanout_grants;
+} gpu_perf_snapshot;
 enum gpu_driver_result { GPU_DRIVER_ID=-1, GPU_DRIVER_VERSION=-2,
  GPU_DRIVER_BUSY=-3, GPU_DRIVER_FULL=-4, GPU_DRIVER_TIMEOUT=-5,
  GPU_DRIVER_TAG=-6, GPU_DRIVER_HARDWARE=-7, GPU_DRIVER_ARGUMENT=-8,
@@ -51,7 +59,11 @@ int gpu_fill_async(gpu_device *d,uint32_t dst,uint32_t stride,uint16_t w,uint16_
 int gpu_copy_async(gpu_device *d,uint32_t src,uint32_t dst,uint32_t src_stride,uint32_t dst_stride,uint16_t w,uint16_t h,uint16_t *tag);
 int gpu_color_key_async(gpu_device *d,uint32_t src,uint32_t dst,uint32_t src_stride,uint32_t dst_stride,uint16_t w,uint16_t h,uint16_t color_key,uint16_t *tag);
 int gpu_alpha_async(gpu_device *d,uint32_t src,uint32_t dst,uint32_t src_stride,uint32_t dst_stride,uint16_t w,uint16_t h,uint8_t alpha,uint16_t *tag);
+int gpu_sparse_async(gpu_device *d,uint32_t tokens,uint32_t dst,uint32_t dst_stride,uint16_t w,uint16_t h,uint16_t *tag);
 int gpu_present_async(gpu_device *d,uint32_t back_buffer,uint16_t *tag);
 int gpu_wait_tag(gpu_device *d,uint16_t tag,uint32_t poll_limit);
+int gpu_set_qos(gpu_device *d,uint16_t low,uint16_t high,int adaptive);
+int gpu_clear_perf(gpu_device *d);
+int gpu_read_perf_snapshot(gpu_device *d,gpu_perf_snapshot *snapshot);
 
 #endif

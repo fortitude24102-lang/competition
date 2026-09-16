@@ -84,3 +84,88 @@ int benchmark_summarize_run(const benchmark_frame_sample *samples,size_t count,
  return 0;
 }
 
+uint16_t benchmark_counter_delta(uint64_t current,uint64_t *previous) {
+ if(!previous || current<*previous) return 0;
+ uint64_t delta=current-*previous;
+ *previous=current;
+ return (uint16_t)(delta>UINT16_MAX?UINT16_MAX:delta);
+}
+
+uint32_t gpu_command_stream_hash(const gpu_command *commands,size_t count,uint32_t hash) {
+ if(!commands) return 0;
+ for(size_t i=0;i<count;i++) {
+  const gpu_command *c=&commands[i];
+  const uint32_t fields[]={c->op,c->src_addr,c->dst_addr,c->src_stride,c->dst_stride,
+   gpu_pack_size(c->width_pixels,c->height_pixels),gpu_pack_color_key(c->color,c->color_key),
+   gpu_pack_alpha_flags(c->alpha,c->flags)};
+  for(size_t field=0;field<sizeof fields/sizeof fields[0];field++)
+   hash=(hash^fields[field])*UINT32_C(16777619);
+ }
+ return hash;
+}
+
+int gpu_qos_benchmark_validate(const gpu_qos_benchmark_result *r) {
+ if(!r || !r->dense_bytes || !r->sparse_bytes || r->sparse_bytes>=r->dense_bytes)
+  return GPU_DRIVER_ARGUMENT;
+ return r->fixed.frame_crc==r->adaptive.frame_crc ? 0 : GPU_DRIVER_HARDWARE;
+}
+
+static int qos_run(gpu_device *d,const gpu_command *commands,size_t count,uint32_t polls,
+ int adaptive,const void *frame,size_t frame_bytes,gpu_qos_sample *sample) {
+ int e=gpu_set_qos(d,256,1536,adaptive); if(e) return e;
+ e=gpu_clear_perf(d); if(e) return e;
+ gpu_platform_sync(); uint64_t start=gpu_platform_cycles();
+ gpu_submit_metrics submit;
+ e=gpu_benchmark_submit_stream(d,commands,count,GPU_SUBMIT_BATCH,polls,&submit); if(e) return e;
+ gpu_platform_sync();
+ gpu_perf_snapshot perf;
+ e=gpu_read_perf_snapshot(d,&perf); if(e) return e;
+ *sample=(gpu_qos_sample){.cpu_cycles=gpu_platform_cycles()-start,
+  .render_stalls=perf.stalls,.underflows=perf.underflows,
+  .render_grants=perf.render_grants,.scanout_grants=perf.scanout_grants,
+  .frame_crc=golden_crc32(frame,frame_bytes)};
+ return 0;
+}
+
+int gpu_benchmark_qos_compare(gpu_device *d,const gpu_command *commands,size_t count,
+ uint32_t polls,const void *frame,size_t frame_bytes,uint32_t dense_bytes,
+ uint32_t sparse_bytes,gpu_qos_benchmark_result *r) {
+ if(!d || !commands || !count || !frame || !frame_bytes || !r) return GPU_DRIVER_ARGUMENT;
+ *r=(gpu_qos_benchmark_result){.dense_bytes=dense_bytes,.sparse_bytes=sparse_bytes};
+ int e=qos_run(d,commands,count,polls,0,frame,frame_bytes,&r->fixed); if(e) return e;
+ e=qos_run(d,commands,count,polls,1,frame,frame_bytes,&r->adaptive); if(e) return e;
+ return gpu_qos_benchmark_validate(r);
+}
+
+static int sparse_run(gpu_device *d,const gpu_command *commands,size_t count,uint32_t polls,
+ const void *frame,size_t frame_bytes,gpu_perf_snapshot *perf,uint64_t *cpu_cycles,
+ uint32_t *crc) {
+ int e=gpu_clear_perf(d); if(e) return e;
+ gpu_platform_sync(); uint64_t start=gpu_platform_cycles();
+ gpu_submit_metrics submit;
+ e=gpu_benchmark_submit_stream(d,commands,count,GPU_SUBMIT_BATCH,polls,&submit); if(e) return e;
+ gpu_platform_sync(); *cpu_cycles=gpu_platform_cycles()-start;
+ e=gpu_read_perf_snapshot(d,perf); if(e) return e;
+ gpu_platform_sync(); *crc=golden_crc32(frame,frame_bytes);
+ return 0;
+}
+
+int gpu_benchmark_sparse_compare(gpu_device *d,const gpu_command *dense_commands,
+ const gpu_command *sparse_commands,size_t count,uint32_t polls,const void *dense_frame,
+ const void *sparse_frame,size_t frame_bytes,uint32_t dense_asset_bytes,
+ uint32_t sparse_asset_bytes,gpu_sparse_benchmark_result *r) {
+ if(!d || !dense_commands || !sparse_commands || !count || !dense_frame || !sparse_frame ||
+    !frame_bytes || !r || !dense_asset_bytes || !sparse_asset_bytes)
+  return GPU_DRIVER_ARGUMENT;
+ *r=(gpu_sparse_benchmark_result){.dense_asset_bytes=dense_asset_bytes,
+  .sparse_asset_bytes=sparse_asset_bytes};
+ int e=sparse_run(d,dense_commands,count,polls,dense_frame,frame_bytes,&r->dense,
+  &r->dense_cpu_cycles,&r->dense_crc); if(e) return e;
+ e=sparse_run(d,sparse_commands,count,polls,sparse_frame,frame_bytes,&r->sparse,
+  &r->sparse_cpu_cycles,&r->sparse_crc); if(e) return e;
+ if(r->dense_crc!=r->sparse_crc) return GPU_DRIVER_HARDWARE;
+ if(r->sparse_asset_bytes>=r->dense_asset_bytes || r->sparse.read_bytes>=r->dense.read_bytes)
+  return GPU_DRIVER_HARDWARE;
+ return 0;
+}
+

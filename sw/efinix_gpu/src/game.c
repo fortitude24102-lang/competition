@@ -31,15 +31,16 @@ void game_step(game_state *g,unsigned input,uint32_t dt) {
  g->tick++;
 }
 
-int game_build_commands(const game_state *g,uint32_t dst,game_command_stream *s) {
+int game_build_commands_mode(const game_state *g,uint32_t dst,int sparse,game_command_stream *s) {
  if(!g || !s || (dst!=GPU_FRAMEBUFFER_A && dst!=GPU_FRAMEBUFFER_B)) return GPU_DRIVER_ARGUMENT;
  *s=(game_command_stream){0};
  s->commands[s->count++]=(gpu_command){.op=GPU_OP_FILL,.dst_addr=dst,.dst_stride=1280,
   .width_pixels=GPU_FRAME_WIDTH,.height_pixels=GPU_FRAME_HEIGHT,.color=0};
- s->commands[s->count++]=(gpu_command){.op=GPU_OP_COLOR_KEY,.src_addr=gpu_player_asset.address,
+ s->commands[s->count++]=(gpu_command){.op=sparse?GPU_OP_SPARSE:GPU_OP_COLOR_KEY,
+  .src_addr=sparse?gpu_demo_sparse_asset.address:gpu_demo_asset.address,
   .dst_addr=dst+(uint32_t)g->player.y*1280u+(uint32_t)g->player.x*2u,
-  .src_stride=gpu_player_asset.stride_bytes,.dst_stride=1280,
-  .width_pixels=gpu_player_asset.width,.height_pixels=gpu_player_asset.height,.color_key=0};
+  .src_stride=gpu_demo_asset.stride_bytes,.dst_stride=1280,
+  .width_pixels=gpu_demo_asset.width,.height_pixels=gpu_demo_asset.height,.color_key=0};
  ++s->sprite_count;
  for(unsigned i=0;i<GAME_MAX_ENEMIES;i++) if(g->enemies[i].active) {
   const game_object *o=&g->enemies[i];
@@ -57,6 +58,10 @@ int game_build_commands(const game_state *g,uint32_t dst,game_command_stream *s)
   ++s->sprite_count;
  }
  return 0;
+}
+
+int game_build_commands(const game_state *g,uint32_t dst,game_command_stream *s) {
+ return game_build_commands_mode(g,dst,0,s);
 }
 
 int game_submit_commands(gpu_device *d,const game_command_stream *s,int batch,uint32_t polls) {

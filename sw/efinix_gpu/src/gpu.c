@@ -28,6 +28,12 @@ static int validate(const gpu_command *c) {
  if(c->op==GPU_OP_FILL) return surface(c->dst_addr,c->dst_stride,c->width_pixels,c->height_pixels);
  if(c->op==GPU_OP_PRESENT)
   return c->dst_addr==GPU_FRAMEBUFFER_A || c->dst_addr==GPU_FRAMEBUFFER_B ? 0 : GPU_ERROR_ADDRESS_RANGE;
+ if(c->op==GPU_OP_SPARSE) {
+  if((c->src_addr&3u) || c->src_addr<GPU_FRAMEBUFFER_A ||
+     c->src_addr>GPU_DDR_END_EXCLUSIVE-4u) return (c->src_addr&3u) ?
+      GPU_ERROR_MISALIGNED_ADDRESS : GPU_ERROR_ADDRESS_RANGE;
+  return surface(c->dst_addr,c->dst_stride,c->width_pixels,c->height_pixels);
+ }
  if(c->op!=GPU_OP_COPY && c->op!=GPU_OP_COLOR_KEY && c->op!=GPU_OP_ALPHA)
   return GPU_ERROR_INVALID_OPCODE;
  e=surface(c->src_addr,c->src_stride,c->width_pixels,c->height_pixels); if(e) return e;
@@ -148,6 +154,11 @@ int gpu_alpha_async(gpu_device *d,uint32_t src,uint32_t dst,uint32_t ss,uint32_t
  gpu_command c={.op=GPU_OP_ALPHA,.src_addr=src,.dst_addr=dst,.src_stride=ss,.dst_stride=ds,.width_pixels=w,.height_pixels=h,.alpha=alpha};
  return gpu_try_submit(d,&c,tag);
 }
+int gpu_sparse_async(gpu_device *d,uint32_t src,uint32_t dst,uint32_t ds,uint16_t w,uint16_t h,uint16_t *tag) {
+ gpu_command c={.op=GPU_OP_SPARSE,.src_addr=src,.dst_addr=dst,.dst_stride=ds,
+  .width_pixels=w,.height_pixels=h};
+ return gpu_try_submit(d,&c,tag);
+}
 int gpu_present_async(gpu_device *d,uint32_t back,uint16_t *tag) {
  gpu_command c={.op=GPU_OP_PRESENT,.dst_addr=back,.dst_stride=2,.width_pixels=1,.height_pixels=1};
  return gpu_try_submit(d,&c,tag);
@@ -160,4 +171,39 @@ int gpu_wait_tag(gpu_device *d,uint16_t tag,uint32_t poll_limit) {
   if(e!=GPU_POLL_PENDING) return e;
  }
  return GPU_DRIVER_TIMEOUT;
+}
+
+int gpu_set_qos(gpu_device *d,uint16_t low,uint16_t high,int adaptive) {
+ if(!d || !d->ready || low>=high || high>GPU_QOS_LOW_MASK || (adaptive!=0 && adaptive!=1))
+  return GPU_DRIVER_ARGUMENT;
+ wr(d,GPU_REG_QOS_WATERMARKS,gpu_pack_qos(low,high,adaptive));
+ gpu_io_fence();
+ return 0;
+}
+
+int gpu_clear_perf(gpu_device *d) {
+ if(!d || !d->ready) return GPU_DRIVER_ARGUMENT;
+ wr(d,GPU_REG_PERF_CONTROL,GPU_PERF_CONTROL_CLEAR);
+ gpu_io_fence();
+ return 0;
+}
+
+static uint64_t read64(gpu_device *d,unsigned low,unsigned high) {
+ uint32_t lo=rd(d,low),hi=rd(d,high);
+ return ((uint64_t)hi<<32)|lo;
+}
+
+int gpu_read_perf_snapshot(gpu_device *d,gpu_perf_snapshot *s) {
+ if(!d || !d->ready || !s) return GPU_DRIVER_ARGUMENT;
+ wr(d,GPU_REG_PERF_CONTROL,GPU_PERF_CONTROL_SNAPSHOT);
+ gpu_io_fence();
+ s->cycles=read64(d,GPU_REG_PERF_CYCLES_LO,GPU_REG_PERF_CYCLES_HI);
+ s->pixels=read64(d,GPU_REG_PERF_PIXELS_LO,GPU_REG_PERF_PIXELS_HI);
+ s->read_bytes=read64(d,GPU_REG_PERF_READ_BYTES_LO,GPU_REG_PERF_READ_BYTES_HI);
+ s->write_bytes=read64(d,GPU_REG_PERF_WRITE_BYTES_LO,GPU_REG_PERF_WRITE_BYTES_HI);
+ s->stalls=read64(d,GPU_REG_PERF_STALLS_LO,GPU_REG_PERF_STALLS_HI);
+ s->underflows=read64(d,GPU_REG_PERF_UNDERFLOWS_LO,GPU_REG_PERF_UNDERFLOWS_HI);
+ s->render_grants=read64(d,GPU_REG_PERF_RENDER_GRANTS_LO,GPU_REG_PERF_RENDER_GRANTS_HI);
+ s->scanout_grants=read64(d,GPU_REG_PERF_SCANOUT_GRANTS_LO,GPU_REG_PERF_SCANOUT_GRANTS_HI);
+ return 0;
 }
