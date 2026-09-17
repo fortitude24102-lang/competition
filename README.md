@@ -1,71 +1,113 @@
 # 易灵思 Ti60F225 2D 图像渲染加速器
 
-本项目参加 2026 年嵌入式 FPGA 赛道，唯一有效实施计划是 [`Efinix_2D图像渲染三人开发计划书_官方Demo版.docx`](docs/word/Efinix_2D图像渲染三人开发计划书_官方Demo版.docx)。该文件现为三人三天收尾版，替代原二十五天排期，但保留原计划全部最终功能和验收结果。
+本项目参加 2026 年嵌入式 FPGA 赛道，正式方案复用官方 Ti60F225 Sapphire RISC-V、DDR3 与 HDMI Demo，在其上增加自研 2D GPU（AetherGX）。原有自研 CPU 只保留为历史参考，不进入比赛主线。
 
-项目直接复用官方 Ti60F225 Demo：以 Sapphire RISC-V + DDR3 工程为主工程底座，以官方 HDMI TX 工程为显示输出底座。原有自研 Chisel CPU 仅保留为历史研究和回退参考，不进入正式 2D GPU 主线。
+当前代码冻结为 **V1 基线**。唯一有效的后续实施计划是 [`Efinix_2D图像渲染V2一周升级计划书_以太网资源服务版.docx`](docs/word/Efinix_2D图像渲染V2一周升级计划书_以太网资源服务版.docx)。
 
-## 当前进度与后三天
+## V1 基线
 
-当前基线为主负责人完成原第 18 天、组员 A 完成原第 19 天、组员 B 完成原第 20 天；官方 Sapphire CPU、DDR3、8 个用户 LED 和 HDMI 已完成基础实机验证。
+V1 已形成从 Sapphire 软件、APB 命令、AetherGX、DDR3 帧缓存到 HDMI 显示的完整闭环，并完成实机显示验证。
 
-- 第 1 天：完成 Sparse token、C 打包器、Chisel 解码与 Blit、Dense/Sparse CRC 和 DDR 字节比较，同时建立显示下溢同步与 Dense 压力基线。
-- 第 2 天：完成可配置的 FIFO 水位自适应 DDR QoS、APB 性能计数、板级接线以及固定轮询/自适应模式对比。
-- 第 3 天：统一生成 RTL 和正式位流，完成时序、启动、300 帧性能、Dense/Sparse 显示一致性、30 分钟耐久和三方封版。
+- 官方 Sapphire RISC-V 运行频率为 100 MHz；GPU 位于 APB Slave 0，基地址为 `0xF8100000`。
+- DDR3 型号为 MT41J128M16JT-125，像素格式为 RGB565，采用前后台双缓冲并在 vblank 执行 PRESENT。
+- 内部渲染分辨率为 640×480@60 FPS，经 2×整数放大后居中输出至 1920×1080 HDMI。
+- AetherGX 支持 Solid Fill、Block Copy、Color Key、Global Alpha、Sparse Blit。
+- 已实现 16 项带 tag 的非阻塞命令队列、AXI Burst、显示异步 FIFO、Scanout DMA、自适应 DDR QoS、性能计数器和下溢统计。
+- Sapphire 固件负责输入、游戏状态更新、命令生成、批量提交和性能统计；当前 300 帧流程能够执行 wait-each/batch、fixed/adaptive QoS 和 Dense/Sparse 对比。
+- 当前板上 Demo 已正常显示并完成固件返回值、寄存器状态、DDR 固件回读和显示下溢检查。
 
-组员 B 三天任务的离线实现和交叉构建已完成：Sparse pack/资源/驱动、QoS 与性能快照 API、HUD、受控 300 帧流程、Sanitizer 测试和 RV32 ELF/BIN/HEX 均已生成；板级验收仍待依赖补齐。主负责人也已重新生成拆分 RTL，并单轮通过 39/39 GPU 测试和完整 Verilog 回归。
+V1 仍有两个任务书缺口：
 
-当前唯一硬依赖在 A-work：仍缺计划要求的 `underflow_pulse_gpu` 跨时钟单周期脉冲，以及从 HDMI 子系统到 `efinix_sapphire_adapter.v` 的连接。正式 Efinity 位流、300 帧板测、耐久、UART/CSV 和最终 SHA256 清单必须等该接口到位；当前不得用悬空输入或旧位流封版。
+1. `gpu_benchmark()` 已能测量 CPU 与 GPU 周期，但当前主程序和 HUD 尚未同时显示纯软件 CPU 渲染与硬件加速渲染的帧率/加速比。
+2. 当前游戏能够统计 300 帧稳定 Sprite 数量，但尚未按 16、32、64、96……逐档施压并确定稳定 60 FPS 的真实上限。
 
-详细文件、输入、输出、依赖和逐日验收均以正式 Word 计划书为准。历史阶段记录只用于追溯，不再决定后续排期。
+因此，V1 可以作为完整硬件管线基线和后续优化对照，但不能表述为已经满足任务书全部要求。
+
+## V2 一周目标
+
+接下来一周只做两件事：
+
+1. 补齐 V1 的 CPU/GPU 可视化性能对比与 Sprite 数量极限测试。
+2. 复用官方千兆以太网 Demo，实现 PC 资源服务器，并把画面升级为 960×540 内部渲染、1920×1080 全屏输出的植物防线式游戏。
+
+### V2 架构边界
+
+```text
+PC Asset Server（只保存和返回资源包）
+        │  UDP：GET(asset_id, offset, length)
+        ▼
+官方 GE/RGMII + FPGA 包接收与 Asset DMA
+        │
+        ▼
+DDR3 资源缓存 ───────────────┐
+        ▲                    │
+        │                    ▼
+Sapphire RISC-V          AetherGX
+资源请求与校验            Fill / Copy / Key / Alpha / Sparse
+缓存与场景管理                 │
+输入、植物/敌人/弹丸逻辑        ▼
+碰撞、波次、动画状态       双缓冲 Framebuffer
+GPU Command 生成               │
+        │                      ▼
+        └────────────────── HDMI 1080p60
+```
+
+PC 不参与逐帧游戏运算、不生成 GPU 命令、不合成画面；它只相当于通过千兆以太网连接的外部资源盘。Sapphire RISC-V 必须主动请求资源、验证 CRC、管理 DDR 缓存，并独立完成游戏逻辑和渲染调度。断开网线后，已经加载到 DDR 的当前场景仍应继续运行。
+
+## 游戏逻辑与素材复用原则
+
+游戏不是本项目的创新重点，V2 不从零设计玩法。实现时优先移植许可清晰的开源 C 代码，并仅改造平台接口、定点数据、输入层和 AetherGX 命令生成层。
+
+- 首选逻辑参考：[ZombieGardenTD](https://github.com/JamesC01/ZombieGardenTD)，C + MIT，适合提取植物、敌人、弹丸、波次和网格逻辑。
+- 架构参考：[PlantsVsZombies-CPP](https://github.com/stefanpeiculeasa/PlantsVsZombies-CPP)，其无图形游戏核心、固定时间步和只读渲染状态的分层方式适合移植到 Sapphire。
+- 素材优先使用自制资源或许可明确的资源，例如 [CC0 tower-defense sprites](https://opengameart.org/content/gameboy-tower-defense-sprites)。
+- 不导入 PopCap/EA 原版图片、字体、音乐、名称或 Logo；所有第三方代码和素材必须保留许可证与来源记录。
 
 ## 官方工程来源
 
-- 主工程：`Ti60F225_DemoBoard_v4/08_ti60f225_soc_demo/09_Ti60F225_hardjtag_demo/par/ddr_demo_ti60`
+- Sapphire + DDR3：`Ti60F225_DemoBoard_v4/08_ti60f225_soc_demo/09_Ti60F225_hardjtag_demo/par/ddr_demo_ti60`
 - HDMI：`Ti60F225_DemoBoard_v4/03_hdmi_tx_demo/hdmi_tx_demo_v2`
+- 千兆以太网：`Ti60F225_DemoBoard_v4/04_Ti60f225_GE_demo/04_Ti60F225_tse_hj_demo_v5`
 - 帧缓存参考：`Ti60F225_DemoBoard_v4/10_Ti60f225_sc431hai2hdmi_demo/Ti60f225_sc431hai2hdmi_v6.rar`
 
-原始 `Ti60F225_DemoBoard_v4` 始终只读。需要复用的文件复制到 `board/efinix_ti60/vendor/`，保持原内容并登记 SHA256。
+原始 `Ti60F225_DemoBoard_v4` 始终只读。需要复用的文件复制到 `board/efinix_ti60/vendor/`，保持原内容并登记 SHA256；派生修改只能进入自研 RTL、派生工程、约束和软件目录。
 
-## 目录说明
+## 当前目录
 
 ```text
 .
-├─ board/efinix_ti60/                 # 从官方 08/03 Demo 派生的比赛板级工程
-│  ├─ rtl/pixel/                      # 组员 A：Copy/Fill/Key/Alpha 像素模块
-│  ├─ rtl/display/                    # 组员 A：FIFO、行缓存、2 倍缩放、HDMI 适配
+├─ board/efinix_ti60/                 # 官方 Demo 派生的板级工程
+│  ├─ rtl/pixel/                      # A：Copy/Fill/Key/Alpha 像素模块
+│  ├─ rtl/display/                    # A：FIFO、行缓存、缩放、HDMI 适配
 │  ├─ vendor/sapphire_ddr3/           # 原样复用的官方 Sapphire/DDR3 文件
 │  ├─ vendor/hdmi_tx/                 # 原样复用的官方 HDMI TX 文件
 │  ├─ vendor/manifest.sha256          # 官方文件来源与哈希
 │  ├─ constraints/                    # DDR3、GPU、HDMI 和 CDC 约束
-│  ├─ output/                         # bit、hex、日志和 Efinity 报告
-│  ├─ efinix_2d_gpu.xml
-│  ├─ efinix_2d_gpu.peri.xml
-│  ├─ efinix_2d_gpu.sdc
 │  └─ rtl/board_top.v
 ├─ chisel/
-│  ├─ src/main/scala/gpu/             # 负责人：APB、命令队列、AXI、渲染、Scanout、QoS
-│  └─ src/test/scala/gpu/             # 负责人：各 Chisel 模块及系统测试
-├─ generated/efinix_gpu/              # Chisel split-verilog 输出，一文件一模块
-├─ sw/efinix_gpu/                     # 组员 B：Sapphire BSP 驱动、黄金模型、游戏 Demo
-├─ release/                           # 最终 bit/hex、固件、基准、视频和 SHA256 清单
-├─ tb/verilog/                        # 组员 A：像素和 HDMI 自检 testbench
+│  ├─ src/main/scala/gpu/             # 负责人：APB、AXI、渲染、DMA、QoS
+│  └─ src/test/scala/gpu/             # 负责人：Chisel 单元与系统测试
+├─ generated/efinix_gpu/              # Chisel split-verilog 输出
+├─ sw/efinix_gpu/                     # B：Sapphire 驱动、游戏、基准
+├─ release/                           # 最终位流、固件、基准和清单
+├─ tb/verilog/                        # A：像素、显示和板级 testbench
 ├─ tb/vectors/                        # 三人共用固定向量、CRC 和随机种子
-├─ scripts/                           # 三条一键测试、生成和板级验收入口
-├─ docs/efinix_2d_gpu/                # 接口合同、验收记录和目录说明
-└─ docs/word/                         # 唯一有效 Word 计划书
+├─ scripts/                           # 测试、生成和板级验收入口
+├─ docs/efinix_2d_gpu/                # 接口合同与验收记录
+└─ docs/word/                         # 当前有效 Word 计划书
 ```
+
+V2 实施后将新增 `board/efinix_ti60/rtl/net/`、`board/efinix_ti60/vendor/ge_udp/`、`sw/efinix_gpu/tools/asset_server/` 和 `sw/efinix_gpu/assets_v2/`。这些目录在对应任务验收前不能被 README 描述为已完成。
 
 ## 三人边界
 
-- 负责人使用 Chisel 实现 GPU 核心，接入官方 APB Slave 0（`0xF8100000`）和 Sapphire 已启用的 32 位外部 AXI Master，不重写 Sapphire CPU、DDR3 控制器或 HDMI。
-- 组员 A 只负责 `board/efinix_ti60/rtl/` 和 `tb/verilog/`；每个新增或修改的 `.v` 文件只能包含一个 `module`。
-- 组员 B 只负责 `sw/efinix_gpu/`；软件建立在官方 Sapphire BSP 上。
+- 负责人使用 Chisel：Asset DMA、三路 DDR QoS、GPU/Scanout 参数化、性能计数与最终集成。
+- 组员 A 使用 Verilog：官方 GE Demo 复用、RGMII/MAC 包通路、UDP 资源流、FIFO/CDC、960×540 全屏显示、板级约束与 Efinity 集成。每个新增或修改的 `.v` 文件只能包含一个 `module`。
+- 组员 B 使用 C：CPU/GPU 对比、Sprite 极限测试、PC 资源服务器、Sapphire 资源客户端/缓存、开源游戏逻辑移植和资源打包。
 
-更详细的目录和复用边界见 [`docs/efinix_2d_gpu/directory_layout.md`](docs/efinix_2d_gpu/directory_layout.md)。
+每个人每天必须提交哪些文件、每个文件的职责、输入、输出、依赖和验收条件，以有效 Word 计划书为准。
 
 ## 测试入口
-
-在本工作树中执行：
 
 ```powershell
 ./scripts/test-efinix-gpu.ps1
@@ -74,4 +116,4 @@
 ./scripts/test-efinix-board.ps1 -EfinityHome D:/efinity -Flow map
 ```
 
-前三条脚本依次检查负责人 GPU、组员 A 的官方 HDMI/RGB565 边界和组员 B 的 Sapphire 软件接口；第四条检查派生工程的 Efinity 映射。最终完成还必须使用同一正式候选位流执行板上 DDR、CPU、LED、HDMI、性能和耐久验收。当前收尾证据见 [负责人验收](docs/efinix_2d_gpu/lead_acceptance.md) 和 [组员 B 验收](docs/efinix_2d_gpu/software_acceptance.md)。
+V2 还必须增加以太网回环/丢包/乱序仿真、资源 CRC、960×540 整帧显示、CPU/GPU 对比和 Sprite 逐档压力测试。最终验收必须使用同一候选位流完成资源加载、网线断开继续运行、1080p60 全屏显示、稳定 60 FPS Sprite 上限和 30 分钟耐久测试。

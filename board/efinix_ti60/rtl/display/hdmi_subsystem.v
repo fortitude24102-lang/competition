@@ -13,6 +13,7 @@ module hdmi_subsystem (
     output wire fifo_level_low,
     output wire fifo_level_high,
     output wire vblank_gpu,
+    output wire underflow_pulse_gpu,
     output wire vblank,
     output wire fifo_full,
     output wire fifo_empty,
@@ -89,6 +90,11 @@ module hdmi_subsystem (
     vblank_pulse_sync u_vblank_sync (
         .src_clk(pixel_clk), .src_reset(pixel_reset), .src_vblank(vblank),
         .dst_clk(gpu_clk), .dst_reset(gpu_reset), .dst_pulse(vblank_gpu)
+    );
+
+    vblank_pulse_sync u_underflow_sync (
+        .src_clk(pixel_clk), .src_reset(pixel_reset), .src_vblank(scale_underflow),
+        .dst_clk(gpu_clk), .dst_reset(gpu_reset), .dst_pulse(underflow_pulse_gpu)
     );
 
     rgb565_to_rgb888 u_rgb (

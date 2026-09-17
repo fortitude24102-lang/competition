@@ -134,7 +134,8 @@ parameter                       AXI_DATA_WIDTH     = `AXI_DATA_WIDTH
    output                             gpu_display_frame_last,
    input                              gpu_display_ready,
    input [11:0]                       gpu_scanout_level,
-   input                              gpu_vblank
+   input                              gpu_vblank,
+   input                              gpu_underflow_pulse
    );
 
 
@@ -485,6 +486,7 @@ Efinix2dGpuTop u_efinix_2d_gpu (
     .io_axi_r_bits_last        (gpu_rlast),
     .io_vblank                 (gpu_vblank),
     .io_scanoutLevel           (gpu_scanout_level),
+    .io_underflow_pulse_gpu    (gpu_underflow_pulse),
     .io_displayReady           (gpu_display_ready),
     .io_displayPixel           (gpu_display_pixel),
     .io_displayValid           (gpu_display_valid),
