@@ -57,6 +57,8 @@ CRC 使用 CRC-32/ISO-HDLC：反射多项式 `0xEDB88320`、初值 `0xFFFFFFFF`�
 
 GET 没有载荷，`payload_len` 表示请求字节数。DATA 必须回显 GET 的 `session/asset_id/offset/payload_len/sequence`；最后一块置 `LAST`。超时重发同一个 GET 时置 `RETRY`，其余字段不变。重复 DATA 可以被识别和计数，但不得第二次写 DDR 或推进 committed 状态。ERROR 没有载荷，具体错误由软件按请求失败处理，不进入 DMA 数据通路。
 
+除带 `LAST` 的最后一块外，DATA 的 `payload_len` 必须是 4 的倍数，保证下一块 offset 仍保持 4 字节对齐；最后一块允许 1～1024 的任意长度。
+
 Sapphire 的职责是选择 `asset_id`、DDR 目标地址和请求时机，执行 20 ms 超时与最多 5 次重试，核对分块 CRC 和完整资源 CRC，并在全部通过后提交缓存。PC 只读取资源文件并响应 GET；FPGA 不解释地图、植物、敌人或动画语义。
 
 ## 4. 网络流接口

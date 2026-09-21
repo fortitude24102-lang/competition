@@ -9,11 +9,36 @@ object GpuMemoryMap {
   val DenseAssets: BigInt = BigInt("02400000", 16)
   val SparseAssets: BigInt = BigInt("06000000", 16)
   val DdrEndExclusive: BigInt = BigInt("10000000", 16)
+  val AssetStart: BigInt = DenseAssets
+  val AssetEndExclusive: BigInt = DdrEndExclusive
 
   val FrameWidth = 640
   val FrameHeight = 480
   val BytesPerPixel = 2
   val FrameBytes: BigInt = FrameWidth * FrameHeight * BytesPerPixel
+}
+
+object AssetDmaRegisterMap {
+  val Session = 0x0100
+  val DstAddr = 0x0104
+  val AssetId = 0x0108
+  val ExpectedOffset = 0x010c
+  val ExpectedSequence = 0x0110
+  val MaxLength = 0x0114
+  val Control = 0x0118
+  val Status = 0x011c
+  val CommittedOffset = 0x0120
+  val CommittedSequence = 0x0124
+  val CommittedBytes = 0x0128
+  val PacketCount = 0x012c
+  val ErrorCount = 0x0130
+  val DuplicateCount = 0x0134
+
+  val All: Seq[Int] = Seq(
+    Session, DstAddr, AssetId, ExpectedOffset, ExpectedSequence, MaxLength,
+    Control, Status, CommittedOffset, CommittedSequence, CommittedBytes,
+    PacketCount, ErrorCount, DuplicateCount
+  )
 }
 
 object GpuRegisterMap {
