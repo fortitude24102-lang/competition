@@ -14,7 +14,7 @@ module tb_hdmi_subsystem;
     wire [15:0] video_rgb565;
     wire video_hs, video_vs, video_de;
     integer source_x, source_y, source_frame;
-    integer checked_frames, active_count, scaled_count, vblank_count;
+    integer checked_frames, active_count, scaled_count, vblank_count, underflow_pulse_count;
     reg cutoff_active = 0, recovery_active = 0, saw_white = 0;
     reg saw_low = 0, saw_high = 0;
 
@@ -47,6 +47,7 @@ module tb_hdmi_subsystem;
     initial begin
         source_x = 0; source_y = 0; source_frame = 0;
         checked_frames = 0; active_count = 0; scaled_count = 0; vblank_count = 0;
+        underflow_pulse_count = 0;
         #37000 gpu_reset = 0;
         #46000 pixel_reset = 0;
         // Phase 0: feed three distinct pattern frames.
@@ -66,6 +67,8 @@ module tb_hdmi_subsystem;
         cutoff_active = 1;
         repeat (500000) @(negedge gpu_clk);   // 5 ms: FIFO drains and lines go black
         if (underflow_event !== 1'b1) $fatal(1, "underflow event was not latched after stream cutoff");
+        if (underflow_pulse_count != underflow_count || underflow_pulse_count == 0)
+            $fatal(1, "underflow CDC mismatch pulses=%0d episodes=%0d", underflow_pulse_count, underflow_count);
 
         // Phase 2: resume with a solid white frame; expect the display to recover.
         cutoff_active = 0;
@@ -91,6 +94,7 @@ module tb_hdmi_subsystem;
 
     always @(posedge gpu_clk) begin
         if (!gpu_reset && vblank_gpu) vblank_count <= vblank_count + 1;
+        if (!gpu_reset && underflow_pulse_gpu) underflow_pulse_count <= underflow_pulse_count + 1;
         if (!gpu_reset && fifo_level > 2048) $fatal(1, "FIFO level overflow: %0d", fifo_level);
         if (!gpu_reset && fifo_level_low) saw_low <= 1;
         if (!gpu_reset && fifo_level_high) saw_high <= 1;

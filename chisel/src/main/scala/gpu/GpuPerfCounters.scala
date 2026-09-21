@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util.PopCount
 
 /** Free-running render, DDR arbitration, and display-underflow counters. */
-class GpuPerfCounters extends Module {
+class GpuPerfCounters(initialValue: BigInt = 0) extends Module {
   val io = IO(new Bundle {
     val clear = Input(Bool())
     val active = Input(Bool())
@@ -25,14 +25,14 @@ class GpuPerfCounters extends Module {
     val scanoutGrants = Output(UInt(64.W))
   })
 
-  private val cycles = RegInit(0.U(64.W))
-  private val pixels = RegInit(0.U(64.W))
-  private val readBytes = RegInit(0.U(64.W))
-  private val writeBytes = RegInit(0.U(64.W))
-  private val stalls = RegInit(0.U(64.W))
-  private val underflows = RegInit(0.U(64.W))
-  private val renderGrants = RegInit(0.U(64.W))
-  private val scanoutGrants = RegInit(0.U(64.W))
+  private val cycles = RegInit(initialValue.U(64.W))
+  private val pixels = RegInit(initialValue.U(64.W))
+  private val readBytes = RegInit(initialValue.U(64.W))
+  private val writeBytes = RegInit(initialValue.U(64.W))
+  private val stalls = RegInit(initialValue.U(64.W))
+  private val underflows = RegInit(initialValue.U(64.W))
+  private val renderGrants = RegInit(initialValue.U(64.W))
+  private val scanoutGrants = RegInit(initialValue.U(64.W))
 
   when(io.clear) {
     cycles := 0.U

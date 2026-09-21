@@ -118,4 +118,4 @@ scripts/test-efinix-software.ps1     # 组员 B 测试入口
 
 原有 `chisel/src/main/scala/cpu/`、`chisel/src/main/scala/soc/`、`rtl/video/` 和旧软件驱动保留为历史基线，但不属于正式 Ti60F225 2D GPU 主线。
 
-尚未生成的第 1 至 3 天文件在此表示冻结后的目标位置，不代表功能已经完成。实际完成状态以测试结果和 `lead_acceptance.md`、`display_acceptance.md`、`software_acceptance.md` 为准。
+组员 B 的三天软件文件和主负责人的拆分 RTL 已生成，完成状态见 `software_acceptance.md` 与 `lead_acceptance.md`。A 的 `underflow_pulse_gpu` CDC/板级接线、最终位流和实机证据仍以 `display_acceptance.md` 及最终发布清单为准。
