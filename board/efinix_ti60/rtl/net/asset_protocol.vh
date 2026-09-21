@@ -1,0 +1,7 @@
+`ifndef ASSET_PROTOCOL_VH
+`define ASSET_PROTOCOL_VH
+`define ASST_MAGIC 32'h4153_5354
+`define ASST_VERSION 16'd1
+`define ASST_DATA 16'd2
+`define ASST_LAST 16'h0001
+`endif

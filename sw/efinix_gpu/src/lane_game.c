@@ -1,0 +1,11 @@
+#include "lane_game.h"
+#include <string.h>
+static uint32_t mix(uint32_t x){x^=x>>16;x*=16777619u;x^=x>>13;return x;}
+void lane_game_init(lane_game_state *s,uint32_t seed){memset(s,0,sizeof *s);s->coins=50;s->phase=LANE_PLAYING;s->wave=1;s->tick=seed;}
+int lane_game_plant(lane_game_state *s,uint8_t r,uint8_t c){if(!s||s->phase!=LANE_PLAYING||r>=LANE_ROWS||c>=LANE_COLS||s->coins<10)return -1;for(unsigned i=0;i<LANE_MAX_PLANTS;i++)if(s->plants[i].active&&s->plants[i].row==r&&s->plants[i].col==c)return -2;for(unsigned i=0;i<LANE_MAX_PLANTS;i++)if(!s->plants[i].active){s->plants[i]=(lane_plant){r,c,100,1,0};s->coins-=10;return 0;}return -3;}
+int lane_game_fire(lane_game_state *s,uint8_t r){if(!s||s->phase!=LANE_PLAYING||r>=LANE_ROWS)return -1;for(unsigned i=0;i<LANE_MAX_PROJECTILES;i++)if(!s->projectiles[i].active){s->projectiles[i]=(lane_projectile){r,1,0,25,0x180};return 0;}return -2;}
+void lane_game_step(lane_game_state *s,uint32_t in){if(!s||s->phase==LANE_WON||s->phase==LANE_LOST)return;if(in&LANE_INPUT_PAUSE){s->phase=s->phase==LANE_PAUSED?LANE_PLAYING:LANE_PAUSED;return;}if(s->phase==LANE_PAUSED)return;s->tick+=16;s->spawned=0;if((s->tick%1000)==0){for(unsigned i=0;i<LANE_MAX_ENEMIES;i++)if(!s->enemies[i].active){s->enemies[i]=(lane_enemy){(uint8_t)(s->wave%LANE_ROWS),1,0,100,0x40};s->spawned=1;break;}}for(unsigned i=0;i<LANE_MAX_PROJECTILES;i++)if(s->projectiles[i].active){s->projectiles[i].x16+=s->projectiles[i].speed16;if(s->projectiles[i].x16>=(LANE_COLS<<16))s->projectiles[i].active=0;}
+for(unsigned i=0;i<LANE_MAX_ENEMIES;i++)if(s->enemies[i].active){s->enemies[i].x16+=s->enemies[i].speed16;if(s->enemies[i].x16>=(LANE_COLS<<16)){s->phase=LANE_LOST;return;}}
+for(unsigned p=0;p<LANE_MAX_PROJECTILES;p++)if(s->projectiles[p].active)for(unsigned e=0;e<LANE_MAX_ENEMIES;e++)if(s->enemies[e].active&&s->projectiles[p].row==s->enemies[e].row&&s->projectiles[p].x16+0x2000>=s->enemies[e].x16){s->enemies[e].hp=(s->enemies[e].hp>s->projectiles[p].damage)?s->enemies[e].hp-s->projectiles[p].damage:0;s->projectiles[p].active=0;if(!s->enemies[e].hp){s->enemies[e].active=0;s->coins+=5;s->score+=10;}}
+if(s->wave>=10){s->phase=LANE_WON;}}
+uint32_t lane_game_crc(const lane_game_state *s){if(!s)return 0;const uint8_t *p=(const uint8_t*)s;uint32_t h=2166136261u;for(size_t i=0;i<sizeof *s;i++)h=mix(h^p[i]);return h;}

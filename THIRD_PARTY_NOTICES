@@ -1,0 +1,4 @@
+ZombieGardenTD (MIT) by JamesC01
+Source: https://github.com/JamesC01/ZombieGardenTD
+License text preserved in third_party/ZombieGardenTD.LICENSE. The lane game adapts the
+plant/enemy/projectile/wave/economy model to a deterministic integer fixed-point core.

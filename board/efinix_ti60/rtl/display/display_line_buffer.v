@@ -7,19 +7,19 @@ module display_line_buffer (
     output wire input_ready,
     input wire line_begin,
     input wire line_done,
-    input wire [9:0] read_index,
+    input wire [10:0] read_index,
     output wire [15:0] read_pixel,
     output reg line_valid,
     output reg protocol_error
 );
-    (* syn_ramstyle = "block_ram" *) reg [15:0] line0 [0:639];
-    (* syn_ramstyle = "block_ram" *) reg [15:0] line1 [0:639];
+    (* syn_ramstyle = "block_ram" *) reg [15:0] line0 [0:959];
+    (* syn_ramstyle = "block_ram" *) reg [15:0] line1 [0:959];
     reg [15:0] line0_read, line1_read;
-    reg [9:0] write_index;
+    reg [10:0] write_index;
     reg write_bank, read_bank, active_bank;
     reg [1:0] bank_ready;
     wire write_fire = input_valid && input_ready;
-    wire write_last = write_index == 10'd639;
+    wire write_last = write_index == 11'd959;
 
     assign input_ready = !bank_ready[write_bank];
     assign read_pixel = active_bank ? line1_read : line0_read;
