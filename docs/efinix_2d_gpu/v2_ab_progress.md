@@ -11,9 +11,10 @@ Baseline merge: ea4930e incorporates origin/main 5ef192d and preserves A-work's 
 ## Work ledger
 
 - [x] Read all seven days of A/B requirements and merge current lead baseline.
-- [~] A days 1–4: behavioral ASST header parser and protocol constants are present; official GE inventory/wrapper, TX, FIFO/CDC, guard and adverse-packet testbench remain.
+- [~] A days 1–4: store-and-forward ASST DATA parser and protocol constants compile; official GE inventory/wrapper, TX, FIFO/CDC, guard and adverse-packet testbench remain.
 - [x] A day 5: display line storage and scaler are parameterized for 960×540 input and 1920×1080 active output; RTL compiles. Full timed pixel run is pending.
 - [~] B days 1–2: deterministic lane core and SVEC generator are present; CPU/GPU visible HUD integration and 300-frame executable stress harness remain.
 - [~] B days 3–4: host ASST protocol/CRC is present and tested; Winsock server, retrying client and transactional cache remain.
-- [x] B days 5–6: deterministic integer lane game, immutable scene command builder, MIT attribution and source license are present; asset pack integration remains.
+- [x] B days 5–6: deterministic integer lane game, immutable scene command builder, MIT attribution and source license are present; asset pack integration remains and the source itself still needs an auditable import record.
 - [ ] A/B days 6–7: integrate available interfaces, build software/server, collect simulation evidence and document outstanding lead/board dependencies.
+
