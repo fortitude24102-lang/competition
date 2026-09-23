@@ -6,6 +6,8 @@
 
 2026-09-23 已接入 A-work `96f46c8` 的 960×540 → 1080p 全屏显示与欠流 CDC，8 项相关仿真及工程清单/RC0 哈希检查通过；GPU RC0 不变。**网络链路、V2 固件与整板验收仍未完成**，不能直接把当前工程当成已上板的 V2。接收范围和 A/B 待交付项见 [V2 最终验收状态](docs/efinix_2d_gpu/v2_final_acceptance.md)。
 
+A、B 组员下一步直接看：[AB 接下来怎么做](docs/efinix_2d_gpu/AB_接下来怎么做.md)。
+
 ## V1 基线
 
 V1 已形成从 Sapphire 软件、APB 命令、AetherGX、DDR3 帧缓存到 HDMI 显示的完整闭环，并完成实机显示验证。
