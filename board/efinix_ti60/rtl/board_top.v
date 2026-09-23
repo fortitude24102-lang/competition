@@ -108,8 +108,11 @@ parameter                       AXI_DATA_WIDTH     = `AXI_DATA_WIDTH
 wire gpu_stream_clk, gpu_stream_reset;
 wire [15:0] gpu_display_pixel;
 wire gpu_display_valid, gpu_display_line_last, gpu_display_frame_last;
-wire gpu_display_ready, gpu_vblank, gpu_underflow_pulse;
+wire gpu_display_ready, gpu_vblank;
 wire [11:0] gpu_scanout_level;
+// GPU-clock-domain, active-high, one-cycle underflow episode indication.
+// Consumed by the GPU performance counter through the Sapphire adapter.
+wire gpu_underflow_pulse;
 efinix_sapphire_adapter sapphire (
  .axi_clk(axi_clk),
  .core_clk(core_clk),
@@ -179,8 +182,8 @@ efinix_sapphire_adapter sapphire (
  .gpu_display_ready(gpu_display_ready),
  .gpu_scanout_level(gpu_scanout_level),
  .gpu_vblank(gpu_vblank),
- .gpu_underflow_pulse(gpu_underflow_pulse)
-);
+ .gpu_underflow_pulse_gpu(gpu_underflow_pulse)
+ );
 wire rst_n;
 wire display_vblank, fifo_full, fifo_empty, display_protocol_error;
 wire display_underflow_event;
@@ -196,9 +199,10 @@ hdmi_subsystem display (
  .gpu_pixel(gpu_display_pixel),.gpu_valid(gpu_display_valid),
  .gpu_line_last(gpu_display_line_last),.gpu_frame_last(gpu_display_frame_last),
  .gpu_ready(gpu_display_ready),.fifo_level(gpu_scanout_level),
- .vblank_gpu(gpu_vblank),.underflow_pulse_gpu(gpu_underflow_pulse),.vblank(display_vblank),
+ .vblank_gpu(gpu_vblank),.vblank(display_vblank),
  .fifo_full(fifo_full),.fifo_empty(fifo_empty),.protocol_error(display_protocol_error),
  .underflow_event(display_underflow_event),.underflow_count(display_underflow_count),
+ .underflow_pulse_gpu(gpu_underflow_pulse),
  .video_rgb565(display_rgb565),.video_hs(display_hs),.video_vs(display_vs),.video_de(display_de),
  .tmds_data0_o(tmds_data0_o),
  .tmds_data1_o(tmds_data1_o),

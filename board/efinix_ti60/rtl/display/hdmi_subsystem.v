@@ -40,7 +40,7 @@ module hdmi_subsystem (
     wire [17:0] fifo_read_data;
     wire fifo_read_valid, fifo_read_ready;
     wire [11:0] fifo_read_level;
-    wire [9:0] line_read_index;
+    wire [10:0] line_read_index;
     wire [15:0] line_pixel;
     wire line_begin, line_done, line_valid;
     wire scale_underflow;
@@ -92,9 +92,9 @@ module hdmi_subsystem (
         .dst_clk(gpu_clk), .dst_reset(gpu_reset), .dst_pulse(vblank_gpu)
     );
 
-    vblank_pulse_sync u_underflow_sync (
-        .src_clk(pixel_clk), .src_reset(pixel_reset), .src_vblank(scale_underflow),
-        .dst_clk(gpu_clk), .dst_reset(gpu_reset), .dst_pulse(underflow_pulse_gpu)
+    underflow_pulse_cdc u_underflow_sync (
+        .pixel_clk(pixel_clk), .pixel_reset(pixel_reset), .scale_underflow(scale_underflow),
+        .gpu_clk(gpu_clk), .gpu_reset(gpu_reset), .underflow_pulse_gpu(underflow_pulse_gpu)
     );
 
     rgb565_to_rgb888 u_rgb (

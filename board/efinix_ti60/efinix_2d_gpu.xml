@@ -41,6 +41,11 @@
     <efx:design_file name="rtl/board_top.v" version="default" library="default" />
     <efx:design_file name="rtl/efinix_sapphire_adapter.v" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/GpuApbRegs.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/AssetDmaRegs.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/AxiWriteEngine.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/wordBuffer_256x32.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/strobeBuffer_256x4.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/AssetDmaWriter.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/ram_16x220.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/Queue16_GpuCommand.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/CommandQueue.sv" version="default" library="default" />
@@ -50,7 +55,6 @@
     <efx:design_file name="../../generated/efinix_gpu/AxiReadEngine_1.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/PixelReadAligner.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/PixelWritePacker.sv" version="default" library="default" />
-    <efx:design_file name="../../generated/efinix_gpu/AxiWriteEngine.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/RRArbiter2_Axi4Address.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/DenseBlitEngine.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/SparseDecoder.sv" version="default" library="default" />
@@ -61,11 +65,14 @@
     <efx:design_file name="../../generated/efinix_gpu/gpu_pixel_color_key.v" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/gpu_pixel_alpha_blend.v" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/gpu_pixel_pipe.v" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/gpu_pixel_contract.vh" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/PixelPipeHarness.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/GpuPerfCounters.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/Arbiter4_GpuCompletion.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/RenderEngine.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/ScanoutDma.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/ram_256x39.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/Queue256_Axi4ReadData.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/DdrQosArbiter.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/Efinix2dGpuTop.sv" version="default" library="default" />
     <efx:design_file name="rtl/display/pixel_async_fifo.v" version="default" library="default" />
@@ -74,6 +81,7 @@
     <efx:design_file name="rtl/display/vblank_pulse_sync.v" version="default" library="default" />
     <efx:design_file name="rtl/display/rgb565_to_rgb888.v" version="default" library="default" />
     <efx:design_file name="rtl/display/hdmi_tx_adapter.v" version="default" library="default" />
+    <efx:design_file name="rtl/display/underflow_pulse_cdc.v" version="default" library="default" />
     <efx:design_file name="rtl/display/hdmi_subsystem.v" version="default" library="default" />
     <efx:design_file name="vendor/hdmi_tx/rtl/reset.v" version="default" library="default" />
     <efx:design_file name="vendor/hdmi_tx/rtl/hdmi_src/dvi_tx/dvi_encoder.v" version="default" library="default" />

@@ -37,9 +37,9 @@ module tb_hdmi_subsystem;
     endfunction
 
     task automatic advance_source();
-        if (source_x == 639) begin
+        if (source_x == 959) begin
             source_x = 0;
-            if (source_y == 479) begin source_y = 0; source_frame = source_frame + 1; end
+            if (source_y == 539) begin source_y = 0; source_frame = source_frame + 1; end
             else source_y = source_y + 1;
         end else source_x = source_x + 1;
     endtask
@@ -56,8 +56,8 @@ module tb_hdmi_subsystem;
             if (gpu_ready) begin
                 gpu_valid = 1;
                 gpu_pixel = pattern(source_x, source_y, source_frame);
-                gpu_line_last = source_x == 639;
-                gpu_frame_last = source_x == 639 && source_y == 479;
+                gpu_line_last = source_x == 959;
+                gpu_frame_last = source_x == 959 && source_y == 539;
                 advance_source();
             end else gpu_valid = 0;
         end
@@ -74,13 +74,13 @@ module tb_hdmi_subsystem;
         cutoff_active = 0;
         recovery_active = 1;
         source_x = 0;
-        while (source_x < 640 * 480) begin
+        while (source_x < 960 * 540) begin
             @(negedge gpu_clk);
             if (gpu_ready) begin
                 gpu_valid = 1;
                 gpu_pixel = 16'hffff;
-                gpu_line_last = (source_x % 640) == 639;
-                gpu_frame_last = (source_x % 640) == 639 && (source_x / 640) == 479;
+                gpu_line_last = (source_x % 960) == 959;
+                gpu_frame_last = (source_x % 960) == 959 && (source_x / 960) == 539;
                 source_x = source_x + 1;
             end else gpu_valid = 0;
         end
@@ -88,7 +88,7 @@ module tb_hdmi_subsystem;
         repeat (800000) @(negedge gpu_clk);   // let the recovery frame reach the screen
         if (!saw_white) $fatal(1, "display did not recover: no white pixel seen after resume");
         recovery_active = 0;
-        $display("PASS display: FIFO CDC, 2x centered scaling, vblank sync, TMDS boundary, underflow latch + black background, recovery, QoS watermarks");
+        $display("PASS display: 960x540 full-screen 2x scaling, two complete 1080p frames, CDC, underflow and recovery");
         $finish;
     end
 
@@ -107,7 +107,7 @@ module tb_hdmi_subsystem;
         v = dut.u_scale.v_count;
         expected_de = h >= 192 && h < 2112 && v >= 41 && v < 1121;
         ax = h - 192; ay = v - 41;
-        expected_scaled = expected_de && ax >= 320 && ax < 1600 && ay >= 60 && ay < 1020;
+        expected_scaled = expected_de;
         if (!pixel_reset) begin
             if (video_de !== expected_de) $fatal(1, "DE mismatch at %0d,%0d", h, v);
             if (video_hs !== (h < 44)) $fatal(1, "HS mismatch at %0d", h);
@@ -116,7 +116,7 @@ module tb_hdmi_subsystem;
             if (checked_frames >= 1 && expected_de) begin
                 active_count = active_count + 1;
                 if (expected_scaled) begin
-                    sx = (ax - 320) >> 1; sy = (ay - 60) >> 1;
+                    sx = ax >> 1; sy = ay >> 1;
                     scaled_count = scaled_count + 1;
                     if (cutoff_active || recovery_active) begin
                         // No garbage: only black, a fed pattern, or the recovery white.
@@ -137,7 +137,7 @@ module tb_hdmi_subsystem;
             if (h == 2199 && v == 1124) begin
                 checked_frames = checked_frames + 1;
                 if (checked_frames == 3) begin
-                    if (active_count != 2*1920*1080 || scaled_count != 2*1280*960)
+                    if (active_count != 2*1920*1080 || scaled_count != 2*1920*1080)
                         $fatal(1, "frame geometry mismatch active=%0d scaled=%0d", active_count, scaled_count);
                     if (vblank_count != 3 || protocol_error)
                         $fatal(1, "CDC/display status failure pulses=%0d protocol=%b", vblank_count, protocol_error);
