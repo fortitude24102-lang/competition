@@ -113,7 +113,8 @@ class AssetDmaRegs extends Module {
 
   io.metaOut.valid := io.metaIn.valid && expected
   io.metaOut.bits := meta
-  io.metaIn.ready := Mux(packetPending, false.B, Mux(expected, io.metaOut.ready, true.B))
+  io.metaIn.ready := Mux(packetPending || aborting, false.B,
+    Mux(expected, io.metaOut.ready, true.B))
   io.dropPacket := io.metaIn.valid && io.metaIn.ready && !expected
 
   when(io.metaOut.fire) {
@@ -156,7 +157,7 @@ class AssetDmaRegs extends Module {
 
   when(io.packetFailed && packetPending) {
     packetPending := false.B
-    active := false.B
+    aborting := true.B
     error := true.B
     errorCount := errorCount + 1.U
     lastError := Mux(io.packetError === 0.U, AssetDmaError.AxiResponse.U, io.packetError)

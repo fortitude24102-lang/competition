@@ -1,4 +1,9 @@
 GpuApbRegs.sv
+AssetDmaRegs.sv
+AxiWriteEngine.sv
+wordBuffer_256x32.sv
+strobeBuffer_256x4.sv
+AssetDmaWriter.sv
 ram_16x220.sv
 Queue16_GpuCommand.sv
 CommandQueue.sv
@@ -8,7 +13,6 @@ AxiReadEngine.sv
 AxiReadEngine_1.sv
 PixelReadAligner.sv
 PixelWritePacker.sv
-AxiWriteEngine.sv
 RRArbiter2_Axi4Address.sv
 DenseBlitEngine.sv
 SparseDecoder.sv
@@ -25,5 +29,7 @@ GpuPerfCounters.sv
 Arbiter4_GpuCompletion.sv
 RenderEngine.sv
 ScanoutDma.sv
+ram_256x39.sv
+Queue256_Axi4ReadData.sv
 DdrQosArbiter.sv
 Efinix2dGpuTop.sv

@@ -38,6 +38,7 @@ class ScanoutDmaProductionHarness extends Module {
   scanout.io.enable := !stopRequested
   scanout.io.frontBase := base
   scanout.io.fifoLevel := 0.U
+  scanout.io.refill := false.B
   scanout.io.pixel.ready := true.B
   scanout.io.axi.ar.ready := readBeats === 0.U
   scanout.io.axi.aw.ready := true.B
@@ -421,6 +422,7 @@ class GpuSystemSpec extends AnyFunSpec with StableChiselSim with Matchers {
   describe("ScanoutDma") {
     it("reads a strided framebuffer in order and marks line and frame boundaries") {
       simulate(new ScanoutDma(frameWidth = 3, frameHeight = 2, strideBytes = 8, lowWatermark = 2)) { dut =>
+        dut.io.refill.poke(false)
         val memory = Map[Long, Long](
           0x2000L -> 0x22221111L,
           0x2004L -> 0xaaaa3333L,
@@ -487,6 +489,7 @@ class GpuSystemSpec extends AnyFunSpec with StableChiselSim with Matchers {
 
     it("waits for the configured FIFO low watermark before issuing the next row") {
       simulate(new ScanoutDma(frameWidth = 2, frameHeight = 1, strideBytes = 4, lowWatermark = 2)) { dut =>
+        dut.io.refill.poke(false)
         dut.io.enable.poke(true)
         dut.io.frontBase.poke(0x2000)
         dut.io.fifoLevel.poke(3)
@@ -510,9 +513,12 @@ class GpuSystemSpec extends AnyFunSpec with StableChiselSim with Matchers {
       }
     }
 
-    it("streams all 307200 production pixels across split bursts with a fixed frame CRC") {
+    it("streams all 518400 production pixels across split bursts with a fixed frame CRC") {
+      GpuMemoryMap.FrameWidth shouldBe 960
+      GpuMemoryMap.FrameHeight shouldBe 540
+      GpuMemoryMap.FrameBytes shouldBe BigInt(1036800)
       simulate(new ScanoutDmaProductionHarness) { dut =>
-        dut.clock.step(500000)
+        dut.clock.step(850000)
         dut.io.done.expect(true)
         withClue(s"first pixel mismatch at ${dut.io.mismatchAt.peek().litValue}, actual ${dut.io.mismatchActual.peek().litValue}: ") {
           dut.io.mismatchCode.peek().litValue shouldBe 0
@@ -521,7 +527,7 @@ class GpuSystemSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.pixelCount.expect(GpuMemoryMap.FrameWidth * GpuMemoryMap.FrameHeight)
         dut.io.lineCount.expect(GpuMemoryMap.FrameHeight)
         dut.io.frameLastCount.expect(1)
-        dut.io.frameCrc.expect(0x0fc5c6bcL)
+        dut.io.frameCrc.expect(0x954a2475L)
       }
     }
   }

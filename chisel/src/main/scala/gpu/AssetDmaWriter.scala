@@ -15,6 +15,7 @@ class AssetDmaWriter extends Module {
     val meta = Flipped(Decoupled(new AssetPacketMeta))
     val payload = Flipped(Decoupled(new AssetPayloadByte))
     val abort = Input(Bool())
+    val streamError = Input(Bool())
     val axi = new Axi4MasterPort
     val busy = Output(Bool())
     val packetCommitted = Output(Bool())
@@ -52,7 +53,7 @@ class AssetDmaWriter extends Module {
   abortDonePulse := false.B
 
   io.meta.ready := state === idle && !io.abort
-  io.payload.ready := state === receive && !io.abort
+  io.payload.ready := state === receive && !io.abort && !io.streamError
 
   when(io.meta.fire) {
     packetLength := io.meta.bits.length
@@ -87,6 +88,10 @@ class AssetDmaWriter extends Module {
     }.otherwise {
       abortRequested := true.B
     }
+  }.elsewhen(io.streamError && (state === receive || state === request)) {
+    state := idle
+    failedPulse := true.B
+    packetError := AssetDmaError.Stream.U
   }.elsewhen(state === receive && io.payload.fire) {
     when(io.payload.bits.last =/= expectedLast) {
       state := idle
@@ -114,7 +119,7 @@ class AssetDmaWriter extends Module {
   private val cappedBeats = Mux(remainingBeats > 256.U, 256.U, remainingBeats)
   private val nextBurstBeats = Mux(cappedBeats > wordsToBoundary, wordsToBoundary, cappedBeats)
 
-  writer.io.request.valid := state === request && !abortRequested && !io.abort
+  writer.io.request.valid := state === request && !abortRequested && !io.abort && !io.streamError
   writer.io.request.bits.address := currentAddress
   writer.io.request.bits.beats := nextBurstBeats
   when(writer.io.request.fire) {
@@ -139,15 +144,15 @@ class AssetDmaWriter extends Module {
   }
 
   when(state === waitBurst && writer.io.done) {
-    when(writer.io.error) {
+    when(abortRequested || io.abort) {
+      state := idle
+      abortRequested := false.B
+      abortDonePulse := true.B
+    }.elsewhen(writer.io.error) {
       state := idle
       abortRequested := false.B
       failedPulse := true.B
       packetError := AssetDmaError.AxiResponse.U
-    }.elsewhen(abortRequested) {
-      state := idle
-      abortRequested := false.B
-      abortDonePulse := true.B
     }.elsewhen(remainingBeats === 0.U) {
       state := idle
       committedPulse := true.B

@@ -9,9 +9,8 @@ always @(posedge clk or posedge reset) begin
   if(meta_valid&&meta_ready) meta_valid<=0;
   if(payload_valid&&payload_ready) begin payload_valid<=0; if(payload_last) begin payload_last<=0;state<=IDLE;end end
   case(state)
-   IDLE: if(rx_valid) begin state<=RECV;count<=1;packet_length<=rx_length;mem[0]<=rx_byte;end
+   IDLE: if(rx_valid) begin state<=RECV;count<=1;packet_length<=rx_length;mem[0]<=rx_byte;hm[31:24]<=rx_byte;end
    RECV: if(rx_valid) begin if(count<1056) mem[count]<=rx_byte; count<=count+1; case(count) 1:hm[23:16]<=rx_byte;2:hm[15:8]<=rx_byte;3:hm[7:0]<=rx_byte;4:hv[15:8]<=rx_byte;5:hv[7:0]<=rx_byte;6:ht[15:8]<=rx_byte;7:ht[7:0]<=rx_byte;8:hs[31:24]<=rx_byte;9:hs[23:16]<=rx_byte;10:hs[15:8]<=rx_byte;11:hs[7:0]<=rx_byte;12:ha[31:24]<=rx_byte;13:ha[23:16]<=rx_byte;14:ha[15:8]<=rx_byte;15:ha[7:0]<=rx_byte;16:ho[31:24]<=rx_byte;17:ho[23:16]<=rx_byte;18:ho[15:8]<=rx_byte;19:ho[7:0]<=rx_byte;20:hl[15:8]<=rx_byte;21:hl[7:0]<=rx_byte;22:hf[15:8]<=rx_byte;23:hf[7:0]<=rx_byte;24:hq[31:24]<=rx_byte;25:hq[23:16]<=rx_byte;26:hq[15:8]<=rx_byte;27:hq[7:0]<=rx_byte;28:hc[31:24]<=rx_byte;29:hc[23:16]<=rx_byte;30:hc[15:8]<=rx_byte;31:hc[7:0]<=rx_byte;endcase if(rx_last) begin
-      hm[31:24]<=mem[0];
        if(header_ok) begin meta_session<=hs;meta_asset_id<=ha;meta_offset<=ho;meta_length<=hl;meta_flags<=hf;meta_sequence<=hq;meta_crc32<=hc;meta_valid<=1;send_index<=0;state<=WAIT_META;end else begin error_count<=error_count+1;state<=IDLE;end end end
    WAIT_META: if(meta_valid&&meta_ready) state<=SEND;
    SEND: if(!payload_valid||payload_ready) begin payload_data<=mem[32+send_index];payload_valid<=1;payload_last<=send_index==hl-1; if(send_index<hl-1) send_index<=send_index+1;end

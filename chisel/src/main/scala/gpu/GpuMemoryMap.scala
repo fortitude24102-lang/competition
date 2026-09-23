@@ -12,8 +12,8 @@ object GpuMemoryMap {
   val AssetStart: BigInt = DenseAssets
   val AssetEndExclusive: BigInt = DdrEndExclusive
 
-  val FrameWidth = 640
-  val FrameHeight = 480
+  val FrameWidth = 960
+  val FrameHeight = 540
   val BytesPerPixel = 2
   val FrameBytes: BigInt = FrameWidth * FrameHeight * BytesPerPixel
 }

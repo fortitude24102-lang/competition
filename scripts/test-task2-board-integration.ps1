@@ -56,7 +56,7 @@ $generatedRoot = Join-Path $projectRoot 'generated/efinix_gpu'
 $generatedFileList = @(
     Get-Content (Join-Path $generatedRoot 'filelist.f') |
         ForEach-Object { $_.Trim().Replace('.\', '').Replace('./', '') } |
-        Where-Object { $_ -and [IO.Path]::GetExtension($_) -in '.sv', '.v' }
+        Where-Object { $_ -and [IO.Path]::GetExtension($_) -in '.sv', '.v', '.vh' }
 )
 $projectGeneratedList = @(
     $sourceList |
@@ -67,6 +67,7 @@ if (($generatedFileList -join "`n") -ne ($projectGeneratedList -join "`n")) {
     throw 'FAIL generated integration: split-verilog filelist and Efinity source order differ.'
 }
 foreach ($generatedFile in $generatedFileList) {
+    if ([IO.Path]::GetExtension($generatedFile) -eq '.vh') { continue }
     $generatedSource = Get-Content -Raw (Join-Path $generatedRoot $generatedFile)
     $moduleCount = [regex]::Matches($generatedSource, '(?m)^\s*module\s+[A-Za-z_][A-Za-z0-9_$]*').Count
     if ($moduleCount -ne 1) {
@@ -75,7 +76,7 @@ foreach ($generatedFile in $generatedFileList) {
 }
 $generatedDirectoryFiles = @(
     Get-ChildItem -LiteralPath $generatedRoot -File |
-        Where-Object { $_.Extension -in '.sv', '.v' } |
+        Where-Object { $_.Extension -in '.sv', '.v', '.vh' } |
         ForEach-Object { $_.Name } |
         Sort-Object
 )
