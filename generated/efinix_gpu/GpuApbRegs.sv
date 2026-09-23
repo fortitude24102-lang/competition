@@ -114,7 +114,7 @@ module GpuApbRegs(	// src/main/scala/gpu/GpuApbRegs.scala:6:7
   wire        _legalOffset_WIRE_3 = address == 16'hC;	// src/main/scala/gpu/GpuApbRegs.scala:45:32, :50:53
   wire        submit = _io_perfClear_T & _legalOffset_WIRE_3 & writeData[0];	// src/main/scala/gpu/GpuApbRegs.scala:47:34, :50:{33,42,53,82,94}
   wire        _legalOffset_WIRE_19 = address == 16'h4C;	// src/main/scala/gpu/GpuApbRegs.scala:45:32, :52:13
-  wire        _legalOffset_WIRE_0 = address == 16'h0;	// <stdin>:225:31, src/main/scala/gpu/GpuApbRegs.scala:45:32, :53:78
+  wire        _legalOffset_WIRE_0 = address == 16'h0;	// <stdin>:245:31, src/main/scala/gpu/GpuApbRegs.scala:45:32, :53:78
   wire        _legalOffset_WIRE_1 = address == 16'h4;	// src/main/scala/gpu/GpuApbRegs.scala:45:32, :53:78
   wire        _legalOffset_WIRE_2 = address == 16'h8;	// src/main/scala/gpu/GpuApbRegs.scala:45:32, :53:78
   wire        _legalOffset_WIRE_4 = address == 16'h10;	// src/main/scala/gpu/GpuApbRegs.scala:45:32, :53:78
@@ -198,24 +198,24 @@ module GpuApbRegs(	// src/main/scala/gpu/GpuApbRegs.scala:6:7
   reg         qosAdaptiveEnable;	// src/main/scala/gpu/GpuApbRegs.scala:64:42
   wire        qosWriteValid =
     writeData[30:28] == 3'h0 & writeData[15:12] == 4'h0
-    & writeData[11:0] < writeData[27:16];	// <stdin>:236:30, src/main/scala/gpu/GpuApbRegs.scala:47:34, :66:{40,49,57,69,78,86}, :67:{14,22,33}, :164:23
+    & writeData[11:0] < writeData[27:16];	// <stdin>:256:30, src/main/scala/gpu/GpuApbRegs.scala:47:34, :66:{40,49,57,69,78,86}, :67:{14,22,33}, :164:23
   wire        io_perfClear_0 = _io_perfClear_T & _legalOffset_WIRE_19 & writeData[1];	// src/main/scala/gpu/GpuApbRegs.scala:47:34, :50:33, :52:13, :81:88, :82:{37,81}
   always @(posedge clock) begin	// src/main/scala/gpu/GpuApbRegs.scala:6:7
     if (reset) begin	// src/main/scala/gpu/GpuApbRegs.scala:6:7
-      shadow_op <= 4'h0;	// <stdin>:236:30, src/main/scala/gpu/GpuApbRegs.scala:43:31
+      shadow_op <= 4'h0;	// <stdin>:256:30, src/main/scala/gpu/GpuApbRegs.scala:43:31
       shadow_srcAddr <= 32'h0;	// src/main/scala/gpu/GpuApbRegs.scala:43:31
       shadow_dstAddr <= 32'h0;	// src/main/scala/gpu/GpuApbRegs.scala:43:31
-      shadow_widthPixels <= 16'h0;	// <stdin>:225:31, src/main/scala/gpu/GpuApbRegs.scala:43:31
-      shadow_heightPixels <= 16'h0;	// <stdin>:225:31, src/main/scala/gpu/GpuApbRegs.scala:43:31
+      shadow_widthPixels <= 16'h0;	// <stdin>:245:31, src/main/scala/gpu/GpuApbRegs.scala:43:31
+      shadow_heightPixels <= 16'h0;	// <stdin>:245:31, src/main/scala/gpu/GpuApbRegs.scala:43:31
       shadow_srcStride <= 32'h0;	// src/main/scala/gpu/GpuApbRegs.scala:43:31
       shadow_dstStride <= 32'h0;	// src/main/scala/gpu/GpuApbRegs.scala:43:31
-      shadow_color <= 16'h0;	// <stdin>:225:31, src/main/scala/gpu/GpuApbRegs.scala:43:31
-      shadow_colorKey <= 16'h0;	// <stdin>:225:31, src/main/scala/gpu/GpuApbRegs.scala:43:31
-      shadow_alpha <= 8'h0;	// <stdin>:227:33, src/main/scala/gpu/GpuApbRegs.scala:43:31
-      shadow_flags <= 16'h0;	// <stdin>:225:31, src/main/scala/gpu/GpuApbRegs.scala:43:31
-      shadow_tag <= 16'h0;	// <stdin>:225:31, src/main/scala/gpu/GpuApbRegs.scala:43:31
+      shadow_color <= 16'h0;	// <stdin>:245:31, src/main/scala/gpu/GpuApbRegs.scala:43:31
+      shadow_colorKey <= 16'h0;	// <stdin>:245:31, src/main/scala/gpu/GpuApbRegs.scala:43:31
+      shadow_alpha <= 8'h0;	// <stdin>:247:33, src/main/scala/gpu/GpuApbRegs.scala:43:31
+      shadow_flags <= 16'h0;	// <stdin>:245:31, src/main/scala/gpu/GpuApbRegs.scala:43:31
+      shadow_tag <= 16'h0;	// <stdin>:245:31, src/main/scala/gpu/GpuApbRegs.scala:43:31
       pending <= 1'h0;	// src/main/scala/gpu/GpuApbRegs.scala:44:32
-      address <= 16'h0;	// <stdin>:225:31, src/main/scala/gpu/GpuApbRegs.scala:45:32
+      address <= 16'h0;	// <stdin>:245:31, src/main/scala/gpu/GpuApbRegs.scala:45:32
       write <= 1'h0;	// src/main/scala/gpu/GpuApbRegs.scala:44:32, :46:30
       writeData <= 32'h0;	// src/main/scala/gpu/GpuApbRegs.scala:47:34
       perfCycles <= 64'h0;	// src/main/scala/gpu/GpuApbRegs.scala:54:35
@@ -445,7 +445,7 @@ module GpuApbRegs(	// src/main/scala/gpu/GpuApbRegs.scala:6:7
                                                                                                                                       ? perfScanoutGrants[31:0]
                                                                                                                                       : _legalOffset_WIRE_35
                                                                                                                                           ? perfScanoutGrants[63:32]
-                                                                                                                                          : 32'h0;	// <stdin>:225:31, :227:33, :236:30, src/main/scala/gpu/GpuApbRegs.scala:6:7, :43:31, :53:78, :54:35, :55:35, :56:38, :57:39, :58:35, :59:39, :60:41, :61:42, :62:40, :63:41, :64:42, :139:13, :140:19, :141:41, :142:46, :144:{17,23}, :149:41, :150:46, :151:46, :152:{43,49}, :153:48, :154:48, :155:{47,53}, :156:{49,55}, :157:42, :158:47, :159:44, :160:49, :161:50, :162:49, :164:{17,23}, :166:{51,64}, :167:{51,64}, :168:{51,64}, :169:{51,64}, :170:{54,70}, :171:{54,70}, :172:{55,72}, :173:{55,72}, :174:{51,64}, :175:{51,64}, :176:{55,72}, :177:{55,72}, :178:{57,76}, :179:{57,76}, :180:{58,78}, :181:{58,78}
+                                                                                                                                          : 32'h0;	// <stdin>:245:31, :247:33, :256:30, src/main/scala/gpu/GpuApbRegs.scala:6:7, :43:31, :53:78, :54:35, :55:35, :56:38, :57:39, :58:35, :59:39, :60:41, :61:42, :62:40, :63:41, :64:42, :139:13, :140:19, :141:41, :142:46, :144:{17,23}, :149:41, :150:46, :151:46, :152:{43,49}, :153:48, :154:48, :155:{47,53}, :156:{49,55}, :157:42, :158:47, :159:44, :160:49, :161:50, :162:49, :164:{17,23}, :166:{51,64}, :167:{51,64}, :168:{51,64}, :169:{51,64}, :170:{54,70}, :171:{54,70}, :172:{55,72}, :173:{55,72}, :174:{51,64}, :175:{51,64}, :176:{55,72}, :177:{55,72}, :178:{57,76}, :179:{57,76}, :180:{58,78}, :181:{58,78}
   assign io_pready = transfer;	// src/main/scala/gpu/GpuApbRegs.scala:6:7, :49:{34,48}
   assign io_pslverror =
     transfer

@@ -23,6 +23,7 @@ class ScanoutDma(
     val enable = Input(Bool())
     val frontBase = Input(UInt(32.W))
     val fifoLevel = Input(UInt(12.W))
+    val refill = Input(Bool())
     val pixel = Decoupled(new ScanoutPixel)
     val axi = new Axi4MasterPort
     val busy = Output(Bool())
@@ -53,7 +54,7 @@ class ScanoutDma(
     state := waitDemand
   }
 
-  when(state === waitDemand && io.fifoLevel <= lowWatermark.U) {
+  when(state === waitDemand && (io.fifoLevel <= lowWatermark.U || io.refill)) {
     state := startAligner
   }
 

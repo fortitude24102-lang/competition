@@ -2,7 +2,7 @@
 
 本项目参加 2026 年嵌入式 FPGA 赛道，正式方案复用官方 Ti60F225 Sapphire RISC-V、DDR3 与 HDMI Demo，在其上增加自研 2D GPU（AetherGX）。原有自研 CPU 只保留为历史参考，不进入比赛主线。
 
-当前代码冻结为 **V1 基线**。唯一有效的后续实施计划是 [`Efinix_2D图像渲染V2一周升级计划书_以太网资源服务版.docx`](docs/word/Efinix_2D图像渲染V2一周升级计划书_以太网资源服务版.docx)。
+已验证的板上版本为 **V1 基线**；当前负责人 Chisel/生成 RTL 正按 V2 升级，板级工程和固件须按 V2 接口同步后再构建。唯一有效的后续实施计划是 [`Efinix_2D图像渲染V2一周升级计划书_以太网资源服务版.docx`](docs/word/Efinix_2D图像渲染V2一周升级计划书_以太网资源服务版.docx)。
 
 ## V1 基线
 
@@ -106,6 +106,8 @@ V2 实施后将新增 `board/efinix_ti60/rtl/net/`、`board/efinix_ti60/vendor/g
 - 组员 B 使用 C：CPU/GPU 对比、Sprite 极限测试、PC 资源服务器、Sapphire 资源客户端/缓存、开源游戏逻辑移植和资源打包。
 
 每个人每天必须提交哪些文件、每个文件的职责、输入、输出、依赖和验收条件，以有效 Word 计划书为准。
+
+主负责人 V2 离线实现、生成 RTL 的接线说明及尚需 A/B 交付的清单见 [V2 主负责人离线交付与接线边界](docs/efinix_2d_gpu/v2_lead_offline_acceptance.md)；其中仿真结果不等于板上验收。
 
 ## 测试入口
 

@@ -20,4 +20,5 @@ module gpu_pixel_alpha_blend(input [15:0] foreground, input [15:0] background, i
   wire [5:0] g_out = g_rounded[13:8];
   wire [4:0] b_out = b_rounded[12:8];
   assign result_pixel = {r_out, g_out, b_out};
-endmodule	// src/main/scala/gpu/PixelPipeExt.scala:7:7
+endmodule
+	// src/main/scala/gpu/PixelPipeExt.scala:7:7

@@ -182,5 +182,38 @@ class AssetDmaRegsSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.active.expect(false)
       }
     }
+
+    it("keeps a failed AXI packet uncommitted until software aborts and retries") {
+      simulate(new AssetDmaRegs) { dut =>
+        initialize(dut)
+        program(dut)
+        transfer(dut, AssetDmaRegisterMap.Control, write = true, 1)._2 shouldBe false
+        pokeMeta(dut, length = 4)
+        dut.io.metaIn.valid.poke(true)
+        dut.io.metaOut.ready.poke(true)
+        dut.io.metaIn.ready.expect(true)
+        dut.clock.step()
+        dut.io.metaIn.valid.poke(false)
+        dut.io.packetFailed.poke(true)
+        dut.io.packetError.poke(AssetDmaError.AxiResponse)
+        dut.clock.step()
+        dut.io.packetFailed.poke(false)
+        dut.io.active.expect(true)
+        dut.io.committedOffset.expect(0)
+        dut.io.committedSequence.expect(0)
+        dut.io.committedBytes.expect(0)
+        transfer(dut, AssetDmaRegisterMap.PacketCount, write = false)._1 shouldBe 0
+        transfer(dut, AssetDmaRegisterMap.Control, write = true, 2)._2 shouldBe false
+        dut.io.abortDone.poke(true)
+        dut.clock.step()
+        dut.io.abortDone.poke(false)
+        dut.io.active.expect(false)
+        dut.io.aborted.expect(true)
+        program(dut, offset = 0, sequence = 0)
+        transfer(dut, AssetDmaRegisterMap.Control, write = true, 1)._2 shouldBe false
+        dut.io.committedOffset.expect(0)
+        dut.io.committedSequence.expect(0)
+      }
+    }
   }
 }

@@ -45,6 +45,9 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.displayReady.poke(false)
         dut.io.scanoutLevel.poke(0)
         dut.io.underflow_pulse_gpu.poke(false)
+        dut.io.assetMeta.valid.poke(false)
+        dut.io.assetPayload.valid.poke(false)
+        dut.io.assetStreamError.poke(false)
         dut.clock.step()
 
         dut.io.axi.aw.valid.expect(false)
@@ -85,6 +88,9 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.vblank.poke(false)
         dut.io.scanoutLevel.poke(0)
         dut.io.underflow_pulse_gpu.poke(false)
+        dut.io.assetMeta.valid.poke(false)
+        dut.io.assetPayload.valid.poke(false)
+        dut.io.assetStreamError.poke(false)
         dut.io.displayReady.poke(false)
         dut.clock.step()
 

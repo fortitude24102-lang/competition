@@ -49,7 +49,8 @@ module ScanoutDma(	// src/main/scala/gpu/ScanoutDma.scala:13:7
                 io_enable,	// src/main/scala/gpu/ScanoutDma.scala:22:14
   input  [31:0] io_frontBase,	// src/main/scala/gpu/ScanoutDma.scala:22:14
   input  [11:0] io_fifoLevel,	// src/main/scala/gpu/ScanoutDma.scala:22:14
-  input         io_pixel_ready,	// src/main/scala/gpu/ScanoutDma.scala:22:14
+  input         io_refill,	// src/main/scala/gpu/ScanoutDma.scala:22:14
+                io_pixel_ready,	// src/main/scala/gpu/ScanoutDma.scala:22:14
   output        io_pixel_valid,	// src/main/scala/gpu/ScanoutDma.scala:22:14
   output [15:0] io_pixel_bits_pixel,	// src/main/scala/gpu/ScanoutDma.scala:22:14
   output        io_pixel_bits_lineLast,	// src/main/scala/gpu/ScanoutDma.scala:22:14
@@ -66,70 +67,70 @@ module ScanoutDma(	// src/main/scala/gpu/ScanoutDma.scala:13:7
   input         io_axi_r_bits_last	// src/main/scala/gpu/ScanoutDma.scala:22:14
 );
 
-  wire        _aligner_io_start_ready;	// src/main/scala/gpu/ScanoutDma.scala:34:31
-  wire        _aligner_io_input_ready;	// src/main/scala/gpu/ScanoutDma.scala:34:31
-  wire        _aligner_io_output_valid;	// src/main/scala/gpu/ScanoutDma.scala:34:31
-  wire        _aligner_io_output_bits_last;	// src/main/scala/gpu/ScanoutDma.scala:34:31
-  wire        _reader_io_request_ready;	// src/main/scala/gpu/ScanoutDma.scala:33:30
-  wire        _reader_io_data_valid;	// src/main/scala/gpu/ScanoutDma.scala:33:30
-  wire [31:0] _reader_io_data_bits_data;	// src/main/scala/gpu/ScanoutDma.scala:33:30
-  wire        _reader_io_done;	// src/main/scala/gpu/ScanoutDma.scala:33:30
-  wire        _reader_io_error;	// src/main/scala/gpu/ScanoutDma.scala:33:30
-  reg  [2:0]  state;	// src/main/scala/gpu/ScanoutDma.scala:36:30
-  reg  [31:0] rowBase;	// src/main/scala/gpu/ScanoutDma.scala:37:28
-  reg  [8:0]  row;	// src/main/scala/gpu/ScanoutDma.scala:38:28
-  reg         readDone;	// src/main/scala/gpu/ScanoutDma.scala:39:33
-  reg         readError;	// src/main/scala/gpu/ScanoutDma.scala:40:34
-  wire        aligner_io_start_valid = state == 3'h2;	// src/main/scala/gpu/ScanoutDma.scala:36:30, :60:35
-  wire        reader_io_request_valid = state == 3'h3;	// src/main/scala/gpu/ScanoutDma.scala:36:30, :64:11, :67:36
-  wire        _aligner_io_output_ready_T = state == 3'h4;	// src/main/scala/gpu/ScanoutDma.scala:36:30, :73:11, :80:27
-  wire        io_pixel_valid_0 = _aligner_io_output_ready_T & _aligner_io_output_valid;	// src/main/scala/gpu/ScanoutDma.scala:34:31, :80:{27,38}
-  wire        _io_pixel_bits_frameLast_T = row == 9'h1DF;	// src/main/scala/gpu/ScanoutDma.scala:38:28, :83:65
+  wire        _aligner_io_start_ready;	// src/main/scala/gpu/ScanoutDma.scala:35:31
+  wire        _aligner_io_input_ready;	// src/main/scala/gpu/ScanoutDma.scala:35:31
+  wire        _aligner_io_output_valid;	// src/main/scala/gpu/ScanoutDma.scala:35:31
+  wire        _aligner_io_output_bits_last;	// src/main/scala/gpu/ScanoutDma.scala:35:31
+  wire        _reader_io_request_ready;	// src/main/scala/gpu/ScanoutDma.scala:34:30
+  wire        _reader_io_data_valid;	// src/main/scala/gpu/ScanoutDma.scala:34:30
+  wire [31:0] _reader_io_data_bits_data;	// src/main/scala/gpu/ScanoutDma.scala:34:30
+  wire        _reader_io_done;	// src/main/scala/gpu/ScanoutDma.scala:34:30
+  wire        _reader_io_error;	// src/main/scala/gpu/ScanoutDma.scala:34:30
+  reg  [2:0]  state;	// src/main/scala/gpu/ScanoutDma.scala:37:30
+  reg  [31:0] rowBase;	// src/main/scala/gpu/ScanoutDma.scala:38:28
+  reg  [9:0]  row;	// src/main/scala/gpu/ScanoutDma.scala:39:28
+  reg         readDone;	// src/main/scala/gpu/ScanoutDma.scala:40:33
+  reg         readError;	// src/main/scala/gpu/ScanoutDma.scala:41:34
+  wire        aligner_io_start_valid = state == 3'h2;	// src/main/scala/gpu/ScanoutDma.scala:37:30, :61:35
+  wire        reader_io_request_valid = state == 3'h3;	// src/main/scala/gpu/ScanoutDma.scala:37:30, :65:11, :68:36
+  wire        _aligner_io_output_ready_T = state == 3'h4;	// src/main/scala/gpu/ScanoutDma.scala:37:30, :74:11, :81:27
+  wire        io_pixel_valid_0 = _aligner_io_output_ready_T & _aligner_io_output_valid;	// src/main/scala/gpu/ScanoutDma.scala:35:31, :81:{27,38}
+  wire        _io_pixel_bits_frameLast_T = row == 10'h21B;	// src/main/scala/gpu/ScanoutDma.scala:39:28, :84:65
   always @(posedge clock) begin	// src/main/scala/gpu/ScanoutDma.scala:13:7
-    automatic logic _GEN;	// src/main/scala/gpu/ScanoutDma.scala:50:23
-    automatic logic _GEN_0;	// src/main/scala/gpu/ScanoutDma.scala:96:27
-    automatic logic _GEN_1;	// src/main/scala/gpu/ScanoutDma.scala:50:37, :95:41, :97:25, :100:45, :104:11
-    automatic logic _GEN_2;	// src/main/scala/gpu/ScanoutDma.scala:50:37, :96:47, :97:25
-    _GEN = state == 3'h0 & io_enable;	// src/main/scala/gpu/ScanoutDma.scala:36:30, :50:{14,23}
-    _GEN_0 = state == 3'h5 & (readDone | _reader_io_done);	// src/main/scala/gpu/ScanoutDma.scala:33:30, :36:30, :39:33, :91:11, :94:42, :96:{14,27}
-    _GEN_1 = readError | _reader_io_error | _io_pixel_bits_frameLast_T;	// src/main/scala/gpu/ScanoutDma.scala:33:30, :40:34, :50:37, :83:65, :95:41, :97:25, :100:45, :104:11
-    _GEN_2 = ~_GEN_0 | _GEN_1;	// src/main/scala/gpu/ScanoutDma.scala:50:37, :95:41, :96:{27,47}, :97:25, :100:45, :104:11
+    automatic logic _GEN;	// src/main/scala/gpu/ScanoutDma.scala:51:23
+    automatic logic _GEN_0;	// src/main/scala/gpu/ScanoutDma.scala:97:27
+    automatic logic _GEN_1;	// src/main/scala/gpu/ScanoutDma.scala:51:37, :96:41, :98:25, :101:45, :105:11
+    automatic logic _GEN_2;	// src/main/scala/gpu/ScanoutDma.scala:51:37, :97:47, :98:25
+    _GEN = state == 3'h0 & io_enable;	// src/main/scala/gpu/ScanoutDma.scala:37:30, :51:{14,23}
+    _GEN_0 = state == 3'h5 & (readDone | _reader_io_done);	// src/main/scala/gpu/ScanoutDma.scala:34:30, :37:30, :40:33, :92:11, :95:42, :97:{14,27}
+    _GEN_1 = readError | _reader_io_error | _io_pixel_bits_frameLast_T;	// src/main/scala/gpu/ScanoutDma.scala:34:30, :41:34, :51:37, :84:65, :96:41, :98:25, :101:45, :105:11
+    _GEN_2 = ~_GEN_0 | _GEN_1;	// src/main/scala/gpu/ScanoutDma.scala:51:37, :96:41, :97:{27,47}, :98:25, :101:45, :105:11
     if (reset) begin	// src/main/scala/gpu/ScanoutDma.scala:13:7
-      state <= 3'h0;	// src/main/scala/gpu/ScanoutDma.scala:36:30
-      row <= 9'h0;	// src/main/scala/gpu/ScanoutDma.scala:38:28
-      readDone <= 1'h0;	// src/main/scala/gpu/ScanoutDma.scala:13:7, :39:33
-      readError <= 1'h0;	// src/main/scala/gpu/ScanoutDma.scala:13:7, :40:34
+      state <= 3'h0;	// src/main/scala/gpu/ScanoutDma.scala:37:30
+      row <= 10'h0;	// src/main/scala/gpu/ScanoutDma.scala:39:28
+      readDone <= 1'h0;	// src/main/scala/gpu/ScanoutDma.scala:13:7, :40:33
+      readError <= 1'h0;	// src/main/scala/gpu/ScanoutDma.scala:13:7, :41:34
     end
     else begin	// src/main/scala/gpu/ScanoutDma.scala:13:7
       automatic logic _GEN_3;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-      _GEN_3 = _reader_io_request_ready & reader_io_request_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/ScanoutDma.scala:33:30, :67:36
-      if (_GEN_0)	// src/main/scala/gpu/ScanoutDma.scala:96:27
-        state <= {2'h0, ~_GEN_1};	// src/main/scala/gpu/ScanoutDma.scala:13:7, :36:30, :50:37, :95:41, :97:25, :99:13, :100:45, :102:13, :104:11, :106:13
-      else if (io_pixel_ready & io_pixel_valid_0 & _aligner_io_output_bits_last)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/ScanoutDma.scala:34:31, :80:38, :90:22
-        state <= 3'h5;	// src/main/scala/gpu/ScanoutDma.scala:36:30, :91:11
+      _GEN_3 = _reader_io_request_ready & reader_io_request_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/ScanoutDma.scala:34:30, :68:36
+      if (_GEN_0)	// src/main/scala/gpu/ScanoutDma.scala:97:27
+        state <= {2'h0, ~_GEN_1};	// src/main/scala/gpu/ScanoutDma.scala:13:7, :37:30, :51:37, :96:41, :98:25, :100:13, :101:45, :103:13, :105:11, :107:13
+      else if (io_pixel_ready & io_pixel_valid_0 & _aligner_io_output_bits_last)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/ScanoutDma.scala:35:31, :81:38, :91:22
+        state <= 3'h5;	// src/main/scala/gpu/ScanoutDma.scala:37:30, :92:11
       else if (_GEN_3)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-        state <= 3'h4;	// src/main/scala/gpu/ScanoutDma.scala:36:30, :73:11
-      else if (_aligner_io_start_ready & aligner_io_start_valid)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/ScanoutDma.scala:34:31, :60:35
-        state <= 3'h3;	// src/main/scala/gpu/ScanoutDma.scala:36:30, :64:11
-      else if (state == 3'h1 & io_fifoLevel < 12'h101)	// src/main/scala/gpu/ScanoutDma.scala:36:30, :53:11, :56:{14,29,45}
-        state <= 3'h2;	// src/main/scala/gpu/ScanoutDma.scala:36:30
-      else if (_GEN)	// src/main/scala/gpu/ScanoutDma.scala:50:23
-        state <= 3'h1;	// src/main/scala/gpu/ScanoutDma.scala:36:30, :53:11
-      if (_GEN_2) begin	// src/main/scala/gpu/ScanoutDma.scala:50:37, :96:47, :97:25
-        if (_GEN)	// src/main/scala/gpu/ScanoutDma.scala:50:23
-          row <= 9'h0;	// src/main/scala/gpu/ScanoutDma.scala:38:28
+        state <= 3'h4;	// src/main/scala/gpu/ScanoutDma.scala:37:30, :74:11
+      else if (_aligner_io_start_ready & aligner_io_start_valid)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/ScanoutDma.scala:35:31, :61:35
+        state <= 3'h3;	// src/main/scala/gpu/ScanoutDma.scala:37:30, :65:11
+      else if (state == 3'h1 & (io_fifoLevel < 12'h101 | io_refill))	// src/main/scala/gpu/ScanoutDma.scala:37:30, :54:11, :57:{14,29,46,64}
+        state <= 3'h2;	// src/main/scala/gpu/ScanoutDma.scala:37:30
+      else if (_GEN)	// src/main/scala/gpu/ScanoutDma.scala:51:23
+        state <= 3'h1;	// src/main/scala/gpu/ScanoutDma.scala:37:30, :54:11
+      if (_GEN_2) begin	// src/main/scala/gpu/ScanoutDma.scala:51:37, :97:47, :98:25
+        if (_GEN)	// src/main/scala/gpu/ScanoutDma.scala:51:23
+          row <= 10'h0;	// src/main/scala/gpu/ScanoutDma.scala:39:28
       end
-      else	// src/main/scala/gpu/ScanoutDma.scala:50:37, :96:47, :97:25
-        row <= row + 9'h1;	// src/main/scala/gpu/ScanoutDma.scala:38:28, :104:18
-      readDone <= _reader_io_done | ~_GEN_3 & readDone;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/ScanoutDma.scala:33:30, :39:33, :70:32, :71:14, :86:24, :87:14
-      readError <= _reader_io_done ? _reader_io_error : ~_GEN_3 & readError;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/ScanoutDma.scala:33:30, :39:33, :40:34, :70:32, :71:14, :72:15, :86:24, :88:15
+      else	// src/main/scala/gpu/ScanoutDma.scala:51:37, :97:47, :98:25
+        row <= row + 10'h1;	// src/main/scala/gpu/ScanoutDma.scala:39:28, :105:18
+      readDone <= _reader_io_done | ~_GEN_3 & readDone;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/ScanoutDma.scala:34:30, :40:33, :71:32, :72:14, :87:24, :88:14
+      readError <= _reader_io_done ? _reader_io_error : ~_GEN_3 & readError;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/ScanoutDma.scala:34:30, :40:33, :41:34, :71:32, :72:14, :73:15, :87:24, :89:15
     end
-    if (_GEN_2) begin	// src/main/scala/gpu/ScanoutDma.scala:50:37, :96:47, :97:25
-      if (_GEN)	// src/main/scala/gpu/ScanoutDma.scala:50:23
-        rowBase <= io_frontBase;	// src/main/scala/gpu/ScanoutDma.scala:37:28
+    if (_GEN_2) begin	// src/main/scala/gpu/ScanoutDma.scala:51:37, :97:47, :98:25
+      if (_GEN)	// src/main/scala/gpu/ScanoutDma.scala:51:23
+        rowBase <= io_frontBase;	// src/main/scala/gpu/ScanoutDma.scala:38:28
     end
-    else	// src/main/scala/gpu/ScanoutDma.scala:50:37, :96:47, :97:25
-      rowBase <= rowBase + 32'h500;	// src/main/scala/gpu/ScanoutDma.scala:37:28, :105:26
+    else	// src/main/scala/gpu/ScanoutDma.scala:51:37, :97:47, :98:25
+      rowBase <= rowBase + 32'h780;	// src/main/scala/gpu/ScanoutDma.scala:38:28, :106:26
   end // always @(posedge)
   `ifdef ENABLE_INITIAL_REG_	// src/main/scala/gpu/ScanoutDma.scala:13:7
     `ifdef FIRRTL_BEFORE_INITIAL	// src/main/scala/gpu/ScanoutDma.scala:13:7
@@ -144,25 +145,25 @@ module ScanoutDma(	// src/main/scala/gpu/ScanoutDma.scala:13:7
         for (logic [1:0] i = 2'h0; i < 2'h2; i += 2'h1) begin
           _RANDOM[i[0]] = `RANDOM;	// src/main/scala/gpu/ScanoutDma.scala:13:7
         end	// src/main/scala/gpu/ScanoutDma.scala:13:7
-        state = _RANDOM[1'h0][2:0];	// src/main/scala/gpu/ScanoutDma.scala:13:7, :36:30
-        rowBase = {_RANDOM[1'h0][31:3], _RANDOM[1'h1][2:0]};	// src/main/scala/gpu/ScanoutDma.scala:13:7, :36:30, :37:28
-        row = _RANDOM[1'h1][11:3];	// src/main/scala/gpu/ScanoutDma.scala:13:7, :37:28, :38:28
-        readDone = _RANDOM[1'h1][12];	// src/main/scala/gpu/ScanoutDma.scala:13:7, :37:28, :39:33
-        readError = _RANDOM[1'h1][13];	// src/main/scala/gpu/ScanoutDma.scala:13:7, :37:28, :40:34
+        state = _RANDOM[1'h0][2:0];	// src/main/scala/gpu/ScanoutDma.scala:13:7, :37:30
+        rowBase = {_RANDOM[1'h0][31:3], _RANDOM[1'h1][2:0]};	// src/main/scala/gpu/ScanoutDma.scala:13:7, :37:30, :38:28
+        row = _RANDOM[1'h1][12:3];	// src/main/scala/gpu/ScanoutDma.scala:13:7, :38:28, :39:28
+        readDone = _RANDOM[1'h1][13];	// src/main/scala/gpu/ScanoutDma.scala:13:7, :38:28, :40:33
+        readError = _RANDOM[1'h1][14];	// src/main/scala/gpu/ScanoutDma.scala:13:7, :38:28, :41:34
       `endif // RANDOMIZE_REG_INIT
     end // initial
     `ifdef FIRRTL_AFTER_INITIAL	// src/main/scala/gpu/ScanoutDma.scala:13:7
       `FIRRTL_AFTER_INITIAL	// src/main/scala/gpu/ScanoutDma.scala:13:7
     `endif // FIRRTL_AFTER_INITIAL
   `endif // ENABLE_INITIAL_REG_
-  AxiReadEngine reader (	// src/main/scala/gpu/ScanoutDma.scala:33:30
+  AxiReadEngine reader (	// src/main/scala/gpu/ScanoutDma.scala:34:30
     .clock                   (clock),
     .reset                   (reset),
     .io_request_ready        (_reader_io_request_ready),
-    .io_request_valid        (reader_io_request_valid),	// src/main/scala/gpu/ScanoutDma.scala:67:36
-    .io_request_bits_address (rowBase),	// src/main/scala/gpu/ScanoutDma.scala:37:28
-    .io_request_bits_bytes   (32'h500),
-    .io_data_ready           (_aligner_io_input_ready),	// src/main/scala/gpu/ScanoutDma.scala:34:31
+    .io_request_valid        (reader_io_request_valid),	// src/main/scala/gpu/ScanoutDma.scala:68:36
+    .io_request_bits_address (rowBase),	// src/main/scala/gpu/ScanoutDma.scala:38:28
+    .io_request_bits_bytes   (32'h780),
+    .io_data_ready           (_aligner_io_input_ready),	// src/main/scala/gpu/ScanoutDma.scala:35:31
     .io_data_valid           (_reader_io_data_valid),
     .io_data_bits_data       (_reader_io_data_bits_data),
     .io_axiAr_ready          (io_axi_ar_ready),
@@ -177,25 +178,25 @@ module ScanoutDma(	// src/main/scala/gpu/ScanoutDma.scala:13:7
     .io_axiR_bits_last       (io_axi_r_bits_last),
     .io_done                 (_reader_io_done),
     .io_error                (_reader_io_error)
-  );	// src/main/scala/gpu/ScanoutDma.scala:33:30
-  PixelReadAligner aligner (	// src/main/scala/gpu/ScanoutDma.scala:34:31
+  );	// src/main/scala/gpu/ScanoutDma.scala:34:30
+  PixelReadAligner aligner (	// src/main/scala/gpu/ScanoutDma.scala:35:31
     .clock                    (clock),
     .reset                    (reset),
     .io_start_ready           (_aligner_io_start_ready),
-    .io_start_valid           (aligner_io_start_valid),	// src/main/scala/gpu/ScanoutDma.scala:60:35
-    .io_start_bits_upperFirst (rowBase[1]),	// src/main/scala/gpu/ScanoutDma.scala:37:28, :61:46
-    .io_start_bits_pixels     (16'h280),	// src/main/scala/gpu/ScanoutDma.scala:62:32
+    .io_start_valid           (aligner_io_start_valid),	// src/main/scala/gpu/ScanoutDma.scala:61:35
+    .io_start_bits_upperFirst (rowBase[1]),	// src/main/scala/gpu/ScanoutDma.scala:38:28, :62:46
+    .io_start_bits_pixels     (16'h3C0),	// src/main/scala/gpu/ScanoutDma.scala:63:32
     .io_input_ready           (_aligner_io_input_ready),
-    .io_input_valid           (_reader_io_data_valid),	// src/main/scala/gpu/ScanoutDma.scala:33:30
-    .io_input_bits            (_reader_io_data_bits_data),	// src/main/scala/gpu/ScanoutDma.scala:33:30
-    .io_output_ready          (_aligner_io_output_ready_T & io_pixel_ready),	// src/main/scala/gpu/ScanoutDma.scala:80:27, :84:47
+    .io_input_valid           (_reader_io_data_valid),	// src/main/scala/gpu/ScanoutDma.scala:34:30
+    .io_input_bits            (_reader_io_data_bits_data),	// src/main/scala/gpu/ScanoutDma.scala:34:30
+    .io_output_ready          (_aligner_io_output_ready_T & io_pixel_ready),	// src/main/scala/gpu/ScanoutDma.scala:81:27, :85:47
     .io_output_valid          (_aligner_io_output_valid),
     .io_output_bits_pixel     (io_pixel_bits_pixel),
     .io_output_bits_last      (_aligner_io_output_bits_last)
-  );	// src/main/scala/gpu/ScanoutDma.scala:34:31
-  assign io_pixel_valid = io_pixel_valid_0;	// src/main/scala/gpu/ScanoutDma.scala:13:7, :80:38
-  assign io_pixel_bits_lineLast = _aligner_io_output_bits_last;	// src/main/scala/gpu/ScanoutDma.scala:13:7, :34:31
+  );	// src/main/scala/gpu/ScanoutDma.scala:35:31
+  assign io_pixel_valid = io_pixel_valid_0;	// src/main/scala/gpu/ScanoutDma.scala:13:7, :81:38
+  assign io_pixel_bits_lineLast = _aligner_io_output_bits_last;	// src/main/scala/gpu/ScanoutDma.scala:13:7, :35:31
   assign io_pixel_bits_frameLast =
-    _aligner_io_output_bits_last & _io_pixel_bits_frameLast_T;	// src/main/scala/gpu/ScanoutDma.scala:13:7, :34:31, :83:{58,65}
+    _aligner_io_output_bits_last & _io_pixel_bits_frameLast_T;	// src/main/scala/gpu/ScanoutDma.scala:13:7, :35:31, :84:{58,65}
 endmodule
 

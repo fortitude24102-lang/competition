@@ -1,6 +1,7 @@
 package gpu
 
 import chisel3._
+import chisel3.util._
 
 class ApbSlavePort extends Bundle {
   val paddr = Input(UInt(16.W))
@@ -25,10 +26,19 @@ class Efinix2dGpuTop extends Module {
     val displayValid = Output(Bool())
     val displayLineLast = Output(Bool())
     val displayFrameLast = Output(Bool())
+    val assetMeta = Flipped(Decoupled(new AssetPacketMeta))
+    val assetPayload = Flipped(Decoupled(new AssetPayloadByte))
+    val assetStreamError = Input(Bool())
+    val assetSession = Output(UInt(32.W))
+    val assetActive = Output(Bool())
+    val assetDropPacket = Output(Bool())
+    val assetAbort = Output(Bool())
     val irq = Output(Bool())
   })
 
   private val regs = Module(new GpuApbRegs)
+  private val assetRegs = Module(new AssetDmaRegs)
+  private val assetWriter = Module(new AssetDmaWriter)
   private val render = Module(new RenderEngine)
   private val scanout = Module(new ScanoutDma)
   private val ddr = Module(new DdrQosArbiter)
@@ -36,15 +46,39 @@ class Efinix2dGpuTop extends Module {
   private val lastError = RegInit(GpuError.None.U(8.W))
   private val irq = RegInit(false.B)
   private val scanoutStarted = RegInit(false.B)
+  private val scanoutEverEnabled = RegInit(false.B)
 
+  private val assetSelect = io.apb.paddr(15, 8) === 1.U
   regs.io.paddr := io.apb.paddr
-  regs.io.psel := io.apb.psel
+  regs.io.psel := io.apb.psel && !assetSelect
   regs.io.penable := io.apb.penable
   regs.io.pwrite := io.apb.pwrite
   regs.io.pwdata := io.apb.pwdata
-  io.apb.prdata := regs.io.prdata
-  io.apb.pready := regs.io.pready
-  io.apb.pslverror := regs.io.pslverror
+  assetRegs.io.paddr := io.apb.paddr
+  assetRegs.io.psel := io.apb.psel && assetSelect
+  assetRegs.io.penable := io.apb.penable
+  assetRegs.io.pwrite := io.apb.pwrite
+  assetRegs.io.pwdata := io.apb.pwdata
+  io.apb.prdata := Mux(assetSelect, assetRegs.io.prdata, regs.io.prdata)
+  io.apb.pready := Mux(assetSelect, assetRegs.io.pready, regs.io.pready)
+  io.apb.pslverror := Mux(assetSelect, assetRegs.io.pslverror, regs.io.pslverror)
+
+  assetRegs.io.metaIn <> io.assetMeta
+  assetWriter.io.meta <> assetRegs.io.metaOut
+  assetWriter.io.payload <> io.assetPayload
+  assetWriter.io.descriptor := assetRegs.io.descriptor
+  assetWriter.io.abort := assetRegs.io.abort
+  assetWriter.io.streamError := io.assetStreamError
+  assetRegs.io.packetCommitted := assetWriter.io.packetCommitted
+  assetRegs.io.packetBytes := assetWriter.io.packetBytes
+  assetRegs.io.packetLast := assetWriter.io.packetLast
+  assetRegs.io.packetFailed := assetWriter.io.packetFailed
+  assetRegs.io.packetError := assetWriter.io.packetError
+  assetRegs.io.abortDone := assetWriter.io.abortDone
+  io.assetSession := Mux(assetRegs.io.active, assetRegs.io.descriptor.session, 0.U)
+  io.assetActive := assetRegs.io.active
+  io.assetDropPacket := assetRegs.io.dropPacket
+  io.assetAbort := assetRegs.io.abort || assetWriter.io.packetFailed
 
   render.io.command <> regs.io.command
   render.io.vblank := io.vblank
@@ -85,16 +119,23 @@ class Efinix2dGpuTop extends Module {
 
   ddr.io.render <> render.io.axi
   ddr.io.scanout <> scanout.io.axi
+  ddr.io.asset <> assetWriter.io.axi
   ddr.io.scanoutLevel := io.scanoutLevel
   ddr.io.lowWatermark := regs.io.qosLowWatermark
   ddr.io.highWatermark := regs.io.qosHighWatermark
-  ddr.io.adaptiveEnable := regs.io.qosAdaptiveEnable
+  // An empty FIFO before the first frame is not a scanout emergency.
+  ddr.io.adaptiveEnable := regs.io.qosAdaptiveEnable && scanoutEverEnabled
   io.axi <> ddr.io.axi
 
   when(render.io.swapPending) { scanoutStarted := true.B }
   scanout.io.enable := scanoutStarted && !render.io.swapPending
+  when(scanout.io.enable) { scanoutEverEnabled := true.B }
   scanout.io.frontBase := render.io.frontBase
   scanout.io.fifoLevel := io.scanoutLevel
+  // Continue refilling through hysteresis: one 960-pixel row alone cannot
+  // raise a 256-pixel low level to the default 1536-pixel high watermark.
+  // The pixel ready/valid handshake still prevents physical FIFO overflow.
+  scanout.io.refill := ddr.io.scanoutPriority
   scanout.io.pixel.ready := io.displayReady
 
   io.displayPixel := scanout.io.pixel.bits.pixel

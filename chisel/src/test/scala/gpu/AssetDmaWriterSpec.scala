@@ -15,6 +15,7 @@ class AssetDmaWriterSpec extends AnyFunSpec with StableChiselSim with Matchers {
     dut.io.payload.valid.poke(false)
     dut.io.payload.bits.poke(0.U.asTypeOf(new AssetPayloadByte))
     dut.io.abort.poke(false)
+    dut.io.streamError.poke(false)
     dut.io.axi.aw.ready.poke(false)
     dut.io.axi.w.ready.poke(false)
     dut.io.axi.b.valid.poke(false)
@@ -26,6 +27,35 @@ class AssetDmaWriterSpec extends AnyFunSpec with StableChiselSim with Matchers {
     dut.reset.poke(true)
     dut.clock.step(2)
     dut.reset.poke(false)
+  }
+
+  describe("Asset stream guard handoff") {
+    it("fails a truncated packet before any DDR write") {
+      simulate(new AssetDmaWriter) { dut =>
+        initialize(dut)
+        dut.io.descriptor.dstAddr.poke(GpuMemoryMap.DenseAssets)
+        dut.io.meta.bits.poke(0.U.asTypeOf(new AssetPacketMeta))
+        dut.io.meta.bits.length.poke(8)
+        dut.io.meta.bits.flags.poke(1)
+        dut.io.meta.valid.poke(true)
+        dut.io.meta.ready.expect(true)
+        dut.clock.step()
+        dut.io.meta.valid.poke(false)
+        dut.io.payload.bits.data.poke(0x55)
+        dut.io.payload.bits.last.poke(false)
+        dut.io.payload.valid.poke(true)
+        dut.clock.step()
+        dut.io.payload.valid.poke(false)
+        dut.io.streamError.poke(true)
+        dut.io.axi.aw.valid.expect(false)
+        dut.clock.step()
+        dut.io.streamError.poke(false)
+        dut.io.packetFailed.expect(true)
+        dut.io.packetError.expect(AssetDmaError.Stream)
+        dut.io.busy.expect(false)
+        dut.io.axi.aw.valid.expect(false)
+      }
+    }
   }
 
   private def sendPacket(dut: AssetDmaWriter, address: BigInt, bytes: Seq[Int],
@@ -94,6 +124,49 @@ class AssetDmaWriterSpec extends AnyFunSpec with StableChiselSim with Matchers {
   }
 
   describe("AssetDmaWriter") {
+    it("honors ABORT coincident with the final AXI completion") {
+      simulate(new AssetDmaWriter) { dut =>
+        initialize(dut)
+        dut.io.descriptor.dstAddr.poke(GpuMemoryMap.DenseAssets)
+        dut.io.meta.bits.length.poke(4)
+        dut.io.meta.bits.flags.poke(1)
+        dut.io.meta.valid.poke(true)
+        dut.clock.step()
+        dut.io.meta.valid.poke(false)
+        for (index <- 0 until 4) {
+          dut.io.payload.bits.data.poke(index + 1)
+          dut.io.payload.bits.last.poke(index == 3)
+          dut.io.payload.valid.poke(true)
+          dut.clock.step()
+        }
+        dut.io.payload.valid.poke(false)
+        dut.io.axi.aw.ready.poke(true)
+        dut.io.axi.w.ready.poke(true)
+        var wroteLast = false
+        for (_ <- 0 until 12 if !wroteLast) {
+          wroteLast = dut.io.axi.w.valid.peek().litToBoolean &&
+            dut.io.axi.w.ready.peek().litToBoolean &&
+            dut.io.axi.w.bits.last.peek().litToBoolean
+          dut.clock.step()
+        }
+        wroteLast shouldBe true
+        dut.io.axi.b.valid.poke(true)
+        var answered = false
+        for (_ <- 0 until 8 if !answered) {
+          answered = dut.io.axi.b.ready.peek().litToBoolean
+          dut.clock.step()
+        }
+        answered shouldBe true
+        dut.io.axi.b.valid.poke(false)
+        dut.io.abort.poke(true)
+        dut.clock.step()
+        dut.io.abort.poke(false)
+        dut.io.abortDone.expect(true)
+        dut.io.packetCommitted.expect(false)
+        dut.io.busy.expect(false)
+      }
+    }
+
     it("packs 1/2/3/1023/1024 bytes exactly under deterministic AXI backpressure") {
       simulate(new AssetDmaWriter) { dut =>
         initialize(dut)
