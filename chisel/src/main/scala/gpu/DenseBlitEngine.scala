@@ -17,16 +17,20 @@ class DenseBlitEngine extends Module {
   private val backgroundReader = Module(new AxiReadEngine(1))
   private val aligner = Module(new PixelReadAligner)
   private val backgroundAligner = Module(new PixelReadAligner)
+  private val alphaForegroundBuffer = Module(new Queue(UInt(32.W), 33))
+  private val alphaBackgroundBuffer = Module(new Queue(UInt(32.W), 33))
   private val packer = Module(new PixelWritePacker)
   private val writer = Module(new AxiWriteEngine)
   private val readAddressArbiter = Module(new RRArbiter(new Axi4Address, 2))
 
-  private val idle :: startRect :: startWrite :: startAligner :: startRead :: startAlphaAligners :: startAlphaReads :: requestPixel :: waitPixel :: waitRow :: finish :: Nil = Enum(11)
+  private val idle :: startRect :: startWrite :: startAligner :: startRead :: startAlphaAligners :: startAlphaReads :: waitAlphaReads :: requestPixel :: waitPixel :: waitRow :: finish :: Nil = Enum(12)
   private val state = RegInit(idle)
   private val commandReg = Reg(new GpuCommand)
   private val srcRowBase = Reg(UInt(32.W))
   private val dstRowBase = Reg(UInt(32.W))
   private val alphaSrcAddress = Reg(UInt(32.W))
+  private val alphaChunkDstAddress = Reg(UInt(32.W))
+  private val alphaChunkBeats = Reg(UInt(32.W))
   private val pixelAddress = Reg(UInt(32.W))
   private val pixelRowLast = Reg(Bool())
   private val pixelLast = Reg(Bool())
@@ -73,26 +77,25 @@ class DenseBlitEngine extends Module {
   }
 
   private val fixedWriteRequest = state === startWrite
-  private val dynamicWriteRequest = (isColorKey || isAlpha) &&
+  private val dynamicWriteRequest = isColorKey &&
     packer.io.output.valid && !dynamicWriteOutstanding
   writer.io.request.valid := fixedWriteRequest || dynamicWriteRequest
-  writer.io.request.bits.address := Mux(dynamicWriteRequest, packer.io.output.bits.address, dstRowBase)
-  writer.io.request.bits.beats := Mux(dynamicWriteRequest, 1.U, rowBeats)
+  writer.io.request.bits.address := Mux(dynamicWriteRequest, packer.io.output.bits.address,
+    Mux(isAlpha, alphaChunkDstAddress, dstRowBase))
+  writer.io.request.bits.beats := Mux(dynamicWriteRequest, 1.U,
+    Mux(isAlpha, alphaChunkBeats, rowBeats))
   when(writer.io.request.fire) {
     when(dynamicWriteRequest) {
       dynamicWriteOutstanding := true.B
     }.otherwise {
       rowWriteDone := false.B
-      rowWriteError := false.B
       state := Mux(isCopy, startAligner, requestPixel)
     }
   }
 
-  private val alphaChunkPixels = Mux(
-    !alphaSrcAddress(1) && !rect.io.address.bits.address(1) && !rect.io.address.bits.rowLast,
-    2.U,
-    1.U
-  )
+  private val alphaRowProgress = ((alphaSrcAddress - srcRowBase) >> 1)(15, 0)
+  private val alphaPixelsLeft = (commandReg.widthPixels - alphaRowProgress)(15, 0)
+  private val alphaChunkPixels = Mux(alphaPixelsLeft > 64.U, 64.U(16.W), alphaPixelsLeft)
   private val startingSourceRow = state === startAligner
   private val startingAlphaPair = state === startAlphaAligners
   aligner.io.start.valid := startingSourceRow || (startingAlphaPair && backgroundAligner.io.start.ready)
@@ -110,6 +113,8 @@ class DenseBlitEngine extends Module {
     state := startRead
   }
   when(startingAlphaPair && aligner.io.start.fire && backgroundAligner.io.start.fire) {
+    alphaChunkDstAddress := rect.io.address.bits.address
+    alphaChunkBeats := ((alphaChunkPixels << 1) + rect.io.address.bits.address(1, 0) + 3.U) >> 2
     state := startAlphaReads
   }
 
@@ -127,7 +132,10 @@ class DenseBlitEngine extends Module {
     state := requestPixel
   }
   when(startingAlphaReads && reader.io.request.fire && backgroundReader.io.request.fire) {
-    state := requestPixel
+    state := waitAlphaReads
+  }
+  when(state === waitAlphaReads && reader.io.request.ready && backgroundReader.io.request.ready) {
+    state := startWrite
   }
 
   private val sourceValid = !hasSource ||
@@ -158,7 +166,7 @@ class DenseBlitEngine extends Module {
   packer.io.input.bits.address := pixelAddress
   packer.io.input.bits.pixel := io.pixelResult.bits.pixel
   packer.io.input.bits.writeEnable := io.pixelResult.bits.writeEnable
-  packer.io.input.bits.rowLast := pixelRowLast
+  packer.io.input.bits.rowLast := pixelRowLast || (isAlpha && pixelChunkLast)
   io.pixelResult.ready := state === waitPixel && packer.io.input.ready
 
   when(io.pixelResult.fire) {
@@ -184,7 +192,7 @@ class DenseBlitEngine extends Module {
   }
 
   private val writeFinished = Mux(
-    isColorKey || isAlpha,
+    isColorKey,
     !dynamicWriteOutstanding && !packer.io.output.valid,
     rowWriteDone || writer.io.done
   )
@@ -244,10 +252,16 @@ class DenseBlitEngine extends Module {
   backgroundReader.io.axiR.bits := io.axi.r.bits
   io.axi.r.ready := Mux(backgroundResponse, backgroundReader.io.axiR.ready, reader.io.axiR.ready)
 
-  aligner.io.input.valid := reader.io.data.valid
-  aligner.io.input.bits := reader.io.data.bits.data
-  reader.io.data.ready := aligner.io.input.ready
-  backgroundAligner.io.input.valid := backgroundReader.io.data.valid
-  backgroundAligner.io.input.bits := backgroundReader.io.data.bits.data
-  backgroundReader.io.data.ready := backgroundAligner.io.input.ready
+  alphaForegroundBuffer.io.enq.valid := isAlpha && reader.io.data.valid
+  alphaForegroundBuffer.io.enq.bits := reader.io.data.bits.data
+  reader.io.data.ready := Mux(isAlpha, alphaForegroundBuffer.io.enq.ready, aligner.io.input.ready)
+  aligner.io.input.valid := Mux(isAlpha, alphaForegroundBuffer.io.deq.valid, reader.io.data.valid)
+  aligner.io.input.bits := Mux(isAlpha, alphaForegroundBuffer.io.deq.bits, reader.io.data.bits.data)
+  alphaForegroundBuffer.io.deq.ready := isAlpha && aligner.io.input.ready
+  alphaBackgroundBuffer.io.enq.valid := backgroundReader.io.data.valid
+  alphaBackgroundBuffer.io.enq.bits := backgroundReader.io.data.bits.data
+  backgroundReader.io.data.ready := alphaBackgroundBuffer.io.enq.ready
+  backgroundAligner.io.input.valid := alphaBackgroundBuffer.io.deq.valid
+  backgroundAligner.io.input.bits := alphaBackgroundBuffer.io.deq.bits
+  alphaBackgroundBuffer.io.deq.ready := backgroundAligner.io.input.ready
 }

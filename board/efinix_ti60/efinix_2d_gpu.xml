@@ -54,6 +54,8 @@
     <efx:design_file name="../../generated/efinix_gpu/AxiReadEngine.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/AxiReadEngine_1.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/PixelReadAligner.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/ram_33x32.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/Queue33_UInt32.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/PixelWritePacker.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/RRArbiter2_Axi4Address.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/DenseBlitEngine.sv" version="default" library="default" />

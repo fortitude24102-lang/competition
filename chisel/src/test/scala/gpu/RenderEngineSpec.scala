@@ -880,17 +880,21 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
 
   describe("Global Alpha path") {
     it("pairs foreground and background pixels under random AXI delays") {
+      for ((width, stride, expectedReads, expectedWrites, firstWriteError) <- Seq(
+        (3, 10, 4, Seq(2, 2), false),
+        (65, 134, 8, Seq(32, 1, 33, 1), false),
+        (65, 134, 4, Seq(32, 1), true)
+      )) {
       simulate(new DenseBlitEngine) { dut =>
         val srcBase = 0x02400000L
         val dstBase = 0x02000000L
-        // Row 0 begins in the low halfword and covers the two-pixel chunk path;
-        // the 10-byte stride makes row 1 upper-first and covers single-pixel chunks.
-        val stride = 10
-        val width = 3
+        // The two-byte-offset stride makes row 1 upper-first; the wide case crosses a chunk.
         val height = 2
         val alpha = 128
-        val foreground = Seq(0xf800, 0x07e0, 0x001f, 0xffff, 0x0000, 0x1234)
-        val background = Seq(0x001f, 0xf800, 0x07e0, 0x0000, 0xffff, 0xabcd)
+        val fgPattern = Seq(0xf800, 0x07e0, 0x001f, 0xffff, 0x0000, 0x1234)
+        val bgPattern = Seq(0x001f, 0xf800, 0x07e0, 0x0000, 0xffff, 0xabcd)
+        val foreground = Seq.tabulate(width * height)(i => fgPattern(i % fgPattern.size))
+        val background = Seq.tabulate(width * height)(i => bgPattern(i % bgPattern.size))
         val memory = collection.mutable.Map.empty[Long, Int].withDefaultValue(0)
 
         def pixelAddress(base: Long, index: Int): Long =
@@ -918,6 +922,7 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
         final case class ReadBurst(id: Int, var address: Long, var beats: Int)
         val reads = collection.mutable.Queue.empty[ReadBurst]
         val readAddresses = collection.mutable.ArrayBuffer.empty[Long]
+        val writeBurstLengths = collection.mutable.ArrayBuffer.empty[Int]
         val observedPairs = collection.mutable.ArrayBuffer.empty[(Int, Int)]
         val random = new scala.util.Random(0x16a17L)
         var submitted = false
@@ -927,10 +932,10 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
         var writeAddress = 0L
         var responsePending = false
         var writeTransactionOpen = false
+        var writeResponseIndex = 0
 
         dut.io.completion.ready.poke(true)
         dut.io.axi.b.bits.id.poke(0)
-        dut.io.axi.b.bits.resp.poke(Axi4.Okay)
         dut.io.axi.r.bits.resp.poke(Axi4.Okay)
 
         for (_ <- 0 until 10000 if !completed) {
@@ -952,6 +957,7 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
           // same-address read until WLAST. The renderer must issue read-before-write.
           dut.io.axi.ar.ready.poke(!writeTransactionOpen && random.nextBoolean())
           dut.io.axi.b.valid.poke(responsePending && random.nextBoolean())
+          dut.io.axi.b.bits.resp.poke(if (firstWriteError && writeResponseIndex == 0) 2 else Axi4.Okay)
 
           val offerRead = reads.nonEmpty && random.nextBoolean()
           dut.io.axi.r.valid.poke(offerRead)
@@ -990,7 +996,10 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
             ))
             readAddresses += address
           }
-          if (awFire) writeAddress = dut.io.axi.aw.bits.addr.peek().litValue.longValue
+          if (awFire) {
+            writeAddress = dut.io.axi.aw.bits.addr.peek().litValue.longValue
+            writeBurstLengths += dut.io.axi.aw.bits.len.peek().litValue.toInt + 1
+          }
           if (wFire) {
             val data = dut.io.axi.w.bits.data.peek().litValue.longValue
             val strobe = dut.io.axi.w.bits.strb.peek().litValue.toInt
@@ -1001,7 +1010,7 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
           }
           if (completionFire) {
             dut.io.completion.bits.tag.expect(0x1617)
-            dut.io.completion.bits.error.expect(GpuError.None)
+            dut.io.completion.bits.error.expect(if (firstWriteError) GpuError.AxiResponse else GpuError.None)
             completed = true
           }
 
@@ -1016,7 +1025,10 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
               reads.front.beats -= 1
             }
           }
-          if (bFire) responsePending = false
+          if (bFire) {
+            responsePending = false
+            writeResponseIndex += 1
+          }
           if (wLast) {
             responsePending = true
             writeTransactionOpen = false
@@ -1025,11 +1037,19 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
         }
 
         completed shouldBe true
-        observedPairs.toSeq shouldBe foreground.zip(background)
+        val processedPixels = if (firstWriteError) width else width * height
+        observedPairs.toSeq shouldBe foreground.zip(background).take(processedPixels)
         foreground.indices.map(index => loadHalf(pixelAddress(dstBase, index))) shouldBe
-          foreground.zip(background).map { case (fg, bg) => blend(fg, bg) }
+          foreground.zip(background).zipWithIndex.map { case ((fg, bg), index) =>
+            if (index < processedPixels) blend(fg, bg) else bg
+          }
+        // One source and one background burst per chunk, not a read pair per pixel.
+        readAddresses.size shouldBe expectedReads
+        // One write burst per chunk, not a response round-trip per packed word.
+        writeBurstLengths.toSeq shouldBe expectedWrites
         readAddresses.exists(address => address >= srcBase && address < srcBase + height * stride) shouldBe true
         readAddresses.exists(address => address >= dstBase && address < dstBase + height * stride) shouldBe true
+      }
       }
     }
 

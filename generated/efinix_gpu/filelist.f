@@ -12,6 +12,8 @@ RectAddressGen.sv
 AxiReadEngine.sv
 AxiReadEngine_1.sv
 PixelReadAligner.sv
+ram_33x32.sv
+Queue33_UInt32.sv
 PixelWritePacker.sv
 RRArbiter2_Axi4Address.sv
 DenseBlitEngine.sv
