@@ -93,9 +93,14 @@ int hud_comparison_text(const hud_comparison *m,char lines[HUD_COMPARISON_LINES]
    number(p,(us[i]/100u)%10);
   } else text(p,"--  RENDER MS --");
  }
- char *p=text(lines[2],m->gpu_active?"MODE GPU  N ":"MODE CPU  N ");
+ char *p=text(lines[2],m->gpu_active?"MODE GPU  ":"MODE CPU  ");
+ p=text(p,m->bullet_demo?"BULLETS ":"N ");
  p=number(p,m->sprites); p=text(p,"  NET "); text(p,m->network_ready?"READY":"FAIL FALLBACK");
- text(lines[3],"KEY1 LESS KEY2 MORE  30 FRAME FPS WITH PRESENT");
+ if(m->bullet_demo) {
+  p=text(lines[3],"UFL "); p=number(p,m->underflows);
+  p=text(p," ERR "); p=number(p,m->error_code);
+  text(p,"  KEY1 LESS KEY2 MORE");
+ } else text(lines[3],"KEY1 LESS KEY2 MORE  30 FRAME FPS WITH PRESENT");
  return 0;
 }
 int hud_build_comparison(uint32_t dst,const hud_comparison *m,hud_command_stream *s) {

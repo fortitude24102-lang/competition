@@ -69,7 +69,7 @@ try {
     if (!(Test-Path "$bsp/linker/default.ld")) { throw "Complete external Sapphire BSP missing: $soc" }
     $sourceLine = Get-Content 'sw/efinix_gpu/Makefile' | Where-Object { $_ -match '^SOURCES = ' }
     $firmwareSources = @(($sourceLine -replace '^SOURCES = ', '') -split '\s+' | ForEach-Object { "sw/efinix_gpu/$_" })
-    & $RiscvGcc -std=gnu11 -Os -Wall -Wextra -Werror '-Wstack-usage=2048' -march=rv32im_zicsr -mabi=ilp32 -ffreestanding -ffunction-sections -fdata-sections "-DNETWORK_LOCAL_IP=$NetworkLocalIp" "-DNETWORK_PEER_IP=$NetworkPeerIp" -Isw/efinix_gpu/include -Isw/efinix_gpu/assets/v2 -isystem "$bsp/include" -isystem "$soc/software/standalone/driver" -DUSE_GP -DNO_LIBC_INIT_ARRAY -nostartfiles "-T$bsp/linker/default.ld" '-Tsw/efinix_gpu/linker.ld' '-Wl,--gc-sections' "-Wl,-Map,$out/gpu_demo.map" "$soc/software/standalone/common/start.S" @firmwareSources -o "$out/gpu_demo.elf"
+    & $RiscvGcc -std=gnu11 -Os -Wall -Wextra -Werror '-Wstack-usage=2048' -march=rv32im_zicsr -mabi=ilp32 -ffreestanding -ffunction-sections -fdata-sections "-DNETWORK_LOCAL_IP=$NetworkLocalIp" "-DNETWORK_PEER_IP=$NetworkPeerIp" -DBULLET_DEMO_DEFAULT=0 -Isw/efinix_gpu/include -Isw/efinix_gpu/assets/v2 -Isw/efinix_gpu/assets/bullet -isystem "$bsp/include" -isystem "$soc/software/standalone/driver" -DUSE_GP -DNO_LIBC_INIT_ARRAY -nostartfiles "-T$bsp/linker/default.ld" '-Tsw/efinix_gpu/linker.ld' '-Wl,--gc-sections' "-Wl,-Map,$out/gpu_demo.map" "$soc/software/standalone/common/start.S" @firmwareSources -o "$out/gpu_demo.elf"
     if ($LASTEXITCODE -ne 0) { throw 'Sapphire ELF link failed' }
     $objcopy = Join-Path (Split-Path $RiscvGcc) 'riscv-none-elf-objcopy.exe'
     foreach ($format in @(@('binary','bin'),@('ihex','hex'))) {

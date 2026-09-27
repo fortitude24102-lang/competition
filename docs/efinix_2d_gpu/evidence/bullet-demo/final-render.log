@@ -1,0 +1,9 @@
+PASS bullet state: deterministic motion, replay, clipping, capacity, recycling
+PASS bullet pixels: tiers=32/64/128/256/512; representative visible=126 commands=134 pixels=599508 CRC=1846b9be
+local scene CRC=8e341090
+HUD maximum test uses 686/1024 commands
+PASS: V2 scene, CPU pixels/CRC, GPU submission, timing and HUD (host only)
+VCD info: dumpfile generated/verification/bullet-demo/bullet_pixels.vcd opened for output.
+PASS bullet RTL: 599508 pixels COPY=518400 KEY=8296 ALPHA=432 FILL=72380 stalls=70532
+tb/verilog/tb_bullet_pixels.sv:64: $finish called at 12695500000 (1ps)
+PASS bullet demo: host state/assets/pixels, legacy perf, unchanged RTL pixel replay

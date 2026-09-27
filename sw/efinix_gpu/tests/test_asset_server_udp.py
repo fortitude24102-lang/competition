@@ -1,4 +1,5 @@
 import pathlib
+import os
 import socket
 import struct
 import subprocess
@@ -11,7 +12,7 @@ import zlib
 
 class AssetServerUdpTest(unittest.TestCase):
     def test_repository_resources_full_crc(self):
-        assets = pathlib.Path(__file__).resolve().parents[1] / "assets" / "v2"
+        assets = pathlib.Path(os.environ["ASSET_SERVER_TEST_DIRECTORY"]) if "ASSET_SERVER_TEST_DIRECTORY" in os.environ else pathlib.Path(__file__).resolve().parents[1] / "assets" / "v2"
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
             probe.bind(("127.0.0.1", 0))
             port = probe.getsockname()[1]

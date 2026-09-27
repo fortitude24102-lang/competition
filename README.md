@@ -10,6 +10,8 @@
 
 ## 两条工作线
 
+A-work 新增了纯软件的 [100KBBH 风格二维弹幕渲染候选](docs/efinix_2d_gpu/bullet_demo_usage.md)：独立素材、32～512 对象档位、CPU/GPU 同状态回放，保留旧性能场景。它尚未上板，也未接入人物操控，不代表已完成游戏赛题或稳定 60 FPS 验收；硬件设计与 V2 发布包不变。
+
 - 负责人：锁定当前同场景 CPU/GPU 基准，定位帧时间和 DDR/命令瓶颈，逐项优化并用同一测试口径复测。性能代码在 `sw/efinix_gpu/src/perf_demo.c`、`main.c`，GPU 在 `chisel/src/main/scala/gpu/`。
 - 组员：优化游戏画面和资源，复用许可明确的现有素材与逻辑；素材在 `sw/efinix_gpu/assets/v2/`，生成器在 `tools/build_v2_assets.py`。改动应保持 CPU/GPU 两种模式读取同一场景，不把 PC 变成渲染节点。每个 `.v` 文件仍只能含一个模块。
 

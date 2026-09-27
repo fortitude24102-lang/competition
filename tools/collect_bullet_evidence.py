@@ -1,0 +1,35 @@
+"""Archive generated offline evidence; never modify board/release artifacts."""
+import gzip
+import hashlib
+import json
+import pathlib
+import shutil
+
+
+def collect():
+    source = pathlib.Path("generated/verification/bullet-demo")
+    target = pathlib.Path("docs/efinix_2d_gpu/evidence/bullet-demo")
+    target.mkdir(parents=True, exist_ok=True)
+    for name in ("preview.png", "final-render.log", "final-regression.log",
+                 "final-firmware-bullet.log", "final-firmware-legacy.log"):
+        shutil.copyfile(source / name, target / name)
+    (target / "bullet_pixels.vcd.gz").write_bytes(gzip.compress(
+        (source / "bullet_pixels.vcd").read_bytes(), mtime=0))
+    hashes = {}
+    for path in sorted(target.iterdir()):
+        if path.name != "manifest.json":
+            hashes[path.name] = hashlib.sha256(path.read_bytes()).hexdigest()
+    for mode in ("bullet", "legacy"):
+        for extension in ("elf", "bin", "hex"):
+            path = source / f"firmware-{mode}" / f"gpu_demo.{extension}"
+            hashes[str(path)] = hashlib.sha256(path.read_bytes()).hexdigest()
+    manifest = {"scope": "offline host and pixel-pipe RTL only, not board performance",
+                "hardware_base": "a82f3dd", "frame_crc32": "1846b9be",
+                "rtl_pixel_operations": 599508, "representative_visible_bullets": 126,
+                "native_tests_are_sanitized": False, "sha256": hashes}
+    (target / "manifest.json").write_text(json.dumps(manifest, indent=2)+"\n", encoding="utf-8")
+    print("Archived bullet-demo preview, compressed waveform, logs and hashes")
+
+
+if __name__ == "__main__":
+    collect()

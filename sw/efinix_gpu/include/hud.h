@@ -15,6 +15,8 @@ typedef struct {
  uint32_t cpu_fps_x10,gpu_fps_x10,cpu_render_us,gpu_render_us;
  uint16_t sprites;
  uint8_t cpu_valid,gpu_valid,gpu_active,network_ready;
+ uint8_t bullet_demo,error_code;
+ uint32_t underflows;
 } hud_comparison;
 #define HUD_COMPARISON_LINES 4u
 #define HUD_COMPARISON_COLUMNS 64u
