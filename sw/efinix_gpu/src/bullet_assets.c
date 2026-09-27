@@ -15,18 +15,32 @@ void bullet_init_local_assets(void) {
  volatile uint16_t *bg=(volatile uint16_t *)(uintptr_t)BULLET_LOCAL_BACKGROUND;
  volatile uint16_t *atlas=(volatile uint16_t *)(uintptr_t)BULLET_LOCAL_ATLAS;
  for(unsigned y=0;y<540;y++) for(unsigned x=0;x<960;x++) {
-  uint16_t color=y<72?0:(uint16_t)((1u<<11)|((3u+y/90u)<<5)|(5u+y/135u));
-  if(y>=72 && (!(x%60u) || !((y-72u)%60u))) color=0x1949;
+  uint16_t color=0;
+  if(y>=72) {
+   unsigned edge=x;
+   if(959u-x<edge) edge=959u-x;
+   if(y-72u<edge) edge=y-72u;
+   if(539u-y<edge) edge=539u-y;
+   color=(uint16_t)((1u<<11)|((3u+y/90u)<<5)|(7u+y/135u));
+   if(!(x%60u) || !((y-72u)%60u)) color=0x1107;
+   if(!(x%120u) && !((y-72u)%120u)) color=0x29ad;
+   if(((x*73u+y*151u)^(x*y*3u))%4093u<3u) color=0x4a71;
+   if(edge==8u || edge==9u) color=0x1a2c;
+   if(edge>=12u && edge<=14u && (x/24u+y/24u)%3u==0) color=0x21af;
+  }
   bg[y*960+x]=color;
  }
  static const uint16_t colors[3]={0x07ff,0xfc80,0xb81f};
  for(unsigned n=0;n<3;n++) for(int y=0;y<8;y++) for(int x=0;x<8;x++) {
   int dx=2*x-7,dy=2*y-7,r=dx*dx+dy*dy;
-  atlas[n*64u+(unsigned)y*8u+(unsigned)x]=r>49?BULLET_COLOR_KEY:r<10?0xffff:colors[n];
+  atlas[n*64u+(unsigned)y*8u+(unsigned)x]=r>49?BULLET_COLOR_KEY:r<10?0xffff:r>=34?0x4208:colors[n];
  }
  for(int y=0;y<16;y++) for(int x=0;x<16;x++) {
-  int dx=2*x-15,dy=2*y-15,d=(dx<0?-dx:dx)+(dy<0?-dy:dy);
-  atlas[192u+(unsigned)y*16u+(unsigned)x]=d>16?BULLET_COLOR_KEY:d<8?0xffff:0x07e0;
+  int dx=2*x-15; if(dx<0) dx=-dx;
+  int body=dx<=3 && y>=2 && y<=12;
+  int wing=y>=5 && y<=12 && dx<=(y-4)*2;
+  int engine=y>=13 && y<=15 && dx<=3;
+  atlas[192u+(unsigned)y*16u+(unsigned)x]=body?0xffff:wing?(y>=11?0x0430:0x07ff):engine?0xfc80:BULLET_COLOR_KEY;
  }
  for(int y=0;y<12;y++) for(int x=0;x<12;x++) {
   int dx=2*x-11,dy=2*y-11,d=(dx<0?-dx:dx)+(dy<0?-dy:dy);

@@ -13,6 +13,7 @@
 static bullet_state state;
 static bullet_stream scene;
 static hud_command_stream hud;
+static hud_raster_cache cache;
 static uint16_t oracle[960*540];
 static gpu_command submitted[BULLET_MAX_COMMANDS];
 static unsigned submit_count,wait_count,fetch_count;
@@ -142,15 +143,39 @@ int main(void) {
  assert(!hud_build_comparison(GPU_FRAMEBUFFER_A,&m,&hud));
  assert(!perf_render_cpu(scene.commands,scene.count));
  assert(!perf_render_cpu(hud.commands,hud.count));
+ assert(!hud_update_cache(&m,&cache,&hud));
+ gpu_command cached;
+ assert(!hud_cached_command(GPU_FRAMEBUFFER_B,&cache,&cached));
+ assert(!perf_render_cpu(&cached,1));
+ assert(!memcmp((void *)(uintptr_t)GPU_FRAMEBUFFER_A,(void *)(uintptr_t)GPU_FRAMEBUFFER_B,HUD_CACHE_BYTES));
+ assert(!hud_cached_command(GPU_FRAMEBUFFER_A,&cache,&cached));
+ assert(!perf_render_cpu(&cached,1));
  FILE *f=fopen("generated/verification/bullet-demo/pixels.txt","w"); assert(f);
  unsigned total=reference(scene.commands,scene.count,f);
- total+=reference(hud.commands,hud.count,f);
+ total+=reference(&cached,1,f);
  assert(!fclose(f));
  assert(!memcmp(oracle,(void *)(uintptr_t)GPU_FRAMEBUFFER_A,GPU_FRAME_BYTES));
  f=fopen("generated/verification/bullet-demo/frame.rgb565","wb"); assert(f);
  assert(fwrite(oracle,1,GPU_FRAME_BYTES,f)==GPU_FRAME_BYTES); assert(!fclose(f));
  printf("PASS bullet pixels: tiers=32/64/128/256/512; representative visible=%u commands=%u pixels=%u CRC=%08x\n",
   scene.visible,scene.count,total,golden_crc32(oracle,sizeof oracle));
+ for(unsigned tick=0;tick<=180;tick+=90) {
+  assert(!bullet_prepare_frame(&state,512,tick,7));
+  assert(!bullet_build_frame(&state,GPU_FRAMEBUFFER_A,0,1,BULLET_MAX_COMMANDS,&scene));
+  m.sprites=(uint16_t)scene.visible;
+  assert(!hud_update_cache(&m,&cache,&hud));
+  assert(!hud_cached_command(GPU_FRAMEBUFFER_A,&cache,&cached));
+  assert(!perf_render_cpu(scene.commands,scene.count));
+  assert(!perf_render_cpu(&cached,1));
+  memset(oracle,0,sizeof oracle);
+  reference(scene.commands,scene.count,NULL); reference(&cached,1,NULL);
+  assert(!memcmp(oracle,(void *)(uintptr_t)GPU_FRAMEBUFFER_A,GPU_FRAME_BYTES));
+  char path[128];
+  snprintf(path,sizeof path,"generated/verification/bullet-demo/frame512_%03u.rgb565",tick);
+  f=fopen(path,"wb"); assert(f);
+  assert(fwrite(oracle,1,GPU_FRAME_BYTES,f)==GPU_FRAME_BYTES); assert(!fclose(f));
+  printf("PASS preview512: tick=%u visible=%u commands=%u CRC=%08x\n",tick,scene.visible,scene.count,golden_crc32(oracle,sizeof oracle));
+ }
  assert(!munmap(memory,bytes));
  return 0;
 }

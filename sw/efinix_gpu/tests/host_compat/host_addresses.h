@@ -6,6 +6,7 @@
 #include "perf_demo.h"
 #include "bullet_demo.h"
 #include "asset_catalog.h"
+#include "hud.h"
 #ifdef _WIN32
 #undef GPU_FRAMEBUFFER_A
 #undef GPU_FRAMEBUFFER_B
@@ -35,5 +36,7 @@
 #undef BULLET_LOCAL_ATLAS
 #define BULLET_LOCAL_BACKGROUND 0x20b00000u
 #define BULLET_LOCAL_ATLAS 0x20c00000u
+#undef HUD_CACHE_ADDR
+#define HUD_CACHE_ADDR 0x20c10000u
 #endif
 #endif

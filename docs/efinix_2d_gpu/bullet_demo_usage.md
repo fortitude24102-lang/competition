@@ -5,7 +5,7 @@
 Software-only 960x540 RGB565 bullet showcase using the existing board-tested
 Sapphire/GPU/DDR/HDMI design. Fixed-point ring, downward fan and spiral emitters,
 8x8 keyed bullets, a fixed 16x16 player marker, three small Alpha tiles and a
-dark grid background. No character input, collision, score or complete game
+original star/circuit arena background and a small ship marker. No character input, collision, score or complete game
 yet. UART/network keyboard input remains a future independent task.
 
 100KBBH is a reference, not an engine port. This implementation and procedural
@@ -77,7 +77,9 @@ baseline purpose; use the new native scripts on this machine without WSL.
   continuous-load/endurance acceptance still needs a board and dedicated run.
 - 8x8 bullets touch 64 source pixels versus 5,120 for the old 64x80 sprites
   (80x fewer per full sprite). Background still copies all 518,400 pixels and
-  HUD is still redrawn. This is a workload reduction, NOT a measured FPS gain;
+  HUD is still copied in full. In R2, visible text changes rebuild a 960x72
+  raster at 0x02c10000 (138,240 bytes); each frame uses one common CPU COPY,
+  rather than hundreds of glyph FILL commands. This is NOT a measured FPS gain;
   compare CPU/GPU within the new scene, not new FPS against old scene FPS.
 
 ## Offline verification
@@ -97,7 +99,8 @@ Windows host tests relocate only their simulated pointers, because Windows
 reserves the board's low DDR address range for its heap. Actual firmware still
 uses the original DDR addresses. These native MinGW runs are not sanitizer runs.
 
-Outputs, reproducible commands and scope are recorded in bullet_demo_acceptance.md.
+Historical R1 evidence is recorded in bullet_demo_acceptance.md; current R2
+evidence and the 512-object multi-frame previews are in bullet_demo_r2_acceptance.md.
 RTL simulation verifies pixel math, ColorKey write suppression and elastic
 backpressure; it does not simulate the complete RISC-V, APB/AXI DMA or physical
 DDR/HDMI. No offline result is represented as a board FPS result.

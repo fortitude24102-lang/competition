@@ -55,3 +55,44 @@ RTL: replay emitted real scene pixel operations through unchanged gpu_pixel_pipe
 compare each result and write-enable, include backpressure and VCD evidence.
 Firmware: compile/link bullet and legacy configurations with the official BSP;
 do not overwrite any board-tested release artifacts.
+
+## Follow-up R2 (2026-09-27)
+
+Goal: improve presentation and remove per-frame HUD glyph command construction,
+without changing hardware, gameplay, replay workloads or the legacy renderer.
+Inline execution with test-first checks and one final independent review.
+
+- [x] HUD: `hud_update_cache(metrics,cache,static_scratch)` and
+  `hud_cached_command(dst,cache,out)` in src/hud_cache.c. Cache text, not raw
+  padded metrics; DDR 0x02c10000..0x02c31c00, disjoint from pending network DMA.
+  First compile observed RED (missing APIs), then pixel equality/A-B copy/text
+  invalidation/canary test GREEN. CPU copies the HUD in both comparison modes.
+- [x] Art: refine original RGB565 background/player/bullets in both Python asset
+  generator and C fallback. Keep dimensions, bullet opacity mask and protocol.
+  Existing complete asset byte-comparison must fail on generator-only changes,
+  then pass with identical C regeneration. No new third-party license dependency.
+- [x] Evidence: compare cached HUD against original all-pixel oracle; replay
+  real cached COPY through unchanged pixel RTL. Generate 512-object frames
+  0/90/180 with independent oracle checks. Archive actual parsed CRC/counts,
+  not hardcoded historical metrics; reject mismatched host/RTL receipts.
+- [x] Final: review, final render/regression runs, both RV32 builds, archive
+  evidence and authorized push to A-work. Check hardware delta/main unchanged.
+
+Review focus: cache visibility fence, text-only invalidation, memory separation,
+all-pixel equivalence, asset fallback identity, receipt provenance, preview
+visibility versus configured count. No added package/install requirement.
+
+Final review: one important outline-threshold defect (no lattice pixels in
+r=41..49). Outer-ring assertion RED, change both generators to r>=34 GREEN,
+then fresh render/regression/bullet RV32/evidence. Cached HUD tests, 596296
+unchanged RTL pixel operations, legacy CRC 8e341090, 12 existing suites and
+both UDP catalogs green. Legacy RV32 branch unchanged by the outline fix;
+its successful build remains valid. No deferred minors.
+
+Review boundary rulings: physical coherence/SoC/HDMI/FPS stay unverified until
+a board is available (cost: on-board acceptance remains necessary); controls,
+collision and gameplay stay deferred (cost: this remains a rendering demo);
+final artifacts are certified by actual parent test logs rather than the
+read-only reviewer (cost: reviewer did not execute them); unrelated untracked
+BSP/waves stay untouched (cost: not part of this deliverable). Authorized push
+is to A-work only, never a merge or push into main.

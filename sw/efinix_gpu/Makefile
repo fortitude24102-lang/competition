@@ -15,7 +15,7 @@ else
 $(error DEMO must be bullet or legacy)
 endif
 CFLAGS += -Iassets/bullet
-SOURCES = src/main.c src/gpu.c src/benchmark.c src/golden_renderer.c src/rgb565.c src/sparse_pack.c src/assets.c src/framebuffer.c src/hud.c src/game.c src/lane_game.c src/lane_scene.c src/asset_protocol.c src/asset_cache.c src/asset_dma.c src/net_asset_server.c src/network_assets.c src/perf_demo.c src/bullet_demo.c src/bullet_assets.c
+SOURCES = src/main.c src/gpu.c src/benchmark.c src/golden_renderer.c src/rgb565.c src/sparse_pack.c src/assets.c src/framebuffer.c src/hud.c src/hud_cache.c src/game.c src/lane_game.c src/lane_scene.c src/asset_protocol.c src/asset_cache.c src/asset_dma.c src/net_asset_server.c src/network_assets.c src/perf_demo.c src/bullet_demo.c src/bullet_assets.c
 all: $(OUT)/gpu_demo.bin $(OUT)/gpu_demo.hex
 $(OUT)/gpu_demo.elf: $(SOURCES) $(wildcard include/*.h) $(wildcard assets/v2/*.h) $(wildcard assets/bullet/*.h) FORCE
 	@mkdir -p $(OUT)

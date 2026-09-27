@@ -1,0 +1,4 @@
+C:/efinity/riscv/toolchain/bin/../lib/gcc/riscv-none-elf/13.4.0/../../../../riscv-none-elf/bin/ld.exe: warning: generated/verification/bullet-demo/firmware-legacy/gpu_demo.elf has a LOAD segment with RWX permissions
+   text	   data	    bss	    dec	    hex	filename
+  17130	      0	  47496	  64626	   fc72	generated/verification/bullet-demo/firmware-legacy/gpu_demo.elf
+PASS legacy RV32 firmware build only; not board executed; release/ untouched

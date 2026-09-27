@@ -21,6 +21,8 @@ class BulletAssetsTest(unittest.TestCase):
             self.assertEqual(len(atlas), 1184)
             self.assertEqual(atlas[:2], b"\x1f\xf8")  # Transparent corner.
             self.assertEqual(atlas[2*(3*8+3):2*(3*8+3)+2], b"\xff\xff")
+            # Radius squared 34 is the outermost opaque ring on this 8x8 lattice.
+            self.assertEqual(atlas[2*(2*8+1):2*(2*8+1)+2], b"\x08\x42")
             self.assertEqual((out / "manifest.csv").read_text(),
                              "101,background.rgb565\n102,atlas.rgb565\n")
             catalog = (out / "bullet_asset_catalog.h").read_text()

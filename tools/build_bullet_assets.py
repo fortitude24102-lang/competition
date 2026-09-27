@@ -11,21 +11,37 @@ def build(out):
     bg = bytearray()
     for y in range(540):
         for x in range(960):
-            color = 0 if y < 72 else (1 << 11) | ((3 + y // 90) << 5) | (5 + y // 135)
-            if y >= 72 and (x % 60 == 0 or (y - 72) % 60 == 0):
-                color = 0x1949
+            color = 0
+            if y >= 72:
+                # Subdued space arena: distant stars, inset rails and circuit grid.
+                edge = min(x, 959-x, y-72, 539-y)
+                color = (1 << 11) | ((3 + y // 90) << 5) | (7 + y // 135)
+                if x % 60 == 0 or (y-72) % 60 == 0:
+                    color = 0x1107
+                if x % 120 == 0 and (y-72) % 120 == 0:
+                    color = 0x29ad
+                if ((x*73 + y*151) ^ (x*y*3)) % 4093 < 3:
+                    color = 0x4a71
+                if edge in (8, 9):
+                    color = 0x1a2c
+                if 12 <= edge <= 14 and (x//24+y//24) % 3 == 0:
+                    color = 0x21af
             bg += struct.pack("<H", color)
     atlas = bytearray()
     for color in (0x07ff, 0xfc80, 0xb81f):
         for y in range(8):
             for x in range(8):
                 r = (2*x-7)**2 + (2*y-7)**2
-                pixel = 0xf81f if r > 49 else 0xffff if r < 10 else color
+                pixel = 0xf81f if r > 49 else 0xffff if r < 10 else 0x4208 if r >= 34 else color
                 atlas += struct.pack("<H", pixel)
     for y in range(16):
         for x in range(16):
-            d = abs(2*x-15) + abs(2*y-15)
-            pixel = 0xf81f if d > 16 else 0xffff if d < 8 else 0x07e0
+            dx = abs(2*x-15)
+            body = dx <= 3 and 2 <= y <= 12
+            wing = 5 <= y <= 12 and dx <= (y-4)*2
+            engine = 13 <= y <= 15 and dx <= 3
+            pixel = (0xffff if body else 0x0430 if wing and y >= 11 else
+                     0x07ff if wing else 0xfc80 if engine else 0xf81f)
             atlas += struct.pack("<H", pixel)
     for y in range(12):
         for x in range(12):

@@ -22,4 +22,16 @@ typedef struct {
 #define HUD_COMPARISON_COLUMNS 64u
 int hud_comparison_text(const hud_comparison *metrics,char lines[HUD_COMPARISON_LINES][HUD_COMPARISON_COLUMNS]);
 int hud_build_comparison(uint32_t destination,const hud_comparison *metrics,hud_command_stream *stream);
+#define HUD_CACHE_ADDR 0x02c10000u
+#define HUD_CACHE_HEIGHT 72u
+#define HUD_CACHE_BYTES (GPU_FRAME_STRIDE*HUD_CACHE_HEIGHT)
+typedef struct {
+ char text[HUD_COMPARISON_LINES][HUD_COMPARISON_COLUMNS];
+ uint32_t rebuilds;
+ uint8_t valid;
+} hud_raster_cache;
+/* Zero-initialize cache; scratch must be static/BSS (too large for board stack).
+ * Caller synchronizes DDR after update, before consuming the cached COPY. */
+int hud_update_cache(const hud_comparison *metrics,hud_raster_cache *cache,hud_command_stream *scratch);
+int hud_cached_command(uint32_t destination,const hud_raster_cache *cache,gpu_command *command);
 #endif

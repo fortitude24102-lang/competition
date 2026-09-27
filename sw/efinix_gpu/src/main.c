@@ -22,6 +22,7 @@ void gpu_platform_sync(void) {
 #if BULLET_DEMO_DEFAULT
 static bullet_stream scene;
 static bullet_state bullets,window_start;
+static hud_raster_cache hud_cache;
 static const unsigned tiers[]={32,64,128,256,512};
 #else
 static perf_stream scene;
@@ -102,7 +103,14 @@ int main(void) {
   metrics.sprites=(uint16_t)scene.visible;
   metrics.error_code=gpu.hardware_error;
 #endif
+#if BULLET_DEMO_DEFAULT
+  e=hud_update_cache(&metrics,&hud_cache,&overlay); if(e) break;
+  gpu_platform_sync();
+  e=hud_cached_command(buffers.back,&hud_cache,&overlay.commands[0]); if(e) break;
+  overlay.count=1;
+#else
   e=hud_build_comparison(buffers.back,&metrics,&overlay); if(e) break;
+#endif
   /* Identical CPU HUD work in both modes, outside the scene render measurement. */
   e=perf_render_cpu(overlay.commands,overlay.count); if(e) break;
   gpu_platform_sync();
