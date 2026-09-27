@@ -11,14 +11,26 @@
 #define NETWORK_PEER_IP 0xc0a80003u
 #endif
 
-static void aircraft(volatile uint16_t *atlas,uint16_t color,int downward) {
+static void aircraft(volatile uint16_t *atlas,uint16_t color) {
  for(int y=0;y<16;y++) for(int x=0;x<16;x++) {
-  int yy=downward?15-y:y;
+  int yy=y;
   int dx=2*x-15; if(dx<0) dx=-dx;
   int body=dx<=3 && yy>=2 && yy<=12;
   int wing=yy>=5 && yy<=12 && dx<=(yy-4)*2;
   int engine=yy>=13 && yy<=15 && dx<=3;
   atlas[(unsigned)y*16u+(unsigned)x]=body?0xffff:wing?(yy>=11?0x0430:color):engine?0xfc80:BULLET_COLOR_KEY;
+ }
+}
+
+static void enemy_aircraft(volatile uint16_t *atlas,uint16_t color) {
+ for(int y=0;y<16;y++) for(int x=0;x<16;x++) {
+  int dx=2*x-15; if(dx<0) dx=-dx;
+  int pods=dx>=7 && dx<=9 && y>=1 && y<=11;
+  int body=dx<=3 && y>=3 && y<=12;
+  int wing=((y==5 || y==9) && dx<=11) || y==6 || y==7 || (y==8 && dx<=13);
+  int nose=dx<=1 && (y==13 || y==14);
+  atlas[(unsigned)y*16u+(unsigned)x]=nose || (body && y>=10)?0xffff:
+   pods && y<=2?0xfc80:pods?0x8410:wing && y==8?0x0430:body || wing?color:BULLET_COLOR_KEY;
  }
 }
 
@@ -46,13 +58,13 @@ void bullet_init_local_assets(void) {
   int dx=2*x-7,dy=2*y-7,r=dx*dx+dy*dy;
   atlas[n*64u+(unsigned)y*8u+(unsigned)x]=!bullet_shape_opaque(n,(unsigned)x,(unsigned)y)?BULLET_COLOR_KEY:r<10?0xffff:r>=34?0x4208:colors[n];
  }
- aircraft(atlas+BULLET_PLAYER_OFFSET/2u,0x07ff,0);
+ aircraft(atlas+BULLET_PLAYER_OFFSET/2u,0x07ff);
  for(int y=0;y<12;y++) for(int x=0;x<12;x++) {
   int dx=2*x-11,dy=2*y-11,d=(dx<0?-dx:dx)+(dy<0?-dy:dy);
   atlas[BULLET_GLOW_OFFSET/2u+(unsigned)y*12u+(unsigned)x]=(uint16_t)((22-d)*2<<5);
  }
  static const uint16_t enemies[3]={0xfc80,0xb81f,0x07e0};
- for(unsigned n=0;n<3;n++) aircraft(atlas+BULLET_EMITTER_OFFSET/2u+n*256u,enemies[n],1);
+ for(unsigned n=0;n<3;n++) enemy_aircraft(atlas+BULLET_EMITTER_OFFSET/2u+n*256u,enemies[n]);
 }
 
 int bullet_load_network_assets(uintptr_t base,uint32_t session) {

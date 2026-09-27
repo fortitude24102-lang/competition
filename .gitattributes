@@ -4,3 +4,4 @@ generated/efinix_gpu/* text eol=lf
 # Evidence SHA-256 covers archived bytes, including log line endings.
 docs/efinix_2d_gpu/evidence/bullet-demo-r2/* -text whitespace=cr-at-eol
 docs/efinix_2d_gpu/evidence/bullet-demo-r3/* -text whitespace=cr-at-eol
+docs/efinix_2d_gpu/evidence/bullet-demo-r4/* -text whitespace=cr-at-eol

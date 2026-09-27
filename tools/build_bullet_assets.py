@@ -13,10 +13,10 @@ def opaque(shape, x, y):
             18 <= r <= 49)[shape]
 
 
-def aircraft(atlas, color, downward=False):
+def aircraft(atlas, color):
     for y in range(16):
         for x in range(16):
-            yy = 15-y if downward else y
+            yy = y
             dx = abs(2*x-15)
             body = dx <= 3 and 2 <= yy <= 12
             wing = 5 <= yy <= 12 and dx <= (yy-4)*2
@@ -24,6 +24,21 @@ def aircraft(atlas, color, downward=False):
             pixel = (0xffff if body else 0x0430 if wing and yy >= 11 else
                      color if wing else 0xfc80 if engine else 0xf81f)
             atlas += struct.pack('<H', pixel)
+
+
+def enemy_aircraft(atlas, color):
+    # Wide twin nacelles: a distinct silhouette, not a mirrored player fighter.
+    for y in range(16):
+        for x in range(16):
+            dx = abs(2*x-15)
+            pods = 7 <= dx <= 9 and 1 <= y <= 11
+            body = dx <= 3 and 3 <= y <= 12
+            wing = (y in (5,9) and dx <= 11) or y in (6,7) or (y == 8 and dx <= 13)
+            nose = dx <= 1 and y in (13,14)
+            pixel = (0xffff if nose or (body and y >= 10) else
+                     0xfc80 if pods and y <= 2 else 0x8410 if pods else
+                     0x0430 if wing and y == 8 else color if body or wing else 0xf81f)
+            atlas += struct.pack('<H',pixel)
 
 
 def build(out):
@@ -61,7 +76,7 @@ def build(out):
             d = abs(2*x-11) + abs(2*y-11)
             atlas += struct.pack("<H", (max(0, 22-d)*2) << 5)
     for color in (0xfc80,0xb81f,0x07e0):
-        aircraft(atlas,color,downward=True)
+        enemy_aircraft(atlas,color)
     (out / "background.rgb565").write_bytes(bg)
     (out / "atlas.rgb565").write_bytes(atlas)
     (out / "manifest.csv").write_text("101,background.rgb565\n102,atlas.rgb565\n", encoding="ascii")

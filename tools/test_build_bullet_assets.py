@@ -37,11 +37,26 @@ class BulletAssetsTest(unittest.TestCase):
                     for x, cell in enumerate(row):
                         pixel = struct.unpack_from('<H', atlas, shape*128+2*(y*8+x))[0]
                         self.assertEqual(pixel != 0xf81f, cell == '#', (shape,x,y))
-            # Three downward-facing aircraft with opaque noses and clear corners.
+            # Broad twin-engine enemy mask, not a flipped/recolored player.
+            enemy_rows = [
+                '................', '...##......##...', '...##......##...',
+                '...##.####.##...', '...##.####.##...', '..############..',
+                '################', '################', '.##############.',
+                '..############..', '...##.####.##...', '...##.####.##...',
+                '......####......', '.......##.......', '.......##.......',
+                '................',
+            ]
+            player = [struct.unpack_from('<H',atlas,768+2*i)[0] != 0xf81f for i in range(256)]
             for plane in range(3):
                 offset = 1568 + plane*512
                 self.assertEqual(struct.unpack_from('<H',atlas,offset)[0], 0xf81f)
                 self.assertNotEqual(struct.unpack_from('<H',atlas,offset+2*(13*16+7))[0], 0xf81f)
+                enemy = [struct.unpack_from('<H',atlas,offset+2*i)[0] != 0xf81f for i in range(256)]
+                normalized = [enemy[(15-y)*16+x] for y in range(16) for x in range(16)]
+                self.assertGreaterEqual(sum(a != b for a,b in zip(player,normalized)),40)
+                for y,row in enumerate(enemy_rows):
+                    for x,cell in enumerate(row):
+                        self.assertEqual(enemy[y*16+x],cell == '#',(plane,x,y))
             self.assertEqual((out / "manifest.csv").read_text(),
                              "101,background.rgb565\n102,atlas.rgb565\n")
             catalog = (out / "bullet_asset_catalog.h").read_text()

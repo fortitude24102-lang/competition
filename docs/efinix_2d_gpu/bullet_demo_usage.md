@@ -100,8 +100,10 @@ Windows host tests relocate only their simulated pointers, because Windows
 reserves the board's low DDR address range for its heap. Actual firmware still
 uses the original DDR addresses. These native MinGW runs are not sanitizer runs.
 
-Historical R1/R2 evidence is preserved. Current aircraft/multi-shape (R3)
-evidence and 512-object multi-frame previews are in bullet_demo_r3_acceptance.md.
+Historical R1/R2/R3 evidence is preserved. Current distinct-friendly/enemy
+aircraft (R4) evidence and previews are in bullet_demo_r4_acceptance.md.
+The player is a pointed narrow fighter; enemies have broad wings and two
+side engines, not just the same sprite rotated and recolored.
 RTL simulation verifies pixel math, ColorKey write suppression and elastic
 backpressure; it does not simulate the complete RISC-V, APB/AXI DMA or physical
 DDR/HDMI. No offline result is represented as a board FPS result.

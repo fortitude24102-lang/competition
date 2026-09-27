@@ -16,6 +16,8 @@ R2 软件完善增加原创星空/电路场地与飞船素材、HUD 栅格缓存
 
 R3 将三个发射器替换为飞机，并加入圆、菱形、针、十字、星形和空心环六种子弹；仍仅改软件素材，见 [新画面与离线验证](docs/efinix_2d_gpu/bullet_demo_r3_acceptance.md)。
 
+R4 进一步区分敌我轮廓：我方为尖头窄机身战机，敌方为宽翼双引擎飞机；尺寸与绘制量不变，见 [敌我飞机素材验证](docs/efinix_2d_gpu/bullet_demo_r4_acceptance.md)。
+
 - 负责人：锁定当前同场景 CPU/GPU 基准，定位帧时间和 DDR/命令瓶颈，逐项优化并用同一测试口径复测。性能代码在 `sw/efinix_gpu/src/perf_demo.c`、`main.c`，GPU 在 `chisel/src/main/scala/gpu/`。
 - 组员：优化游戏画面和资源，复用许可明确的现有素材与逻辑；素材在 `sw/efinix_gpu/assets/v2/`，生成器在 `tools/build_v2_assets.py`。改动应保持 CPU/GPU 两种模式读取同一场景，不把 PC 变成渲染节点。每个 `.v` 文件仍只能含一个模块。
 
