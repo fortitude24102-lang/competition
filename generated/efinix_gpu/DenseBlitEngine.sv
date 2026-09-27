@@ -71,7 +71,8 @@ module DenseBlitEngine(	// src/main/scala/gpu/DenseBlitEngine.scala:6:7
   input         io_pixelResult_valid,	// src/main/scala/gpu/DenseBlitEngine.scala:7:14
   input  [15:0] io_pixelResult_bits_pixel,	// src/main/scala/gpu/DenseBlitEngine.scala:7:14
   input         io_pixelResult_bits_writeEnable,	// src/main/scala/gpu/DenseBlitEngine.scala:7:14
-                io_axi_aw_ready,	// src/main/scala/gpu/DenseBlitEngine.scala:7:14
+  output        io_copyWordDone,	// src/main/scala/gpu/DenseBlitEngine.scala:7:14
+  input         io_axi_aw_ready,	// src/main/scala/gpu/DenseBlitEngine.scala:7:14
   output        io_axi_aw_valid,	// src/main/scala/gpu/DenseBlitEngine.scala:7:14
   output [31:0] io_axi_aw_bits_addr,	// src/main/scala/gpu/DenseBlitEngine.scala:7:14
   output [7:0]  io_axi_aw_bits_len,	// src/main/scala/gpu/DenseBlitEngine.scala:7:14
@@ -101,138 +102,143 @@ module DenseBlitEngine(	// src/main/scala/gpu/DenseBlitEngine.scala:6:7
   output [7:0]  io_completion_bits_error	// src/main/scala/gpu/DenseBlitEngine.scala:7:14
 );
 
-  wire        _readAddressArbiter_io_in_0_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:24:42
-  wire        _readAddressArbiter_io_in_1_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:24:42
-  wire        _writer_io_request_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:23:30
-  wire        _writer_io_data_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:23:30
-  wire        _writer_io_done;	// src/main/scala/gpu/DenseBlitEngine.scala:23:30
-  wire        _writer_io_error;	// src/main/scala/gpu/DenseBlitEngine.scala:23:30
-  wire        _packer_io_input_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:22:30
-  wire        _packer_io_output_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:22:30
-  wire [31:0] _packer_io_output_bits_address;	// src/main/scala/gpu/DenseBlitEngine.scala:22:30
-  wire [31:0] _packer_io_output_bits_data;	// src/main/scala/gpu/DenseBlitEngine.scala:22:30
-  wire [3:0]  _packer_io_output_bits_strb;	// src/main/scala/gpu/DenseBlitEngine.scala:22:30
-  wire        _alphaBackgroundBuffer_io_enq_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:21:45
-  wire        _alphaBackgroundBuffer_io_deq_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:21:45
-  wire [31:0] _alphaBackgroundBuffer_io_deq_bits;	// src/main/scala/gpu/DenseBlitEngine.scala:21:45
-  wire        _alphaForegroundBuffer_io_enq_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:20:45
-  wire        _alphaForegroundBuffer_io_deq_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:20:45
-  wire [31:0] _alphaForegroundBuffer_io_deq_bits;	// src/main/scala/gpu/DenseBlitEngine.scala:20:45
-  wire        _backgroundAligner_io_start_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:19:41
-  wire        _backgroundAligner_io_input_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:19:41
-  wire        _backgroundAligner_io_output_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:19:41
-  wire [15:0] _backgroundAligner_io_output_bits_pixel;	// src/main/scala/gpu/DenseBlitEngine.scala:19:41
-  wire        _aligner_io_start_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:18:31
-  wire        _aligner_io_input_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:18:31
-  wire        _aligner_io_output_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:18:31
-  wire        _aligner_io_output_bits_last;	// src/main/scala/gpu/DenseBlitEngine.scala:18:31
-  wire        _backgroundReader_io_request_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:17:40
-  wire        _backgroundReader_io_data_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:17:40
-  wire [31:0] _backgroundReader_io_data_bits_data;	// src/main/scala/gpu/DenseBlitEngine.scala:17:40
-  wire        _backgroundReader_io_axiAr_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:17:40
-  wire [31:0] _backgroundReader_io_axiAr_bits_addr;	// src/main/scala/gpu/DenseBlitEngine.scala:17:40
-  wire [7:0]  _backgroundReader_io_axiAr_bits_len;	// src/main/scala/gpu/DenseBlitEngine.scala:17:40
-  wire        _backgroundReader_io_axiR_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:17:40
-  wire        _backgroundReader_io_done;	// src/main/scala/gpu/DenseBlitEngine.scala:17:40
-  wire        _backgroundReader_io_error;	// src/main/scala/gpu/DenseBlitEngine.scala:17:40
-  wire        _reader_io_request_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:16:30
-  wire        _reader_io_data_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:16:30
-  wire [31:0] _reader_io_data_bits_data;	// src/main/scala/gpu/DenseBlitEngine.scala:16:30
-  wire        _reader_io_axiAr_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:16:30
-  wire [31:0] _reader_io_axiAr_bits_addr;	// src/main/scala/gpu/DenseBlitEngine.scala:16:30
-  wire [7:0]  _reader_io_axiAr_bits_len;	// src/main/scala/gpu/DenseBlitEngine.scala:16:30
-  wire        _reader_io_axiR_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:16:30
-  wire        _reader_io_done;	// src/main/scala/gpu/DenseBlitEngine.scala:16:30
-  wire        _reader_io_error;	// src/main/scala/gpu/DenseBlitEngine.scala:16:30
-  wire        _rect_io_start_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:15:28
-  wire        _rect_io_address_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:15:28
-  wire [31:0] _rect_io_address_bits_address;	// src/main/scala/gpu/DenseBlitEngine.scala:15:28
-  wire        _rect_io_address_bits_rowLast;	// src/main/scala/gpu/DenseBlitEngine.scala:15:28
-  wire        _rect_io_address_bits_last;	// src/main/scala/gpu/DenseBlitEngine.scala:15:28
-  reg  [3:0]  state;	// src/main/scala/gpu/DenseBlitEngine.scala:27:30
-  reg  [3:0]  commandReg_op;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-  reg  [31:0] commandReg_dstAddr;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-  reg  [15:0] commandReg_widthPixels;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-  reg  [15:0] commandReg_heightPixels;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-  reg  [31:0] commandReg_srcStride;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-  reg  [31:0] commandReg_dstStride;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-  reg  [15:0] commandReg_color;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-  reg  [15:0] commandReg_colorKey;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-  reg  [7:0]  commandReg_alpha;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-  reg  [15:0] commandReg_tag;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-  reg  [31:0] srcRowBase;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
-  reg  [31:0] dstRowBase;	// src/main/scala/gpu/DenseBlitEngine.scala:30:31
-  reg  [31:0] alphaSrcAddress;	// src/main/scala/gpu/DenseBlitEngine.scala:31:36
-  reg  [31:0] alphaChunkDstAddress;	// src/main/scala/gpu/DenseBlitEngine.scala:32:41
-  reg  [31:0] alphaChunkBeats;	// src/main/scala/gpu/DenseBlitEngine.scala:33:36
-  reg  [31:0] pixelAddress;	// src/main/scala/gpu/DenseBlitEngine.scala:34:33
-  reg         pixelRowLast;	// src/main/scala/gpu/DenseBlitEngine.scala:35:33
-  reg         pixelLast;	// src/main/scala/gpu/DenseBlitEngine.scala:36:30
-  reg         pixelChunkLast;	// src/main/scala/gpu/DenseBlitEngine.scala:37:35
-  reg         rowReadDone;	// src/main/scala/gpu/DenseBlitEngine.scala:38:36
-  reg         rowWriteDone;	// src/main/scala/gpu/DenseBlitEngine.scala:39:37
-  reg         rowReadError;	// src/main/scala/gpu/DenseBlitEngine.scala:40:37
-  reg         backgroundReadError;	// src/main/scala/gpu/DenseBlitEngine.scala:41:44
-  reg         rowWriteError;	// src/main/scala/gpu/DenseBlitEngine.scala:42:38
-  reg         dynamicWriteOutstanding;	// src/main/scala/gpu/DenseBlitEngine.scala:43:48
-  reg  [7:0]  completionError;	// src/main/scala/gpu/DenseBlitEngine.scala:44:40
-  wire        io_command_ready_0 = state == 4'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30, :46:29
-  wire        isCopy = commandReg_op == 4'h2;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31, :62:38
-  wire        isColorKey = commandReg_op == 4'h3;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31, :63:42
-  wire        isAlpha = commandReg_op == 4'h4;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31, :64:39
-  wire        hasSource = isCopy | isColorKey | isAlpha;	// src/main/scala/gpu/DenseBlitEngine.scala:62:38, :63:42, :64:39, :65:{34,48}
+  wire        _readAddressArbiter_io_in_0_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:25:42
+  wire        _readAddressArbiter_io_in_1_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:25:42
+  wire        _writer_io_request_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:24:30
+  wire        _writer_io_data_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:24:30
+  wire        _writer_io_done;	// src/main/scala/gpu/DenseBlitEngine.scala:24:30
+  wire        _writer_io_error;	// src/main/scala/gpu/DenseBlitEngine.scala:24:30
+  wire        _packer_io_input_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:23:30
+  wire        _packer_io_output_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:23:30
+  wire [31:0] _packer_io_output_bits_address;	// src/main/scala/gpu/DenseBlitEngine.scala:23:30
+  wire [31:0] _packer_io_output_bits_data;	// src/main/scala/gpu/DenseBlitEngine.scala:23:30
+  wire [3:0]  _packer_io_output_bits_strb;	// src/main/scala/gpu/DenseBlitEngine.scala:23:30
+  wire        _alphaBackgroundBuffer_io_enq_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:22:45
+  wire        _alphaBackgroundBuffer_io_deq_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:22:45
+  wire [31:0] _alphaBackgroundBuffer_io_deq_bits;	// src/main/scala/gpu/DenseBlitEngine.scala:22:45
+  wire        _alphaForegroundBuffer_io_enq_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:21:45
+  wire        _alphaForegroundBuffer_io_deq_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:21:45
+  wire [31:0] _alphaForegroundBuffer_io_deq_bits;	// src/main/scala/gpu/DenseBlitEngine.scala:21:45
+  wire        _backgroundAligner_io_start_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:20:41
+  wire        _backgroundAligner_io_input_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:20:41
+  wire        _backgroundAligner_io_output_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:20:41
+  wire [15:0] _backgroundAligner_io_output_bits_pixel;	// src/main/scala/gpu/DenseBlitEngine.scala:20:41
+  wire        _aligner_io_start_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:19:31
+  wire        _aligner_io_input_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:19:31
+  wire        _aligner_io_output_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:19:31
+  wire        _aligner_io_output_bits_last;	// src/main/scala/gpu/DenseBlitEngine.scala:19:31
+  wire        _backgroundReader_io_request_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:18:40
+  wire        _backgroundReader_io_data_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:18:40
+  wire [31:0] _backgroundReader_io_data_bits_data;	// src/main/scala/gpu/DenseBlitEngine.scala:18:40
+  wire        _backgroundReader_io_axiAr_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:18:40
+  wire [31:0] _backgroundReader_io_axiAr_bits_addr;	// src/main/scala/gpu/DenseBlitEngine.scala:18:40
+  wire [7:0]  _backgroundReader_io_axiAr_bits_len;	// src/main/scala/gpu/DenseBlitEngine.scala:18:40
+  wire        _backgroundReader_io_axiR_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:18:40
+  wire        _backgroundReader_io_done;	// src/main/scala/gpu/DenseBlitEngine.scala:18:40
+  wire        _backgroundReader_io_error;	// src/main/scala/gpu/DenseBlitEngine.scala:18:40
+  wire        _reader_io_request_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:17:30
+  wire        _reader_io_data_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:17:30
+  wire [31:0] _reader_io_data_bits_data;	// src/main/scala/gpu/DenseBlitEngine.scala:17:30
+  wire        _reader_io_axiAr_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:17:30
+  wire [31:0] _reader_io_axiAr_bits_addr;	// src/main/scala/gpu/DenseBlitEngine.scala:17:30
+  wire [7:0]  _reader_io_axiAr_bits_len;	// src/main/scala/gpu/DenseBlitEngine.scala:17:30
+  wire        _reader_io_axiR_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:17:30
+  wire        _reader_io_done;	// src/main/scala/gpu/DenseBlitEngine.scala:17:30
+  wire        _reader_io_error;	// src/main/scala/gpu/DenseBlitEngine.scala:17:30
+  wire        _rect_io_start_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:16:28
+  wire        _rect_io_address_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:16:28
+  wire [31:0] _rect_io_address_bits_address;	// src/main/scala/gpu/DenseBlitEngine.scala:16:28
+  wire        _rect_io_address_bits_rowLast;	// src/main/scala/gpu/DenseBlitEngine.scala:16:28
+  wire        _rect_io_address_bits_last;	// src/main/scala/gpu/DenseBlitEngine.scala:16:28
+  reg  [3:0]  state;	// src/main/scala/gpu/DenseBlitEngine.scala:28:30
+  reg  [3:0]  commandReg_op;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+  reg  [31:0] commandReg_dstAddr;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+  reg  [15:0] commandReg_widthPixels;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+  reg  [15:0] commandReg_heightPixels;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+  reg  [31:0] commandReg_srcStride;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+  reg  [31:0] commandReg_dstStride;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+  reg  [15:0] commandReg_color;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+  reg  [15:0] commandReg_colorKey;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+  reg  [7:0]  commandReg_alpha;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+  reg  [15:0] commandReg_tag;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+  reg  [31:0] srcRowBase;	// src/main/scala/gpu/DenseBlitEngine.scala:30:31
+  reg  [31:0] dstRowBase;	// src/main/scala/gpu/DenseBlitEngine.scala:31:31
+  reg  [31:0] alphaSrcAddress;	// src/main/scala/gpu/DenseBlitEngine.scala:32:36
+  reg  [31:0] alphaChunkDstAddress;	// src/main/scala/gpu/DenseBlitEngine.scala:33:41
+  reg  [31:0] alphaChunkBeats;	// src/main/scala/gpu/DenseBlitEngine.scala:34:36
+  reg  [31:0] pixelAddress;	// src/main/scala/gpu/DenseBlitEngine.scala:35:33
+  reg         pixelRowLast;	// src/main/scala/gpu/DenseBlitEngine.scala:36:33
+  reg         pixelLast;	// src/main/scala/gpu/DenseBlitEngine.scala:37:30
+  reg         pixelChunkLast;	// src/main/scala/gpu/DenseBlitEngine.scala:38:35
+  reg         fastCopy;	// src/main/scala/gpu/DenseBlitEngine.scala:39:33
+  reg  [15:0] fastCopyRowsLeft;	// src/main/scala/gpu/DenseBlitEngine.scala:40:37
+  reg         rowReadDone;	// src/main/scala/gpu/DenseBlitEngine.scala:41:36
+  reg         rowWriteDone;	// src/main/scala/gpu/DenseBlitEngine.scala:42:37
+  reg         rowReadError;	// src/main/scala/gpu/DenseBlitEngine.scala:43:37
+  reg         backgroundReadError;	// src/main/scala/gpu/DenseBlitEngine.scala:44:44
+  reg         rowWriteError;	// src/main/scala/gpu/DenseBlitEngine.scala:45:38
+  reg         dynamicWriteOutstanding;	// src/main/scala/gpu/DenseBlitEngine.scala:46:48
+  reg  [7:0]  completionError;	// src/main/scala/gpu/DenseBlitEngine.scala:47:40
+  wire        io_command_ready_0 = state == 4'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30, :49:29
+  wire        isCopy = commandReg_op == 4'h2;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31, :70:38
+  wire        isColorKey = commandReg_op == 4'h3;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31, :71:42
+  wire        isAlpha = commandReg_op == 4'h4;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31, :72:39
+  wire        hasSource = isCopy | isColorKey | isAlpha;	// src/main/scala/gpu/DenseBlitEngine.scala:70:38, :71:42, :72:39, :73:{34,48}
   wire [31:0] _rowBeats_T =
-    {15'h0, commandReg_widthPixels, 1'h0} + {30'h0, dstRowBase[1:0]} + 32'h3;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31, :30:31, :67:{43,55}, :68:44
-  wire        rect_io_start_valid = state == 4'h1;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30, :70:32
+    {15'h0, commandReg_widthPixels, 1'h0} + {30'h0, dstRowBase[1:0]} + 32'h3;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31, :31:31, :75:{43,55}, :76:44
+  wire        _rect_io_start_valid_T = state == 4'h1;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30, :78:32
+  wire        rect_io_start_valid = _rect_io_start_valid_T & ~fastCopy;	// src/main/scala/gpu/DenseBlitEngine.scala:39:33, :78:{32,46,49}
   wire        dynamicWriteRequest =
-    isColorKey & _packer_io_output_valid & ~dynamicWriteOutstanding;	// src/main/scala/gpu/DenseBlitEngine.scala:22:30, :43:48, :63:42, :80:48, :81:{28,31}
-  wire        writer_io_request_valid = state == 4'h2 | dynamicWriteRequest;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30, :79:41, :80:48, :81:28, :82:48
-  wire [16:0] _alphaRowProgress_T = alphaSrcAddress[16:0] - srcRowBase[16:0];	// src/main/scala/gpu/DenseBlitEngine.scala:29:31, :31:36, :96:52
-  wire [15:0] _alphaPixelsLeft_T = commandReg_widthPixels - _alphaRowProgress_T[16:1];	// src/main/scala/gpu/DenseBlitEngine.scala:28:31, :96:{52,66,71}, :97:57
+    isColorKey & _packer_io_output_valid & ~dynamicWriteOutstanding;	// src/main/scala/gpu/DenseBlitEngine.scala:23:30, :46:48, :71:42, :91:48, :92:{28,31}
+  wire        writer_io_request_valid = state == 4'h2 | dynamicWriteRequest;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30, :90:41, :91:48, :92:28, :93:48
+  wire [16:0] _alphaRowProgress_T = alphaSrcAddress[16:0] - srcRowBase[16:0];	// src/main/scala/gpu/DenseBlitEngine.scala:30:31, :32:36, :107:52
+  wire [15:0] _alphaPixelsLeft_T = commandReg_widthPixels - _alphaRowProgress_T[16:1];	// src/main/scala/gpu/DenseBlitEngine.scala:29:31, :107:{52,66,71}, :108:57
   wire [15:0] alphaChunkPixels =
-    _alphaPixelsLeft_T > 16'h40 ? 16'h40 : _alphaPixelsLeft_T;	// src/main/scala/gpu/DenseBlitEngine.scala:97:57, :98:{37,54}
-  wire        startingSourceRow = state == 4'h3;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30, :99:41
-  wire        startingAlphaPair = state == 4'h5;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30, :100:41
+    _alphaPixelsLeft_T > 16'h40 ? 16'h40 : _alphaPixelsLeft_T;	// src/main/scala/gpu/DenseBlitEngine.scala:108:57, :109:{37,54}
+  wire        startingSourceRow = state == 4'h3;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30, :110:41
+  wire        startingAlphaPair = state == 4'h5;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30, :111:41
   wire        aligner_io_start_valid =
-    startingSourceRow | startingAlphaPair & _backgroundAligner_io_start_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:19:41, :99:41, :100:41, :101:{47,69}
+    startingSourceRow | startingAlphaPair & _backgroundAligner_io_start_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:20:41, :110:41, :111:41, :112:{47,69}
   wire        backgroundAligner_io_start_valid =
-    startingAlphaPair & _aligner_io_start_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:18:31, :100:41, :104:57
-  wire        startingSourceRead = state == 4'h4;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30, :121:42
-  wire        startingAlphaReads = state == 4'h6;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30, :122:42
+    startingAlphaPair & _aligner_io_start_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:19:31, :111:41, :115:57
+  wire        startingSourceRead = state == 4'h4;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30, :132:42
+  wire        startingAlphaReads = state == 4'h6;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30, :133:42
   wire        reader_io_request_valid =
-    startingSourceRead | startingAlphaReads & _backgroundReader_io_request_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:17:40, :121:42, :122:42, :123:{49,72}
+    startingSourceRead | startingAlphaReads & _backgroundReader_io_request_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:18:40, :132:42, :133:42, :134:{49,72}
   wire        backgroundReader_io_request_valid =
-    startingAlphaReads & _reader_io_request_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:16:30, :122:42, :126:59
-  wire        _aligner_io_output_ready_T_4 = commandReg_op != 4'h4;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31, :64:39, :142:34
+    startingAlphaReads & _reader_io_request_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:17:30, :133:42, :137:59
+  wire        _aligner_io_output_ready_T_4 = commandReg_op != 4'h4;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31, :72:39, :153:34
   wire        sourceValid =
     ~hasSource | _aligner_io_output_valid
-    & (_aligner_io_output_ready_T_4 | _backgroundAligner_io_output_valid);	// src/main/scala/gpu/DenseBlitEngine.scala:18:31, :19:41, :64:39, :65:{34,48}, :141:{29,40}, :142:{30,34,43}
-  wire        _backgroundAligner_io_output_ready_T = state == 4'h8;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30, :143:34
+    & (_aligner_io_output_ready_T_4 | _backgroundAligner_io_output_valid);	// src/main/scala/gpu/DenseBlitEngine.scala:19:31, :20:41, :72:39, :73:{34,48}, :152:{29,40}, :153:{30,34,43}
+  wire        _backgroundAligner_io_output_ready_T = state == 4'h8;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30, :154:34
   wire        io_pixelRequest_valid_0 =
-    _backgroundAligner_io_output_ready_T & _rect_io_address_valid & sourceValid;	// src/main/scala/gpu/DenseBlitEngine.scala:15:28, :141:40, :143:{34,51,76}
-  wire        _io_pixelResult_ready_T = state == 4'h9;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30, :165:34
-  wire        _state_T_3 = isAlpha & pixelChunkLast;	// src/main/scala/gpu/DenseBlitEngine.scala:37:35, :64:39, :169:60
-  wire        io_pixelResult_ready_0 = _io_pixelResult_ready_T & _packer_io_input_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:22:30, :165:34, :170:47
-  wire        io_completion_valid_0 = state == 4'hB;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30, :226:32
-  wire        backgroundResponse = io_axi_r_bits_id == 4'h1;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :248:53
+    _backgroundAligner_io_output_ready_T & _rect_io_address_valid & sourceValid;	// src/main/scala/gpu/DenseBlitEngine.scala:16:28, :152:40, :154:{34,51,76}
+  wire        _io_pixelResult_ready_T = state == 4'h9;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30, :176:34
+  wire        _state_T_5 = isAlpha & pixelChunkLast;	// src/main/scala/gpu/DenseBlitEngine.scala:38:35, :72:39, :180:60
+  wire        io_pixelResult_ready_0 = _io_pixelResult_ready_T & _packer_io_input_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:23:30, :176:34, :181:47
+  wire        writer_io_data_valid =
+    fastCopy ? _reader_io_data_valid : _packer_io_output_valid;	// src/main/scala/gpu/DenseBlitEngine.scala:17:30, :23:30, :39:33, :187:30
+  wire        io_completion_valid_0 = state == 4'hB;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30, :239:32
+  wire        backgroundResponse = io_axi_r_bits_id == 4'h1;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :261:53
   always @(posedge clock) begin	// src/main/scala/gpu/DenseBlitEngine.scala:6:7
     automatic logic        _GEN;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
     automatic logic        _GEN_0;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-    automatic logic        _GEN_1;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:115:{26,51}
+    automatic logic        _GEN_1;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:126:{26,51}
     automatic logic        _GEN_2;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-    automatic logic        transferError;	// src/main/scala/gpu/DenseBlitEngine.scala:204:{45,64,80,99}
-    automatic logic        _GEN_3;	// src/main/scala/gpu/DenseBlitEngine.scala:206:{26,43}
-    automatic logic [31:0] _alphaSrcAddress_T_2;	// src/main/scala/gpu/DenseBlitEngine.scala:213:32
-    automatic logic        _GEN_4;	// src/main/scala/gpu/DenseBlitEngine.scala:47:25, :207:25, :210:27, :213:18
-    automatic logic        _GEN_5;	// src/main/scala/gpu/DenseBlitEngine.scala:47:25, :206:60, :207:25
-    _GEN = io_command_ready_0 & io_command_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:46:29
-    _GEN_0 = _aligner_io_start_ready & aligner_io_start_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:18:31, :101:47
+    automatic logic        transferError;	// src/main/scala/gpu/DenseBlitEngine.scala:216:{45,64,80,99}
+    automatic logic        _GEN_3;	// src/main/scala/gpu/DenseBlitEngine.scala:218:{26,43}
+    automatic logic        _GEN_4;	// src/main/scala/gpu/DenseBlitEngine.scala:50:25, :219:25, :222:68, :225:22
+    automatic logic [31:0] _alphaSrcAddress_T_2;	// src/main/scala/gpu/DenseBlitEngine.scala:226:32
+    automatic logic        _GEN_5;	// src/main/scala/gpu/DenseBlitEngine.scala:50:25, :218:60, :219:25
+    _GEN = io_command_ready_0 & io_command_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:49:29
+    _GEN_0 = _aligner_io_start_ready & aligner_io_start_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:19:31, :112:47
     _GEN_1 =
-      _GEN_0 & _backgroundAligner_io_start_ready & backgroundAligner_io_start_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:19:41, :104:57, :115:{26,51}
-    _GEN_2 = io_pixelRequest_ready & io_pixelRequest_valid_0;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:143:{51,76}
+      _GEN_0 & _backgroundAligner_io_start_ready & backgroundAligner_io_start_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:20:41, :115:57, :126:{26,51}
+    _GEN_2 = io_pixelRequest_ready & io_pixelRequest_valid_0;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:154:{51,76}
     transferError =
       rowWriteError | _writer_io_error | rowReadError | _reader_io_error | isAlpha
-      & (backgroundReadError | _backgroundReader_io_error);	// src/main/scala/gpu/DenseBlitEngine.scala:16:30, :17:40, :23:30, :40:37, :41:44, :42:38, :64:39, :204:{45,64,80,99}, :205:{14,38}
+      & (backgroundReadError | _backgroundReader_io_error);	// src/main/scala/gpu/DenseBlitEngine.scala:17:30, :18:40, :24:30, :43:37, :44:44, :45:38, :72:39, :216:{45,64,80,99}, :217:{14,38}
     _GEN_3 =
       state == 4'hA
       & (isColorKey
@@ -240,128 +246,142 @@ module DenseBlitEngine(	// src/main/scala/gpu/DenseBlitEngine.scala:6:7
            : rowWriteDone | _writer_io_done)
       & (isAlpha
            ? _reader_io_request_ready & _backgroundReader_io_request_ready
-           : ~hasSource | rowReadDone | _reader_io_done);	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :16:30, :17:40, :22:30, :23:30, :27:30, :38:36, :39:37, :43:48, :63:42, :64:39, :65:{34,48}, :81:31, :141:29, :194:34, :196:{30,33}, :197:18, :199:33, :201:29, :202:{16,31}, :206:{14,26,43}
-    _alphaSrcAddress_T_2 = srcRowBase + commandReg_srcStride;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31, :29:31, :213:32
-    _GEN_4 = transferError | pixelLast;	// src/main/scala/gpu/DenseBlitEngine.scala:36:30, :47:25, :204:{45,64,80,99}, :207:25, :210:27, :213:18
-    _GEN_5 = ~_GEN_3 | _GEN_4;	// src/main/scala/gpu/DenseBlitEngine.scala:47:25, :206:{26,43,60}, :207:25, :210:27, :213:18
+           : ~hasSource | rowReadDone | _reader_io_done);	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :17:30, :18:40, :23:30, :24:30, :28:30, :41:36, :42:37, :46:48, :71:42, :72:39, :73:{34,48}, :92:31, :152:29, :206:34, :208:{30,33}, :209:18, :211:33, :213:29, :214:{16,31}, :218:{14,26,43}
+    _GEN_4 = transferError | (fastCopy ? fastCopyRowsLeft == 16'h1 : pixelLast);	// src/main/scala/gpu/DenseBlitEngine.scala:37:30, :39:33, :40:37, :50:25, :216:{45,64,80,99}, :219:25, :222:{19,47,68}, :225:22
+    _alphaSrcAddress_T_2 = srcRowBase + commandReg_srcStride;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31, :30:31, :226:32
+    _GEN_5 = ~_GEN_3 | _GEN_4;	// src/main/scala/gpu/DenseBlitEngine.scala:50:25, :218:{26,43,60}, :219:25, :222:68, :225:22
     if (reset) begin	// src/main/scala/gpu/DenseBlitEngine.scala:6:7
-      state <= 4'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30
-      rowReadDone <= 1'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:38:36
-      rowWriteDone <= 1'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:39:37
-      rowReadError <= 1'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:40:37
-      backgroundReadError <= 1'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:41:44
-      rowWriteError <= 1'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:42:38
-      dynamicWriteOutstanding <= 1'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:43:48
-      completionError <= 8'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:44:40
+      state <= 4'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30
+      fastCopy <= 1'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:39:33
+      rowReadDone <= 1'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:41:36
+      rowWriteDone <= 1'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:42:37
+      rowReadError <= 1'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:43:37
+      backgroundReadError <= 1'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:44:44
+      rowWriteError <= 1'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:45:38
+      dynamicWriteOutstanding <= 1'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:46:48
+      completionError <= 8'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:47:40
     end
     else begin	// src/main/scala/gpu/DenseBlitEngine.scala:6:7
-      automatic logic _GEN_6 = _writer_io_request_ready & writer_io_request_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:23:30, :82:48
-      automatic logic _GEN_7;	// src/main/scala/gpu/DenseBlitEngine.scala:47:25, :87:32, :88:31
-      automatic logic _GEN_8;	// src/main/scala/gpu/DenseBlitEngine.scala:107:26
-      automatic logic _GEN_9;	// src/main/scala/gpu/DenseBlitEngine.scala:87:32, :107:52, :108:22, :109:20
+      automatic logic _GEN_6 = _writer_io_request_ready & writer_io_request_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:24:30, :93:48
+      automatic logic _GEN_7;	// src/main/scala/gpu/DenseBlitEngine.scala:50:25, :98:32, :99:31
+      automatic logic _GEN_8;	// src/main/scala/gpu/DenseBlitEngine.scala:118:26
+      automatic logic _GEN_9;	// src/main/scala/gpu/DenseBlitEngine.scala:98:32, :118:52, :119:22, :120:20
       automatic logic _GEN_10;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-      automatic logic _GEN_11;	// src/main/scala/gpu/DenseBlitEngine.scala:129:27
-      automatic logic _GEN_12;	// src/main/scala/gpu/DenseBlitEngine.scala:38:36, :47:25, :52:17, :129:54, :130:17
-      _GEN_7 = ~_GEN_6 | dynamicWriteRequest;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:47:25, :80:48, :81:28, :87:32, :88:31
-      _GEN_8 = startingSourceRow & _GEN_0;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:99:41, :107:26
-      _GEN_9 = _GEN_8 & isColorKey;	// src/main/scala/gpu/DenseBlitEngine.scala:63:42, :87:32, :107:{26,52}, :108:22, :109:20
-      _GEN_10 = _reader_io_request_ready & reader_io_request_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:16:30, :123:49
-      _GEN_11 = startingSourceRead & _GEN_10;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:121:42, :129:27
-      _GEN_12 = _GEN_11 | _GEN;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:38:36, :47:25, :52:17, :129:{27,54}, :130:17
-      if (io_completion_ready & io_completion_valid_0)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:226:32
-        state <= 4'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30
-      else if (_GEN_3)	// src/main/scala/gpu/DenseBlitEngine.scala:206:{26,43}
-        state <= _GEN_4 ? 4'hB : isColorKey ? 4'h3 : isAlpha ? 4'h5 : 4'h2;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30, :47:25, :63:42, :64:39, :207:25, :209:13, :210:27, :211:13, :213:18, :222:{13,19,49}
-      else if (io_pixelResult_ready_0 & io_pixelResult_valid)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:170:47
-        state <= pixelRowLast ? 4'hA : _state_T_3 ? 4'h5 : 4'h8;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30, :35:33, :169:60, :173:{17,44}
+      automatic logic _GEN_11;	// src/main/scala/gpu/DenseBlitEngine.scala:140:27
+      automatic logic _GEN_12;	// src/main/scala/gpu/DenseBlitEngine.scala:41:36, :50:25, :60:17, :140:54, :141:17
+      _GEN_7 = ~_GEN_6 | dynamicWriteRequest;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:50:25, :91:48, :92:28, :98:32, :99:31
+      _GEN_8 = startingSourceRow & _GEN_0;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:110:41, :118:26
+      _GEN_9 = _GEN_8 & isColorKey;	// src/main/scala/gpu/DenseBlitEngine.scala:71:42, :98:32, :118:{26,52}, :119:22, :120:20
+      _GEN_10 = _reader_io_request_ready & reader_io_request_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:17:30, :134:49
+      _GEN_11 = startingSourceRead & _GEN_10;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:132:42, :140:27
+      _GEN_12 = _GEN_11 | _GEN;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:41:36, :50:25, :60:17, :140:{27,54}, :141:17
+      if (io_completion_ready & io_completion_valid_0)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:239:32
+        state <= 4'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30
+      else if (_GEN_3)	// src/main/scala/gpu/DenseBlitEngine.scala:218:{26,43}
+        state <= _GEN_4 ? 4'hB : isColorKey ? 4'h3 : isAlpha ? 4'h5 : 4'h2;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30, :50:25, :71:42, :72:39, :219:25, :221:13, :222:68, :223:13, :225:22, :235:{13,19,49}
+      else if (io_pixelResult_ready_0 & io_pixelResult_valid)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:181:47
+        state <= pixelRowLast ? 4'hA : _state_T_5 ? 4'h5 : 4'h8;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30, :36:33, :180:60, :184:{17,44}
       else if (_GEN_2)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-        state <= 4'h9;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30
+        state <= 4'h9;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30
       else if (state == 4'h7 & _reader_io_request_ready
-               & _backgroundReader_io_request_ready)	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :16:30, :17:40, :27:30, :137:{14,33,60}
-        state <= 4'h2;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30
+               & _backgroundReader_io_request_ready)	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :17:30, :18:40, :28:30, :148:{14,33,60}
+        state <= 4'h2;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30
       else if (_GEN_10 & _backgroundReader_io_request_ready
-               & backgroundReader_io_request_valid)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:17:40, :126:59, :134:{27,53}
-        state <= 4'h7;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30
-      else if (_GEN_11)	// src/main/scala/gpu/DenseBlitEngine.scala:129:27
-        state <= 4'h8;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30
-      else if (_GEN_1)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:115:{26,51}
-        state <= 4'h6;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30
-      else if (_GEN_8)	// src/main/scala/gpu/DenseBlitEngine.scala:107:26
-        state <= 4'h4;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30
-      else if (_GEN_7) begin	// src/main/scala/gpu/DenseBlitEngine.scala:47:25, :75:28, :87:32, :88:31
-        if (_rect_io_start_ready & rect_io_start_valid)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:15:28, :70:32
-          state <= isColorKey ? 4'h3 : isAlpha ? 4'h5 : 4'h2;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30, :63:42, :64:39, :76:{17,47}
+               & backgroundReader_io_request_valid)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:18:40, :137:59, :145:{27,53}
+        state <= 4'h7;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30
+      else if (_GEN_11)	// src/main/scala/gpu/DenseBlitEngine.scala:140:27
+        state <= {2'h2, fastCopy, 1'h0};	// src/main/scala/gpu/DenseBlitEngine.scala:28:30, :39:33, :143:17
+      else if (_GEN_1)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:126:{26,51}
+        state <= 4'h6;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30
+      else if (_GEN_8)	// src/main/scala/gpu/DenseBlitEngine.scala:118:26
+        state <= 4'h4;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30
+      else if (_GEN_7) begin	// src/main/scala/gpu/DenseBlitEngine.scala:50:25, :86:41, :98:32, :99:31
+        if (_rect_io_start_valid_T & fastCopy)	// src/main/scala/gpu/DenseBlitEngine.scala:39:33, :78:32, :86:28
+          state <= 4'h2;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30
+        else if (_rect_io_start_ready & rect_io_start_valid)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:16:28, :78:46
+          state <= isColorKey ? 4'h3 : isAlpha ? 4'h5 : 4'h2;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30, :71:42, :72:39, :84:{17,47}
         else if (_GEN)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-          state <= 4'h1;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30
+          state <= 4'h1;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30
       end
-      else	// src/main/scala/gpu/DenseBlitEngine.scala:75:28, :87:32, :88:31
-        state <= isCopy ? 4'h3 : 4'h8;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30, :62:38, :92:19
-      rowReadDone <= _GEN_5 & (_reader_io_done | ~_GEN_12 & rowReadDone);	// src/main/scala/gpu/DenseBlitEngine.scala:16:30, :38:36, :47:25, :52:17, :129:54, :130:17, :186:24, :187:17, :206:60, :207:25
+      else	// src/main/scala/gpu/DenseBlitEngine.scala:86:41, :98:32, :99:31
+        state <= fastCopy ? 4'h4 : isCopy ? 4'h3 : 4'h8;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30, :39:33, :70:38, :103:{19,44}
+      if (_GEN)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
+        fastCopy <=
+          io_command_bits_op == 4'h2 & io_command_bits_srcAddr[1:0] == 2'h0
+          & io_command_bits_dstAddr[1:0] == 2'h0 & io_command_bits_srcStride[1:0] == 2'h0
+          & io_command_bits_dstStride[1:0] == 2'h0 & ~(io_command_bits_widthPixels[0]);	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :39:33, :52:{36,57}, :53:{30,37,45,71,78,86}, :54:{32,39,47,75,82,90}, :55:{34,38}
+      rowReadDone <= _GEN_5 & (_reader_io_done | ~_GEN_12 & rowReadDone);	// src/main/scala/gpu/DenseBlitEngine.scala:17:30, :41:36, :50:25, :60:17, :140:54, :141:17, :198:24, :199:17, :218:60, :219:25
       rowWriteDone <=
-        _GEN_5 & (_writer_io_done | ~_GEN_9 & _GEN_7 & ~_GEN & rowWriteDone);	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:23:30, :39:37, :47:25, :53:18, :87:32, :88:31, :107:52, :108:22, :109:20, :181:24, :182:18, :206:60, :207:25
+        _GEN_5 & (_writer_io_done | ~_GEN_9 & _GEN_7 & ~_GEN & rowWriteDone);	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:24:30, :42:37, :50:25, :61:18, :98:32, :99:31, :118:52, :119:22, :120:20, :193:24, :194:18, :218:60, :219:25
       rowReadError <=
         _GEN_5
-        & (_reader_io_done ? rowReadError | _reader_io_error : ~_GEN_12 & rowReadError);	// src/main/scala/gpu/DenseBlitEngine.scala:16:30, :38:36, :40:37, :47:25, :52:17, :54:18, :129:54, :130:17, :131:18, :186:24, :188:{18,34}, :206:60, :207:25
+        & (_reader_io_done ? rowReadError | _reader_io_error : ~_GEN_12 & rowReadError);	// src/main/scala/gpu/DenseBlitEngine.scala:17:30, :41:36, :43:37, :50:25, :60:17, :62:18, :140:54, :141:17, :142:18, :198:24, :200:{18,34}, :218:60, :219:25
       backgroundReadError <=
         _GEN_5
         & (_backgroundReader_io_done
              ? backgroundReadError | _backgroundReader_io_error
-             : ~_GEN & backgroundReadError);	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:17:40, :39:37, :41:44, :47:25, :53:18, :55:25, :190:34, :191:{25,48}, :206:60, :207:25
+             : ~_GEN & backgroundReadError);	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:18:40, :42:37, :44:44, :50:25, :61:18, :63:25, :202:34, :203:{25,48}, :218:60, :219:25
       rowWriteError <=
         _GEN_5
         & (_writer_io_done
              ? rowWriteError | _writer_io_error
-             : _GEN_8 ? ~(isColorKey | _GEN) & rowWriteError : ~_GEN & rowWriteError);	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:23:30, :39:37, :42:38, :47:25, :53:18, :56:19, :63:42, :107:{26,52}, :108:22, :110:21, :181:24, :183:{19,36}, :206:60, :207:25
+             : _GEN_8 ? ~(isColorKey | _GEN) & rowWriteError : ~_GEN & rowWriteError);	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:24:30, :42:37, :45:38, :50:25, :61:18, :64:19, :71:42, :118:{26,52}, :119:22, :121:21, :193:24, :195:{19,36}, :218:60, :219:25
       dynamicWriteOutstanding <=
         _GEN_5 & ~(_writer_io_done | _GEN_9)
-        & (_GEN_6 & dynamicWriteRequest | ~_GEN & dynamicWriteOutstanding);	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:23:30, :39:37, :43:48, :47:25, :53:18, :57:29, :80:48, :81:28, :87:32, :88:31, :89:31, :107:52, :108:22, :109:20, :111:31, :181:24, :184:29, :206:60, :207:25
-      if (_GEN_3 & transferError)	// src/main/scala/gpu/DenseBlitEngine.scala:47:25, :204:{45,64,80,99}, :206:{26,43,60}, :207:25, :208:23
-        completionError <= 8'h9;	// src/main/scala/gpu/DenseBlitEngine.scala:44:40, :208:23
+        & (_GEN_6 & dynamicWriteRequest | ~_GEN & dynamicWriteOutstanding);	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:24:30, :42:37, :46:48, :50:25, :61:18, :65:29, :91:48, :92:28, :98:32, :99:31, :100:31, :118:52, :119:22, :120:20, :122:31, :193:24, :196:29, :218:60, :219:25
+      if (_GEN_3 & transferError)	// src/main/scala/gpu/DenseBlitEngine.scala:50:25, :216:{45,64,80,99}, :218:{26,43,60}, :219:25, :220:23
+        completionError <= 8'h9;	// src/main/scala/gpu/DenseBlitEngine.scala:47:40, :220:23
       else if (_GEN)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-        completionError <= 8'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:44:40
+        completionError <= 8'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:47:40
     end
     if (_GEN) begin	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-      commandReg_op <= io_command_bits_op;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-      commandReg_dstAddr <= io_command_bits_dstAddr;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-      commandReg_widthPixels <= io_command_bits_widthPixels;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-      commandReg_heightPixels <= io_command_bits_heightPixels;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-      commandReg_srcStride <= io_command_bits_srcStride;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-      commandReg_dstStride <= io_command_bits_dstStride;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-      commandReg_color <= io_command_bits_color;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-      commandReg_colorKey <= io_command_bits_colorKey;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-      commandReg_alpha <= io_command_bits_alpha;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-      commandReg_tag <= io_command_bits_tag;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
+      commandReg_op <= io_command_bits_op;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+      commandReg_dstAddr <= io_command_bits_dstAddr;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+      commandReg_widthPixels <= io_command_bits_widthPixels;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+      commandReg_heightPixels <= io_command_bits_heightPixels;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+      commandReg_srcStride <= io_command_bits_srcStride;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+      commandReg_dstStride <= io_command_bits_dstStride;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+      commandReg_color <= io_command_bits_color;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+      commandReg_colorKey <= io_command_bits_colorKey;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+      commandReg_alpha <= io_command_bits_alpha;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+      commandReg_tag <= io_command_bits_tag;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
     end
-    if (_GEN_5) begin	// src/main/scala/gpu/DenseBlitEngine.scala:47:25, :206:60, :207:25
+    if (_GEN_5) begin	// src/main/scala/gpu/DenseBlitEngine.scala:50:25, :218:60, :219:25
       if (_GEN) begin	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-        srcRowBase <= io_command_bits_srcAddr;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
-        dstRowBase <= io_command_bits_dstAddr;	// src/main/scala/gpu/DenseBlitEngine.scala:30:31
+        srcRowBase <= io_command_bits_srcAddr;	// src/main/scala/gpu/DenseBlitEngine.scala:30:31
+        dstRowBase <= io_command_bits_dstAddr;	// src/main/scala/gpu/DenseBlitEngine.scala:31:31
       end
     end
-    else begin	// src/main/scala/gpu/DenseBlitEngine.scala:47:25, :206:60, :207:25
-      srcRowBase <= _alphaSrcAddress_T_2;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31, :213:32
-      dstRowBase <= dstRowBase + commandReg_dstStride;	// src/main/scala/gpu/DenseBlitEngine.scala:28:31, :30:31, :214:32
+    else begin	// src/main/scala/gpu/DenseBlitEngine.scala:50:25, :218:60, :219:25
+      srcRowBase <= _alphaSrcAddress_T_2;	// src/main/scala/gpu/DenseBlitEngine.scala:30:31, :226:32
+      dstRowBase <= dstRowBase + commandReg_dstStride;	// src/main/scala/gpu/DenseBlitEngine.scala:29:31, :31:31, :227:32
     end
-    if (~_GEN_3 | _GEN_4 | ~isAlpha) begin	// src/main/scala/gpu/DenseBlitEngine.scala:47:25, :64:39, :156:30, :206:{26,43,60}, :207:25, :210:27, :213:18, :221:21
-      if (_GEN_2 & isAlpha)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:47:25, :64:39, :156:30, :161:{19,37}
-        alphaSrcAddress <= alphaSrcAddress + 32'h2;	// src/main/scala/gpu/DenseBlitEngine.scala:31:36, :161:56
+    if (~_GEN_3 | _GEN_4 | ~isAlpha) begin	// src/main/scala/gpu/DenseBlitEngine.scala:50:25, :72:39, :167:30, :218:{26,43,60}, :219:25, :222:68, :225:22, :234:21
+      if (_GEN_2 & isAlpha)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:50:25, :72:39, :167:30, :172:{19,37}
+        alphaSrcAddress <= alphaSrcAddress + 32'h2;	// src/main/scala/gpu/DenseBlitEngine.scala:32:36, :172:56
       else if (_GEN)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-        alphaSrcAddress <= io_command_bits_srcAddr;	// src/main/scala/gpu/DenseBlitEngine.scala:31:36
+        alphaSrcAddress <= io_command_bits_srcAddr;	// src/main/scala/gpu/DenseBlitEngine.scala:32:36
     end
-    else	// src/main/scala/gpu/DenseBlitEngine.scala:156:30, :206:60, :207:25, :210:27, :221:21
-      alphaSrcAddress <= _alphaSrcAddress_T_2;	// src/main/scala/gpu/DenseBlitEngine.scala:31:36, :213:32
-    if (_GEN_1) begin	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:115:{26,51}
+    else	// src/main/scala/gpu/DenseBlitEngine.scala:167:30, :218:60, :219:25, :222:68, :234:21
+      alphaSrcAddress <= _alphaSrcAddress_T_2;	// src/main/scala/gpu/DenseBlitEngine.scala:32:36, :226:32
+    if (_GEN_1) begin	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:126:{26,51}
       automatic logic [16:0] _alphaChunkBeats_T_4 =
-        {alphaChunkPixels, 1'h0} + {15'h0, _rect_io_address_bits_address[1:0]} + 17'h3;	// src/main/scala/gpu/DenseBlitEngine.scala:15:28, :98:37, :117:{49,79,86}
-      alphaChunkDstAddress <= _rect_io_address_bits_address;	// src/main/scala/gpu/DenseBlitEngine.scala:15:28, :32:41
-      alphaChunkBeats <= {17'h0, _alphaChunkBeats_T_4[16:2]};	// src/main/scala/gpu/DenseBlitEngine.scala:33:36, :117:{21,49,86,93}
+        {alphaChunkPixels, 1'h0} + {15'h0, _rect_io_address_bits_address[1:0]} + 17'h3;	// src/main/scala/gpu/DenseBlitEngine.scala:16:28, :109:37, :128:{49,79,86}
+      alphaChunkDstAddress <= _rect_io_address_bits_address;	// src/main/scala/gpu/DenseBlitEngine.scala:16:28, :33:41
+      alphaChunkBeats <= {17'h0, _alphaChunkBeats_T_4[16:2]};	// src/main/scala/gpu/DenseBlitEngine.scala:34:36, :128:{21,49,86,93}
     end
     if (_GEN_2) begin	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
-      pixelAddress <= _rect_io_address_bits_address;	// src/main/scala/gpu/DenseBlitEngine.scala:15:28, :34:33
-      pixelRowLast <= _rect_io_address_bits_rowLast;	// src/main/scala/gpu/DenseBlitEngine.scala:15:28, :35:33
-      pixelLast <= _rect_io_address_bits_last;	// src/main/scala/gpu/DenseBlitEngine.scala:15:28, :36:30
-      pixelChunkLast <= _aligner_io_output_bits_last;	// src/main/scala/gpu/DenseBlitEngine.scala:18:31, :37:35
+      pixelAddress <= _rect_io_address_bits_address;	// src/main/scala/gpu/DenseBlitEngine.scala:16:28, :35:33
+      pixelRowLast <= _rect_io_address_bits_rowLast;	// src/main/scala/gpu/DenseBlitEngine.scala:16:28, :36:33
+      pixelLast <= _rect_io_address_bits_last;	// src/main/scala/gpu/DenseBlitEngine.scala:16:28, :37:30
+      pixelChunkLast <= _aligner_io_output_bits_last;	// src/main/scala/gpu/DenseBlitEngine.scala:19:31, :38:35
     end
+    if (~_GEN_3 | _GEN_4 | ~fastCopy) begin	// src/main/scala/gpu/DenseBlitEngine.scala:39:33, :50:25, :218:{26,43,60}, :219:25, :222:68, :225:22
+      if (_GEN)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
+        fastCopyRowsLeft <= io_command_bits_heightPixels;	// src/main/scala/gpu/DenseBlitEngine.scala:40:37
+    end
+    else	// src/main/scala/gpu/DenseBlitEngine.scala:50:25, :218:60, :219:25, :222:68, :225:22
+      fastCopyRowsLeft <= fastCopyRowsLeft - 16'h1;	// src/main/scala/gpu/DenseBlitEngine.scala:40:37, :225:61
   end // always @(posedge)
   `ifdef ENABLE_INITIAL_REG_	// src/main/scala/gpu/DenseBlitEngine.scala:6:7
     `ifdef FIRRTL_BEFORE_INITIAL	// src/main/scala/gpu/DenseBlitEngine.scala:6:7
@@ -376,192 +396,197 @@ module DenseBlitEngine(	// src/main/scala/gpu/DenseBlitEngine.scala:6:7
         for (logic [3:0] i = 4'h0; i < 4'hF; i += 4'h1) begin
           _RANDOM[i] = `RANDOM;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7
         end	// src/main/scala/gpu/DenseBlitEngine.scala:6:7
-        state = _RANDOM[4'h0][3:0];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30
-        commandReg_op = _RANDOM[4'h0][7:4];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :27:30, :28:31
-        commandReg_dstAddr = {_RANDOM[4'h1][31:8], _RANDOM[4'h2][7:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31
-        commandReg_widthPixels = _RANDOM[4'h2][23:8];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31
-        commandReg_heightPixels = {_RANDOM[4'h2][31:24], _RANDOM[4'h3][7:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31
-        commandReg_srcStride = {_RANDOM[4'h3][31:8], _RANDOM[4'h4][7:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31
-        commandReg_dstStride = {_RANDOM[4'h4][31:8], _RANDOM[4'h5][7:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31
-        commandReg_color = _RANDOM[4'h5][23:8];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31
-        commandReg_colorKey = {_RANDOM[4'h5][31:24], _RANDOM[4'h6][7:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31
-        commandReg_alpha = _RANDOM[4'h6][15:8];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31
-        commandReg_tag = _RANDOM[4'h7][15:0];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31
-        srcRowBase = {_RANDOM[4'h7][31:16], _RANDOM[4'h8][15:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31, :29:31
-        dstRowBase = {_RANDOM[4'h8][31:16], _RANDOM[4'h9][15:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31, :30:31
-        alphaSrcAddress = {_RANDOM[4'h9][31:16], _RANDOM[4'hA][15:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :30:31, :31:36
-        alphaChunkDstAddress = {_RANDOM[4'hA][31:16], _RANDOM[4'hB][15:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :31:36, :32:41
-        alphaChunkBeats = {_RANDOM[4'hB][31:16], _RANDOM[4'hC][15:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :32:41, :33:36
-        pixelAddress = {_RANDOM[4'hC][31:16], _RANDOM[4'hD][15:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :33:36, :34:33
-        pixelRowLast = _RANDOM[4'hD][16];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :34:33, :35:33
-        pixelLast = _RANDOM[4'hD][17];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :34:33, :36:30
-        pixelChunkLast = _RANDOM[4'hD][18];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :34:33, :37:35
-        rowReadDone = _RANDOM[4'hD][19];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :34:33, :38:36
-        rowWriteDone = _RANDOM[4'hD][20];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :34:33, :39:37
-        rowReadError = _RANDOM[4'hD][21];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :34:33, :40:37
-        backgroundReadError = _RANDOM[4'hD][22];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :34:33, :41:44
-        rowWriteError = _RANDOM[4'hD][23];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :34:33, :42:38
-        dynamicWriteOutstanding = _RANDOM[4'hD][24];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :34:33, :43:48
-        completionError = {_RANDOM[4'hD][31:25], _RANDOM[4'hE][0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :34:33, :44:40
+        state = _RANDOM[4'h0][3:0];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30
+        commandReg_op = _RANDOM[4'h0][7:4];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:30, :29:31
+        commandReg_dstAddr = {_RANDOM[4'h1][31:8], _RANDOM[4'h2][7:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31
+        commandReg_widthPixels = _RANDOM[4'h2][23:8];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31
+        commandReg_heightPixels = {_RANDOM[4'h2][31:24], _RANDOM[4'h3][7:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31
+        commandReg_srcStride = {_RANDOM[4'h3][31:8], _RANDOM[4'h4][7:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31
+        commandReg_dstStride = {_RANDOM[4'h4][31:8], _RANDOM[4'h5][7:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31
+        commandReg_color = _RANDOM[4'h5][23:8];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31
+        commandReg_colorKey = {_RANDOM[4'h5][31:24], _RANDOM[4'h6][7:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31
+        commandReg_alpha = _RANDOM[4'h6][15:8];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31
+        commandReg_tag = _RANDOM[4'h7][15:0];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31
+        srcRowBase = {_RANDOM[4'h7][31:16], _RANDOM[4'h8][15:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31, :30:31
+        dstRowBase = {_RANDOM[4'h8][31:16], _RANDOM[4'h9][15:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :30:31, :31:31
+        alphaSrcAddress = {_RANDOM[4'h9][31:16], _RANDOM[4'hA][15:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :31:31, :32:36
+        alphaChunkDstAddress = {_RANDOM[4'hA][31:16], _RANDOM[4'hB][15:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :32:36, :33:41
+        alphaChunkBeats = {_RANDOM[4'hB][31:16], _RANDOM[4'hC][15:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :33:41, :34:36
+        pixelAddress = {_RANDOM[4'hC][31:16], _RANDOM[4'hD][15:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :34:36, :35:33
+        pixelRowLast = _RANDOM[4'hD][16];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :35:33, :36:33
+        pixelLast = _RANDOM[4'hD][17];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :35:33, :37:30
+        pixelChunkLast = _RANDOM[4'hD][18];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :35:33, :38:35
+        fastCopy = _RANDOM[4'hD][19];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :35:33, :39:33
+        fastCopyRowsLeft = {_RANDOM[4'hD][31:20], _RANDOM[4'hE][3:0]};	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :35:33, :40:37
+        rowReadDone = _RANDOM[4'hE][4];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :40:37, :41:36
+        rowWriteDone = _RANDOM[4'hE][5];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :40:37, :42:37
+        rowReadError = _RANDOM[4'hE][6];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :40:37, :43:37
+        backgroundReadError = _RANDOM[4'hE][7];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :40:37, :44:44
+        rowWriteError = _RANDOM[4'hE][8];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :40:37, :45:38
+        dynamicWriteOutstanding = _RANDOM[4'hE][9];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :40:37, :46:48
+        completionError = _RANDOM[4'hE][17:10];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :40:37, :47:40
       `endif // RANDOMIZE_REG_INIT
     end // initial
     `ifdef FIRRTL_AFTER_INITIAL	// src/main/scala/gpu/DenseBlitEngine.scala:6:7
       `FIRRTL_AFTER_INITIAL	// src/main/scala/gpu/DenseBlitEngine.scala:6:7
     `endif // FIRRTL_AFTER_INITIAL
   `endif // ENABLE_INITIAL_REG_
-  RectAddressGen rect (	// src/main/scala/gpu/DenseBlitEngine.scala:15:28
+  RectAddressGen rect (	// src/main/scala/gpu/DenseBlitEngine.scala:16:28
     .clock                      (clock),
     .reset                      (reset),
     .io_start_ready             (_rect_io_start_ready),
-    .io_start_valid             (rect_io_start_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:70:32
-    .io_start_bits_base         (commandReg_dstAddr),	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-    .io_start_bits_widthPixels  (commandReg_widthPixels),	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-    .io_start_bits_heightPixels (commandReg_heightPixels),	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
-    .io_start_bits_stride       (commandReg_dstStride),	// src/main/scala/gpu/DenseBlitEngine.scala:28:31
+    .io_start_valid             (rect_io_start_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:78:46
+    .io_start_bits_base         (commandReg_dstAddr),	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+    .io_start_bits_widthPixels  (commandReg_widthPixels),	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+    .io_start_bits_heightPixels (commandReg_heightPixels),	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
+    .io_start_bits_stride       (commandReg_dstStride),	// src/main/scala/gpu/DenseBlitEngine.scala:29:31
     .io_address_ready
-      (_backgroundAligner_io_output_ready_T & io_pixelRequest_ready & sourceValid),	// src/main/scala/gpu/DenseBlitEngine.scala:141:40, :143:34, :150:{51,76}
+      (_backgroundAligner_io_output_ready_T & io_pixelRequest_ready & sourceValid),	// src/main/scala/gpu/DenseBlitEngine.scala:152:40, :154:34, :161:{51,76}
     .io_address_valid           (_rect_io_address_valid),
     .io_address_bits_address    (_rect_io_address_bits_address),
     .io_address_bits_rowLast    (_rect_io_address_bits_rowLast),
     .io_address_bits_last       (_rect_io_address_bits_last)
-  );	// src/main/scala/gpu/DenseBlitEngine.scala:15:28
-  AxiReadEngine reader (	// src/main/scala/gpu/DenseBlitEngine.scala:16:30
+  );	// src/main/scala/gpu/DenseBlitEngine.scala:16:28
+  AxiReadEngine reader (	// src/main/scala/gpu/DenseBlitEngine.scala:17:30
     .clock                   (clock),
     .reset                   (reset),
     .io_request_ready        (_reader_io_request_ready),
-    .io_request_valid        (reader_io_request_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:123:49
-    .io_request_bits_address (isAlpha ? alphaSrcAddress : srcRowBase),	// src/main/scala/gpu/DenseBlitEngine.scala:29:31, :31:36, :64:39, :124:40
+    .io_request_valid        (reader_io_request_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:134:49
+    .io_request_bits_address (isAlpha ? alphaSrcAddress : srcRowBase),	// src/main/scala/gpu/DenseBlitEngine.scala:30:31, :32:36, :72:39, :135:40
     .io_request_bits_bytes
-      ({15'h0, isAlpha ? alphaChunkPixels : commandReg_widthPixels, 1'h0}),	// src/main/scala/gpu/DenseBlitEngine.scala:28:31, :64:39, :98:37, :125:38
+      ({15'h0, isAlpha ? alphaChunkPixels : commandReg_widthPixels, 1'h0}),	// src/main/scala/gpu/DenseBlitEngine.scala:29:31, :72:39, :109:37, :136:38
     .io_data_ready
-      (isAlpha ? _alphaForegroundBuffer_io_enq_ready : _aligner_io_input_ready),	// src/main/scala/gpu/DenseBlitEngine.scala:18:31, :20:45, :64:39, :257:30
+      (isAlpha
+         ? _alphaForegroundBuffer_io_enq_ready
+         : fastCopy ? _writer_io_data_ready : _aligner_io_input_ready),	// src/main/scala/gpu/DenseBlitEngine.scala:19:31, :21:45, :24:30, :39:33, :72:39, :270:30, :271:8
     .io_data_valid           (_reader_io_data_valid),
     .io_data_bits_data       (_reader_io_data_bits_data),
-    .io_axiAr_ready          (_readAddressArbiter_io_in_0_ready),	// src/main/scala/gpu/DenseBlitEngine.scala:24:42
+    .io_axiAr_ready          (_readAddressArbiter_io_in_0_ready),	// src/main/scala/gpu/DenseBlitEngine.scala:25:42
     .io_axiAr_valid          (_reader_io_axiAr_valid),
     .io_axiAr_bits_addr      (_reader_io_axiAr_bits_addr),
     .io_axiAr_bits_len       (_reader_io_axiAr_bits_len),
     .io_axiR_ready           (_reader_io_axiR_ready),
-    .io_axiR_valid           (io_axi_r_valid & io_axi_r_bits_id != 4'h1),	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :248:53, :249:{42,45}
+    .io_axiR_valid           (io_axi_r_valid & io_axi_r_bits_id != 4'h1),	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :261:53, :262:{42,45}
     .io_axiR_bits_id         (io_axi_r_bits_id),
     .io_axiR_bits_data       (io_axi_r_bits_data),
     .io_axiR_bits_resp       (io_axi_r_bits_resp),
     .io_axiR_bits_last       (io_axi_r_bits_last),
     .io_done                 (_reader_io_done),
     .io_error                (_reader_io_error)
-  );	// src/main/scala/gpu/DenseBlitEngine.scala:16:30
-  AxiReadEngine_1 backgroundReader (	// src/main/scala/gpu/DenseBlitEngine.scala:17:40
+  );	// src/main/scala/gpu/DenseBlitEngine.scala:17:30
+  AxiReadEngine_1 backgroundReader (	// src/main/scala/gpu/DenseBlitEngine.scala:18:40
     .clock                   (clock),
     .reset                   (reset),
     .io_request_ready        (_backgroundReader_io_request_ready),
-    .io_request_valid        (backgroundReader_io_request_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:126:59
-    .io_request_bits_address (_rect_io_address_bits_address),	// src/main/scala/gpu/DenseBlitEngine.scala:15:28
-    .io_request_bits_bytes   ({15'h0, alphaChunkPixels, 1'h0}),	// src/main/scala/gpu/DenseBlitEngine.scala:98:37, :125:38
-    .io_data_ready           (_alphaBackgroundBuffer_io_enq_ready),	// src/main/scala/gpu/DenseBlitEngine.scala:21:45
+    .io_request_valid        (backgroundReader_io_request_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:137:59
+    .io_request_bits_address (_rect_io_address_bits_address),	// src/main/scala/gpu/DenseBlitEngine.scala:16:28
+    .io_request_bits_bytes   ({15'h0, alphaChunkPixels, 1'h0}),	// src/main/scala/gpu/DenseBlitEngine.scala:109:37, :136:38
+    .io_data_ready           (_alphaBackgroundBuffer_io_enq_ready),	// src/main/scala/gpu/DenseBlitEngine.scala:22:45
     .io_data_valid           (_backgroundReader_io_data_valid),
     .io_data_bits_data       (_backgroundReader_io_data_bits_data),
-    .io_axiAr_ready          (_readAddressArbiter_io_in_1_ready),	// src/main/scala/gpu/DenseBlitEngine.scala:24:42
+    .io_axiAr_ready          (_readAddressArbiter_io_in_1_ready),	// src/main/scala/gpu/DenseBlitEngine.scala:25:42
     .io_axiAr_valid          (_backgroundReader_io_axiAr_valid),
     .io_axiAr_bits_addr      (_backgroundReader_io_axiAr_bits_addr),
     .io_axiAr_bits_len       (_backgroundReader_io_axiAr_bits_len),
     .io_axiR_ready           (_backgroundReader_io_axiR_ready),
-    .io_axiR_valid           (io_axi_r_valid & backgroundResponse),	// src/main/scala/gpu/DenseBlitEngine.scala:248:53, :251:52
+    .io_axiR_valid           (io_axi_r_valid & backgroundResponse),	// src/main/scala/gpu/DenseBlitEngine.scala:261:53, :264:52
     .io_axiR_bits_id         (io_axi_r_bits_id),
     .io_axiR_bits_data       (io_axi_r_bits_data),
     .io_axiR_bits_resp       (io_axi_r_bits_resp),
     .io_axiR_bits_last       (io_axi_r_bits_last),
     .io_done                 (_backgroundReader_io_done),
     .io_error                (_backgroundReader_io_error)
-  );	// src/main/scala/gpu/DenseBlitEngine.scala:17:40
-  PixelReadAligner aligner (	// src/main/scala/gpu/DenseBlitEngine.scala:18:31
+  );	// src/main/scala/gpu/DenseBlitEngine.scala:18:40
+  PixelReadAligner aligner (	// src/main/scala/gpu/DenseBlitEngine.scala:19:31
     .clock                    (clock),
     .reset                    (reset),
     .io_start_ready           (_aligner_io_start_ready),
-    .io_start_valid           (aligner_io_start_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:101:47
-    .io_start_bits_upperFirst (isAlpha ? alphaSrcAddress[1] : srcRowBase[1]),	// src/main/scala/gpu/DenseBlitEngine.scala:29:31, :31:36, :64:39, :102:{42,67,82}
-    .io_start_bits_pixels     (isAlpha ? alphaChunkPixels : commandReg_widthPixels),	// src/main/scala/gpu/DenseBlitEngine.scala:28:31, :64:39, :98:37, :103:38
+    .io_start_valid           (aligner_io_start_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:112:47
+    .io_start_bits_upperFirst (isAlpha ? alphaSrcAddress[1] : srcRowBase[1]),	// src/main/scala/gpu/DenseBlitEngine.scala:30:31, :32:36, :72:39, :113:{42,67,82}
+    .io_start_bits_pixels     (isAlpha ? alphaChunkPixels : commandReg_widthPixels),	// src/main/scala/gpu/DenseBlitEngine.scala:29:31, :72:39, :109:37, :114:38
     .io_input_ready           (_aligner_io_input_ready),
     .io_input_valid
-      (isAlpha ? _alphaForegroundBuffer_io_deq_valid : _reader_io_data_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:16:30, :20:45, :64:39, :258:32
+      (isAlpha ? _alphaForegroundBuffer_io_deq_valid : _reader_io_data_valid & ~fastCopy),	// src/main/scala/gpu/DenseBlitEngine.scala:17:30, :21:45, :39:33, :72:39, :78:49, :272:32, :273:26
     .io_input_bits
-      (isAlpha ? _alphaForegroundBuffer_io_deq_bits : _reader_io_data_bits_data),	// src/main/scala/gpu/DenseBlitEngine.scala:16:30, :20:45, :64:39, :259:31
+      (isAlpha ? _alphaForegroundBuffer_io_deq_bits : _reader_io_data_bits_data),	// src/main/scala/gpu/DenseBlitEngine.scala:17:30, :21:45, :72:39, :274:31
     .io_output_ready
       (_backgroundAligner_io_output_ready_T & hasSource & _rect_io_address_valid
        & io_pixelRequest_ready
-       & (_aligner_io_output_ready_T_4 | _backgroundAligner_io_output_valid)),	// src/main/scala/gpu/DenseBlitEngine.scala:15:28, :19:41, :64:39, :65:{34,48}, :142:34, :143:34, :151:{53,66,91,116}, :152:15
+       & (_aligner_io_output_ready_T_4 | _backgroundAligner_io_output_valid)),	// src/main/scala/gpu/DenseBlitEngine.scala:16:28, :20:41, :72:39, :73:{34,48}, :153:34, :154:34, :162:{53,66,91,116}, :163:15
     .io_output_valid          (_aligner_io_output_valid),
     .io_output_bits_pixel     (io_pixelRequest_bits_foreground),
     .io_output_bits_last      (_aligner_io_output_bits_last)
-  );	// src/main/scala/gpu/DenseBlitEngine.scala:18:31
-  PixelReadAligner backgroundAligner (	// src/main/scala/gpu/DenseBlitEngine.scala:19:41
+  );	// src/main/scala/gpu/DenseBlitEngine.scala:19:31
+  PixelReadAligner backgroundAligner (	// src/main/scala/gpu/DenseBlitEngine.scala:20:41
     .clock                    (clock),
     .reset                    (reset),
     .io_start_ready           (_backgroundAligner_io_start_ready),
-    .io_start_valid           (backgroundAligner_io_start_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:104:57
-    .io_start_bits_upperFirst (_rect_io_address_bits_address[1]),	// src/main/scala/gpu/DenseBlitEngine.scala:15:28, :105:77
-    .io_start_bits_pixels     (alphaChunkPixels),	// src/main/scala/gpu/DenseBlitEngine.scala:98:37
+    .io_start_valid           (backgroundAligner_io_start_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:115:57
+    .io_start_bits_upperFirst (_rect_io_address_bits_address[1]),	// src/main/scala/gpu/DenseBlitEngine.scala:16:28, :116:77
+    .io_start_bits_pixels     (alphaChunkPixels),	// src/main/scala/gpu/DenseBlitEngine.scala:109:37
     .io_input_ready           (_backgroundAligner_io_input_ready),
-    .io_input_valid           (_alphaBackgroundBuffer_io_deq_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:21:45
-    .io_input_bits            (_alphaBackgroundBuffer_io_deq_bits),	// src/main/scala/gpu/DenseBlitEngine.scala:21:45
+    .io_input_valid           (_alphaBackgroundBuffer_io_deq_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:22:45
+    .io_input_bits            (_alphaBackgroundBuffer_io_deq_bits),	// src/main/scala/gpu/DenseBlitEngine.scala:22:45
     .io_output_ready
       (_backgroundAligner_io_output_ready_T & isAlpha & _rect_io_address_valid
-       & io_pixelRequest_ready & _aligner_io_output_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:15:28, :18:31, :64:39, :143:34, :153:{63,74,99}, :154:27
+       & io_pixelRequest_ready & _aligner_io_output_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:16:28, :19:31, :72:39, :154:34, :164:{63,74,99}, :165:27
     .io_output_valid          (_backgroundAligner_io_output_valid),
     .io_output_bits_pixel     (_backgroundAligner_io_output_bits_pixel),
     .io_output_bits_last      (/* unused */)
-  );	// src/main/scala/gpu/DenseBlitEngine.scala:19:41
-  Queue33_UInt32 alphaForegroundBuffer (	// src/main/scala/gpu/DenseBlitEngine.scala:20:45
+  );	// src/main/scala/gpu/DenseBlitEngine.scala:20:41
+  Queue33_UInt32 alphaForegroundBuffer (	// src/main/scala/gpu/DenseBlitEngine.scala:21:45
     .clock        (clock),
     .reset        (reset),
     .io_enq_ready (_alphaForegroundBuffer_io_enq_ready),
-    .io_enq_valid (isAlpha & _reader_io_data_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:16:30, :64:39, :255:49
-    .io_enq_bits  (_reader_io_data_bits_data),	// src/main/scala/gpu/DenseBlitEngine.scala:16:30
-    .io_deq_ready (isAlpha & _aligner_io_input_ready),	// src/main/scala/gpu/DenseBlitEngine.scala:18:31, :64:39, :260:49
+    .io_enq_valid (isAlpha & _reader_io_data_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:17:30, :72:39, :268:49
+    .io_enq_bits  (_reader_io_data_bits_data),	// src/main/scala/gpu/DenseBlitEngine.scala:17:30
+    .io_deq_ready (isAlpha & _aligner_io_input_ready),	// src/main/scala/gpu/DenseBlitEngine.scala:19:31, :72:39, :275:49
     .io_deq_valid (_alphaForegroundBuffer_io_deq_valid),
     .io_deq_bits  (_alphaForegroundBuffer_io_deq_bits)
-  );	// src/main/scala/gpu/DenseBlitEngine.scala:20:45
-  Queue33_UInt32 alphaBackgroundBuffer (	// src/main/scala/gpu/DenseBlitEngine.scala:21:45
+  );	// src/main/scala/gpu/DenseBlitEngine.scala:21:45
+  Queue33_UInt32 alphaBackgroundBuffer (	// src/main/scala/gpu/DenseBlitEngine.scala:22:45
     .clock        (clock),
     .reset        (reset),
     .io_enq_ready (_alphaBackgroundBuffer_io_enq_ready),
-    .io_enq_valid (_backgroundReader_io_data_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:17:40
-    .io_enq_bits  (_backgroundReader_io_data_bits_data),	// src/main/scala/gpu/DenseBlitEngine.scala:17:40
-    .io_deq_ready (_backgroundAligner_io_input_ready),	// src/main/scala/gpu/DenseBlitEngine.scala:19:41
+    .io_enq_valid (_backgroundReader_io_data_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:18:40
+    .io_enq_bits  (_backgroundReader_io_data_bits_data),	// src/main/scala/gpu/DenseBlitEngine.scala:18:40
+    .io_deq_ready (_backgroundAligner_io_input_ready),	// src/main/scala/gpu/DenseBlitEngine.scala:20:41
     .io_deq_valid (_alphaBackgroundBuffer_io_deq_valid),
     .io_deq_bits  (_alphaBackgroundBuffer_io_deq_bits)
-  );	// src/main/scala/gpu/DenseBlitEngine.scala:21:45
-  PixelWritePacker packer (	// src/main/scala/gpu/DenseBlitEngine.scala:22:30
+  );	// src/main/scala/gpu/DenseBlitEngine.scala:22:45
+  PixelWritePacker packer (	// src/main/scala/gpu/DenseBlitEngine.scala:23:30
     .clock                     (clock),
     .reset                     (reset),
     .io_input_ready            (_packer_io_input_ready),
-    .io_input_valid            (_io_pixelResult_ready_T & io_pixelResult_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:165:{34,48}
-    .io_input_bits_address     (pixelAddress),	// src/main/scala/gpu/DenseBlitEngine.scala:34:33
+    .io_input_valid            (_io_pixelResult_ready_T & io_pixelResult_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:176:{34,48}
+    .io_input_bits_address     (pixelAddress),	// src/main/scala/gpu/DenseBlitEngine.scala:35:33
     .io_input_bits_pixel       (io_pixelResult_bits_pixel),
     .io_input_bits_writeEnable (io_pixelResult_bits_writeEnable),
-    .io_input_bits_rowLast     (pixelRowLast | _state_T_3),	// src/main/scala/gpu/DenseBlitEngine.scala:35:33, :169:{48,60}
-    .io_output_ready           (_writer_io_data_ready),	// src/main/scala/gpu/DenseBlitEngine.scala:23:30
+    .io_input_bits_rowLast     (pixelRowLast | _state_T_5),	// src/main/scala/gpu/DenseBlitEngine.scala:36:33, :180:{48,60}
+    .io_output_ready           (~fastCopy & _writer_io_data_ready),	// src/main/scala/gpu/DenseBlitEngine.scala:24:30, :39:33, :78:49, :190:39
     .io_output_valid           (_packer_io_output_valid),
     .io_output_bits_address    (_packer_io_output_bits_address),
     .io_output_bits_data       (_packer_io_output_bits_data),
     .io_output_bits_strb       (_packer_io_output_bits_strb)
-  );	// src/main/scala/gpu/DenseBlitEngine.scala:22:30
-  AxiWriteEngine writer (	// src/main/scala/gpu/DenseBlitEngine.scala:23:30
+  );	// src/main/scala/gpu/DenseBlitEngine.scala:23:30
+  AxiWriteEngine writer (	// src/main/scala/gpu/DenseBlitEngine.scala:24:30
     .clock                   (clock),
     .reset                   (reset),
     .io_request_ready        (_writer_io_request_ready),
-    .io_request_valid        (writer_io_request_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:82:48
+    .io_request_valid        (writer_io_request_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:93:48
     .io_request_bits_address
       (dynamicWriteRequest
          ? _packer_io_output_bits_address
-         : isAlpha ? alphaChunkDstAddress : dstRowBase),	// src/main/scala/gpu/DenseBlitEngine.scala:22:30, :30:31, :32:41, :64:39, :80:48, :81:28, :83:40, :84:8
+         : isAlpha ? alphaChunkDstAddress : dstRowBase),	// src/main/scala/gpu/DenseBlitEngine.scala:23:30, :31:31, :33:41, :72:39, :91:48, :92:28, :94:40, :95:8
     .io_request_bits_beats
       (dynamicWriteRequest
          ? 32'h1
-         : isAlpha ? alphaChunkBeats : {2'h0, _rowBeats_T[31:2]}),	// src/main/scala/gpu/DenseBlitEngine.scala:33:36, :62:38, :64:39, :67:43, :68:{44,51}, :80:48, :81:28, :85:38, :86:8
+         : isAlpha ? alphaChunkBeats : {2'h0, _rowBeats_T[31:2]}),	// src/main/scala/gpu/DenseBlitEngine.scala:34:36, :52:36, :72:39, :75:43, :76:{44,51}, :91:48, :92:28, :96:38, :97:8
     .io_data_ready           (_writer_io_data_ready),
-    .io_data_valid           (_packer_io_output_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:22:30
-    .io_data_bits_data       (_packer_io_output_bits_data),	// src/main/scala/gpu/DenseBlitEngine.scala:22:30
-    .io_data_bits_strb       (_packer_io_output_bits_strb),	// src/main/scala/gpu/DenseBlitEngine.scala:22:30
+    .io_data_valid           (writer_io_data_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:187:30
+    .io_data_bits_data
+      (fastCopy ? _reader_io_data_bits_data : _packer_io_output_bits_data),	// src/main/scala/gpu/DenseBlitEngine.scala:17:30, :23:30, :39:33, :188:34
+    .io_data_bits_strb       (fastCopy ? 4'hF : _packer_io_output_bits_strb),	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :23:30, :39:33, :189:34
     .io_axiAw_ready          (io_axi_aw_ready),
     .io_axiAw_valid          (io_axi_aw_valid),
     .io_axiAw_bits_addr      (io_axi_aw_bits_addr),
@@ -577,36 +602,37 @@ module DenseBlitEngine(	// src/main/scala/gpu/DenseBlitEngine.scala:6:7
     .io_axiB_bits_resp       (io_axi_b_bits_resp),
     .io_done                 (_writer_io_done),
     .io_error                (_writer_io_error)
-  );	// src/main/scala/gpu/DenseBlitEngine.scala:23:30
-  RRArbiter2_Axi4Address readAddressArbiter (	// src/main/scala/gpu/DenseBlitEngine.scala:24:42
+  );	// src/main/scala/gpu/DenseBlitEngine.scala:24:30
+  RRArbiter2_Axi4Address readAddressArbiter (	// src/main/scala/gpu/DenseBlitEngine.scala:25:42
     .clock             (clock),
     .io_in_0_ready     (_readAddressArbiter_io_in_0_ready),
-    .io_in_0_valid     (_reader_io_axiAr_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:16:30
-    .io_in_0_bits_addr (_reader_io_axiAr_bits_addr),	// src/main/scala/gpu/DenseBlitEngine.scala:16:30
-    .io_in_0_bits_len  (_reader_io_axiAr_bits_len),	// src/main/scala/gpu/DenseBlitEngine.scala:16:30
+    .io_in_0_valid     (_reader_io_axiAr_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:17:30
+    .io_in_0_bits_addr (_reader_io_axiAr_bits_addr),	// src/main/scala/gpu/DenseBlitEngine.scala:17:30
+    .io_in_0_bits_len  (_reader_io_axiAr_bits_len),	// src/main/scala/gpu/DenseBlitEngine.scala:17:30
     .io_in_1_ready     (_readAddressArbiter_io_in_1_ready),
-    .io_in_1_valid     (_backgroundReader_io_axiAr_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:17:40
-    .io_in_1_bits_addr (_backgroundReader_io_axiAr_bits_addr),	// src/main/scala/gpu/DenseBlitEngine.scala:17:40
-    .io_in_1_bits_len  (_backgroundReader_io_axiAr_bits_len),	// src/main/scala/gpu/DenseBlitEngine.scala:17:40
+    .io_in_1_valid     (_backgroundReader_io_axiAr_valid),	// src/main/scala/gpu/DenseBlitEngine.scala:18:40
+    .io_in_1_bits_addr (_backgroundReader_io_axiAr_bits_addr),	// src/main/scala/gpu/DenseBlitEngine.scala:18:40
+    .io_in_1_bits_len  (_backgroundReader_io_axiAr_bits_len),	// src/main/scala/gpu/DenseBlitEngine.scala:18:40
     .io_out_ready      (io_axi_ar_ready),
     .io_out_valid      (io_axi_ar_valid),
     .io_out_bits_addr  (io_axi_ar_bits_addr),
     .io_out_bits_id    (io_axi_ar_bits_id),
     .io_out_bits_len   (io_axi_ar_bits_len)
-  );	// src/main/scala/gpu/DenseBlitEngine.scala:24:42
-  assign io_command_ready = io_command_ready_0;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :46:29
-  assign io_pixelRequest_valid = io_pixelRequest_valid_0;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :143:{51,76}
-  assign io_pixelRequest_bits_op = commandReg_op[2:0];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31, :144:43
+  );	// src/main/scala/gpu/DenseBlitEngine.scala:25:42
+  assign io_command_ready = io_command_ready_0;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :49:29
+  assign io_pixelRequest_valid = io_pixelRequest_valid_0;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :154:{51,76}
+  assign io_pixelRequest_bits_op = commandReg_op[2:0];	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31, :155:43
   assign io_pixelRequest_bits_background =
-    isAlpha ? _backgroundAligner_io_output_bits_pixel : 16'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :19:41, :64:39, :146:41
-  assign io_pixelRequest_bits_fillColor = commandReg_color;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31
-  assign io_pixelRequest_bits_colorKey = commandReg_colorKey;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31
-  assign io_pixelRequest_bits_alpha = commandReg_alpha;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31
-  assign io_pixelResult_ready = io_pixelResult_ready_0;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :170:47
+    isAlpha ? _backgroundAligner_io_output_bits_pixel : 16'h0;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :20:41, :72:39, :157:41
+  assign io_pixelRequest_bits_fillColor = commandReg_color;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31
+  assign io_pixelRequest_bits_colorKey = commandReg_colorKey;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31
+  assign io_pixelRequest_bits_alpha = commandReg_alpha;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31
+  assign io_pixelResult_ready = io_pixelResult_ready_0;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :181:47
+  assign io_copyWordDone = fastCopy & _writer_io_data_ready & writer_io_data_valid;	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/DenseBlitEngine.scala:6:7, :24:30, :39:33, :187:30, :191:31
   assign io_axi_r_ready =
-    backgroundResponse ? _backgroundReader_io_axiR_ready : _reader_io_axiR_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :16:30, :17:40, :248:53, :253:24
-  assign io_completion_valid = io_completion_valid_0;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :226:32
-  assign io_completion_bits_tag = commandReg_tag;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :28:31
-  assign io_completion_bits_error = completionError;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :44:40
+    backgroundResponse ? _backgroundReader_io_axiR_ready : _reader_io_axiR_ready;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :17:30, :18:40, :261:53, :266:24
+  assign io_completion_valid = io_completion_valid_0;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :239:32
+  assign io_completion_bits_tag = commandReg_tag;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :29:31
+  assign io_completion_bits_error = completionError;	// src/main/scala/gpu/DenseBlitEngine.scala:6:7, :47:40
 endmodule
 

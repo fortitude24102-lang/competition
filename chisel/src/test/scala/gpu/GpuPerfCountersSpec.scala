@@ -10,7 +10,7 @@ class GpuPerfCountersSpec extends AnyFunSpec with StableChiselSim with Matchers 
     simulate(new GpuPerfCounters) { dut =>
       dut.io.clear.poke(false)
       dut.io.active.poke(true)
-      dut.io.pixelDone.poke(true)
+      dut.io.pixelCount.poke(1)
       dut.io.readBeat.poke(true)
       dut.io.writeStrobe.poke("b1011".U)
       dut.io.stalled.poke(true)
@@ -28,7 +28,7 @@ class GpuPerfCountersSpec extends AnyFunSpec with StableChiselSim with Matchers 
       dut.io.renderGrants.expect(2)
       dut.io.scanoutGrants.expect(0)
 
-      dut.io.pixelDone.poke(false)
+      dut.io.pixelCount.poke(0)
       dut.io.readBeat.poke(false)
       dut.io.writeStrobe.poke(0)
       dut.io.stalled.poke(false)
@@ -63,7 +63,7 @@ class GpuPerfCountersSpec extends AnyFunSpec with StableChiselSim with Matchers 
     simulate(new GpuPerfCounters) { dut =>
       dut.io.clear.poke(true)
       dut.io.active.poke(true)
-      dut.io.pixelDone.poke(true)
+      dut.io.pixelCount.poke(2)
       dut.io.readBeat.poke(true)
       dut.io.writeStrobe.poke("b1111".U)
       dut.io.stalled.poke(true)
@@ -85,7 +85,7 @@ class GpuPerfCountersSpec extends AnyFunSpec with StableChiselSim with Matchers 
       dut.clock.step()
 
       dut.io.cycles.expect(1)
-      dut.io.pixels.expect(1)
+      dut.io.pixels.expect(2)
       dut.io.readBytes.expect(4)
       dut.io.writeBytes.expect(4)
       dut.io.stalls.expect(1)
@@ -99,7 +99,7 @@ class GpuPerfCountersSpec extends AnyFunSpec with StableChiselSim with Matchers 
     simulate(new GpuPerfCounters(initialValue = BigInt("ffffffff", 16))) { dut =>
       dut.io.clear.poke(false)
       dut.io.active.poke(true)
-      dut.io.pixelDone.poke(false)
+      dut.io.pixelCount.poke(0)
       dut.io.readBeat.poke(false)
       dut.io.writeStrobe.poke(0)
       dut.io.stalled.poke(false)

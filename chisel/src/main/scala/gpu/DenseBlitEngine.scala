@@ -8,6 +8,7 @@ class DenseBlitEngine extends Module {
     val command = Flipped(Decoupled(new GpuCommand))
     val pixelRequest = Decoupled(new PixelTransaction)
     val pixelResult = Flipped(Decoupled(new PixelResult))
+    val copyWordDone = Output(Bool())
     val axi = new Axi4MasterPort
     val completion = Decoupled(new GpuCompletion)
   })
@@ -35,6 +36,8 @@ class DenseBlitEngine extends Module {
   private val pixelRowLast = Reg(Bool())
   private val pixelLast = Reg(Bool())
   private val pixelChunkLast = Reg(Bool())
+  private val fastCopy = RegInit(false.B)
+  private val fastCopyRowsLeft = Reg(UInt(16.W))
   private val rowReadDone = RegInit(false.B)
   private val rowWriteDone = RegInit(false.B)
   private val rowReadError = RegInit(false.B)
@@ -46,6 +49,11 @@ class DenseBlitEngine extends Module {
   io.command.ready := state === idle
   when(io.command.fire) {
     commandReg := io.command.bits
+    fastCopy := io.command.bits.op === GpuOpcode.Copy.U &&
+      io.command.bits.srcAddr(1, 0) === 0.U && io.command.bits.dstAddr(1, 0) === 0.U &&
+      io.command.bits.srcStride(1, 0) === 0.U && io.command.bits.dstStride(1, 0) === 0.U &&
+      io.command.bits.widthPixels(0) === 0.U
+    fastCopyRowsLeft := io.command.bits.heightPixels
     srcRowBase := io.command.bits.srcAddr
     dstRowBase := io.command.bits.dstAddr
     alphaSrcAddress := io.command.bits.srcAddr
@@ -67,13 +75,16 @@ class DenseBlitEngine extends Module {
   private val rowTransferBytes = rowBytes + dstRowBase(1, 0)
   private val rowBeats = (rowTransferBytes + 3.U) >> 2
 
-  rect.io.start.valid := state === startRect
+  rect.io.start.valid := state === startRect && !fastCopy
   rect.io.start.bits.base := commandReg.dstAddr
   rect.io.start.bits.widthPixels := commandReg.widthPixels
   rect.io.start.bits.heightPixels := commandReg.heightPixels
   rect.io.start.bits.stride := commandReg.dstStride
   when(rect.io.start.fire) {
     state := Mux(isColorKey, startAligner, Mux(isAlpha, startAlphaAligners, startWrite))
+  }
+  when(state === startRect && fastCopy) {
+    state := startWrite
   }
 
   private val fixedWriteRequest = state === startWrite
@@ -89,7 +100,7 @@ class DenseBlitEngine extends Module {
       dynamicWriteOutstanding := true.B
     }.otherwise {
       rowWriteDone := false.B
-      state := Mux(isCopy, startAligner, requestPixel)
+      state := Mux(fastCopy, startRead, Mux(isCopy, startAligner, requestPixel))
     }
   }
 
@@ -129,7 +140,7 @@ class DenseBlitEngine extends Module {
   when(startingSourceRead && reader.io.request.fire) {
     rowReadDone := false.B
     rowReadError := false.B
-    state := requestPixel
+    state := Mux(fastCopy, waitRow, requestPixel)
   }
   when(startingAlphaReads && reader.io.request.fire && backgroundReader.io.request.fire) {
     state := waitAlphaReads
@@ -173,10 +184,11 @@ class DenseBlitEngine extends Module {
     state := Mux(pixelRowLast, waitRow, Mux(isAlpha && pixelChunkLast, startAlphaAligners, requestPixel))
   }
 
-  writer.io.data.valid := packer.io.output.valid
-  writer.io.data.bits.data := packer.io.output.bits.data
-  writer.io.data.bits.strb := packer.io.output.bits.strb
-  packer.io.output.ready := writer.io.data.ready
+  writer.io.data.valid := Mux(fastCopy, reader.io.data.valid, packer.io.output.valid)
+  writer.io.data.bits.data := Mux(fastCopy, reader.io.data.bits.data, packer.io.output.bits.data)
+  writer.io.data.bits.strb := Mux(fastCopy, "hf".U, packer.io.output.bits.strb)
+  packer.io.output.ready := !fastCopy && writer.io.data.ready
+  io.copyWordDone := fastCopy && writer.io.data.fire
 
   when(writer.io.done) {
     rowWriteDone := true.B
@@ -207,9 +219,10 @@ class DenseBlitEngine extends Module {
     when(transferError) {
       completionError := GpuError.AxiResponse.U
       state := finish
-    }.elsewhen(pixelLast) {
+    }.elsewhen(Mux(fastCopy, fastCopyRowsLeft === 1.U, pixelLast)) {
       state := finish
     }.otherwise {
+      when(fastCopy) { fastCopyRowsLeft := fastCopyRowsLeft - 1.U }
       srcRowBase := srcRowBase + commandReg.srcStride
       dstRowBase := dstRowBase + commandReg.dstStride
       rowReadDone := false.B
@@ -254,8 +267,10 @@ class DenseBlitEngine extends Module {
 
   alphaForegroundBuffer.io.enq.valid := isAlpha && reader.io.data.valid
   alphaForegroundBuffer.io.enq.bits := reader.io.data.bits.data
-  reader.io.data.ready := Mux(isAlpha, alphaForegroundBuffer.io.enq.ready, aligner.io.input.ready)
-  aligner.io.input.valid := Mux(isAlpha, alphaForegroundBuffer.io.deq.valid, reader.io.data.valid)
+  reader.io.data.ready := Mux(isAlpha, alphaForegroundBuffer.io.enq.ready,
+    Mux(fastCopy, writer.io.data.ready, aligner.io.input.ready))
+  aligner.io.input.valid := Mux(isAlpha, alphaForegroundBuffer.io.deq.valid,
+    reader.io.data.valid && !fastCopy)
   aligner.io.input.bits := Mux(isAlpha, alphaForegroundBuffer.io.deq.bits, reader.io.data.bits.data)
   alphaForegroundBuffer.io.deq.ready := isAlpha && aligner.io.input.ready
   alphaBackgroundBuffer.io.enq.valid := backgroundReader.io.data.valid

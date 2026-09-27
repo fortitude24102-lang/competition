@@ -141,7 +141,8 @@ class RenderEngine extends Module {
       (blit.io.pixelResult.valid && !blit.io.pixelResult.ready)
   perf.io.clear := io.perfClear
   perf.io.active := io.busy
-  perf.io.pixelDone := blit.io.pixelResult.fire || sparse.io.pixelDone
+  perf.io.pixelCount := Mux(blit.io.copyWordDone, 2.U,
+    (blit.io.pixelResult.fire || sparse.io.pixelDone).asUInt)
   perf.io.readBeat := io.axi.r.fire
   perf.io.writeStrobe := Mux(io.axi.w.fire, io.axi.w.bits.strb, 0.U)
   perf.io.stalled := io.busy && (axiStalled || pixelStalled)

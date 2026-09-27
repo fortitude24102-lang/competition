@@ -10,6 +10,8 @@
 
 开发板分阶段实测已定位首要瓶颈为 **Alpha 的 1–2 像素小事务和单 beat 写回**，其次是每帧全屏背景 Copy；具体计数、口径和优化顺序见 [V2 性能瓶颈定位](docs/efinix_2d_gpu/v2_bottleneck_analysis.md)。画面优化与性能优化保持两条工作线。
 
+**当前源码性能候选（2026-09-27，尚未发布）：** Alpha 分块突发与对齐 Copy 直通已通过 61/61 项 GPU 仿真及 Efinity 构建，并通过 JTAG 临时上板；同一旧画面的 GPU/CPU 对比约为 **20.0/2.1 FPS**，背景 Copy 由约 22.0 ms 降至 8.2 ms。但正常固件的 300 帧统计报告 **242,100 次显示下溢、硬件错误 0、60 FPS 合格计数 0**；两轮短时诊断下溢为 0 不能覆盖这一问题。此源码与生成 RTL 是**带已知显示风险的实验候选**，不能作为稳定发布版、画质验收或 60 FPS 达标证据；`release/v2/` 仍为上方所述正式 V2 包。后续更换渲染画面后，要在新场景重新测量帧率和下溢，并定位此问题。完整记录见 [性能瓶颈定位](docs/efinix_2d_gpu/v2_bottleneck_analysis.md)。另有非 GPU 的 SoC 固件基线测试异常（`SoftwareDriverSpec`、`PangoBringupSpec`），本轮未处理，不能宣称全项目测试通过。
+
 ## 两条工作线
 
 - 负责人：锁定当前同场景 CPU/GPU 基准，定位帧时间和 DDR/命令瓶颈，逐项优化并用同一测试口径复测。性能代码在 `sw/efinix_gpu/src/perf_demo.c`、`main.c`，GPU 在 `chisel/src/main/scala/gpu/`。

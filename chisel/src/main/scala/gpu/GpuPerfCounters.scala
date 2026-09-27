@@ -8,7 +8,7 @@ class GpuPerfCounters(initialValue: BigInt = 0) extends Module {
   val io = IO(new Bundle {
     val clear = Input(Bool())
     val active = Input(Bool())
-    val pixelDone = Input(Bool())
+    val pixelCount = Input(UInt(2.W))
     val readBeat = Input(Bool())
     val writeStrobe = Input(UInt(4.W))
     val stalled = Input(Bool())
@@ -45,7 +45,7 @@ class GpuPerfCounters(initialValue: BigInt = 0) extends Module {
     scanoutGrants := 0.U
   }.otherwise {
     when(io.active) { cycles := cycles + 1.U }
-    when(io.pixelDone) { pixels := pixels + 1.U }
+    when(io.pixelCount.orR) { pixels := pixels + io.pixelCount }
     when(io.readBeat) { readBytes := readBytes + 4.U }
     when(io.writeStrobe.orR) { writeBytes := writeBytes + PopCount(io.writeStrobe) }
     when(io.stalled) { stalls := stalls + 1.U }
