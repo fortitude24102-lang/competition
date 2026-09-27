@@ -86,6 +86,29 @@
     <efx:design_file name="vendor/hdmi_tx/rtl/reset.v" version="default" library="default" />
     <efx:design_file name="vendor/hdmi_tx/rtl/hdmi_src/dvi_tx/dvi_encoder.v" version="default" library="default" />
     <efx:design_file name="vendor/hdmi_tx/rtl/hdmi_src/dvi_tx/encode.v" version="default" library="default" />
+    <efx:design_file name="rtl/efinix_ge_phy.v" version="default" library="default" />
+    <efx:design_file name="rtl/net/asset_stream_guard.v" version="default" library="default" />
+    <efx:design_file name="rtl/net/asset_udp_rx.v" version="default" library="default" />
+    <efx:design_file name="rtl/net/efinix_ge_mac_wrapper.v" version="default" library="default" />
+    <efx:design_file name="rtl/net/efinix_asset_network.v" version="default" library="default" />
+    <efx:design_file name="vendor/ge_udp/rtl/heijin_test/rgmii2gmii_altera/util_gmii_to_rgmii.v" version="default" library="default" />
+    <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/arp_cache.v" version="default" library="default" />
+    <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/crc.v" version="default" library="default" />
+    <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/dpram.v" version="default" library="default" />
+    <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/mac_top.v" version="default" library="default" />
+    <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/rx/arp_rx.v" version="default" library="default" />
+    <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/rx/ip_rx.v" version="default" library="default" />
+    <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/rx/mac_rx_top.v" version="default" library="default" />
+    <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/rx/mac_rx.v" version="default" library="default" />
+    <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/rx/udp_rx.v" version="default" library="default" />
+    <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/tx/arp_tx.v" version="default" library="default" />
+    <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/tx/ip_tx_mode.v" version="default" library="default" />
+    <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/tx/ip_tx.v" version="default" library="default" />
+    <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/tx/mac_tx_mode.v" version="default" library="default" />
+    <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/tx/mac_tx_top.v" version="default" library="default" />
+    <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/tx/mac_tx.v" version="default" library="default" />
+    <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/tx/udp_tx.v" version="default" library="default" />
+    <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/icmp_reply.v" version="default" library="default" />
     <efx:top_vhdl_arch name="" />
   </efx:design_info>
   <efx:constraint_info>

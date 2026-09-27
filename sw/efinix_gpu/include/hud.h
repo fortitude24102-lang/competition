@@ -1,7 +1,7 @@
 #ifndef EFINIX_GPU_HUD_H
 #define EFINIX_GPU_HUD_H
 #include "gpu.h"
-#define HUD_MAX_COMMANDS 127u
+#define HUD_MAX_COMMANDS 1024u
 typedef struct {
  uint16_t fps, sprite_count, cpu_busy_permille, queue_high_watermark;
  uint16_t underflow_count, error_code;
@@ -11,4 +11,13 @@ typedef struct {
 typedef struct { gpu_command commands[HUD_MAX_COMMANDS]; uint16_t count; } hud_command_stream;
 int hud_draw_fps(gpu_device *device,uint32_t destination,uint32_t stride,uint16_t x,uint16_t y,unsigned fps,uint16_t color,uint16_t scale,uint32_t poll_limit);
 int hud_build_metrics(uint32_t destination,uint32_t stride,uint16_t x,uint16_t y,const hud_metrics *metrics,hud_command_stream *stream);
+typedef struct {
+ uint32_t cpu_fps_x10,gpu_fps_x10,cpu_render_us,gpu_render_us;
+ uint16_t sprites;
+ uint8_t cpu_valid,gpu_valid,gpu_active,network_ready;
+} hud_comparison;
+#define HUD_COMPARISON_LINES 4u
+#define HUD_COMPARISON_COLUMNS 64u
+int hud_comparison_text(const hud_comparison *metrics,char lines[HUD_COMPARISON_LINES][HUD_COMPARISON_COLUMNS]);
+int hud_build_comparison(uint32_t destination,const hud_comparison *metrics,hud_command_stream *stream);
 #endif

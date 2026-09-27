@@ -100,20 +100,20 @@ int main(void) {
     assert(dense_assets[0] == gpu_player_asset.pixels[0]);
     memset(frame_b, 0xa5, sizeof frame_b);
     memset(expected_frame_b, 0xa5, sizeof expected_frame_b);
-    golden_surface expected_dst={expected_frame_b,sizeof expected_frame_b,640,480,1280};
+    golden_surface expected_dst={expected_frame_b,sizeof expected_frame_b,GPU_FRAME_WIDTH,GPU_FRAME_HEIGHT,GPU_FRAME_STRIDE};
     golden_surface expected_src={(uint8_t *)dense_assets,GPU_ASSET_WORDS*2u,8,8,16};
     assert(golden_copy(&expected_dst,10,10,&expected_src,0,0,8,8)==GPU_ERROR_NONE);
-    assert(gpu_copy_async(&device, gpu_player_asset.address, GPU_FRAMEBUFFER_B + 10u*1280u + 20u,
-        gpu_player_asset.stride_bytes, 1280, gpu_player_asset.width, gpu_player_asset.height, &tag) == 0);
+    assert(gpu_copy_async(&device, gpu_player_asset.address, GPU_FRAMEBUFFER_B + 10u*GPU_FRAME_STRIDE + 20u,
+        gpu_player_asset.stride_bytes, GPU_FRAME_STRIDE, gpu_player_asset.width, gpu_player_asset.height, &tag) == 0);
     assert(gpu_wait_tag(&device, tag, 2) == 0);
     assert(golden_crc32(frame_b,sizeof frame_b)==golden_crc32(expected_frame_b,sizeof expected_frame_b));
     assert(memcmp(frame_b,expected_frame_b,sizeof frame_b)==0);
 
     tag=0x55aa;
-    assert(gpu_copy_async(&device,GPU_DENSE_ASSETS,GPU_FRAMEBUFFER_B,16,1280,0,8,&tag)==GPU_ERROR_ZERO_SIZE && tag==0x55aa);
-    assert(gpu_copy_async(&device,GPU_DENSE_ASSETS+1,GPU_FRAMEBUFFER_B,16,1280,8,8,&tag)==GPU_ERROR_MISALIGNED_ADDRESS && tag==0x55aa);
+    assert(gpu_copy_async(&device,GPU_DENSE_ASSETS,GPU_FRAMEBUFFER_B,16,GPU_FRAME_STRIDE,0,8,&tag)==GPU_ERROR_ZERO_SIZE && tag==0x55aa);
+    assert(gpu_copy_async(&device,GPU_DENSE_ASSETS+1,GPU_FRAMEBUFFER_B,16,GPU_FRAME_STRIDE,8,8,&tag)==GPU_ERROR_MISALIGNED_ADDRESS && tag==0x55aa);
     assert(gpu_copy_async(&device,GPU_DENSE_ASSETS,GPU_FRAMEBUFFER_B,16,14,8,8,&tag)==GPU_ERROR_STRIDE_TOO_SMALL && tag==0x55aa);
-    assert(gpu_copy_async(&device,GPU_FRAMEBUFFER_A,GPU_FRAMEBUFFER_A+2,1280,1280,8,1,&tag)==GPU_ERROR_OVERLAPPING_COPY && tag==0x55aa);
+    assert(gpu_copy_async(&device,GPU_FRAMEBUFFER_A,GPU_FRAMEBUFFER_A+2,GPU_FRAME_STRIDE,GPU_FRAME_STRIDE,8,1,&tag)==GPU_ERROR_OVERLAPPING_COPY && tag==0x55aa);
     assert(gpu_copy_async(&device,GPU_DDR_END_EXCLUSIVE-2,GPU_FRAMEBUFFER_B,4,4,2,1,&tag)==GPU_ERROR_ADDRESS_RANGE && tag==0x55aa);
     assert(gpu_copy_async(&device,GPU_DENSE_ASSETS+sizeof dense_assets-2,GPU_FRAMEBUFFER_B,2,2,1,1,&tag)==0);
     assert(gpu_wait_tag(&device,tag,2)==0);
@@ -133,7 +133,7 @@ int main(void) {
     fake_vblank();
     assert(gpu_wait_tag(&device,tag,1)==0 && regs[GPU_REG_FRONT_BUFFER / 4]==GPU_FRAMEBUFFER_A);
 
-    assert(hud_draw_fps(&device, GPU_FRAMEBUFFER_A, 1280, 4, 4, 60, 0xffff, 2, 2) == 0);
+    assert(hud_draw_fps(&device, GPU_FRAMEBUFFER_A, GPU_FRAME_STRIDE, 4, 4, 60, 0xffff, 2, 2) == 0);
     assert(pixel(frame_a, 4, 4) == 0xffff);
     assert(pixel(frame_a, 6, 6) == 0x0000);
     assert(pixel(frame_a, 12, 4) == 0xffff);

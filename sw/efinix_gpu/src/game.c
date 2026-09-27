@@ -34,26 +34,26 @@ void game_step(game_state *g,unsigned input,uint32_t dt) {
 int game_build_commands_mode(const game_state *g,uint32_t dst,int sparse,game_command_stream *s) {
  if(!g || !s || (dst!=GPU_FRAMEBUFFER_A && dst!=GPU_FRAMEBUFFER_B)) return GPU_DRIVER_ARGUMENT;
  *s=(game_command_stream){0};
- s->commands[s->count++]=(gpu_command){.op=GPU_OP_FILL,.dst_addr=dst,.dst_stride=1280,
+ s->commands[s->count++]=(gpu_command){.op=GPU_OP_FILL,.dst_addr=dst,.dst_stride=GPU_FRAME_STRIDE,
   .width_pixels=GPU_FRAME_WIDTH,.height_pixels=GPU_FRAME_HEIGHT,.color=0};
  s->commands[s->count++]=(gpu_command){.op=sparse?GPU_OP_SPARSE:GPU_OP_COLOR_KEY,
   .src_addr=sparse?gpu_demo_sparse_asset.address:gpu_demo_asset.address,
-  .dst_addr=dst+(uint32_t)g->player.y*1280u+(uint32_t)g->player.x*2u,
-  .src_stride=gpu_demo_asset.stride_bytes,.dst_stride=1280,
+  .dst_addr=dst+(uint32_t)g->player.y*GPU_FRAME_STRIDE+(uint32_t)g->player.x*2u,
+  .src_stride=gpu_demo_asset.stride_bytes,.dst_stride=GPU_FRAME_STRIDE,
   .width_pixels=gpu_demo_asset.width,.height_pixels=gpu_demo_asset.height,.color_key=0};
  ++s->sprite_count;
  for(unsigned i=0;i<GAME_MAX_ENEMIES;i++) if(g->enemies[i].active) {
   const game_object *o=&g->enemies[i];
   s->commands[s->count++]=(gpu_command){.op=GPU_OP_ALPHA,.src_addr=gpu_enemy_asset.address,
-   .dst_addr=dst+(uint32_t)o->y*1280u+(uint32_t)o->x*2u,
-   .src_stride=gpu_enemy_asset.stride_bytes,.dst_stride=1280,
+   .dst_addr=dst+(uint32_t)o->y*GPU_FRAME_STRIDE+(uint32_t)o->x*2u,
+   .src_stride=gpu_enemy_asset.stride_bytes,.dst_stride=GPU_FRAME_STRIDE,
    .width_pixels=gpu_enemy_asset.width,.height_pixels=gpu_enemy_asset.height,.alpha=224};
   ++s->sprite_count;
  }
  for(unsigned i=0;i<GAME_MAX_BULLETS;i++) if(g->bullets[i].active) {
   const game_object *o=&g->bullets[i];
   s->commands[s->count++]=(gpu_command){.op=GPU_OP_FILL,
-   .dst_addr=dst+(uint32_t)o->y*1280u+(uint32_t)o->x*2u,.dst_stride=1280,
+   .dst_addr=dst+(uint32_t)o->y*GPU_FRAME_STRIDE+(uint32_t)o->x*2u,.dst_stride=GPU_FRAME_STRIDE,
    .width_pixels=o->width,.height_pixels=o->height,.color=0xffff};
   ++s->sprite_count;
  }

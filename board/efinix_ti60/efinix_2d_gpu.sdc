@@ -1,3 +1,30 @@
+# Official GE port timing and PLL phase preserved; GE PLL moved to free BL0.
+create_clock -period 8.0000 [get_ports {rxc}]
+create_clock -period 8.0000 rx_pll_CLKOUT0
+create_clock -waveform {2.0000 6.0000} -period 8.0000 ge0_tx_clk
+create_clock -waveform {2.0000 6.0000} -period 8.0000 ge0_tx_clk_90
+set_input_delay -clock rxc -reference_pin [get_ports {rxc~CLKOUT~1~146}] -max 0.476 [get_ports {rx_dv_LO rx_dv_HI}]
+set_input_delay -clock rxc -reference_pin [get_ports {rxc~CLKOUT~1~146}] -min 0.276 [get_ports {rx_dv_LO rx_dv_HI}]
+set_input_delay -clock rxc -reference_pin [get_ports {rxc~CLKOUT~1~129}] -max 0.476 [get_ports {rxd_lo_i[0] rxd_hi_i[0]}]
+set_input_delay -clock rxc -reference_pin [get_ports {rxc~CLKOUT~1~129}] -min 0.276 [get_ports {rxd_lo_i[0] rxd_hi_i[0]}]
+set_input_delay -clock rxc -reference_pin [get_ports {rxc~CLKOUT~1~113}] -max 0.476 [get_ports {rxd_lo_i[1] rxd_hi_i[1]}]
+set_input_delay -clock rxc -reference_pin [get_ports {rxc~CLKOUT~1~113}] -min 0.276 [get_ports {rxd_lo_i[1] rxd_hi_i[1]}]
+set_input_delay -clock rxc -reference_pin [get_ports {rxc~CLKOUT~1~12}] -max 0.476 [get_ports {rxd_lo_i[2] rxd_hi_i[2]}]
+set_input_delay -clock rxc -reference_pin [get_ports {rxc~CLKOUT~1~12}] -min 0.276 [get_ports {rxd_lo_i[2] rxd_hi_i[2]}]
+set_input_delay -clock rxc -reference_pin [get_ports {rxc~CLKOUT~1~96}] -max 0.476 [get_ports {rxd_lo_i[3] rxd_hi_i[3]}]
+set_input_delay -clock rxc -reference_pin [get_ports {rxc~CLKOUT~1~96}] -min 0.276 [get_ports {rxd_lo_i[3] rxd_hi_i[3]}]
+set_output_delay -clock ge0_tx_clk -reference_pin [get_ports {ge0_tx_clk~CLKOUT~1~15}] -max 0.302 [get_ports {tx_en_o_LO tx_en_o_HI}]
+set_output_delay -clock ge0_tx_clk -reference_pin [get_ports {ge0_tx_clk~CLKOUT~1~15}] -min -0.140 [get_ports {tx_en_o_LO tx_en_o_HI}]
+set_output_delay -clock ge0_tx_clk_90 -reference_pin [get_ports {ge0_tx_clk_90~CLKOUT~1~130}] -max 0.302 [get_ports {txc_lo_o txc_hi_o}]
+set_output_delay -clock ge0_tx_clk_90 -reference_pin [get_ports {ge0_tx_clk_90~CLKOUT~1~130}] -min -0.140 [get_ports {txc_lo_o txc_hi_o}]
+set_output_delay -clock ge0_tx_clk -reference_pin [get_ports {ge0_tx_clk~CLKOUT~1~114}] -max 0.302 [get_ports {txd_lo_o[0] txd_hi_o[0]}]
+set_output_delay -clock ge0_tx_clk -reference_pin [get_ports {ge0_tx_clk~CLKOUT~1~114}] -min -0.140 [get_ports {txd_lo_o[0] txd_hi_o[0]}]
+set_output_delay -clock ge0_tx_clk -reference_pin [get_ports {ge0_tx_clk~CLKOUT~1~97}] -max 0.302 [get_ports {txd_lo_o[1] txd_hi_o[1]}]
+set_output_delay -clock ge0_tx_clk -reference_pin [get_ports {ge0_tx_clk~CLKOUT~1~97}] -min -0.140 [get_ports {txd_lo_o[1] txd_hi_o[1]}]
+set_output_delay -clock ge0_tx_clk -reference_pin [get_ports {ge0_tx_clk~CLKOUT~1~206}] -max 0.302 [get_ports {txd_lo_o[2] txd_hi_o[2]}]
+set_output_delay -clock ge0_tx_clk -reference_pin [get_ports {ge0_tx_clk~CLKOUT~1~206}] -min -0.140 [get_ports {txd_lo_o[2] txd_hi_o[2]}]
+set_output_delay -clock ge0_tx_clk -reference_pin [get_ports {ge0_tx_clk~CLKOUT~1~207}] -max 0.302 [get_ports {txd_lo_o[3] txd_hi_o[3]}]
+set_output_delay -clock ge0_tx_clk -reference_pin [get_ports {ge0_tx_clk~CLKOUT~1~207}] -min -0.140 [get_ports {txd_lo_o[3] txd_hi_o[3]}]
 create_clock -period 40.00                          [get_ports {clk_25m}]
 create_clock -period 10.00                           core_clk
 create_clock -period 2.50                           sdram_clk

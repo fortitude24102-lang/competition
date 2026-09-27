@@ -141,7 +141,7 @@ int main(void) {
     hud_metrics metrics = {.fps = 60, .sprite_count = 48, .render_stalls = 9,
         .underflow_count = 0, .qos_adaptive = 1};
     hud_command_stream stream;
-    assert(hud_build_metrics(GPU_FRAMEBUFFER_A, 1280, 8, 8, &metrics, &stream) == 0);
+    assert(hud_build_metrics(GPU_FRAMEBUFFER_A, GPU_FRAME_STRIDE, 8, 8, &metrics, &stream) == 0);
     assert(stream.count && stream.count <= HUD_MAX_COMMANDS);
 
     puts("PASS B days21-23: Sparse submit, QoS guards, 64-bit perf snapshot, comparison contract and HUD");
