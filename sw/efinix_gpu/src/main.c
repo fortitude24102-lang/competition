@@ -20,6 +20,46 @@ static hud_command_stream overlay;
 static benchmark_frame_sample gpu_samples[BENCHMARK_FRAME_COUNT];
 static const unsigned tiers[]={16,32,64,96,128,192,256};
 
+#ifdef V2_PROFILE
+/* Diagnostic build only: isolate the existing V2 commands without changing RTL. */
+static gpu_command profile_group[33];
+static int profile_stage(gpu_device *gpu,const char *name,const gpu_command *commands,unsigned count) {
+ gpu_perf_snapshot hw;
+ int e=gpu_clear_perf(gpu); if(e) return e;
+ gpu_platform_sync();
+ uint64_t t=gpu_platform_cycles();
+ e=perf_render_gpu(gpu,commands,count,10000000u);
+ gpu_platform_sync();
+ uint32_t us=(uint32_t)((gpu_platform_cycles()-t)/(BSP_CLINT_HZ/1000000u));
+ if(e) return e;
+ e=gpu_read_perf_snapshot(gpu,&hw); if(e) return e;
+ bsp_printf("PROFILE,%s,count=%d,us=%d,pixels=%d,rd=%d,wr=%d,stalls=%d,render_grants=%d,scan_grants=%d,under=%d\r\n",
+  name,count,us,(uint32_t)hw.pixels,(uint32_t)hw.read_bytes,(uint32_t)hw.write_bytes,
+  (uint32_t)hw.stalls,(uint32_t)hw.render_grants,(uint32_t)hw.scanout_grants,(uint32_t)hw.underflows);
+ return 0;
+}
+static int profile_run(gpu_device *gpu,framebuffer_pair *buffers,int network) {
+ for(unsigned trial=0;trial<3;trial++) {
+  int e=perf_build_frame(buffers->back,32,trial,network,&scene); if(e) return e;
+  e=profile_stage(gpu,"BACKGROUND",scene.commands,1); if(e) return e;
+  unsigned count=0;
+  for(unsigned i=1;i<scene.count;i++) if(scene.commands[i].op==GPU_OP_COLOR_KEY)
+   profile_group[count++]=scene.commands[i];
+  e=profile_stage(gpu,"KEY",profile_group,count); if(e) return e;
+  count=0;
+  for(unsigned i=1;i<scene.count;i++) if(scene.commands[i].op==GPU_OP_ALPHA)
+   profile_group[count++]=scene.commands[i];
+  e=profile_stage(gpu,"ALPHA",profile_group,count); if(e) return e;
+  e=profile_stage(gpu,"FULL",scene.commands,scene.count); if(e) return e;
+  gpu_platform_sync();
+  uint64_t t=gpu_platform_cycles();
+  e=framebuffer_present(gpu,buffers,10000000u); if(e) return e;
+  bsp_printf("PROFILE,PRESENT,us=%d\r\n",(uint32_t)((gpu_platform_cycles()-t)/(BSP_CLINT_HZ/1000000u)));
+ }
+ return 0;
+}
+#endif
+
 int main(void) {
  bsp_init();
  gpu_device gpu;
@@ -31,6 +71,12 @@ int main(void) {
  /* Disjoint from every network destination, including a partially loaded scene. */
  perf_init_local_assets(); gpu_platform_sync();
  framebuffer_pair buffers; framebuffer_init(&buffers);
+#ifdef V2_PROFILE
+ bsp_printf("V2 profile: network_result=%d, sprites=32\r\n",network_result);
+ int profile_result=profile_run(&gpu,&buffers,network);
+ bsp_printf("V2 profile stopped: result=%d hardware=%d\r\n",profile_result,gpu.hardware_error);
+ return profile_result!=0;
+#endif
  perf_window samples[2]={{0},{0}};
  hud_comparison metrics={.network_ready=(uint8_t)network};
  unsigned tier=0,mode=0,frame=0,old_keys=0,gpu_frames=0;

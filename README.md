@@ -8,6 +8,8 @@
 
 四份正式素材已通过千兆以太网加载到 DDR 并由 RISC-V 完整校验，均为零重试。32 个 Sprite 的 CPU/GPU 交替测试实测约 **2.1 / 8.5 FPS**。这是首轮性能基线，未达到赛题要求的稳定 60 FPS；300 帧稳定极限、断网持续运行和长时间耐久仍待验收。具体数据与限制见 [V2 实施记录](docs/efinix_2d_gpu/v2_implementation_progress.md)。
 
+开发板分阶段实测已定位首要瓶颈为 **Alpha 的 1–2 像素小事务和单 beat 写回**，其次是每帧全屏背景 Copy；具体计数、口径和优化顺序见 [V2 性能瓶颈定位](docs/efinix_2d_gpu/v2_bottleneck_analysis.md)。画面优化与性能优化保持两条工作线。
+
 ## 两条工作线
 
 - 负责人：锁定当前同场景 CPU/GPU 基准，定位帧时间和 DDR/命令瓶颈，逐项优化并用同一测试口径复测。性能代码在 `sw/efinix_gpu/src/perf_demo.c`、`main.c`，GPU 在 `chisel/src/main/scala/gpu/`。
