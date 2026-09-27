@@ -25,6 +25,7 @@ try {
   Check $name
  }
  Run-Test 'test_bullet_demo' @('sw/efinix_gpu/tests/test_bullet_demo.c','sw/efinix_gpu/src/bullet_demo.c')
+ Run-Test 'test_bullet_gameplay' @('sw/efinix_gpu/tests/test_bullet_gameplay.c','sw/efinix_gpu/src/bullet_demo.c') | Tee-Object "$out/final-gameplay-boundaries.log"
  $mapped=@('-DGPU_TEST_BACKEND','-Isw/efinix_gpu/tests/host_compat',
   '-include','sw/efinix_gpu/tests/host_compat/host_addresses.h')
  $render=@('sw/efinix_gpu/src/perf_demo.c','sw/efinix_gpu/src/hud.c',
@@ -46,6 +47,10 @@ try {
  foreach($tick in @('000','090','180')) {
   & $Python tools/bullet_preview.py "$out/frame512_$tick.rgb565" "$out/preview512_$tick.png"
   Check "encode 512 preview $tick"
+ }
+ foreach($scenario in @('shield','game_over')) {
+  & $Python tools/bullet_preview.py "$out/$scenario.rgb565" "$out/$scenario.png"
+  Check "encode scenario $scenario"
  }
  Write-Output 'PASS bullet demo: host state/assets/pixels, legacy perf, unchanged RTL pixel replay'
 } finally {

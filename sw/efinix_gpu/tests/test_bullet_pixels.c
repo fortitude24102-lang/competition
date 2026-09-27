@@ -118,7 +118,7 @@ int main(void) {
   memset(oracle,0,sizeof oracle);
   reference(scene.commands,scene.count,NULL);
   assert(!memcmp(oracle,(void *)(uintptr_t)GPU_FRAMEBUFFER_A,GPU_FRAME_BYTES));
-  assert(scene.scene_pixels<=GPU_FRAME_WIDTH*GPU_FRAME_HEIGHT+tiers[t]*64u+1456u);
+  assert(scene.scene_pixels<=GPU_FRAME_WIDTH*GPU_FRAME_HEIGHT+tiers[t]*64u+1456u+(BULLET_MAX_TRAILS+1u)*144u);
  }
  /* Validate clipped visibility against real atlas bytes, not the analytic
   * mask helper used by the renderer. Includes left/right/HUD/bottom corners. */
@@ -156,6 +156,9 @@ int main(void) {
  assert(strstr(lines[3],"UFL 17 ERR 3"));
  m.underflows=0; m.error_code=0; /* Preview is not a fabricated board failure. */
  m.sprites=(uint16_t)scene.visible;
+ m.gameplay=1; m.hp=state.hp; m.score=state.score; m.grazes=state.grazes;
+ m.invulnerable=state.invulnerable!=0; m.game_over=state.hp==0;
+ m.alpha_commands=(uint16_t)scene.alpha_commands;
  assert(!hud_build_comparison(GPU_FRAMEBUFFER_A,&m,&hud));
  assert(!perf_render_cpu(scene.commands,scene.count));
  assert(!perf_render_cpu(hud.commands,hud.count));
@@ -175,10 +178,15 @@ int main(void) {
  assert(fwrite(oracle,1,GPU_FRAME_BYTES,f)==GPU_FRAME_BYTES); assert(!fclose(f));
  printf("PASS bullet pixels: tiers=32/64/128/256/512; representative visible=%u commands=%u pixels=%u CRC=%08x\n",
   scene.visible,scene.count,total,golden_crc32(oracle,sizeof oracle));
+ printf("PASS bullet gameplay: tick=%u hp=%u score=%u grazes=%u alpha_commands=%u alpha_pixels=%u\n",
+  state.tick,state.hp,state.score,state.grazes,scene.alpha_commands,scene.alpha_pixels);
  for(unsigned tick=0;tick<=180;tick+=90) {
   assert(!bullet_prepare_frame(&state,512,tick,7));
   assert(!bullet_build_frame(&state,GPU_FRAMEBUFFER_A,0,1,BULLET_MAX_COMMANDS,&scene));
   m.sprites=(uint16_t)scene.visible;
+  m.hp=state.hp; m.score=state.score; m.grazes=state.grazes;
+  m.invulnerable=state.invulnerable!=0; m.game_over=state.hp==0;
+  m.alpha_commands=(uint16_t)scene.alpha_commands;
   assert(!hud_update_cache(&m,&cache,&hud));
   assert(!hud_cached_command(GPU_FRAMEBUFFER_A,&cache,&cached));
   assert(!perf_render_cpu(scene.commands,scene.count));
@@ -191,6 +199,30 @@ int main(void) {
   f=fopen(path,"wb"); assert(f);
   assert(fwrite(oracle,1,GPU_FRAME_BYTES,f)==GPU_FRAME_BYTES); assert(!fclose(f));
   printf("PASS preview512: tick=%u visible=%u commands=%u CRC=%08x\n",tick,scene.visible,scene.count,golden_crc32(oracle,sizeof oracle));
+  printf("PASS effects512: tick=%u alpha_commands=%u alpha_pixels=%u hp=%u score=%u grazes=%u\n",
+   tick,scene.alpha_commands,scene.alpha_pixels,state.hp,state.score,state.grazes);
+ }
+ /* Controlled collision fixtures, not claimed natural gameplay screenshots. */
+ for(unsigned scenario=0;scenario<2;scenario++) {
+  assert(!bullet_reset(&state,128,7));
+  state.hp=scenario?1:3;
+  state.objects[0].x=479*256; state.objects[0].y=476*256;
+  state.objects[0].vx=state.objects[0].vy=0;
+  assert(!bullet_step(&state) && state.hp==(scenario?0:2));
+  assert(!bullet_build_frame(&state,GPU_FRAMEBUFFER_A,0,1,BULLET_MAX_COMMANDS,&scene));
+  m.hp=state.hp; m.score=state.score; m.grazes=state.grazes;
+  m.invulnerable=state.invulnerable!=0; m.game_over=state.hp==0;
+  m.alpha_commands=(uint16_t)scene.alpha_commands; m.sprites=(uint16_t)scene.visible;
+  assert(!hud_update_cache(&m,&cache,&hud));
+  assert(!hud_cached_command(GPU_FRAMEBUFFER_A,&cache,&cached));
+  assert(!perf_render_cpu(scene.commands,scene.count) && !perf_render_cpu(&cached,1));
+  memset(oracle,0,sizeof oracle);
+  reference(scene.commands,scene.count,NULL); reference(&cached,1,NULL);
+  assert(!memcmp(oracle,(void *)(uintptr_t)GPU_FRAMEBUFFER_A,GPU_FRAME_BYTES));
+  const char *path=scenario?"generated/verification/bullet-demo/game_over.rgb565":"generated/verification/bullet-demo/shield.rgb565";
+  f=fopen(path,"wb"); assert(f);
+  assert(fwrite(oracle,1,GPU_FRAME_BYTES,f)==GPU_FRAME_BYTES); assert(!fclose(f));
+  printf("PASS scenario: %s hp=%u protection=%u CRC=%08x\n",scenario?"game_over":"shield",state.hp,state.invulnerable,golden_crc32(oracle,sizeof oracle));
  }
  assert(!munmap(memory,bytes));
  return 0;

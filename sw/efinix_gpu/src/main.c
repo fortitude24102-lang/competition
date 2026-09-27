@@ -57,7 +57,8 @@ int main(void) {
  hud_comparison metrics={.network_ready=(uint8_t)network};
 #if BULLET_DEMO_DEFAULT
  metrics.bullet_demo=1;
- bsp_printf("SCENE BULLET: original 2D art, deterministic replay, no player input\r\n");
+ metrics.gameplay=1;
+ bsp_printf("SCENE BULLET: AUTO survival, HP/graze/shield/restart, deterministic replay; no physical input\r\n");
 #endif
  unsigned tier=0,mode=0,frame=0,old_keys=0,gpu_frames=0;
  uint64_t previous_underflows=0;
@@ -102,6 +103,9 @@ int main(void) {
 #if BULLET_DEMO_DEFAULT
   metrics.sprites=(uint16_t)scene.visible;
   metrics.error_code=gpu.hardware_error;
+  metrics.hp=bullets.hp; metrics.score=bullets.score; metrics.grazes=bullets.grazes;
+  metrics.invulnerable=bullets.invulnerable!=0; metrics.game_over=bullets.hp==0;
+  metrics.alpha_commands=(uint16_t)scene.alpha_commands;
 #endif
 #if BULLET_DEMO_DEFAULT
   e=hud_update_cache(&metrics,&hud_cache,&overlay); if(e) break;

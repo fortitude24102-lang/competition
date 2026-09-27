@@ -4,10 +4,12 @@
 
 Software-only 960x540 RGB565 bullet showcase using the existing board-tested
 Sapphire/GPU/DDR/HDMI design. Fixed-point ring, downward fan and spiral emitters,
-six 8x8 keyed bullet shapes, a fixed 16x16 player marker, three small Alpha tiles and
+six 8x8 keyed bullet shapes, a 16x16 auto-pilot player, bounded Alpha glows and
 three downward-facing 16x16 aircraft emitters, over an
-original star/circuit arena background and a small ship marker. No character input, collision, score or complete game
-yet. UART/network keyboard input remains a future independent task.
+original star/circuit arena background. R5 adds automatic movement, HP,
+mask-based collision, graze scoring, protection and failure/restart mechanics.
+This is an unattended survival demonstration, not yet a complete playable game.
+UART/network keyboard input remains a future independent task.
 
 100KBBH is a reference, not an engine port. This implementation and procedural
 art are independently authored; no Windows/OpenGL dependency or upstream code
@@ -71,7 +73,8 @@ baseline purpose; use the new native scripts on this machine without WSL.
   advances. The sequence resets after 600 logical frames. It never depends on
   measured wall-clock frame duration. No quadratic per-frame replay rebuilding.
 - Both use the same commands/assets and common CPU-rendered HUD. FPS includes
-  HUD and PRESENT; RENDER MS is scene rendering only. Untested scores show --.
+  HUD and PRESENT; RENDER MS is scene rendering only. Unmeasured FPS/render
+  fields show --; HP/score/graze fields are computed game state, not FPS.
 - UFL is cumulative hardware underflows; ERR is the current GPU hardware error.
 - BULLET_GPU_300 collects GPU samples across alternating windows. Its
   windowed_60fps flag is NOT proof of 300 uninterrupted 60-FPS frames. Formal
@@ -100,8 +103,8 @@ Windows host tests relocate only their simulated pointers, because Windows
 reserves the board's low DDR address range for its heap. Actual firmware still
 uses the original DDR addresses. These native MinGW runs are not sanitizer runs.
 
-Historical R1/R2/R3 evidence is preserved. Current distinct-friendly/enemy
-aircraft (R4) evidence and previews are in bullet_demo_r4_acceptance.md.
+Historical R1..R4 evidence is preserved. Current bounded Alpha/auto-pilot
+survival (R5) mechanics, effects and evidence are in bullet_demo_r5_acceptance.md.
 The player is a pointed narrow fighter; enemies have broad wings and two
 side engines, not just the same sprite rotated and recolored.
 RTL simulation verifies pixel math, ColorKey write suppression and elastic

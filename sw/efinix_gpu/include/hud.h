@@ -17,6 +17,9 @@ typedef struct {
  uint8_t cpu_valid,gpu_valid,gpu_active,network_ready;
  uint8_t bullet_demo,error_code;
  uint32_t underflows;
+ uint32_t score,grazes;
+ uint16_t alpha_commands;
+ uint8_t gameplay,hp,invulnerable,game_over;
 } hud_comparison;
 #define HUD_COMPARISON_LINES 4u
 #define HUD_COMPARISON_COLUMNS 64u

@@ -21,7 +21,7 @@ int main(void) {
  assert(bullet_prepare_frame(&replay,512,37,7)==0);
  assert(!memcmp(&state,&replay,sizeof state));
  assert(bullet_build_frame(&state,GPU_FRAMEBUFFER_A,0,1,BULLET_MAX_COMMANDS,&scene)==0);
- assert(scene.visible>0 && scene.visible<=512 && scene.count<=520);
+ assert(scene.visible>0 && scene.visible<=512 && scene.count<=BULLET_MAX_COMMANDS);
  assert(scene.commands[0].op==GPU_OP_COPY && scene.commands[0].width_pixels==960);
  unsigned planes=0,shapes=0;
  for(unsigned i=0;i<state.count;i++) shapes|=1u<<state.objects[i].shape;

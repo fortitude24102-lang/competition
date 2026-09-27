@@ -95,8 +95,17 @@ int hud_comparison_text(const hud_comparison *m,char lines[HUD_COMPARISON_LINES]
  }
  char *p=text(lines[2],m->gpu_active?"MODE GPU  ":"MODE CPU  ");
  p=text(p,m->bullet_demo?"BULLETS ":"N ");
- p=number(p,m->sprites); p=text(p,"  NET "); text(p,m->network_ready?"READY":"FAIL FALLBACK");
- if(m->bullet_demo) {
+ p=number(p,m->sprites);
+ if(m->bullet_demo && m->gameplay) { p=text(p," ALPHA "); p=number(p,m->alpha_commands); }
+ p=text(p,"  NET "); text(p,m->network_ready?"READY":"FAIL FALLBACK");
+ if(m->bullet_demo && m->gameplay) {
+  p=text(lines[3],"HP "); p=number(p,m->hp);
+  p=text(p," SCORE "); p=number(p,m->score>999999u?999999u:m->score);
+  p=text(p," GRAZE "); p=number(p,m->grazes>9999u?9999u:m->grazes);
+  p=text(p," UFL "); p=number(p,m->underflows);
+  p=text(p," ERR "); p=number(p,m->error_code);
+  text(p,m->game_over?" OVER":m->invulnerable?" SHIELD":" AUTO");
+ } else if(m->bullet_demo) {
   p=text(lines[3],"UFL "); p=number(p,m->underflows);
   p=text(p," ERR "); p=number(p,m->error_code);
   text(p,"  KEY1 LESS KEY2 MORE");

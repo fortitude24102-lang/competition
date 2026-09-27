@@ -1,0 +1,90 @@
+{
+  "scope": "offline host and pixel-pipe RTL only, not board performance",
+  "hardware_base": "a82f3dd",
+  "frame_crc32": "fce196ed",
+  "rtl_pixel_operations": 599464,
+  "representative_visible_bullets": 126,
+  "representative_scene_commands": 151,
+  "rtl_operations": {
+    "COPY": 587520,
+    "KEY": 9064,
+    "ALPHA": 2880,
+    "FILL": 0,
+    "stalls": 70526
+  },
+  "previews_512": [
+    {
+      "tick": 0,
+      "visible": 511,
+      "commands": 584,
+      "crc32": "1b5b3238"
+    },
+    {
+      "tick": 90,
+      "visible": 509,
+      "commands": 582,
+      "crc32": "17a874a0"
+    },
+    {
+      "tick": 180,
+      "visible": 510,
+      "commands": 583,
+      "crc32": "10d3603d"
+    }
+  ],
+  "gameplay": {
+    "tick": 90,
+    "hp": 3,
+    "score": 3,
+    "grazes": 0,
+    "alpha_commands": 20,
+    "alpha_pixels": 2880
+  },
+  "effects_512": [
+    {
+      "tick": 0,
+      "alpha_commands": 68,
+      "alpha_pixels": 9792,
+      "hp": 3,
+      "score": 0,
+      "grazes": 0
+    },
+    {
+      "tick": 90,
+      "alpha_commands": 68,
+      "alpha_pixels": 9648,
+      "hp": 2,
+      "score": 43,
+      "grazes": 4
+    },
+    {
+      "tick": 180,
+      "alpha_commands": 68,
+      "alpha_pixels": 9732,
+      "hp": 2,
+      "score": 86,
+      "grazes": 8
+    }
+  ],
+  "native_tests_are_sanitized": false,
+  "sha256": {
+    "bullet_pixels.vcd.gz": "299f2ce43d33e6d9950fbea4e69482e7af14fceaffccab0470b5534b38b745ff",
+    "final-firmware-bullet.log": "e2b4f27b7e31f83d75d6d9200e29b847cc946de3b0b642de06a69e8b95b0fdb0",
+    "final-firmware-legacy.log": "9dbcad336e8e28cedc6d230e8b77a31ae7435984577820cf55e46e0838751005",
+    "final-gameplay-boundaries.log": "252e0639c13554cf35a5d61036c570f15b05e5af07af8ff446bcfcc1eb27f439",
+    "final-regression.log": "4fe4e22fe76ea17b8096e219e3a75c4414a483299a74f8de639f2248bdcacb38",
+    "final-render.log": "ceb55f8805179c9b533d2945cf4d81e703dba384853e04253ef3c61229f401a2",
+    "game_over.png": "47c47ae5ee60d91baef4b2362531d64ed0df32da8f6e273d3f5b7d0e2e514285",
+    "preview.png": "c95f3d9dd5d0efb3c7640b7f2e0e5707f876da47b8ce23194df86bda5e72cf45",
+    "preview512_000.png": "7fe7d4bfddd15680de1115460788b8b9e22d0019055e95dd6abb6df79cc05468",
+    "preview512_090.png": "8e75e788a6569b58b052db5bda08e59fd64a8442766a728eae94235926aadfce",
+    "preview512_180.png": "67aef0622cf1a0f96afe3cc39958ada29d481dea4acc12d86da678ac86773fb1",
+    "shield.png": "7e656921b91d8302585606efc1d5e270a3946872c47793d38e1872a4ceaf390f",
+    "generated\\verification\\bullet-demo\\firmware-bullet\\gpu_demo.elf": "f31901100d9b865b5bc97adc2ccfc0588ae996ac464381f68284d2ae0a3759db",
+    "generated\\verification\\bullet-demo\\firmware-bullet\\gpu_demo.bin": "eb3f1009c52fac3658d50d99f0ad7348d69532f6d39169b0555461c0678bcffa",
+    "generated\\verification\\bullet-demo\\firmware-bullet\\gpu_demo.hex": "a05ac893ea56f12d976f35c17f2493e426983ee816eb79197fca01bb8fec1a28",
+    "generated\\verification\\bullet-demo\\firmware-legacy\\gpu_demo.elf": "d611681463a8182a7707c9debc00c41b8f9c6b47bac3962ff7d4e707d73b093e",
+    "generated\\verification\\bullet-demo\\firmware-legacy\\gpu_demo.bin": "9d3cefae3d3e84b66f14f862e5ee6c066abc5e1ce96a2a414484eea5621da19e",
+    "generated\\verification\\bullet-demo\\firmware-legacy\\gpu_demo.hex": "665b98312da973fe510f0f3438f928602c4ff2d94cf02c7aa096ab79cf7209b1"
+  }
+}

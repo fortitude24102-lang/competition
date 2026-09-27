@@ -14,6 +14,12 @@ class ReceiptTest(unittest.TestCase):
         self.assertEqual(metrics['frame_crc32'], '4f429e0b')
         self.assertEqual(metrics['rtl_pixel_operations'], 596296)
         self.assertEqual(metrics['previews_512'][1]['visible'], 509)
+        game = text + 'PASS bullet gameplay: tick=90 hp=2 score=43 grazes=4 alpha_commands=3 alpha_pixels=432\n'
+        result = parse_render(game)
+        self.assertEqual(result['gameplay']['hp'], 2)
+        self.assertEqual(result['gameplay']['alpha_pixels'], 432)
+        with self.assertRaises(ValueError):
+            parse_render(game.replace('alpha_pixels=432','alpha_pixels=433'))
         for invalid in ('', text.replace('PASS bullet RTL: 596296', 'PASS bullet RTL: 596297'),
                         text.replace('PASS preview512: tick=180', 'FAIL preview512: tick=180')):
             with self.assertRaises(ValueError):

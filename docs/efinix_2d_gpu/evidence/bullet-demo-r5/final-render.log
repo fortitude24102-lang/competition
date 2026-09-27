@@ -1,0 +1,30 @@
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.412s
+
+OK
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK
+PASS bullet state: deterministic motion, replay, clipping, capacity, recycling
+PASS gameplay: hit/protection/graze/death/restart/autopilot/effect budget/replay
+PASS HUD cache: exact pixels, text invalidation, A/B copy, DDR canary
+PASS bullet pixels: tiers=32/64/128/256/512; representative visible=126 commands=151 pixels=599464 CRC=fce196ed
+PASS bullet gameplay: tick=90 hp=3 score=3 grazes=0 alpha_commands=20 alpha_pixels=2880
+PASS preview512: tick=0 visible=511 commands=584 CRC=1b5b3238
+PASS effects512: tick=0 alpha_commands=68 alpha_pixels=9792 hp=3 score=0 grazes=0
+PASS preview512: tick=90 visible=509 commands=582 CRC=17a874a0
+PASS effects512: tick=90 alpha_commands=68 alpha_pixels=9648 hp=2 score=43 grazes=4
+PASS preview512: tick=180 visible=510 commands=583 CRC=10d3603d
+PASS effects512: tick=180 alpha_commands=68 alpha_pixels=9732 hp=2 score=86 grazes=8
+PASS scenario: shield hp=2 protection=60 CRC=4ef74b6e
+PASS scenario: game_over hp=0 protection=0 CRC=81b42e44
+local scene CRC=8e341090
+HUD maximum test uses 686/1024 commands
+PASS: V2 scene, CPU pixels/CRC, GPU submission, timing and HUD (host only)
+VCD info: dumpfile generated/verification/bullet-demo/bullet_pixels.vcd opened for output.
+PASS bullet RTL: 599464 pixels COPY=587520 KEY=9064 ALPHA=2880 FILL=0 stalls=70526
+tb/verilog/tb_bullet_pixels.sv:65: $finish called at 12694560000 (1ps)
+PASS bullet demo: host state/assets/pixels, legacy perf, unchanged RTL pixel replay
