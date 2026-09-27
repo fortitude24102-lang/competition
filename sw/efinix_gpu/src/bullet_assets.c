@@ -11,6 +11,17 @@
 #define NETWORK_PEER_IP 0xc0a80003u
 #endif
 
+static void aircraft(volatile uint16_t *atlas,uint16_t color,int downward) {
+ for(int y=0;y<16;y++) for(int x=0;x<16;x++) {
+  int yy=downward?15-y:y;
+  int dx=2*x-15; if(dx<0) dx=-dx;
+  int body=dx<=3 && yy>=2 && yy<=12;
+  int wing=yy>=5 && yy<=12 && dx<=(yy-4)*2;
+  int engine=yy>=13 && yy<=15 && dx<=3;
+  atlas[(unsigned)y*16u+(unsigned)x]=body?0xffff:wing?(yy>=11?0x0430:color):engine?0xfc80:BULLET_COLOR_KEY;
+ }
+}
+
 void bullet_init_local_assets(void) {
  volatile uint16_t *bg=(volatile uint16_t *)(uintptr_t)BULLET_LOCAL_BACKGROUND;
  volatile uint16_t *atlas=(volatile uint16_t *)(uintptr_t)BULLET_LOCAL_ATLAS;
@@ -30,22 +41,18 @@ void bullet_init_local_assets(void) {
   }
   bg[y*960+x]=color;
  }
- static const uint16_t colors[3]={0x07ff,0xfc80,0xb81f};
- for(unsigned n=0;n<3;n++) for(int y=0;y<8;y++) for(int x=0;x<8;x++) {
+ static const uint16_t colors[BULLET_SHAPE_COUNT]={0x07ff,0xfc80,0xb81f,0x07e0,0xffe0,0xf800};
+ for(unsigned n=0;n<BULLET_SHAPE_COUNT;n++) for(int y=0;y<8;y++) for(int x=0;x<8;x++) {
   int dx=2*x-7,dy=2*y-7,r=dx*dx+dy*dy;
-  atlas[n*64u+(unsigned)y*8u+(unsigned)x]=r>49?BULLET_COLOR_KEY:r<10?0xffff:r>=34?0x4208:colors[n];
+  atlas[n*64u+(unsigned)y*8u+(unsigned)x]=!bullet_shape_opaque(n,(unsigned)x,(unsigned)y)?BULLET_COLOR_KEY:r<10?0xffff:r>=34?0x4208:colors[n];
  }
- for(int y=0;y<16;y++) for(int x=0;x<16;x++) {
-  int dx=2*x-15; if(dx<0) dx=-dx;
-  int body=dx<=3 && y>=2 && y<=12;
-  int wing=y>=5 && y<=12 && dx<=(y-4)*2;
-  int engine=y>=13 && y<=15 && dx<=3;
-  atlas[192u+(unsigned)y*16u+(unsigned)x]=body?0xffff:wing?(y>=11?0x0430:0x07ff):engine?0xfc80:BULLET_COLOR_KEY;
- }
+ aircraft(atlas+BULLET_PLAYER_OFFSET/2u,0x07ff,0);
  for(int y=0;y<12;y++) for(int x=0;x<12;x++) {
   int dx=2*x-11,dy=2*y-11,d=(dx<0?-dx:dx)+(dy<0?-dy:dy);
-  atlas[448u+(unsigned)y*12u+(unsigned)x]=(uint16_t)((22-d)*2<<5);
+  atlas[BULLET_GLOW_OFFSET/2u+(unsigned)y*12u+(unsigned)x]=(uint16_t)((22-d)*2<<5);
  }
+ static const uint16_t enemies[3]={0xfc80,0xb81f,0x07e0};
+ for(unsigned n=0;n<3;n++) aircraft(atlas+BULLET_EMITTER_OFFSET/2u+n*256u,enemies[n],1);
 }
 
 int bullet_load_network_assets(uintptr_t base,uint32_t session) {

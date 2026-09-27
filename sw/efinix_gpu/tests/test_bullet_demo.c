@@ -23,6 +23,16 @@ int main(void) {
  assert(bullet_build_frame(&state,GPU_FRAMEBUFFER_A,0,1,BULLET_MAX_COMMANDS,&scene)==0);
  assert(scene.visible>0 && scene.visible<=512 && scene.count<=520);
  assert(scene.commands[0].op==GPU_OP_COPY && scene.commands[0].width_pixels==960);
+ unsigned planes=0,shapes=0;
+ for(unsigned i=0;i<state.count;i++) shapes|=1u<<state.objects[i].shape;
+ assert(shapes==63);
+ for(unsigned i=0;i<scene.count;i++) {
+  const gpu_command *c=&scene.commands[i];
+  if(c->src_addr>=BULLET_LOCAL_ATLAS+BULLET_EMITTER_OFFSET && c->op==GPU_OP_COLOR_KEY) {
+   assert(c->width_pixels==16 && c->height_pixels==16); ++planes;
+  }
+ }
+ assert(planes==3);
  for(unsigned i=0;i<scene.count;i++) {
   const gpu_command *c=&scene.commands[i];
   unsigned off=c->dst_addr-GPU_FRAMEBUFFER_A;
@@ -47,6 +57,16 @@ int main(void) {
  assert(bullet_build_frame(&state,GPU_FRAMEBUFFER_A,0,0,520,&scene)==0 && scene.visible==0);
  state.objects[0].x=-8*256;
  assert(bullet_build_frame(&state,GPU_FRAMEBUFFER_A,0,0,520,&scene)==0 && scene.visible==0);
+ /* Literal single-column coverage distinguishes needle from circle clipping. */
+ state.objects[0].x=959*256; state.objects[0].y=100*256;
+ state.objects[0].shape=2;
+ assert(!bullet_build_frame(&state,GPU_FRAMEBUFFER_A,0,0,520,&scene) && scene.visible==0);
+ state.objects[0].shape=1;
+ assert(!bullet_build_frame(&state,GPU_FRAMEBUFFER_A,0,0,520,&scene) && scene.visible==1);
+ state.objects[0].shape=5;
+ assert(!bullet_build_frame(&state,GPU_FRAMEBUFFER_A,0,0,520,&scene) && scene.visible==0);
+ state.objects[0].shape=6;
+ assert(bullet_build_frame(&state,GPU_FRAMEBUFFER_A,0,0,520,&scene)==GPU_DRIVER_ARGUMENT && scene.count==0);
  /* All slots are recycled, not dynamically allocated, during a long replay. */
  assert(bullet_reset(&state,512,7)==0);
  for(unsigned f=0;f<10000;f++) assert(bullet_step(&state)==0);

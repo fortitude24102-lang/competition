@@ -5,6 +5,27 @@ import struct
 import zlib
 
 
+def opaque(shape, x, y):
+    dx, dy = abs(2*x-7), abs(2*y-7)
+    r = dx*dx+dy*dy
+    return (r <= 49, dx+dy <= 8, dx <= 1 or (dx <= 3 and dy <= 3),
+            dx <= 1 or dy <= 1, dx <= 1 or dy <= 1 or dx == dy,
+            18 <= r <= 49)[shape]
+
+
+def aircraft(atlas, color, downward=False):
+    for y in range(16):
+        for x in range(16):
+            yy = 15-y if downward else y
+            dx = abs(2*x-15)
+            body = dx <= 3 and 2 <= yy <= 12
+            wing = 5 <= yy <= 12 and dx <= (yy-4)*2
+            engine = 13 <= yy <= 15 and dx <= 3
+            pixel = (0xffff if body else 0x0430 if wing and yy >= 11 else
+                     color if wing else 0xfc80 if engine else 0xf81f)
+            atlas += struct.pack('<H', pixel)
+
+
 def build(out):
     out = pathlib.Path(out)
     out.mkdir(parents=True, exist_ok=True)
@@ -28,25 +49,19 @@ def build(out):
                     color = 0x21af
             bg += struct.pack("<H", color)
     atlas = bytearray()
-    for color in (0x07ff, 0xfc80, 0xb81f):
+    for shape, color in enumerate((0x07ff, 0xfc80, 0xb81f, 0x07e0, 0xffe0, 0xf800)):
         for y in range(8):
             for x in range(8):
                 r = (2*x-7)**2 + (2*y-7)**2
-                pixel = 0xf81f if r > 49 else 0xffff if r < 10 else 0x4208 if r >= 34 else color
+                pixel = 0xf81f if not opaque(shape,x,y) else 0xffff if r < 10 else 0x4208 if r >= 34 else color
                 atlas += struct.pack("<H", pixel)
-    for y in range(16):
-        for x in range(16):
-            dx = abs(2*x-15)
-            body = dx <= 3 and 2 <= y <= 12
-            wing = 5 <= y <= 12 and dx <= (y-4)*2
-            engine = 13 <= y <= 15 and dx <= 3
-            pixel = (0xffff if body else 0x0430 if wing and y >= 11 else
-                     0x07ff if wing else 0xfc80 if engine else 0xf81f)
-            atlas += struct.pack("<H", pixel)
+    aircraft(atlas,0x07ff)
     for y in range(12):
         for x in range(12):
             d = abs(2*x-11) + abs(2*y-11)
             atlas += struct.pack("<H", (max(0, 22-d)*2) << 5)
+    for color in (0xfc80,0xb81f,0x07e0):
+        aircraft(atlas,color,downward=True)
     (out / "background.rgb565").write_bytes(bg)
     (out / "atlas.rgb565").write_bytes(atlas)
     (out / "manifest.csv").write_text("101,background.rgb565\n102,atlas.rgb565\n", encoding="ascii")

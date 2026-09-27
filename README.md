@@ -14,6 +14,8 @@ A-work 新增了纯软件的 [100KBBH 风格二维弹幕渲染候选](docs/efini
 
 R2 软件完善增加原创星空/电路场地与飞船素材、HUD 栅格缓存，以及经过像素比对的 512 档位多时刻预览，见 [离线验证记录](docs/efinix_2d_gpu/bullet_demo_r2_acceptance.md)。
 
+R3 将三个发射器替换为飞机，并加入圆、菱形、针、十字、星形和空心环六种子弹；仍仅改软件素材，见 [新画面与离线验证](docs/efinix_2d_gpu/bullet_demo_r3_acceptance.md)。
+
 - 负责人：锁定当前同场景 CPU/GPU 基准，定位帧时间和 DDR/命令瓶颈，逐项优化并用同一测试口径复测。性能代码在 `sw/efinix_gpu/src/perf_demo.c`、`main.c`，GPU 在 `chisel/src/main/scala/gpu/`。
 - 组员：优化游戏画面和资源，复用许可明确的现有素材与逻辑；素材在 `sw/efinix_gpu/assets/v2/`，生成器在 `tools/build_v2_assets.py`。改动应保持 CPU/GPU 两种模式读取同一场景，不把 PC 变成渲染节点。每个 `.v` 文件仍只能含一个模块。
 

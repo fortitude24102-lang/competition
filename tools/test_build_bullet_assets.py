@@ -3,6 +3,7 @@ import pathlib
 import tempfile
 import unittest
 import zlib
+import struct
 
 
 class BulletAssetsTest(unittest.TestCase):
@@ -18,11 +19,29 @@ class BulletAssetsTest(unittest.TestCase):
             bg = (out / "background.rgb565").read_bytes()
             atlas = (out / "atlas.rgb565").read_bytes()
             self.assertEqual(len(bg), 1036800)
-            self.assertEqual(len(atlas), 1184)
+            self.assertEqual(len(atlas), 3104)
             self.assertEqual(atlas[:2], b"\x1f\xf8")  # Transparent corner.
             self.assertEqual(atlas[2*(3*8+3):2*(3*8+3)+2], b"\xff\xff")
             # Radius squared 34 is the outermost opaque ring on this 8x8 lattice.
             self.assertEqual(atlas[2*(2*8+1):2*(2*8+1)+2], b"\x08\x42")
+            masks = [
+                ['........', '..####..', '.######.', '.######.', '.######.', '.######.', '..####..', '........'],
+                ['...##...', '..####..', '.######.', '########', '########', '.######.', '..####..', '...##...'],
+                ['...##...', '...##...', '..####..', '..####..', '..####..', '..####..', '...##...', '...##...'],
+                ['...##...', '...##...', '...##...', '########', '########', '...##...', '...##...', '...##...'],
+                ['#..##..#', '.#.##.#.', '..####..', '########', '########', '..####..', '.#.##.#.', '#..##..#'],
+                ['........', '..####..', '.##..##.', '.#....#.', '.#....#.', '.##..##.', '..####..', '........'],
+            ]
+            for shape, rows in enumerate(masks):
+                for y, row in enumerate(rows):
+                    for x, cell in enumerate(row):
+                        pixel = struct.unpack_from('<H', atlas, shape*128+2*(y*8+x))[0]
+                        self.assertEqual(pixel != 0xf81f, cell == '#', (shape,x,y))
+            # Three downward-facing aircraft with opaque noses and clear corners.
+            for plane in range(3):
+                offset = 1568 + plane*512
+                self.assertEqual(struct.unpack_from('<H',atlas,offset)[0], 0xf81f)
+                self.assertNotEqual(struct.unpack_from('<H',atlas,offset+2*(13*16+7))[0], 0xf81f)
             self.assertEqual((out / "manifest.csv").read_text(),
                              "101,background.rgb565\n102,atlas.rgb565\n")
             catalog = (out / "bullet_asset_catalog.h").read_text()

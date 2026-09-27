@@ -118,10 +118,26 @@ int main(void) {
   memset(oracle,0,sizeof oracle);
   reference(scene.commands,scene.count,NULL);
   assert(!memcmp(oracle,(void *)(uintptr_t)GPU_FRAMEBUFFER_A,GPU_FRAME_BYTES));
-  assert(scene.scene_pixels<=GPU_FRAME_WIDTH*GPU_FRAME_HEIGHT+tiers[t]*64u+736u);
+  assert(scene.scene_pixels<=GPU_FRAME_WIDTH*GPU_FRAME_HEIGHT+tiers[t]*64u+1456u);
+ }
+ /* Validate clipped visibility against real atlas bytes, not the analytic
+  * mask helper used by the renderer. Includes left/right/HUD/bottom corners. */
+ static const int positions[][2]={{-7,100},{-4,70},{959,100},{958,539},
+  {0,65},{-7,539},{957,537},{950,500}};
+ for(unsigned shape=0;shape<6;shape++) for(unsigned p=0;p<8;p++) {
+  assert(!bullet_reset(&state,1,7));
+  int x=positions[p][0],y=positions[p][1];
+  state.objects[0].shape=(uint8_t)shape;
+  state.objects[0].x=x*256; state.objects[0].y=y*256;
+  const uint16_t *tile=(const uint16_t *)(uintptr_t)(BULLET_LOCAL_ATLAS+shape*128u);
+  unsigned visible=0;
+  for(int ty=0;ty<8;ty++) for(int tx=0;tx<8;tx++)
+   if(x+tx>=0 && x+tx<960 && y+ty>=72 && y+ty<540 && tile[ty*8+tx]!=BULLET_COLOR_KEY) visible=1;
+  assert(!bullet_build_frame(&state,GPU_FRAMEBUFFER_A,0,1,BULLET_MAX_COMMANDS,&scene));
+  assert(scene.visible==visible);
  }
  /* Representative frame for real RTL: all background, 128 bullets, player,
-  * three Alpha emitter halos, Fill markers and comparison HUD. */
+  * three Alpha emitter halos, keyed aircraft and cached comparison HUD. */
  assert(!bullet_prepare_frame(&state,128,90,7));
  assert(!bullet_build_frame(&state,GPU_FRAMEBUFFER_A,0,1,BULLET_MAX_COMMANDS,&scene));
  gpu_device d={0};

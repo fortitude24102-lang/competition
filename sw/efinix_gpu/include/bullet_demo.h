@@ -7,14 +7,18 @@
 #define BULLET_ATLAS_ADDR 0x02a00000u
 #define BULLET_LOCAL_BACKGROUND 0x02b00000u
 #define BULLET_LOCAL_ATLAS 0x02c00000u
-#define BULLET_ATLAS_BYTES 1184u
+#define BULLET_SHAPE_COUNT 6u
+#define BULLET_PLAYER_OFFSET (BULLET_SHAPE_COUNT*128u)
+#define BULLET_GLOW_OFFSET (BULLET_PLAYER_OFFSET+512u)
+#define BULLET_EMITTER_OFFSET (BULLET_GLOW_OFFSET+288u)
+#define BULLET_ATLAS_BYTES (BULLET_EMITTER_OFFSET+3u*512u)
 #define BULLET_COLOR_KEY 0xf81fu
 #define BULLET_REPLAY_FRAMES 600u
 _Static_assert(BULLET_BACKGROUND_ADDR+GPU_FRAME_BYTES<=BULLET_ATLAS_ADDR,"network asset separation");
 _Static_assert(BULLET_ATLAS_ADDR+BULLET_ATLAS_BYTES<=BULLET_LOCAL_BACKGROUND,"fallback cannot overlap DMA");
 _Static_assert(BULLET_LOCAL_BACKGROUND+GPU_FRAME_BYTES<=BULLET_LOCAL_ATLAS,"local asset separation");
 _Static_assert(BULLET_LOCAL_ATLAS+BULLET_ATLAS_BYTES<=GPU_DDR_END_EXCLUSIVE,"asset DDR bounds");
-typedef struct { int32_t x,y; int16_t vx,vy; uint16_t age; uint8_t kind; } bullet_object;
+typedef struct { int32_t x,y; int16_t vx,vy; uint16_t age; uint8_t kind,shape; } bullet_object;
 typedef struct {
  bullet_object objects[BULLET_MAX_OBJECTS];
  uint32_t seed,tick; unsigned count;
@@ -25,6 +29,8 @@ typedef struct {
  unsigned count,visible; uint32_t scene_pixels;
 } bullet_stream;
 int bullet_reset(bullet_state *state,unsigned count,uint32_t seed);
+/* Analytic atlas mask for clipped visibility; zero for invalid shape/texel. */
+int bullet_shape_opaque(unsigned shape,unsigned x,unsigned y);
 int bullet_step(bullet_state *state);
 int bullet_build_frame(const bullet_state *state,uint32_t dst,int network,int glow,
                       unsigned capacity,bullet_stream *stream);

@@ -57,7 +57,8 @@ module tb_bullet_pixels;
    end else if(fields!=-1) $fatal(1,"malformed vector n=%0d",n);
   end
   $fclose(f);
-  if(copies!=587520 || !keys || !alphas || !fills || !stalls)
+  // This scene now uses keyed aircraft instead of Fill emitter markers.
+  if(copies!=587520 || !keys || !alphas || fills!=0 || !stalls)
    $fatal(1,"incomplete frame coverage");
   $display("PASS bullet RTL: %0d pixels COPY=%0d KEY=%0d ALPHA=%0d FILL=%0d stalls=%0d",
    n,copies,keys,alphas,fills,stalls);

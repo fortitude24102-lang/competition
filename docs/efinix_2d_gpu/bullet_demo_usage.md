@@ -4,7 +4,8 @@
 
 Software-only 960x540 RGB565 bullet showcase using the existing board-tested
 Sapphire/GPU/DDR/HDMI design. Fixed-point ring, downward fan and spiral emitters,
-8x8 keyed bullets, a fixed 16x16 player marker, three small Alpha tiles and a
+six 8x8 keyed bullet shapes, a fixed 16x16 player marker, three small Alpha tiles and
+three downward-facing 16x16 aircraft emitters, over an
 original star/circuit arena background and a small ship marker. No character input, collision, score or complete game
 yet. UART/network keyboard input remains a future independent task.
 
@@ -99,8 +100,8 @@ Windows host tests relocate only their simulated pointers, because Windows
 reserves the board's low DDR address range for its heap. Actual firmware still
 uses the original DDR addresses. These native MinGW runs are not sanitizer runs.
 
-Historical R1 evidence is recorded in bullet_demo_acceptance.md; current R2
-evidence and the 512-object multi-frame previews are in bullet_demo_r2_acceptance.md.
+Historical R1/R2 evidence is preserved. Current aircraft/multi-shape (R3)
+evidence and 512-object multi-frame previews are in bullet_demo_r3_acceptance.md.
 RTL simulation verifies pixel math, ColorKey write suppression and elastic
 backpressure; it does not simulate the complete RISC-V, APB/AXI DMA or physical
 DDR/HDMI. No offline result is represented as a board FPS result.

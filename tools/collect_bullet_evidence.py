@@ -23,7 +23,7 @@ def parse_render(text):
 
 def collect():
     source = pathlib.Path("generated/verification/bullet-demo")
-    target = pathlib.Path("docs/efinix_2d_gpu/evidence/bullet-demo-r2")
+    target = pathlib.Path("docs/efinix_2d_gpu/evidence/bullet-demo-r3")
     metrics = parse_render((source / 'final-render.log').read_text(encoding='utf-8-sig'))
     target.mkdir(parents=True, exist_ok=True)
     for name in ("preview.png", "preview512_000.png", "preview512_090.png", "preview512_180.png", "final-render.log", "final-regression.log",
