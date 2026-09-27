@@ -34,10 +34,10 @@ def parse_render(text):
 
 def collect():
     source = pathlib.Path("generated/verification/bullet-demo")
-    target = pathlib.Path("docs/efinix_2d_gpu/evidence/bullet-demo-r5")
+    target = pathlib.Path("docs/efinix_2d_gpu/evidence/bullet-demo-r6")
     metrics = parse_render((source / 'final-render.log').read_text(encoding='utf-8-sig'))
     if 'gameplay' not in metrics or 'effects_512' not in metrics:
-        raise ValueError('R5 requires successful gameplay/effect evidence')
+        raise ValueError('R6 requires successful gameplay/effect evidence')
     target.mkdir(parents=True, exist_ok=True)
     for name in ("preview.png", "preview512_000.png", "preview512_090.png", "preview512_180.png", "shield.png", "game_over.png", "final-render.log", "final-regression.log",
                  "final-firmware-bullet.log", "final-firmware-legacy.log", "final-gameplay-boundaries.log"):

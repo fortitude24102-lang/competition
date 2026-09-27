@@ -103,8 +103,11 @@ Windows host tests relocate only their simulated pointers, because Windows
 reserves the board's low DDR address range for its heap. Actual firmware still
 uses the original DDR addresses. These native MinGW runs are not sanitizer runs.
 
-Historical R1..R4 evidence is preserved. Current bounded Alpha/auto-pilot
-survival (R5) mechanics, effects and evidence are in bullet_demo_r5_acceptance.md.
+Historical R1..R5 evidence is preserved. Bounded Alpha/auto-pilot
+survival (R5) mechanics and effects are in bullet_demo_r5_acceptance.md.
+Current R6 fixes performance-HUD readability with a 5x7 font at integer 2x
+scale, 4-pixel character/line gutters and unchanged 960x72 cache/playfield.
+See bullet_demo_r6_acceptance.md for refreshed previews, logs and hashes.
 The player is a pointed narrow fighter; enemies have broad wings and two
 side engines, not just the same sprite rotated and recolored.
 RTL simulation verifies pixel math, ColorKey write suppression and elastic

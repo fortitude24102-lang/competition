@@ -20,6 +20,8 @@ R4 进一步区分敌我轮廓：我方为尖头窄机身战机，敌方为宽�
 
 R5 增加有上限的弹幕 Alpha 光晕、护盾，以及自动移动、生命值、受击保护、擦弹计分和失败重开，见 [生存演示与验证](docs/efinix_2d_gpu/bullet_demo_r5_acceptance.md)。仍未接入键盘等真实输入；不是完整可玩游戏，也没有新的板测 FPS 结论。
 
+R6 修正性能 HUD 字母拥挤：使用 5×7 字体、2 倍整数放大和 4 像素字间/行间留白，保留原有 960×72 HUD、缓存与计数口径，见 [字体清晰度修复与仿真](docs/efinix_2d_gpu/bullet_demo_r6_acceptance.md)。
+
 - 负责人：锁定当前同场景 CPU/GPU 基准，定位帧时间和 DDR/命令瓶颈，逐项优化并用同一测试口径复测。性能代码在 `sw/efinix_gpu/src/perf_demo.c`、`main.c`，GPU 在 `chisel/src/main/scala/gpu/`。
 - 组员：优化游戏画面和资源，复用许可明确的现有素材与逻辑；素材在 `sw/efinix_gpu/assets/v2/`，生成器在 `tools/build_v2_assets.py`。改动应保持 CPU/GPU 两种模式读取同一场景，不把 PC 变成渲染节点。每个 `.v` 文件仍只能含一个模块。
 

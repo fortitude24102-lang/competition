@@ -60,12 +60,29 @@ int hud_build_metrics(uint32_t dst,uint32_t stride,uint16_t x,uint16_t y,
  return append_fill(s,dst,stride,(uint16_t)(x+148u),y,3,5,m->qos_adaptive?0x07e0:0xf800);
 }
 
-static const uint8_t letters[26][5]={
- {2,5,7,5,5},{6,5,6,5,6},{3,4,4,4,3},{6,5,5,5,6},{7,4,6,4,7},
- {7,4,6,4,4},{3,4,5,5,3},{5,5,7,5,5},{7,2,2,2,7},{1,1,1,5,2},
- {5,5,6,5,5},{4,4,4,4,7},{5,7,7,5,5},{5,7,7,7,5},{2,5,5,5,2},
- {6,5,6,4,4},{2,5,5,3,1},{6,5,6,5,5},{3,4,2,1,6},{7,2,2,2,2},
- {5,5,5,5,7},{5,5,5,5,2},{5,5,7,7,5},{5,5,2,5,5},{5,5,2,2,2},{7,1,2,4,7}
+/* Comparison HUD only: 5x7 at 2x scale, four blank pixels between cells.
+ * Keep the older compact numeric HUD API and its geometry unchanged. */
+static const uint8_t comparison_letters[26][7]={
+ {14,17,17,31,17,17,17},{30,17,17,30,17,17,30},
+ {14,17,16,16,16,17,14},{30,17,17,17,17,17,30},
+ {31,16,16,30,16,16,31},{31,16,16,30,16,16,16},
+ {14,17,16,23,17,17,15},{17,17,17,31,17,17,17},
+ {14,4,4,4,4,4,14},{7,2,2,2,18,18,12},
+ {17,18,20,24,20,18,17},{16,16,16,16,16,16,31},
+ {17,27,21,21,17,17,17},{17,25,25,21,19,19,17},
+ {14,17,17,17,17,17,14},{30,17,17,30,16,16,16},
+ {14,17,17,17,21,18,13},{30,17,17,30,20,18,17},
+ {15,16,16,14,1,1,30},{31,4,4,4,4,4,4},
+ {17,17,17,17,17,17,14},{17,17,17,17,17,10,4},
+ {17,17,17,21,21,21,10},{17,17,10,4,10,17,17},
+ {17,17,10,4,4,4,4},{31,1,2,4,8,16,31}
+};
+static const uint8_t comparison_digits[10][7]={
+ {14,17,19,21,25,17,14},{4,12,4,4,4,4,14},
+ {14,17,1,2,4,8,31},{30,1,1,14,1,1,30},
+ {2,6,10,18,31,2,2},{31,16,16,30,1,1,30},
+ {14,16,16,30,17,17,14},{31,1,2,4,8,8,8},
+ {14,17,17,14,17,17,14},{14,17,17,15,1,1,14}
 };
 /* Fixed labels plus bounded unsigned fields fit in 64 columns. Avoid pulling
  * the full bare-metal printf formatter into the 124 KiB firmware RAM. */
@@ -120,15 +137,25 @@ int hud_build_comparison(uint32_t dst,const hud_comparison *m,hud_command_stream
  e=append_fill(s,dst,GPU_FRAME_STRIDE,0,0,GPU_FRAME_WIDTH,72,0x0000); if(e) return e;
  for(unsigned line=0;line<HUD_COMPARISON_LINES;line++) for(unsigned n=0;lines[line][n];n++) {
   unsigned char ch=(unsigned char)lines[line][n];
-  for(unsigned row=0;row<5;row++) {
-   unsigned bits=ch>='A'&&ch<='Z'?letters[ch-'A'][row]:
-    ch>='0'&&ch<='9'?digits[ch-'0'][row]:ch=='-'?(row==2?7:0):ch=='.'?(row==4?2:0):0;
-   for(unsigned col=0;col<3;) {
-    if(!(bits&(4u>>col))) { ++col; continue; }
+  uint8_t rows[7];
+  for(unsigned row=0;row<7;row++) rows[row]=
+   ch>='A'&&ch<='Z'?comparison_letters[ch-'A'][row]:
+   ch>='0'&&ch<='9'?comparison_digits[ch-'0'][row]:
+   ch=='-'?(row==3?14:0):ch=='.'?(row==6?4:0):0;
+  for(unsigned row=0;row<7;row++) {
+   for(unsigned col=0;col<5;) {
+    if(!(rows[row]&(16u>>col))) { ++col; continue; }
     unsigned first=col;
-    while(col<3 && (bits&(4u>>col))) ++col;
-    e=append_fill(s,dst,GPU_FRAME_STRIDE,(uint16_t)(8+n*8+first*2),
-     (uint16_t)(5+line*16+row*2),(uint16_t)((col-first)*2),2,line==2?0x07e0:0xffff); if(e) return e;
+    while(col<5 && (rows[row]&(16u>>col))) ++col;
+    unsigned mask=((1u<<(col-first))-1u)<<(5-col),end=row+1;
+    unsigned neighbors=(first?16u>>(first-1):0)|(col<5?16u>>col:0);
+    /* Coalesce identical vertical runs to keep the original 1024-command
+     * scratch buffer, rather than expanding scarce bare-metal RAM. */
+    while(end<7 && (rows[end]&(mask|neighbors))==mask) ++end;
+    for(unsigned r=row;r<end;r++) rows[r]&=(uint8_t)~mask;
+    e=append_fill(s,dst,GPU_FRAME_STRIDE,(uint16_t)(8+n*14+first*2),
+     (uint16_t)(3+line*18+row*2),(uint16_t)((col-first)*2),
+     (uint16_t)((end-row)*2),line==2?0x07e0:0xffff); if(e) return e;
    }
   }
  }
