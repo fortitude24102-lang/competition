@@ -68,3 +68,10 @@ verilator --binary --timing --top-module tb_hdmi_subsystem \
   "$display/hdmi_subsystem.v" "$project_root/tb/verilog/tb_hdmi_subsystem.sv" \
   >"$build_dir/display.log" 2>&1 || { cat "$build_dir/display.log"; exit 1; }
 "$build_dir/display/run"
+
+verilator --binary --timing -Wno-TIMESCALEMOD --top-module tb_gpu_perf_underflow \
+  --Mdir "$build_dir/perf-underflow" -o run \
+  "$project_root/generated/efinix_gpu/GpuPerfCounters.sv" \
+  "$project_root/tb/verilog/tb_gpu_perf_underflow.sv" \
+  >"$build_dir/perf-underflow.log" 2>&1 || { cat "$build_dir/perf-underflow.log"; exit 1; }
+(cd "$project_root" && "$build_dir/perf-underflow/run")

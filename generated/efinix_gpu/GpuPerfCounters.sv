@@ -153,3 +153,4 @@ module GpuPerfCounters(	// src/main/scala/gpu/GpuPerfCounters.scala:7:7
   assign io_renderGrants = renderGrants;	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :34:37
   assign io_scanoutGrants = scanoutGrants;	// src/main/scala/gpu/GpuPerfCounters.scala:7:7, :35:38
 endmodule
+

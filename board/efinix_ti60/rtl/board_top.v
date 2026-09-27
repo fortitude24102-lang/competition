@@ -103,7 +103,36 @@ parameter                       AXI_DATA_WIDTH     = `AXI_DATA_WIDTH
  output [9:0] tmds_data0_o,tmds_data1_o,tmds_data2_o,tmds_clk_o,
  output tmds_data0_TX_OE,tmds_data1_TX_OE,tmds_data2_TX_OE,tmds_clk_TX_OE,
  output tmds_data0_TX_RST,tmds_data1_TX_RST,tmds_data2_TX_RST,tmds_clk_TX_RST,
- output HPD_N
+ output HPD_N,
+ input rxc, ge_0_gclk_pll_LOCKED,
+ input [3:0] rxd_hi_i, rxd_lo_i,
+ input rx_dv_HI, rx_dv_LO,
+ output tx_en_o_HI, tx_en_o_LO, txc_hi_o, txc_lo_o,
+ output [3:0] txd_hi_o, txd_lo_o,
+ output phy_rst_n, ge_rx_pll_RSTN, mdc_o, mdio_o, mdio_oe,
+ input mdio_i
+);
+wire ge_reset, gmii_rx_valid, gmii_tx_valid;
+wire [7:0] gmii_rx_data, gmii_tx_data;
+// PHY reset release uses the free-running system clock, never recovered RXC.
+// A 100 MHz counter holds reset for >10 ms after system PLL lock.
+reg [20:0] phy_reset_count = 0;
+always @(posedge core_clk or negedge user_pll_locked)
+ if (!user_pll_locked) phy_reset_count <= 0;
+ else if (!phy_reset_count[20]) phy_reset_count <= phy_reset_count + 1'b1;
+assign phy_rst_n = phy_reset_count[20];
+assign ge_rx_pll_RSTN = phy_rst_n;
+// PHY strap defaults select autonegotiation; management bus stays released.
+assign mdc_o = 1'b0;
+assign mdio_o = 1'b0;
+assign mdio_oe = 1'b0;
+efinix_ge_phy ethernet_phy (
+ .rxc(rxc), .reset_async(!phy_rst_n || !ge_0_gclk_pll_LOCKED || gpu_stream_reset),
+ .rxd_hi_i(rxd_hi_i), .rxd_lo_i(rxd_lo_i), .rx_dv_HI(rx_dv_HI), .rx_dv_LO(rx_dv_LO),
+ .tx_en_o_HI(tx_en_o_HI), .tx_en_o_LO(tx_en_o_LO), .txc_hi_o(txc_hi_o), .txc_lo_o(txc_lo_o),
+ .txd_hi_o(txd_hi_o), .txd_lo_o(txd_lo_o), .ge_reset(ge_reset),
+ .gmii_rx_valid(gmii_rx_valid), .gmii_rx_data(gmii_rx_data),
+ .gmii_tx_valid(gmii_tx_valid), .gmii_tx_data(gmii_tx_data)
 );
 wire gpu_stream_clk, gpu_stream_reset;
 wire [15:0] gpu_display_pixel;
@@ -114,6 +143,9 @@ wire [11:0] gpu_scanout_level;
 // Consumed by the GPU performance counter through the Sapphire adapter.
 wire gpu_underflow_pulse;
 efinix_sapphire_adapter sapphire (
+ .ge_clk(rxc), .ge_reset(ge_reset),
+ .gmii_rx_valid(gmii_rx_valid), .gmii_rx_data(gmii_rx_data),
+ .gmii_tx_valid(gmii_tx_valid), .gmii_tx_data(gmii_tx_data),
  .axi_clk(axi_clk),
  .core_clk(core_clk),
  .sdram_clk(sdram_clk),

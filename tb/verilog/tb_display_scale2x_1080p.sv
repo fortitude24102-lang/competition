@@ -33,7 +33,7 @@ module tb_display_scale2x_1080p;
         if(h==12'd2199 && v==11'd1124) begin
             if(de_count!=1920*1080 || scaled_count!=1920*1080 || begin_count!=540 || done_count!=540)
                 $fatal(1,"geometry counts de=%0d scaled=%0d begin=%0d done=%0d",de_count,scaled_count,begin_count,done_count);
-            $display("PASS scale: 2200x1125 timing, 960x540 input expanded to full 1920x1080, 270 double-line handshakes");
+            $display("PASS scale: 2200x1125 timing, 960x540 input expanded to full 1920x1080, 540 double-line handshakes");
             $finish;
         end
     end

@@ -135,7 +135,12 @@ parameter                       AXI_DATA_WIDTH     = `AXI_DATA_WIDTH
    input                              gpu_display_ready,
    input [11:0]                       gpu_scanout_level,
    input                              gpu_vblank,
-   input                              gpu_underflow_pulse_gpu
+   input                              gpu_underflow_pulse_gpu,
+   input                              ge_clk, ge_reset,
+   input                              gmii_rx_valid,
+   input [7:0]                        gmii_rx_data,
+   output                             gmii_tx_valid,
+   output [7:0]                       gmii_tx_data
    );
 
 
@@ -434,17 +439,55 @@ ddr3_top #(.AXI_ID_WIDTH(AXI_ID_WIDTH)) u_ddr3_top
 
 
 //***************************************************************************
+wire network_select = gpu_apb_paddr[15:8] == 8'h02;
+wire [31:0] core_prdata, network_prdata;
+wire core_pready, core_pslverror, network_pready, network_pslverror;
+assign gpu_apb_prdata = network_select ? network_prdata : core_prdata;
+assign gpu_apb_pready = network_select ? network_pready : core_pready;
+assign gpu_apb_pslverror = network_select ? network_pslverror : core_pslverror;
+wire asset_meta_valid, asset_meta_ready, asset_payload_valid, asset_payload_ready;
+wire [31:0] asset_session, meta_session, meta_asset_id, meta_offset, meta_sequence, meta_crc32;
+wire [15:0] meta_length, meta_flags;
+wire [7:0] asset_payload_data;
+wire asset_payload_last, asset_active, asset_abort, asset_drop, asset_stream_error;
+efinix_asset_network u_asset_network (
+    .gpu_clk(user_clk), .gpu_reset(gpu_stream_reset), .ge_clk(ge_clk), .ge_reset(ge_reset),
+    .paddr(gpu_apb_paddr), .psel(gpu_apb_psel && network_select),
+    .penable(gpu_apb_penable), .pwrite(gpu_apb_pwrite), .pwdata(gpu_apb_pwdata),
+    .prdata(network_prdata), .pready(network_pready), .pslverror(network_pslverror),
+    .gmii_rx_valid(gmii_rx_valid), .gmii_rx_data(gmii_rx_data),
+    .gmii_tx_valid(gmii_tx_valid), .gmii_tx_data(gmii_tx_data),
+    .asset_session(asset_session), .asset_active(asset_active),
+    .asset_abort(asset_abort), .asset_drop(asset_drop),
+    .meta_valid(asset_meta_valid), .meta_ready(asset_meta_ready),
+    .meta_session(meta_session), .meta_asset_id(meta_asset_id), .meta_offset(meta_offset),
+    .meta_sequence(meta_sequence), .meta_crc32(meta_crc32),
+    .meta_length(meta_length), .meta_flags(meta_flags),
+    .payload_valid(asset_payload_valid), .payload_ready(asset_payload_ready),
+    .payload_data(asset_payload_data), .payload_last(asset_payload_last),
+    .stream_error(asset_stream_error)
+);
 Efinix2dGpuTop u_efinix_2d_gpu (
     .clock                     (user_clk),
     .reset                     (gpu_stream_reset),
     .io_apb_paddr              (gpu_apb_paddr),
-    .io_apb_psel               (gpu_apb_psel),
+    .io_apb_psel               (gpu_apb_psel && !network_select),
     .io_apb_penable            (gpu_apb_penable),
     .io_apb_pwrite             (gpu_apb_pwrite),
     .io_apb_pwdata             (gpu_apb_pwdata),
-    .io_apb_prdata             (gpu_apb_prdata),
-    .io_apb_pready             (gpu_apb_pready),
-    .io_apb_pslverror          (gpu_apb_pslverror),
+    .io_apb_prdata             (core_prdata),
+    .io_apb_pready             (core_pready),
+    .io_apb_pslverror          (core_pslverror),
+    .io_assetMeta_valid(asset_meta_valid), .io_assetMeta_ready(asset_meta_ready),
+    .io_assetMeta_bits_session(meta_session), .io_assetMeta_bits_assetId(meta_asset_id),
+    .io_assetMeta_bits_offset(meta_offset), .io_assetMeta_bits_length(meta_length),
+    .io_assetMeta_bits_flags(meta_flags), .io_assetMeta_bits_sequence(meta_sequence),
+    .io_assetMeta_bits_crc32(meta_crc32),
+    .io_assetPayload_valid(asset_payload_valid), .io_assetPayload_ready(asset_payload_ready),
+    .io_assetPayload_bits_data(asset_payload_data), .io_assetPayload_bits_last(asset_payload_last),
+    .io_assetSession(asset_session), .io_assetActive(asset_active),
+    .io_assetAbort(asset_abort), .io_assetDropPacket(asset_drop),
+    .io_assetStreamError(asset_stream_error),
     .io_axi_aw_ready           (gpu_awready),
     .io_axi_aw_valid           (gpu_awvalid),
     .io_axi_aw_bits_addr       (gpu_awaddr),

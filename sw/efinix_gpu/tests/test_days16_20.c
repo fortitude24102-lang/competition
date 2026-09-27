@@ -127,10 +127,10 @@ int main(void) {
         .error_code = 9, .batch_mode = 1
     };
     hud_command_stream overlay;
-    assert(hud_build_metrics(GPU_FRAMEBUFFER_A, 1280, 8, 8, &hud, &overlay) == 0);
+    assert(hud_build_metrics(GPU_FRAMEBUFFER_A, GPU_FRAME_STRIDE, 8, 8, &hud, &overlay) == 0);
     assert(overlay.count > 0 && overlay.count <= HUD_MAX_COMMANDS);
-    assert(hud_build_metrics(GPU_FRAMEBUFFER_A, 1280, 514, 8, &hud, &overlay) == GPU_DRIVER_ARGUMENT);
-    assert(hud_build_metrics(GPU_FRAMEBUFFER_A, 1280, 8, 476, &hud, &overlay) == GPU_DRIVER_ARGUMENT);
+    assert(hud_build_metrics(GPU_FRAMEBUFFER_A, GPU_FRAME_STRIDE, 810, 8, &hud, &overlay) == GPU_DRIVER_ARGUMENT);
+    assert(hud_build_metrics(GPU_FRAMEBUFFER_A, GPU_FRAME_STRIDE, 8, 536, &hud, &overlay) == GPU_DRIVER_ARGUMENT);
 
     /* Day 20: deterministic 300-frame P5 and stable-60 decision. */
     benchmark_frame_sample samples[BENCHMARK_FRAME_COUNT];

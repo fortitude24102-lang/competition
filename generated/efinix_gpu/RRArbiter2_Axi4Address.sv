@@ -96,3 +96,4 @@ module RRArbiter2_Axi4Address(	// src/main/scala/chisel3/util/Arbiter.scala:127:
   assign io_out_bits_id = {3'h0, io_chosen_choice};	// src/main/scala/chisel3/util/Arbiter.scala:55:16, :100:26, :102:{24,33}, :127:7
   assign io_out_bits_len = io_chosen_choice ? io_in_1_bits_len : io_in_0_bits_len;	// src/main/scala/chisel3/util/Arbiter.scala:55:16, :100:26, :102:{24,33}, :127:7
 endmodule
+

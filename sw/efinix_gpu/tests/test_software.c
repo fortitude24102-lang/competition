@@ -64,9 +64,9 @@ int main(int argc, char **argv) {
     assert(golden_crc32("123456789", 9) == 0xcbf43926u);
     assert(golden_crc32("", 0) == 0);
     static uint8_t frame[GPU_FRAME_BYTES];
-    golden_surface full = {frame, sizeof frame, 640, 480, 1280};
-    assert(golden_fill(&full, 0, 0, 640, 480, 0x07e0) == GPU_ERROR_NONE);
-    assert(golden_fill(&full, 639, 479, 1, 1, 0xf800) == GPU_ERROR_NONE);
+    golden_surface full = {frame, sizeof frame, GPU_FRAME_WIDTH, GPU_FRAME_HEIGHT, GPU_FRAME_STRIDE};
+    assert(golden_fill(&full, 0, 0, GPU_FRAME_WIDTH, GPU_FRAME_HEIGHT, 0x07e0) == GPU_ERROR_NONE);
+    assert(golden_fill(&full, GPU_FRAME_WIDTH-1, GPU_FRAME_HEIGHT-1, 1, 1, 0xf800) == GPU_ERROR_NONE);
     for (size_t i=0; i<sizeof frame-2; i+=2) {
         assert(frame[i]==0xe0 && frame[i+1]==0x07);
     }

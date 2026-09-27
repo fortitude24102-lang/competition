@@ -16,4 +16,6 @@ chisel/src/test/resources/soc/*.elf
 chisel/src/test/resources/soc/*.hex
 .worktrees/
 sw/build/
-tb/verilog/*.vcd
+sw/efinix_gpu/tools/asset_server/asset_server
+sw/efinix_gpu/tools/asset_server/asset_server.exe
+tools/__pycache__/
