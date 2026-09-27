@@ -16,7 +16,9 @@ art are independently authored; no Windows/OpenGL dependency or upstream code
 is embedded. The original project license is MIT; any future actual source/art
 reuse must retain relevant notices and check individual asset permissions.
 
-Hardware and release/v2 remain identical to main a82f3dd. The A-work baseline
+Hardware and release/v2 remain at the main a82f3dd baseline. Main's later
+9f2eaba performance RTL is not imported by the scene-entry-only update.
+The A-work baseline
 merge imports main's already-tested changes; the feature itself modifies no
 RTL, Chisel, pins, clocks, GPU registers/opcodes or bitstream.
 
@@ -61,8 +63,14 @@ candidate as part of offline testing.
 
 Makefile alternative: DEMO=bullet (default), or DEMO=legacy; supply your SOC and
 TOOLCHAIN paths. Rebuild on mode switches; FORCE prevents stale mode binaries.
-The older test-efinix-software.ps1 intentionally builds legacy to preserve its
-baseline purpose; use the new native scripts on this machine without WSL.
+The standard test-efinix-software.ps1 now defaults to this bullet scene;
+use -Demo legacy explicitly for the older scene. -Profile keeps main's phase
+diagnostic but uses the selected scene; it does not run the normal HUD loop.
+Supply -Soc/-RiscvGcc when the BSP/toolchain is elsewhere; -FirmwareOnly avoids
+the older WSL test path. Network IP defaults of this standard script are not
+changed: supply the board/PC addresses explicitly. See scene_entry_handoff.md
+for a complete command and offline entry validation. Nothing publishes or
+flashes automatically.
 
 ## Measurement rules
 
