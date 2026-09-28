@@ -67,8 +67,7 @@ class DenseBlitEngine extends Module {
   io.textureCacheError := textureCache.io.error
   io.textureCacheHitBytes := textureCache.io.hitBytes
 
-  io.command.ready := state === idle && !textureCache.io.busy &&
-    !io.textureCacheLoad.valid
+  io.command.ready := state === idle && !textureCache.io.busy
   private val incomingCommand = io.command.bits
   private val incomingAligned = incomingCommand.srcAddr(1, 0) === 0.U &&
     incomingCommand.dstAddr(1, 0) === 0.U && incomingCommand.srcStride(1, 0) === 0.U &&
