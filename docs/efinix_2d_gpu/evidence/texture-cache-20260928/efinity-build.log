@@ -1,0 +1,9 @@
+Creating D:\efinity_builds\texture_cache_20260928\outflow
+Running: efx_run_map.py efinix_2d_gpu --family Titanium --device Ti60F225 --project_xml D:\efinity_builds\texture_cache_20260928\efinix_2d_gpu.xml --dir D:\ZYNQ\smallproject\.worktrees\pango-riscv-cpu\board\efinix_ti60\vendor\sapphire_ddr3\par\ddr_demo_ti60\ip\soc --output_dir outflow --work_dir work_syn --opt root=board_top --opt veri_options=verilog_mode=verilog_2k,vhdl_mode=vhdl_2008 work-dir=work_syn write_efx_verilog=on I=D:/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/board/efinix_ti60/vendor/sapphire_ddr3/rtl
+   map :	PASS 
+Running: efx_run_pt_unified.py efinix_2d_gpu Titanium Ti60F225 --output_dir outflow --timing_model I3 --project_xml efinix_2d_gpu.xml
+   interface :	PASS 
+Running: efx_run_pnr.py efinix_2d_gpu --prj D:\efinity_builds\texture_cache_20260928\efinix_2d_gpu.xml --family Titanium --device Ti60F225 --timing_model I3 --dir D:\ZYNQ\smallproject\.worktrees\pango-riscv-cpu\board\efinix_ti60\vendor\sapphire_ddr3\par\ddr_demo_ti60\ip\soc --output_dir outflow --work_dir work_pnr --opt sdc_file=D:/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/board/efinix_ti60/efinix_2d_gpu.sdc
+   pnr :	PASS 
+Running: efx_run_pgm.py efinix_2d_gpu --family Titanium --device Ti60F225 --output_dir outflow --work_dir work_pnr --opt mode=active width=1 enable_roms=smart spi_low_power_mode=on io_weak_pullup=on oscillator_clock_divider=DIV8 bitstream_compression=on enable_external_master_clock=off active_capture_clk_edge=negedge jtag_usercode=0xFFFFFFFF release_tri_then_reset=on four_byte_addressing=off
+   pgm :	PASS 

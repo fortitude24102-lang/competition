@@ -1,0 +1,23 @@
+wsl: 检测到 localhost 代理配置，但未镜像到 WSL。NAT 模式下的 WSL 不支持 localhost 代理。
+[info] welcome to sbt 1.12.4 (Ubuntu Java 17.0.20)
+[info] loading project definition from /mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/project
+[info] loading settings for project root from build.sbt...
+[info] set current project to smallproject-chisel (in build file:/mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/)
+[info] compiling 24 Scala sources to /mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/target/scala-2.13/classes ...
+[warn] 1 deprecation (since 7.5.0); re-run with -deprecation for details
+[warn] one warning found
+[info] done compiling
+[info] compiling 44 Scala sources to /mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/target/scala-2.13/test-classes ...
+[info] done compiling
+[info] AssetDmaRegsSpec:
+[info] AssetDmaRegs
+[info] - atomically starts a valid descriptor without changing any V1 register offset
+[info] - holds valid metadata under backpressure, commits once, and drops duplicates once
+[info] - rejects wrong metadata and address overflow without losing the active descriptor
+[info] - keeps a failed AXI packet uncommitted until software aborts and retries
+[info] Run completed in 53 seconds, 934 milliseconds.
+[info] Total number of tests run: 4
+[info] Suites: completed 1, aborted 0
+[info] Tests: succeeded 4, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.
+[success] Total time: 83 s (0:01:23.0), completed Sep 28, 2026, 6:29:02 PM
