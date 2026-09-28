@@ -188,6 +188,43 @@ int gpu_clear_perf(gpu_device *d) {
  return 0;
 }
 
+static int texture_cache_idle(gpu_device *d) {
+ if(!d || !d->ready) return GPU_DRIVER_ARGUMENT;
+ if(d->outstanding) return GPU_DRIVER_BUSY;
+ uint32_t status=rd(d,GPU_REG_STATUS);
+ if(!(status&GPU_STATUS_EMPTY) || (status&GPU_STATUS_BUSY)) return GPU_DRIVER_BUSY;
+ if(rd(d,GPU_REG_TEXTURE_CACHE_STATUS)&GPU_TEXTURE_CACHE_STATUS_BUSY)
+  return GPU_DRIVER_BUSY;
+ return 0;
+}
+
+int gpu_texture_cache_load(gpu_device *d,uint32_t base,uint32_t bytes,uint32_t poll_limit) {
+ if(!d || !d->ready || (base&3u) || bytes<4u || bytes>4096u || (bytes&3u) ||
+    base<GPU_DENSE_ASSETS || (uint64_t)base+bytes>GPU_DDR_END_EXCLUSIVE)
+  return GPU_DRIVER_ARGUMENT;
+ int e=texture_cache_idle(d); if(e) return e;
+ wr(d,GPU_REG_TEXTURE_CACHE_BASE,base);
+ wr(d,GPU_REG_TEXTURE_CACHE_BYTES,bytes);
+ gpu_io_fence();
+ wr(d,GPU_REG_TEXTURE_CACHE_CONTROL,GPU_TEXTURE_CACHE_CONTROL_LOAD);
+ gpu_io_fence();
+ while(poll_limit--) {
+  uint32_t status=rd(d,GPU_REG_TEXTURE_CACHE_STATUS);
+  if(status&GPU_TEXTURE_CACHE_STATUS_ERROR) return GPU_DRIVER_HARDWARE;
+  if(!(status&GPU_TEXTURE_CACHE_STATUS_BUSY))
+   return status&GPU_TEXTURE_CACHE_STATUS_VALID ? 0 : GPU_DRIVER_HARDWARE;
+ }
+ return GPU_DRIVER_TIMEOUT;
+}
+
+int gpu_texture_cache_invalidate(gpu_device *d) {
+ int e=texture_cache_idle(d); if(e) return e;
+ gpu_io_fence();
+ wr(d,GPU_REG_TEXTURE_CACHE_CONTROL,GPU_TEXTURE_CACHE_CONTROL_INVALIDATE);
+ gpu_io_fence();
+ return 0;
+}
+
 static uint64_t read64(gpu_device *d,unsigned low,unsigned high) {
  uint32_t lo=rd(d,low),hi=rd(d,high);
  return ((uint64_t)hi<<32)|lo;
@@ -205,5 +242,6 @@ int gpu_read_perf_snapshot(gpu_device *d,gpu_perf_snapshot *s) {
  s->underflows=read64(d,GPU_REG_PERF_UNDERFLOWS_LO,GPU_REG_PERF_UNDERFLOWS_HI);
  s->render_grants=read64(d,GPU_REG_PERF_RENDER_GRANTS_LO,GPU_REG_PERF_RENDER_GRANTS_HI);
  s->scanout_grants=read64(d,GPU_REG_PERF_SCANOUT_GRANTS_LO,GPU_REG_PERF_SCANOUT_GRANTS_HI);
+ s->cache_bytes=read64(d,GPU_REG_PERF_CACHE_BYTES_LO,GPU_REG_PERF_CACHE_BYTES_HI);
  return 0;
 }

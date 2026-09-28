@@ -36,7 +36,7 @@ static inline uint32_t gpu_pack_qos(uint16_t low, uint16_t high, int adaptive) {
 }
 typedef struct {
  uint64_t cycles, pixels, read_bytes, write_bytes, stalls;
- uint64_t underflows, render_grants, scanout_grants;
+ uint64_t underflows, render_grants, scanout_grants, cache_bytes;
 } gpu_perf_snapshot;
 enum gpu_driver_result { GPU_DRIVER_ID=-1, GPU_DRIVER_VERSION=-2,
  GPU_DRIVER_BUSY=-3, GPU_DRIVER_FULL=-4, GPU_DRIVER_TIMEOUT=-5,
@@ -65,5 +65,7 @@ int gpu_wait_tag(gpu_device *d,uint16_t tag,uint32_t poll_limit);
 int gpu_set_qos(gpu_device *d,uint16_t low,uint16_t high,int adaptive);
 int gpu_clear_perf(gpu_device *d);
 int gpu_read_perf_snapshot(gpu_device *d,gpu_perf_snapshot *snapshot);
+int gpu_texture_cache_load(gpu_device *d,uint32_t base,uint32_t bytes,uint32_t poll_limit);
+int gpu_texture_cache_invalidate(gpu_device *d);
 
 #endif

@@ -27,7 +27,7 @@ try {
         & $RiscvGcc @common -c "sw/efinix_gpu/$source" -o "$out/$name.o"
         if ($LASTEXITCODE -ne 0) { throw "RV32 compilation failed: $source" }
 }
-    foreach ($test in @('driver','copy','benchmark')) {
+    foreach ($test in @('driver','copy','benchmark','texture_cache')) {
         $sources = @("sw/efinix_gpu/tests/test_$test.c", 'sw/efinix_gpu/src/golden_renderer.c', 'sw/efinix_gpu/src/rgb565.c')
         if ($test -ne 'copy') { $sources += 'sw/efinix_gpu/src/gpu.c' }
         if ($test -eq 'benchmark') { $sources += 'sw/efinix_gpu/src/benchmark.c' }
