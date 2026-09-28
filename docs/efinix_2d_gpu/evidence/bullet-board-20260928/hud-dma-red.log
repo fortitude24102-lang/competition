@@ -1,0 +1,8 @@
+BULLET_ASSET,id=101,bytes=1036800,retries=0,result=0
+BULLET_ASSET,id=102,bytes=3104,retries=0,result=0
+SCENE BULLET: AUTO survival, HP/graze/shield/restart, deterministic replay; no physical input
+V2 comparison: CLINT Hz=100000000 network_result=0; KEY1 less KEY2 more
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=297221
+HUD_DMA_FAIL: GPU mode used CPU HUD
+V2 comparison stopped: result=-7 hardware=0
+HUD_DMA_TEST_STOP,result=1

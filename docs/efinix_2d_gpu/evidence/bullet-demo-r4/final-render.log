@@ -1,0 +1,23 @@
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.449s
+
+OK
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+PASS bullet state: deterministic motion, replay, clipping, capacity, recycling
+PASS HUD cache: exact pixels, text invalidation, A/B copy, DDR canary
+PASS bullet pixels: tiers=32/64/128/256/512; representative visible=126 commands=134 pixels=597016 CRC=d6ea03f7
+PASS preview512: tick=0 visible=511 commands=519 CRC=7fbfd041
+PASS preview512: tick=90 visible=509 commands=517 CRC=73bfc687
+PASS preview512: tick=180 visible=510 commands=518 CRC=4ae929f5
+local scene CRC=8e341090
+HUD maximum test uses 686/1024 commands
+PASS: V2 scene, CPU pixels/CRC, GPU submission, timing and HUD (host only)
+VCD info: dumpfile generated/verification/bullet-demo/bullet_pixels.vcd opened for output.
+PASS bullet RTL: 597016 pixels COPY=587520 KEY=9064 ALPHA=432 FILL=0 stalls=70238
+tb/verilog/tb_bullet_pixels.sv:65: $finish called at 12642720000 (1ps)
+PASS bullet demo: host state/assets/pixels, legacy perf, unchanged RTL pixel replay

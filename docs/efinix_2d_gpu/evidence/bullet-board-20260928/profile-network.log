@@ -1,0 +1,19 @@
+BULLET_ASSET,id=101,bytes=1036800,retries=0,result=0
+BULLET_ASSET,id=102,bytes=3104,retries=0,result=0
+V2 profile: scene=BULLET network_result=0, target=32
+PROFILE,BACKGROUND,count=1,us=4224,pixels=518400,rd=1036800,wr=1036800,stalls=74884,render_grants=2566,scan_grants=0,under=286
+PROFILE,KEY,count=36,us=399,pixels=3072,rd=6144,wr=2888,stalls=15117,render_grants=1238,scan_grants=0,under=27
+PROFILE,ALPHA,count=8,us=151,pixels=1152,rd=4656,wr=2304,stalls=4705,render_grants=288,scan_grants=0,under=10
+PROFILE,FULL,count=45,us=4745,pixels=522624,rd=1047600,wr=1041992,stalls=95327,render_grants=4092,scan_grants=0,under=276
+PROFILE,PRESENT,us=6031
+PROFILE,BACKGROUND,count=1,us=8577,pixels=518400,rd=1036800,wr=1036800,stalls=513246,render_grants=2566,scan_grants=675,under=0
+PROFILE,KEY,count=36,us=818,pixels=3072,rd=6144,wr=2888,stalls=55101,render_grants=1242,scan_grants=67,under=0
+PROFILE,ALPHA,count=8,us=334,pixels=1152,rd=4752,wr=2304,stalls=23360,render_grants=288,scan_grants=29,under=0
+PROFILE,FULL,count=45,us=9120,pixels=522624,rd=1047696,wr=1041992,stalls=532579,render_grants=4096,scan_grants=680,under=0
+PROFILE,PRESENT,us=10596
+PROFILE,BACKGROUND,count=1,us=8620,pixels=518400,rd=1036800,wr=1036800,stalls=517333,render_grants=2566,scan_grants=683,under=0
+PROFILE,KEY,count=36,us=813,pixels=3072,rd=6144,wr=2888,stalls=54462,render_grants=1240,scan_grants=67,under=0
+PROFILE,ALPHA,count=8,us=318,pixels=1152,rd=4752,wr=2304,stalls=21645,render_grants=288,scan_grants=25,under=0
+PROFILE,FULL,count=45,us=9095,pixels=522624,rd=1047696,wr=1041992,stalls=531789,render_grants=4094,scan_grants=677,under=0
+PROFILE,PRESENT,us=10509
+V2 profile stopped: result=0 hardware=0

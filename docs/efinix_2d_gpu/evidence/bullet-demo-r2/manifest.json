@@ -1,0 +1,53 @@
+{
+  "scope": "offline host and pixel-pipe RTL only, not board performance",
+  "hardware_base": "a82f3dd",
+  "frame_crc32": "f1b1cefe",
+  "rtl_pixel_operations": 596296,
+  "representative_visible_bullets": 126,
+  "representative_scene_commands": 134,
+  "rtl_operations": {
+    "COPY": 587520,
+    "KEY": 8296,
+    "ALPHA": 432,
+    "FILL": 48,
+    "stalls": 70154
+  },
+  "previews_512": [
+    {
+      "tick": 0,
+      "visible": 511,
+      "commands": 519,
+      "crc32": "3123ffad"
+    },
+    {
+      "tick": 90,
+      "visible": 509,
+      "commands": 517,
+      "crc32": "5a5d2759"
+    },
+    {
+      "tick": 180,
+      "visible": 510,
+      "commands": 518,
+      "crc32": "022e4294"
+    }
+  ],
+  "native_tests_are_sanitized": false,
+  "sha256": {
+    "bullet_pixels.vcd.gz": "4c4791a05b4b4c129205df02d6acaa6f99eab1280a082ca8d9abc11b3915c9b0",
+    "final-firmware-bullet.log": "a2a9fcb5fdd35d39a925edcbc1a6387c37bceb064895b0cf359e51a19be44178",
+    "final-firmware-legacy.log": "a0688987506886e8515a77877dc155a280dd9ea986f0cc1f4e626575e0fd7afc",
+    "final-regression.log": "755aca165180be47efeefcad1755830863a8f9079e7c4d3d3002895a66cc36cf",
+    "final-render.log": "75ca42588ba96fc8def9cecbd350f1195743446c6bd10f4e38334165ce2bb743",
+    "preview.png": "1da59940469f79c3270e1ce62f0ef045b5a02857ed7bf2afaa11658ed80a2e75",
+    "preview512_000.png": "d3bd5b2c19cee6c33db00e99cfbd0e0a327dc2c7a8a9bb10bb602d40f1346796",
+    "preview512_090.png": "8e52d115b548061154b6c35066a2c75501d29d4fadb88d25433fdee94caeffe5",
+    "preview512_180.png": "e59d8e287a420c221568804ea1ca438950d5e6b574fea2324ed0846482aafea8",
+    "generated\\verification\\bullet-demo\\firmware-bullet\\gpu_demo.elf": "67108ef560040e902025c59ddcb07fe8bed7223ad85a0444d3103045ff6cc4f8",
+    "generated\\verification\\bullet-demo\\firmware-bullet\\gpu_demo.bin": "707f772dafb4538214d7ad3a5f10127463f91d420779129360b9d3cb9e441db1",
+    "generated\\verification\\bullet-demo\\firmware-bullet\\gpu_demo.hex": "370ed1a0b308bc5e0fb467f24e09c579b3a1ee3ad5bd0db7573d827e03b766d4",
+    "generated\\verification\\bullet-demo\\firmware-legacy\\gpu_demo.elf": "19fa013796cb0e5ec10357c197ba2f3ad3741195729e36a25e1c83f81f16c888",
+    "generated\\verification\\bullet-demo\\firmware-legacy\\gpu_demo.bin": "1d40de17e20d3efc36234c1ac32d012ed86b335615bcaf3321d051fe192b1c2c",
+    "generated\\verification\\bullet-demo\\firmware-legacy\\gpu_demo.hex": "6bbc85aa8c427df07005f6505ba8b10ada921a3285a30df1ff478f2979db5fa5"
+  }
+}

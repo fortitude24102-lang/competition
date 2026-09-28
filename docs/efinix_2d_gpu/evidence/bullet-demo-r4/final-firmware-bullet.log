@@ -1,0 +1,4 @@
+C:/efinity/riscv/toolchain/bin/../lib/gcc/riscv-none-elf/13.4.0/../../../../riscv-none-elf/bin/ld.exe: warning: generated/verification/bullet-demo/firmware-bullet/gpu_demo.elf has a LOAD segment with RWX permissions
+   text	   data	    bss	    dec	    hex	filename
+  21792	      0	  72608	  94400	  170c0	generated/verification/bullet-demo/firmware-bullet/gpu_demo.elf
+PASS bullet RV32 firmware build only; not board executed; release/ untouched

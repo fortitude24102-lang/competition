@@ -14,6 +14,44 @@
 
 ## 两条工作线
 
+**性能工作边界：** 屏幕继续显示 CPU/GPU 对比；CPU 保持新场景原基础
+配置，不新增优化、不接入 GPU 渲染，也不人为降速。只优化 GPU 路径，
+画面美化由组员负责。本轮共用 HUD 按变化行更新已撤回，仅保留 GPU
+模式 HUD DMA；下文含变化行更新的五档连续测量属于历史试验，非当前
+源码直接验收结果。主频、分辨率、Alpha/Key 功能与同屏工作量不因提高
+GPU FPS 而降低。正式演示仍显示实测 CPU 数字，不用占位数代替。
+
+A-work 新增了纯软件的 [100KBBH 风格二维弹幕渲染候选](docs/efinix_2d_gpu/bullet_demo_usage.md)：独立素材、32～512 对象档位、CPU/GPU 同状态回放，保留旧性能场景。2026-09-28 已用最新 R6 软件配合 main 性能候选上板：优化前实际 64 档 CPU/GPU 为 **2.8/15.0 FPS**。已将 GPU 模式 HUD 接入现有 Copy DMA，CPU 模式保留软件 HUD；正常 GPU 窗口升至约 **40.0～58.1 FPS**，300 样本 P5 30、下溢/错误 0/0，仍未稳定达到 60 FPS。另做连续 GPU 测量：32/64/128/256/512 档平均为 **52.8/47.0/43.0/30.0/28.6 FPS**，各档 300 样本均无下溢或错误，但不等同于交替模式或长期耐久。按变化行更新 HUD 已减少写入量，尚未证明额外帧率收益。旧画面下溢未在本轮复现，不等于根因已修复。数据、固件哈希与原始日志见 [新画面板测与瓶颈定位](docs/efinix_2d_gpu/bullet_board_bottleneck_20260928.md)，开源选型和下一项 Color Key 短突发方向见 [GPU 优化选型](docs/efinix_2d_gpu/gpu_performance_options.md)。未接入人物操控，不代表已完成游戏赛题；硬件设计与 V2 发布包不变。
+
+**上一轮已板测的硬件性能候选（2026-09-28，尚未发布）：** 对齐、偶数宽度
+Color Key 已复用 Copy 的字突发 DMA，以 WSTRB 保留透明像素；错位和
+奇数宽度仍走原路径。61/61 项 GPU 回归、Efinity 构建及三个 DDR
+像素/计数检查通过，100 MHz 不变。512 档同探针 Key 从
+8.71～9.26 ms 降至 7.32～7.99 ms，FULL 从 19.88～20.06 ms 降至
+18.47～18.55 ms；15 个案例工作量完全相同，分段下溢/硬件错误为 0。
+512 档仍超过 16.67 ms，不能宣称稳定 60 FPS。普通 CPU/GPU 演示仍用
+同一固件，CPU 保持基础实现；整帧测量与候选哈希见
+[本轮记录](docs/efinix_2d_gpu/bullet_board_bottleneck_20260928.md#color-key-字突发候选构建与板测)。
+仅 JTAG 临时验证，未写 Flash、未覆盖 `release/v2/`，历史异常保留。
+
+**最新半字相位候选（2026-09-28，尚未发布）：** Key DMA 已覆盖错位
+地址、奇数宽度和独立步长，保留首尾/透明掩码、重叠回退及准确计数。
+GPU 回归 63/63、补充边界测试 3/3、Efinity 构建和板端 DDR 29/29 通过；
+100 MHz 核心余量 1.792 ns。512 档 Key 比上一候选再降 6.5%～9.0%，
+FULL 再降 3.5%～4.5%，但仍为 17.724～17.884 ms；普通整帧仍
+40.0～58.1 FPS、P5=30，未稳定达到 60 FPS。CPU 保持 2.5～2.6 FPS
+基础实现。详见 [半字相位 DMA](docs/efinix_2d_gpu/key_phase_dma_20260928.md)。
+
+R2 软件完善增加原创星空/电路场地与飞船素材、HUD 栅格缓存，以及经过像素比对的 512 档位多时刻预览，见 [离线验证记录](docs/efinix_2d_gpu/bullet_demo_r2_acceptance.md)。
+
+R3 将三个发射器替换为飞机，并加入圆、菱形、针、十字、星形和空心环六种子弹；仍仅改软件素材，见 [新画面与离线验证](docs/efinix_2d_gpu/bullet_demo_r3_acceptance.md)。
+
+R4 进一步区分敌我轮廓：我方为尖头窄机身战机，敌方为宽翼双引擎飞机；尺寸与绘制量不变，见 [敌我飞机素材验证](docs/efinix_2d_gpu/bullet_demo_r4_acceptance.md)。
+
+R5 增加有上限的弹幕 Alpha 光晕、护盾，以及自动移动、生命值、受击保护、擦弹计分和失败重开，见 [生存演示与验证](docs/efinix_2d_gpu/bullet_demo_r5_acceptance.md)。该历史记录仅为离线验证；仍未接入键盘等真实输入，不是完整可玩游戏。
+
+R6 修正性能 HUD 字母拥挤：使用 5×7 字体、2 倍整数放大和 4 像素字间/行间留白，保留原有 960×72 HUD、缓存与计数口径，见 [字体清晰度修复与仿真](docs/efinix_2d_gpu/bullet_demo_r6_acceptance.md)。
+
 - 负责人：锁定当前同场景 CPU/GPU 基准，定位帧时间和 DDR/命令瓶颈，逐项优化并用同一测试口径复测。性能代码在 `sw/efinix_gpu/src/perf_demo.c`、`main.c`，GPU 在 `chisel/src/main/scala/gpu/`。
 - 组员：优化游戏画面和资源，复用许可明确的现有素材与逻辑；素材在 `sw/efinix_gpu/assets/v2/`，生成器在 `tools/build_v2_assets.py`。改动应保持 CPU/GPU 两种模式读取同一场景，不把 PC 变成渲染节点。每个 `.v` 文件仍只能含一个模块。
 
@@ -26,7 +64,7 @@
 | `board/efinix_ti60/` | 板级顶层、管脚/时钟约束、Verilog 网络和显示适配 |
 | `board/efinix_ti60/vendor/` | 原样复用的官方 Sapphire/DDR3、HDMI、GE Demo 及哈希清单 |
 | `chisel/src/main/scala/gpu/` | AetherGX 命令、渲染、Asset DMA、三路 DDR 仲裁 |
-| `generated/efinix_gpu/` | 从 Chisel 生成的冻结 RC0 RTL；哈希见 `release/v2_rc0.sha256` |
+| `generated/efinix_gpu/` | 当前 Chisel 性能候选 RTL；冻结 RC0 的哈希仅对应历史版本 |
 | `sw/efinix_gpu/` | Sapphire C 固件、PC 资源服务器、素材和测试 |
 | `tb/verilog/`、`scripts/` | 联调仿真及软件/板级检查入口 |
 | `release/v2/` | 本次同版位流、固件、服务器；操作顺序见其中 README |

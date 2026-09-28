@@ -714,13 +714,21 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
       }
     }
 
-    it("streams aligned Copy words without waiting for the pixel pipeline") {
+    it("streams aligned Copy and Color Key words without waiting for the pixel pipeline") {
+      for ((op, readError, writeError) <- Seq(
+        (GpuOpcode.Copy, false, false), (GpuOpcode.ColorKey, false, false),
+        (GpuOpcode.ColorKey, true, false), (GpuOpcode.ColorKey, false, true)
+      )) {
       simulate(new DenseBlitEngine) { dut =>
         val src = 0x02400ff8L
         val dst = 0x02000ff4L
-        val expected = (0 until 12).map(i => 0x12340000L + i * 0x101L)
+        val source = Seq.fill(3)(Seq(0x12341111L, 0xbeef2222L, 0x3333beefL, 0xbeefbeefL)).flatten
+        val expected = if (op == GpuOpcode.Copy) source else
+          Seq.fill(3)(Seq(0x12341111L, 0xa55a2222L, 0x33334321L, 0xa55a4321L)).flatten
         val memory = collection.mutable.Map.empty[Long, Int].withDefaultValue(0)
-        for ((value, i) <- expected.zipWithIndex; byte <- 0 until 4) {
+        for (row <- 0 until 2; byte <- 0 until 32)
+          memory(dst + row * 32 + byte) = ((0xa55a4321L >> ((byte % 4) * 8)) & 0xff).toInt
+        for ((value, i) <- source.zipWithIndex; byte <- 0 until 4) {
           val address = src + (i / 6) * 32 + (i % 6) * 4 + byte
           memory(address) = ((value >> (byte * 8)) & 0xff).toInt
         }
@@ -734,6 +742,10 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
         var writeAddress = 0L
         var responsePending = false
         var pixelRequests = 0
+        var wordCompletions = 0
+        var readOffered = false
+        var responseOffered = false
+        val random = new scala.util.Random(0xc015L)
         val readLengths = collection.mutable.ArrayBuffer.empty[Int]
         val writeLengths = collection.mutable.ArrayBuffer.empty[Int]
         val writeStrobes = collection.mutable.ArrayBuffer.empty[Int]
@@ -752,7 +764,8 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
         for (_ <- 0 until 400 if !completed) {
           dut.io.command.valid.poke(!submitted)
           dut.io.command.bits.poke(0.U.asTypeOf(new GpuCommand))
-          dut.io.command.bits.op.poke(GpuOpcode.Copy)
+          dut.io.command.bits.op.poke(op)
+          dut.io.command.bits.colorKey.poke(0xbeef)
           dut.io.command.bits.srcAddr.poke(src)
           dut.io.command.bits.dstAddr.poke(dst)
           dut.io.command.bits.widthPixels.poke(12)
@@ -760,8 +773,15 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
           dut.io.command.bits.srcStride.poke(32)
           dut.io.command.bits.dstStride.poke(32)
           dut.io.command.bits.tag.poke(0xc011)
-          dut.io.axi.b.valid.poke(responsePending)
-          dut.io.axi.r.valid.poke(readBeats > 0)
+          dut.io.axi.aw.ready.poke(random.nextBoolean())
+          dut.io.axi.w.ready.poke(random.nextBoolean())
+          dut.io.axi.ar.ready.poke(readBeats == 0 && random.nextBoolean())
+          responseOffered = responseOffered || (responsePending && random.nextBoolean())
+          dut.io.axi.b.valid.poke(responseOffered)
+          dut.io.axi.b.bits.resp.poke(if (writeError) 2 else Axi4.Okay)
+          readOffered = readOffered || (readBeats > 0 && random.nextBoolean())
+          dut.io.axi.r.valid.poke(readOffered)
+          dut.io.axi.r.bits.resp.poke(if (readError) 2 else Axi4.Okay)
           dut.io.axi.r.bits.data.poke(if (readBeats > 0) word(readAddress) else 0L)
           dut.io.axi.r.bits.last.poke(readBeats == 1)
 
@@ -776,6 +796,7 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
           val completionFire = dut.io.completion.valid.peek().litToBoolean && dut.io.completion.ready.peek().litToBoolean
 
           if (pixelRequestFire) pixelRequests += 1
+          if (dut.io.copyWordDone.peek().litToBoolean) wordCompletions += 1
           if (arFire) {
             readAddress = dut.io.axi.ar.bits.addr.peek().litValue.longValue
             readBeats = dut.io.axi.ar.bits.len.peek().litValue.toInt + 1
@@ -795,27 +816,36 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
           }
           if (completionFire) {
             dut.io.completion.bits.tag.expect(0xc011)
-            dut.io.completion.bits.error.expect(GpuError.None)
+            dut.io.completion.bits.error.expect(if (readError || writeError) GpuError.AxiResponse else GpuError.None)
             completed = true
           }
 
           dut.clock.step()
           if (commandFire) submitted = true
           if (rFire) {
+            readOffered = false
             readAddress += 4
             readBeats -= 1
           }
-          if (bFire) responsePending = false
+          if (bFire) {
+            responseOffered = false
+            responsePending = false
+          }
           if (wLast) responsePending = true
         }
 
         completed shouldBe true
         pixelRequests shouldBe 0
-        readLengths.toSeq shouldBe Seq(2, 4, 6)
-        writeLengths.toSeq shouldBe Seq(3, 3, 6)
-        writeStrobes.toSeq shouldBe Seq.fill(12)(0xf)
+        val words = if (readError || writeError) 6 else 12
+        wordCompletions shouldBe words
+        readLengths.toSeq shouldBe (if (words == 6) Seq(2, 4) else Seq(2, 4, 6))
+        writeLengths.toSeq shouldBe (if (words == 6) Seq(3, 3) else Seq(3, 3, 6))
+        writeStrobes.toSeq shouldBe (if (op == GpuOpcode.Copy) Seq.fill(words)(0xf) else
+          Seq.fill(3)(Seq(0xf, 0x3, 0xc, 0x0)).flatten.take(words))
         for (i <- expected.indices)
-          word(dst + (i / 6) * 32 + (i % 6) * 4) shouldBe expected(i)
+          word(dst + (i / 6) * 32 + (i % 6) * 4) shouldBe (if (i < words) expected(i) else 0xa55a4321L)
+        Seq(dst + 24, dst + 28, dst + 56, dst + 60).foreach(address => word(address) shouldBe 0xa55a4321L)
+      }
       }
     }
   }
@@ -857,11 +887,12 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
       }
     }
 
-    it("reads only the source and suppresses transparent byte lanes and an all-transparent row") {
+    it("preserves transparent pixels in aligned and halfword-phase bursts") {
+      for (offset <- Seq(0, 2)) {
       simulate(new DenseBlitEngine) { dut =>
         val key = 0xbeef
-        val srcBase = 0x02400000L
-        val dstBase = 0x02000000L
+        val srcBase = 0x02400000L + offset
+        val dstBase = 0x02000000L + offset
         val source = Seq(key, 0x1111, key, 0x2222, key, key, key, key)
         val initial = Seq(0xaaaa, 0xbbbb, 0xcccc, 0xdddd, 1, 2, 3, 4)
         val expected = Seq(0xaaaa, 0x1111, 0xcccc, 0x2222, 1, 2, 3, 4)
@@ -976,9 +1007,10 @@ class RenderEngineSpec extends AnyFunSpec with StableChiselSim with Matchers {
 
         completed shouldBe true
         (0 until 8).map(index => halfWord(dstBase + index * 2)) shouldBe expected
-        readRequests.toSeq shouldBe Seq(srcBase, srcBase + 8)
-        writeRequests.toSeq shouldBe Seq(dstBase, dstBase + 4)
-        writeStrobes.toSeq shouldBe Seq(0xc, 0xc)
+        readRequests.toSeq shouldBe Seq(srcBase & ~3L, (srcBase + 8) & ~3L)
+        writeRequests.toSeq shouldBe Seq(dstBase & ~3L, (dstBase + 8) & ~3L)
+        writeStrobes.toSeq shouldBe (if (offset == 0) Seq(0xc, 0xc, 0, 0) else Seq(0, 3, 3, 0, 0, 0))
+      }
       }
     }
   }

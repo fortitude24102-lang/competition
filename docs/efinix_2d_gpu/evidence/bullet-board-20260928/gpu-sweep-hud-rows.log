@@ -1,0 +1,14 @@
+BULLET_ASSET,id=101,bytes=1036800,retries=0,result=0
+BULLET_ASSET,id=102,bytes=3104,retries=0,result=0
+GPU_SWEEP_START,network_result=0,warmup=30,samples=300
+GPU_SWEEP,target=32,frames=300,fps_x10=528,render_us=9472,p5_fps=30,underflows=0,errors=0,qualified=0
+GPU_SWEEP_PHASE,target=32,build_including_previous_step_us=346,cache_us=1068,hud_dma_us=1180,present_us=6827,step_us=70
+GPU_SWEEP,target=64,frames=300,fps_x10=470,render_us=10419,p5_fps=30,underflows=0,errors=0,qualified=0
+GPU_SWEEP_PHASE,target=64,build_including_previous_step_us=559,cache_us=1870,hud_dma_us=1083,present_us=7293,step_us=124
+GPU_SWEEP,target=128,frames=300,fps_x10=430,render_us=12011,p5_fps=30,underflows=0,errors=0,qualified=0
+GPU_SWEEP_PHASE,target=128,build_including_previous_step_us=1004,cache_us=2615,hud_dma_us=1197,present_us=6394,step_us=236
+GPU_SWEEP,target=256,frames=300,fps_x10=300,render_us=14770,p5_fps=30,underflows=0,errors=0,qualified=0
+GPU_SWEEP_PHASE,target=256,build_including_previous_step_us=2012,cache_us=3893,hud_dma_us=1039,present_us=11551,step_us=488
+GPU_SWEEP,target=512,frames=300,fps_x10=286,render_us=19944,p5_fps=20,underflows=0,errors=0,qualified=0
+GPU_SWEEP_PHASE,target=512,build_including_previous_step_us=4094,cache_us=4417,hud_dma_us=1163,present_us=5251,step_us=951
+GPU_SWEEP_STOP,result=0,hardware=0

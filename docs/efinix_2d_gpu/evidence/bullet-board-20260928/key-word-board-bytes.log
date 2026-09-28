@@ -1,0 +1,4 @@
+KEY_BOARD_CASE_PASS,case=0,width=12,offset=0,pixels=24,rd=48,wr=24
+KEY_BOARD_CASE_PASS,case=1,width=12,offset=2,pixels=24,rd=56,wr=24
+KEY_BOARD_CASE_PASS,case=2,width=11,offset=0,pixels=22,rd=48,wr=24
+KEY_BOARD_STOP,result=0,hardware=0

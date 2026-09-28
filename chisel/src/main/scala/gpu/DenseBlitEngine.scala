@@ -9,6 +9,7 @@ class DenseBlitEngine extends Module {
     val pixelRequest = Decoupled(new PixelTransaction)
     val pixelResult = Flipped(Decoupled(new PixelResult))
     val copyWordDone = Output(Bool())
+    val wordPixelsDone = Output(UInt(2.W))
     val axi = new Axi4MasterPort
     val completion = Decoupled(new GpuCompletion)
   })
@@ -17,6 +18,7 @@ class DenseBlitEngine extends Module {
   private val reader = Module(new AxiReadEngine(0))
   private val backgroundReader = Module(new AxiReadEngine(1))
   private val aligner = Module(new PixelReadAligner)
+  private val wordAligner = Module(new Rgb565WordAligner)
   private val backgroundAligner = Module(new PixelReadAligner)
   private val alphaForegroundBuffer = Module(new Queue(UInt(32.W), 33))
   private val alphaBackgroundBuffer = Module(new Queue(UInt(32.W), 33))
@@ -36,8 +38,9 @@ class DenseBlitEngine extends Module {
   private val pixelRowLast = Reg(Bool())
   private val pixelLast = Reg(Bool())
   private val pixelChunkLast = Reg(Bool())
-  private val fastCopy = RegInit(false.B)
-  private val fastCopyRowsLeft = Reg(UInt(16.W))
+  private val fastWordBlit = RegInit(false.B)
+  private val directWordBlit = RegInit(false.B)
+  private val fastRowsLeft = Reg(UInt(16.W))
   private val rowReadDone = RegInit(false.B)
   private val rowWriteDone = RegInit(false.B)
   private val rowReadError = RegInit(false.B)
@@ -47,13 +50,24 @@ class DenseBlitEngine extends Module {
   private val completionError = RegInit(GpuError.None.U(8.W))
 
   io.command.ready := state === idle
+  private val incomingCommand = io.command.bits
+  private val incomingAligned = incomingCommand.srcAddr(1, 0) === 0.U &&
+    incomingCommand.dstAddr(1, 0) === 0.U && incomingCommand.srcStride(1, 0) === 0.U &&
+    incomingCommand.dstStride(1, 0) === 0.U && incomingCommand.widthPixels(0) === 0.U
+  private val rowsBeforeLast = (incomingCommand.heightPixels - 1.U)(15, 0)
+  private val sourceEnd = incomingCommand.srcAddr.pad(49) +
+    rowsBeforeLast * incomingCommand.srcStride + (incomingCommand.widthPixels << 1)
+  private val destinationEnd = incomingCommand.dstAddr.pad(49) +
+    rowsBeforeLast * incomingCommand.dstStride + (incomingCommand.widthPixels << 1)
+  private val incomingOverlap = incomingCommand.srcAddr < destinationEnd && incomingCommand.dstAddr < sourceEnd
   when(io.command.fire) {
     commandReg := io.command.bits
-    fastCopy := io.command.bits.op === GpuOpcode.Copy.U &&
-      io.command.bits.srcAddr(1, 0) === 0.U && io.command.bits.dstAddr(1, 0) === 0.U &&
-      io.command.bits.srcStride(1, 0) === 0.U && io.command.bits.dstStride(1, 0) === 0.U &&
-      io.command.bits.widthPixels(0) === 0.U
-    fastCopyRowsLeft := io.command.bits.heightPixels
+    // Preserve legacy overlapping Key commands; only extend the non-overlapping path.
+    fastWordBlit := ((incomingCommand.op === GpuOpcode.Copy.U ||
+      incomingCommand.op === GpuOpcode.ColorKey.U) && incomingAligned) ||
+      (incomingCommand.op === GpuOpcode.ColorKey.U && !incomingOverlap)
+    directWordBlit := incomingAligned
+    fastRowsLeft := io.command.bits.heightPixels
     srcRowBase := io.command.bits.srcAddr
     dstRowBase := io.command.bits.dstAddr
     alphaSrcAddress := io.command.bits.srcAddr
@@ -75,7 +89,7 @@ class DenseBlitEngine extends Module {
   private val rowTransferBytes = rowBytes + dstRowBase(1, 0)
   private val rowBeats = (rowTransferBytes + 3.U) >> 2
 
-  rect.io.start.valid := state === startRect && !fastCopy
+  rect.io.start.valid := state === startRect && !fastWordBlit
   rect.io.start.bits.base := commandReg.dstAddr
   rect.io.start.bits.widthPixels := commandReg.widthPixels
   rect.io.start.bits.heightPixels := commandReg.heightPixels
@@ -83,12 +97,12 @@ class DenseBlitEngine extends Module {
   when(rect.io.start.fire) {
     state := Mux(isColorKey, startAligner, Mux(isAlpha, startAlphaAligners, startWrite))
   }
-  when(state === startRect && fastCopy) {
+  when(state === startRect && fastWordBlit) {
     state := startWrite
   }
 
   private val fixedWriteRequest = state === startWrite
-  private val dynamicWriteRequest = isColorKey &&
+  private val dynamicWriteRequest = isColorKey && !fastWordBlit &&
     packer.io.output.valid && !dynamicWriteOutstanding
   writer.io.request.valid := fixedWriteRequest || dynamicWriteRequest
   writer.io.request.bits.address := Mux(dynamicWriteRequest, packer.io.output.bits.address,
@@ -100,14 +114,20 @@ class DenseBlitEngine extends Module {
       dynamicWriteOutstanding := true.B
     }.otherwise {
       rowWriteDone := false.B
-      state := Mux(fastCopy, startRead, Mux(isCopy, startAligner, requestPixel))
+      state := Mux(fastWordBlit && directWordBlit, startRead,
+        Mux(fastWordBlit || isCopy, startAligner, requestPixel))
     }
   }
 
   private val alphaRowProgress = ((alphaSrcAddress - srcRowBase) >> 1)(15, 0)
   private val alphaPixelsLeft = (commandReg.widthPixels - alphaRowProgress)(15, 0)
   private val alphaChunkPixels = Mux(alphaPixelsLeft > 64.U, 64.U(16.W), alphaPixelsLeft)
-  private val startingSourceRow = state === startAligner
+  private val startingSourceRow = state === startAligner && !fastWordBlit
+  wordAligner.io.start.valid := state === startAligner && fastWordBlit
+  wordAligner.io.start.bits.sourceUpper := srcRowBase(1)
+  wordAligner.io.start.bits.destinationUpper := dstRowBase(1)
+  wordAligner.io.start.bits.pixels := commandReg.widthPixels
+  when(wordAligner.io.start.fire) { state := startRead }
   private val startingAlphaPair = state === startAlphaAligners
   aligner.io.start.valid := startingSourceRow || (startingAlphaPair && backgroundAligner.io.start.ready)
   aligner.io.start.bits.upperFirst := Mux(isAlpha, alphaSrcAddress(1), srcRowBase(1))
@@ -140,7 +160,7 @@ class DenseBlitEngine extends Module {
   when(startingSourceRead && reader.io.request.fire) {
     rowReadDone := false.B
     rowReadError := false.B
-    state := Mux(fastCopy, waitRow, requestPixel)
+    state := Mux(fastWordBlit, waitRow, requestPixel)
   }
   when(startingAlphaReads && reader.io.request.fire && backgroundReader.io.request.fire) {
     state := waitAlphaReads
@@ -184,11 +204,23 @@ class DenseBlitEngine extends Module {
     state := Mux(pixelRowLast, waitRow, Mux(isAlpha && pixelChunkLast, startAlphaAligners, requestPixel))
   }
 
-  writer.io.data.valid := Mux(fastCopy, reader.io.data.valid, packer.io.output.valid)
-  writer.io.data.bits.data := Mux(fastCopy, reader.io.data.bits.data, packer.io.output.bits.data)
-  writer.io.data.bits.strb := Mux(fastCopy, "hf".U, packer.io.output.bits.strb)
-  packer.io.output.ready := !fastCopy && writer.io.data.ready
-  io.copyWordDone := fastCopy && writer.io.data.fire
+  // Keep every beat in the burst, including transparent words with WSTRB=0.
+  // Two RGB565 comparisons preserve background without reading it.
+  private val wordData = Mux(directWordBlit, reader.io.data.bits.data, wordAligner.io.output.bits.data)
+  private val validLanes = Mux(directWordBlit, "b11".U, wordAligner.io.output.bits.lanes)
+  private val keyWordStrobe = Cat(
+    Fill(2, validLanes(1) && wordData(31, 16) =/= commandReg.colorKey),
+    Fill(2, validLanes(0) && wordData(15, 0) =/= commandReg.colorKey))
+  writer.io.data.valid := Mux(fastWordBlit,
+    Mux(directWordBlit, reader.io.data.valid, wordAligner.io.output.valid), packer.io.output.valid)
+  writer.io.data.bits.data := Mux(fastWordBlit, wordData, packer.io.output.bits.data)
+  writer.io.data.bits.strb := Mux(fastWordBlit, Mux(isColorKey, keyWordStrobe, "hf".U), packer.io.output.bits.strb)
+  packer.io.output.ready := !fastWordBlit && writer.io.data.ready
+  // Transparent pixels are processed too; partial first/last words count only valid lanes.
+  io.copyWordDone := fastWordBlit && writer.io.data.fire
+  io.wordPixelsDone := Mux(io.copyWordDone,
+    Mux(directWordBlit, 2.U, wordAligner.io.output.bits.pixels), 0.U)
+  wordAligner.io.output.ready := fastWordBlit && !directWordBlit && writer.io.data.ready
 
   when(writer.io.done) {
     rowWriteDone := true.B
@@ -204,7 +236,7 @@ class DenseBlitEngine extends Module {
   }
 
   private val writeFinished = Mux(
-    isColorKey,
+    isColorKey && !fastWordBlit,
     !dynamicWriteOutstanding && !packer.io.output.valid,
     rowWriteDone || writer.io.done
   )
@@ -219,10 +251,10 @@ class DenseBlitEngine extends Module {
     when(transferError) {
       completionError := GpuError.AxiResponse.U
       state := finish
-    }.elsewhen(Mux(fastCopy, fastCopyRowsLeft === 1.U, pixelLast)) {
+    }.elsewhen(Mux(fastWordBlit, fastRowsLeft === 1.U, pixelLast)) {
       state := finish
     }.otherwise {
-      when(fastCopy) { fastCopyRowsLeft := fastCopyRowsLeft - 1.U }
+      when(fastWordBlit) { fastRowsLeft := fastRowsLeft - 1.U }
       srcRowBase := srcRowBase + commandReg.srcStride
       dstRowBase := dstRowBase + commandReg.dstStride
       rowReadDone := false.B
@@ -232,7 +264,7 @@ class DenseBlitEngine extends Module {
       rowWriteError := false.B
       dynamicWriteOutstanding := false.B
       when(isAlpha) { alphaSrcAddress := srcRowBase + commandReg.srcStride }
-      state := Mux(isColorKey, startAligner, Mux(isAlpha, startAlphaAligners, startWrite))
+      state := Mux(isColorKey && !fastWordBlit, startAligner, Mux(isAlpha, startAlphaAligners, startWrite))
     }
   }
 
@@ -268,9 +300,11 @@ class DenseBlitEngine extends Module {
   alphaForegroundBuffer.io.enq.valid := isAlpha && reader.io.data.valid
   alphaForegroundBuffer.io.enq.bits := reader.io.data.bits.data
   reader.io.data.ready := Mux(isAlpha, alphaForegroundBuffer.io.enq.ready,
-    Mux(fastCopy, writer.io.data.ready, aligner.io.input.ready))
+    Mux(fastWordBlit, Mux(directWordBlit, writer.io.data.ready, wordAligner.io.input.ready), aligner.io.input.ready))
+  wordAligner.io.input.valid := fastWordBlit && !directWordBlit && reader.io.data.valid
+  wordAligner.io.input.bits := reader.io.data.bits.data
   aligner.io.input.valid := Mux(isAlpha, alphaForegroundBuffer.io.deq.valid,
-    reader.io.data.valid && !fastCopy)
+    reader.io.data.valid && !fastWordBlit)
   aligner.io.input.bits := Mux(isAlpha, alphaForegroundBuffer.io.deq.bits, reader.io.data.bits.data)
   alphaForegroundBuffer.io.deq.ready := isAlpha && aligner.io.input.ready
   alphaBackgroundBuffer.io.enq.valid := backgroundReader.io.data.valid

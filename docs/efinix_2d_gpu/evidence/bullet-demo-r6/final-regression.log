@@ -1,0 +1,24 @@
+reference RGB565: 1036800 bytes, CRC32=2da5b8ac
+PASS: packing, RGB roundtrip, exhaustive alpha, guarded odd-width fill, color key, alpha blend, CRC32
+PASS: production driver identity/version, queued submit fields, AGAIN, timeout, tag wrap, hardware error, color key/alpha guards
+PASS: 1000 seeded stride/odd/even copy rectangles, overlap and boundary rejection
+PASS: production benchmark/driver fill against independent byte-memory model; synthetic cycles only
+PASS A/B day9-13 software: sprite copy, fixed DDR layout, present contract, HUD and 300-frame fixed object pool
+PASS B days16-20: advanced stream, 16-deep batch tags, mode metrics, HUD, 300-frame summary
+PASS B sparse: transparent/solid/trailing/odd/capacity/random roundtrip and compression
+PASS B days21-23: Sparse submit, QoS guards, 64-bit perf snapshot, comparison contract and HUD
+PASS lane game deterministic simulation and asset-backed scene
+PASS asset DMA descriptor/status/bounds/abort
+PASS network client: GET byte order, tail, retries, DMA restart, bounds, full CRC, bounded failure
+PASS v2 asset server/retry/cache, rejected reply cannot mutate GET
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.339s
+
+OK
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.081s
+
+OK
+PASS native regression: 12 existing C suites, V2 and bullet UDP catalogs

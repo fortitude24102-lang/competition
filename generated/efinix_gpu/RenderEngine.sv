@@ -150,6 +150,7 @@ module RenderEngine(	// src/main/scala/gpu/RenderEngine.scala:7:7
   wire [7:0]  _blit_io_pixelRequest_bits_alpha;	// src/main/scala/gpu/RenderEngine.scala:37:28
   wire        _blit_io_pixelResult_ready;	// src/main/scala/gpu/RenderEngine.scala:37:28
   wire        _blit_io_copyWordDone;	// src/main/scala/gpu/RenderEngine.scala:37:28
+  wire [1:0]  _blit_io_wordPixelsDone;	// src/main/scala/gpu/RenderEngine.scala:37:28
   wire        _blit_io_axi_aw_valid;	// src/main/scala/gpu/RenderEngine.scala:37:28
   wire [31:0] _blit_io_axi_aw_bits_addr;	// src/main/scala/gpu/RenderEngine.scala:37:28
   wire [7:0]  _blit_io_axi_aw_bits_len;	// src/main/scala/gpu/RenderEngine.scala:37:28
@@ -362,6 +363,7 @@ module RenderEngine(	// src/main/scala/gpu/RenderEngine.scala:7:7
     .io_pixelResult_bits_pixel       (_pixel_io_output_bits_pixel),	// src/main/scala/gpu/RenderEngine.scala:40:29
     .io_pixelResult_bits_writeEnable (_pixel_io_output_bits_writeEnable),	// src/main/scala/gpu/RenderEngine.scala:40:29
     .io_copyWordDone                 (_blit_io_copyWordDone),
+    .io_wordPixelsDone               (_blit_io_wordPixelsDone),
     .io_axi_aw_ready                 (io_axi_aw_ready & ~_sparse_io_busy),	// src/main/scala/gpu/RenderEngine.scala:38:30, :111:{43,46}
     .io_axi_aw_valid                 (_blit_io_axi_aw_valid),
     .io_axi_aw_bits_addr             (_blit_io_axi_aw_bits_addr),
@@ -474,9 +476,9 @@ module RenderEngine(	// src/main/scala/gpu/RenderEngine.scala:7:7
     .io_active        (io_busy_0),	// src/main/scala/gpu/RenderEngine.scala:131:{30,47,73,91}, :132:21
     .io_pixelCount
       (_blit_io_copyWordDone
-         ? 2'h2
+         ? _blit_io_wordPixelsDone
          : {1'h0,
-            _blit_io_pixelResult_ready & _pixel_io_output_valid | _sparse_io_pixelDone}),	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/RenderEngine.scala:37:28, :38:30, :40:29, :58:20, :144:28, :145:31
+            _blit_io_pixelResult_ready & _pixel_io_output_valid | _sparse_io_pixelDone}),	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/RenderEngine.scala:37:28, :38:30, :40:29, :144:28, :145:31
     .io_readBeat      (io_axi_r_ready_0 & io_axi_r_valid),	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/RenderEngine.scala:129:24
     .io_writeStrobe   (io_axi_w_ready & io_axi_w_valid_0 ? io_axi_w_bits_strb_0 : 4'h0),	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/RenderEngine.scala:7:7, :112:24, :113:23, :147:29
     .io_stalled
