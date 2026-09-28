@@ -12,6 +12,8 @@ class RenderEngine extends Module {
     val underflowPulse = Input(Bool())
     val renderGrant = Input(UInt(2.W))
     val scanoutGrant = Input(UInt(2.W))
+    val textureCacheLoad = Flipped(Valid(new TextureCacheLoad))
+    val textureCacheInvalidate = Input(Bool())
     val axi = new Axi4MasterPort
     val completion = Decoupled(new GpuCompletion)
     val busy = Output(Bool())
@@ -30,6 +32,10 @@ class RenderEngine extends Module {
     val perfUnderflows = Output(UInt(64.W))
     val perfRenderGrants = Output(UInt(64.W))
     val perfScanoutGrants = Output(UInt(64.W))
+    val perfCacheBytes = Output(UInt(64.W))
+    val textureCacheValid = Output(Bool())
+    val textureCacheBusy = Output(Bool())
+    val textureCacheError = Output(Bool())
   })
 
   private val queue = Module(new CommandQueue)
@@ -103,6 +109,13 @@ class RenderEngine extends Module {
   swap.io.vblank := io.vblank
   pixel.io.input <> blit.io.pixelRequest
   blit.io.pixelResult <> pixel.io.output
+  blit.io.textureCacheLoad := io.textureCacheLoad
+  blit.io.textureCacheInvalidate := io.textureCacheInvalidate
+  blit.io.textureCachePerfClear := io.perfClear
+  io.textureCacheValid := blit.io.textureCacheValid
+  io.textureCacheBusy := blit.io.textureCacheBusy
+  io.textureCacheError := blit.io.textureCacheError
+  io.perfCacheBytes := blit.io.textureCacheHitBytes
 
   private val useSparse = sparse.io.busy
   io.axi.aw.valid := Mux(useSparse, sparse.io.axi.aw.valid, blit.io.axi.aw.valid)

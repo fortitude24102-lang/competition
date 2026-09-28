@@ -100,6 +100,12 @@ class Efinix2dGpuTop extends Module {
   regs.io.perfUnderflows := render.io.perfUnderflows
   regs.io.perfRenderGrants := render.io.perfRenderGrants
   regs.io.perfScanoutGrants := render.io.perfScanoutGrants
+  regs.io.perfCacheBytes := render.io.perfCacheBytes
+  regs.io.textureCacheValid := render.io.textureCacheValid
+  regs.io.textureCacheBusy := render.io.textureCacheBusy
+  regs.io.textureCacheError := render.io.textureCacheError
+  render.io.textureCacheLoad := regs.io.textureCacheLoad
+  render.io.textureCacheInvalidate := regs.io.textureCacheInvalidate
   render.io.perfClear := regs.io.perfClear
   render.io.underflowPulse := io.underflow_pulse_gpu
   render.io.renderGrant := ddr.io.renderGrant

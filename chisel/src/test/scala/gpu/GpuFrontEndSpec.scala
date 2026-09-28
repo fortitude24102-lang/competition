@@ -123,6 +123,108 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
   }
 
   describe("GpuApbRegs") {
+    it("controls a validated idle-only texture cache and snapshots its traffic") {
+      simulate(new GpuApbRegs) { dut =>
+        dut.io.psel.poke(false)
+        dut.io.penable.poke(false)
+        dut.io.pwrite.poke(false)
+        dut.io.paddr.poke(0)
+        dut.io.pwdata.poke(0)
+        dut.io.command.ready.poke(true)
+        dut.io.queueLevel.poke(0)
+        dut.io.queueHighWater.poke(0)
+        dut.io.queueFull.poke(false)
+        dut.io.queueEmpty.poke(true)
+        dut.io.engineBusy.poke(false)
+        dut.io.irqPending.poke(false)
+        dut.io.lastDoneTag.poke(0)
+        dut.io.lastError.poke(0)
+        dut.io.frontBuffer.poke(GpuMemoryMap.FramebufferA)
+        dut.io.backBuffer.poke(GpuMemoryMap.FramebufferB)
+        dut.io.perfCycles.poke(0)
+        dut.io.perfPixels.poke(0)
+        dut.io.perfReadBytes.poke(0)
+        dut.io.perfWriteBytes.poke(0)
+        dut.io.perfStalls.poke(0)
+        dut.io.perfUnderflows.poke(0)
+        dut.io.perfRenderGrants.poke(0)
+        dut.io.perfScanoutGrants.poke(0)
+        dut.io.perfCacheBytes.poke(BigInt("1122334455667788", 16))
+        dut.io.textureCacheValid.poke(true)
+        dut.io.textureCacheBusy.poke(false)
+        dut.io.textureCacheError.poke(true)
+        dut.clock.step()
+
+        def transfer(offset: Int, write: Boolean, data: BigInt = 0,
+                     check: () => Unit = () => ()): (BigInt, Boolean) = {
+          dut.io.paddr.poke(offset)
+          dut.io.pwrite.poke(write)
+          dut.io.pwdata.poke(data)
+          dut.io.psel.poke(true)
+          dut.io.penable.poke(false)
+          dut.clock.step()
+          dut.io.penable.poke(true)
+          dut.io.pready.expect(true)
+          check()
+          val result = dut.io.prdata.peek().litValue -> dut.io.pslverror.peek().litToBoolean
+          dut.clock.step()
+          dut.io.psel.poke(false)
+          dut.io.penable.poke(false)
+          result
+        }
+
+        transfer(GpuRegisterMap.Version, write = false)._1 shouldBe BigInt("00010100", 16)
+        transfer(GpuRegisterMap.TextureCacheBase, write = true, GpuMemoryMap.DenseAssets)._2 shouldBe false
+        transfer(GpuRegisterMap.TextureCacheBytes, write = true, 3104)._2 shouldBe false
+        transfer(GpuRegisterMap.TextureCacheBase, write = false)._1 shouldBe GpuMemoryMap.DenseAssets
+        transfer(GpuRegisterMap.TextureCacheBytes, write = false)._1 shouldBe 3104
+        transfer(GpuRegisterMap.TextureCacheStatus, write = false)._1 shouldBe 5
+
+        transfer(GpuRegisterMap.TextureCacheControl, write = true, 1, () => {
+          dut.io.textureCacheLoad.valid.expect(true)
+          dut.io.textureCacheLoad.bits.base.expect(GpuMemoryMap.DenseAssets)
+          dut.io.textureCacheLoad.bits.bytes.expect(3104)
+          dut.io.textureCacheInvalidate.expect(false)
+        })._2 shouldBe false
+        dut.io.textureCacheLoad.valid.expect(false)
+
+        transfer(GpuRegisterMap.TextureCacheControl, write = true, 2, () => {
+          dut.io.textureCacheLoad.valid.expect(false)
+          dut.io.textureCacheInvalidate.expect(true)
+        })._2 shouldBe false
+        transfer(GpuRegisterMap.TextureCacheControl, write = true, 3)._2 shouldBe true
+
+        dut.io.engineBusy.poke(true)
+        transfer(GpuRegisterMap.TextureCacheControl, write = true, 1)._2 shouldBe true
+        dut.io.engineBusy.poke(false)
+        dut.io.textureCacheBusy.poke(true)
+        transfer(GpuRegisterMap.TextureCacheControl, write = true, 2)._2 shouldBe true
+        dut.io.textureCacheBusy.poke(false)
+        dut.io.queueEmpty.poke(false)
+        transfer(GpuRegisterMap.TextureCacheControl, write = true, 1)._2 shouldBe true
+        dut.io.queueEmpty.poke(true)
+
+        transfer(GpuRegisterMap.TextureCacheBase, write = true, GpuMemoryMap.DenseAssets + 2)
+        transfer(GpuRegisterMap.TextureCacheControl, write = true, 1)._2 shouldBe true
+        transfer(GpuRegisterMap.TextureCacheBase, write = true, GpuMemoryMap.DenseAssets)
+        transfer(GpuRegisterMap.TextureCacheBytes, write = true, 0)
+        transfer(GpuRegisterMap.TextureCacheControl, write = true, 1)._2 shouldBe true
+        transfer(GpuRegisterMap.TextureCacheBytes, write = true, 4100)
+        transfer(GpuRegisterMap.TextureCacheControl, write = true, 1)._2 shouldBe true
+        transfer(GpuRegisterMap.TextureCacheBase, write = true, GpuMemoryMap.AssetEndExclusive - 4)
+        transfer(GpuRegisterMap.TextureCacheBytes, write = true, 8)
+        transfer(GpuRegisterMap.TextureCacheControl, write = true, 1)._2 shouldBe true
+
+        transfer(GpuRegisterMap.PerfControl, write = true, 1)
+        dut.io.perfCacheBytes.poke(0)
+        transfer(GpuRegisterMap.PerfCacheBytesLo, write = false)._1 shouldBe BigInt("55667788", 16)
+        transfer(GpuRegisterMap.PerfCacheBytesHi, write = false)._1 shouldBe BigInt("11223344", 16)
+        transfer(GpuRegisterMap.PerfControl, write = true, 2, () => dut.io.perfClear.expect(true))
+        transfer(GpuRegisterMap.PerfCacheBytesLo, write = false)._1 shouldBe 0
+        transfer(GpuRegisterMap.PerfCacheBytesHi, write = false)._1 shouldBe 0
+      }
+    }
+
     it("returns read data only in the APB access phase after a setup phase") {
       simulate(new GpuApbRegs) { dut =>
         dut.io.psel.poke(false)

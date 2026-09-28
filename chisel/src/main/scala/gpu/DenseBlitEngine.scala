@@ -12,11 +12,19 @@ class DenseBlitEngine extends Module {
     val wordPixelsDone = Output(UInt(2.W))
     val axi = new Axi4MasterPort
     val completion = Decoupled(new GpuCompletion)
+    val textureCacheLoad = Flipped(Valid(new TextureCacheLoad))
+    val textureCacheInvalidate = Input(Bool())
+    val textureCachePerfClear = Input(Bool())
+    val textureCacheValid = Output(Bool())
+    val textureCacheBusy = Output(Bool())
+    val textureCacheError = Output(Bool())
+    val textureCacheHitBytes = Output(UInt(64.W))
   })
 
   private val rect = Module(new RectAddressGen)
   private val reader = Module(new AxiReadEngine(0))
   private val backgroundReader = Module(new AxiReadEngine(1))
+  private val textureCache = Module(new TextureCache)
   private val aligner = Module(new PixelReadAligner)
   private val wordAligner = Module(new Rgb565WordAligner)
   private val backgroundAligner = Module(new PixelReadAligner)
@@ -48,8 +56,19 @@ class DenseBlitEngine extends Module {
   private val rowWriteError = RegInit(false.B)
   private val dynamicWriteOutstanding = RegInit(false.B)
   private val completionError = RegInit(GpuError.None.U(8.W))
+  private val useTextureCache = RegInit(false.B)
 
-  io.command.ready := state === idle
+  textureCache.io.load.valid := io.textureCacheLoad.valid
+  textureCache.io.load.bits := io.textureCacheLoad.bits
+  textureCache.io.invalidate := io.textureCacheInvalidate
+  textureCache.io.perfClear := io.textureCachePerfClear
+  io.textureCacheValid := textureCache.io.valid
+  io.textureCacheBusy := textureCache.io.busy
+  io.textureCacheError := textureCache.io.error
+  io.textureCacheHitBytes := textureCache.io.hitBytes
+
+  io.command.ready := state === idle && !textureCache.io.busy &&
+    !io.textureCacheLoad.valid
   private val incomingCommand = io.command.bits
   private val incomingAligned = incomingCommand.srcAddr(1, 0) === 0.U &&
     incomingCommand.dstAddr(1, 0) === 0.U && incomingCommand.srcStride(1, 0) === 0.U &&
@@ -60,6 +79,13 @@ class DenseBlitEngine extends Module {
   private val destinationEnd = incomingCommand.dstAddr.pad(49) +
     rowsBeforeLast * incomingCommand.dstStride + (incomingCommand.widthPixels << 1)
   private val incomingOverlap = incomingCommand.srcAddr < destinationEnd && incomingCommand.dstAddr < sourceEnd
+  private val sourceEnd64 = incomingCommand.srcAddr.pad(64) +
+    (rowsBeforeLast * incomingCommand.srcStride).pad(64) +
+    (incomingCommand.widthPixels << 1).pad(64)
+  private val cacheEnd64 = textureCache.io.base.pad(64) + textureCache.io.bytes.pad(64)
+  private val incomingCacheHit = textureCache.io.valid &&
+    (incomingCommand.op === GpuOpcode.ColorKey.U || incomingCommand.op === GpuOpcode.Alpha.U) &&
+    incomingCommand.srcAddr >= textureCache.io.base && sourceEnd64 <= cacheEnd64
   when(io.command.fire) {
     commandReg := io.command.bits
     // Preserve legacy overlapping Key commands; only extend the non-overlapping path.
@@ -78,6 +104,7 @@ class DenseBlitEngine extends Module {
     rowWriteError := false.B
     dynamicWriteOutstanding := false.B
     completionError := GpuError.None.U
+    useTextureCache := incomingCacheHit
     state := startRect
   }
 
@@ -151,21 +178,31 @@ class DenseBlitEngine extends Module {
 
   private val startingSourceRead = state === startRead
   private val startingAlphaReads = state === startAlphaReads
-  reader.io.request.valid := startingSourceRead || (startingAlphaReads && backgroundReader.io.request.ready)
-  reader.io.request.bits.address := Mux(isAlpha, alphaSrcAddress, srcRowBase)
-  reader.io.request.bits.bytes := Mux(isAlpha, alphaChunkPixels << 1, rowBytes)
-  backgroundReader.io.request.valid := startingAlphaReads && reader.io.request.ready
+  private val sourceReadAddress = Mux(isAlpha, alphaSrcAddress, srcRowBase)
+  private val sourceReadBytes = Mux(isAlpha, alphaChunkPixels << 1, rowBytes)
+  private val sourceReadReady = Mux(useTextureCache,
+    textureCache.io.readRequest.ready, reader.io.request.ready)
+  private val sourceReadValid = startingSourceRead ||
+    (startingAlphaReads && backgroundReader.io.request.ready)
+  reader.io.request.valid := sourceReadValid && !useTextureCache
+  reader.io.request.bits.address := sourceReadAddress
+  reader.io.request.bits.bytes := sourceReadBytes
+  textureCache.io.readRequest.valid := sourceReadValid && useTextureCache
+  textureCache.io.readRequest.bits.address := sourceReadAddress
+  textureCache.io.readRequest.bits.bytes := sourceReadBytes
+  backgroundReader.io.request.valid := startingAlphaReads && sourceReadReady
   backgroundReader.io.request.bits.address := rect.io.address.bits.address
   backgroundReader.io.request.bits.bytes := alphaChunkPixels << 1
-  when(startingSourceRead && reader.io.request.fire) {
+  private val sourceReadFire = sourceReadValid && sourceReadReady
+  when(startingSourceRead && sourceReadFire) {
     rowReadDone := false.B
     rowReadError := false.B
     state := Mux(fastWordBlit, waitRow, requestPixel)
   }
-  when(startingAlphaReads && reader.io.request.fire && backgroundReader.io.request.fire) {
+  when(startingAlphaReads && sourceReadFire && backgroundReader.io.request.fire) {
     state := waitAlphaReads
   }
-  when(state === waitAlphaReads && reader.io.request.ready && backgroundReader.io.request.ready) {
+  when(state === waitAlphaReads && sourceReadReady && backgroundReader.io.request.ready) {
     state := startWrite
   }
 
@@ -206,13 +243,19 @@ class DenseBlitEngine extends Module {
 
   // Keep every beat in the burst, including transparent words with WSTRB=0.
   // Two RGB565 comparisons preserve background without reading it.
-  private val wordData = Mux(directWordBlit, reader.io.data.bits.data, wordAligner.io.output.bits.data)
+  private val sourceDataValid = Mux(useTextureCache,
+    textureCache.io.readData.valid, reader.io.data.valid)
+  private val sourceDataBits = Mux(useTextureCache,
+    textureCache.io.readData.bits, reader.io.data.bits)
+  private val sourceDone = Mux(useTextureCache, textureCache.io.readDone, reader.io.done)
+  private val sourceError = Mux(useTextureCache, textureCache.io.readError, reader.io.error)
+  private val wordData = Mux(directWordBlit, sourceDataBits.data, wordAligner.io.output.bits.data)
   private val validLanes = Mux(directWordBlit, "b11".U, wordAligner.io.output.bits.lanes)
   private val keyWordStrobe = Cat(
     Fill(2, validLanes(1) && wordData(31, 16) =/= commandReg.colorKey),
     Fill(2, validLanes(0) && wordData(15, 0) =/= commandReg.colorKey))
   writer.io.data.valid := Mux(fastWordBlit,
-    Mux(directWordBlit, reader.io.data.valid, wordAligner.io.output.valid), packer.io.output.valid)
+    Mux(directWordBlit, sourceDataValid, wordAligner.io.output.valid), packer.io.output.valid)
   writer.io.data.bits.data := Mux(fastWordBlit, wordData, packer.io.output.bits.data)
   writer.io.data.bits.strb := Mux(fastWordBlit, Mux(isColorKey, keyWordStrobe, "hf".U), packer.io.output.bits.strb)
   packer.io.output.ready := !fastWordBlit && writer.io.data.ready
@@ -227,9 +270,9 @@ class DenseBlitEngine extends Module {
     rowWriteError := rowWriteError || writer.io.error
     dynamicWriteOutstanding := false.B
   }
-  when(reader.io.done) {
+  when(sourceDone) {
     rowReadDone := true.B
-    rowReadError := rowReadError || reader.io.error
+    rowReadError := rowReadError || sourceError
   }
   when(backgroundReader.io.done) {
     backgroundReadError := backgroundReadError || backgroundReader.io.error
@@ -242,10 +285,10 @@ class DenseBlitEngine extends Module {
   )
   private val readFinished = Mux(
     isAlpha,
-    reader.io.request.ready && backgroundReader.io.request.ready,
-    !hasSource || rowReadDone || reader.io.done
+    sourceReadReady && backgroundReader.io.request.ready,
+    !hasSource || rowReadDone || sourceDone
   )
-  private val transferError = rowWriteError || writer.io.error || rowReadError || reader.io.error ||
+  private val transferError = rowWriteError || writer.io.error || rowReadError || sourceError ||
     (isAlpha && (backgroundReadError || backgroundReader.io.error))
   when(state === waitRow && writeFinished && readFinished) {
     when(transferError) {
@@ -287,25 +330,39 @@ class DenseBlitEngine extends Module {
 
   readAddressArbiter.io.in(0) <> reader.io.axiAr
   readAddressArbiter.io.in(1) <> backgroundReader.io.axiAr
-  io.axi.ar.valid := readAddressArbiter.io.out.valid
-  io.axi.ar.bits := readAddressArbiter.io.out.bits
-  readAddressArbiter.io.out.ready := io.axi.ar.ready
+  private val textureCacheOwnsAxi = textureCache.io.busy
+  io.axi.ar.valid := Mux(textureCacheOwnsAxi,
+    textureCache.io.axi.ar.valid, readAddressArbiter.io.out.valid)
+  io.axi.ar.bits := Mux(textureCacheOwnsAxi,
+    textureCache.io.axi.ar.bits, readAddressArbiter.io.out.bits)
+  textureCache.io.axi.ar.ready := io.axi.ar.ready && textureCacheOwnsAxi
+  readAddressArbiter.io.out.ready := io.axi.ar.ready && !textureCacheOwnsAxi
   private val backgroundResponse = io.axi.r.bits.id === 1.U
-  reader.io.axiR.valid := io.axi.r.valid && !backgroundResponse
+  textureCache.io.axi.r.valid := io.axi.r.valid && textureCacheOwnsAxi
+  textureCache.io.axi.r.bits := io.axi.r.bits
+  reader.io.axiR.valid := io.axi.r.valid && !textureCacheOwnsAxi && !backgroundResponse
   reader.io.axiR.bits := io.axi.r.bits
-  backgroundReader.io.axiR.valid := io.axi.r.valid && backgroundResponse
+  backgroundReader.io.axiR.valid := io.axi.r.valid && !textureCacheOwnsAxi && backgroundResponse
   backgroundReader.io.axiR.bits := io.axi.r.bits
-  io.axi.r.ready := Mux(backgroundResponse, backgroundReader.io.axiR.ready, reader.io.axiR.ready)
+  io.axi.r.ready := Mux(textureCacheOwnsAxi, textureCache.io.axi.r.ready,
+    Mux(backgroundResponse, backgroundReader.io.axiR.ready, reader.io.axiR.ready))
+  textureCache.io.axi.aw.ready := false.B
+  textureCache.io.axi.w.ready := false.B
+  textureCache.io.axi.b.valid := false.B
+  textureCache.io.axi.b.bits := 0.U.asTypeOf(new Axi4WriteResponse)
 
-  alphaForegroundBuffer.io.enq.valid := isAlpha && reader.io.data.valid
-  alphaForegroundBuffer.io.enq.bits := reader.io.data.bits.data
-  reader.io.data.ready := Mux(isAlpha, alphaForegroundBuffer.io.enq.ready,
-    Mux(fastWordBlit, Mux(directWordBlit, writer.io.data.ready, wordAligner.io.input.ready), aligner.io.input.ready))
-  wordAligner.io.input.valid := fastWordBlit && !directWordBlit && reader.io.data.valid
-  wordAligner.io.input.bits := reader.io.data.bits.data
+  alphaForegroundBuffer.io.enq.valid := isAlpha && sourceDataValid
+  alphaForegroundBuffer.io.enq.bits := sourceDataBits.data
+  private val sourceDataReady = Mux(isAlpha, alphaForegroundBuffer.io.enq.ready,
+    Mux(fastWordBlit, Mux(directWordBlit, writer.io.data.ready,
+      wordAligner.io.input.ready), aligner.io.input.ready))
+  reader.io.data.ready := sourceDataReady && !useTextureCache
+  textureCache.io.readData.ready := sourceDataReady && useTextureCache
+  wordAligner.io.input.valid := fastWordBlit && !directWordBlit && sourceDataValid
+  wordAligner.io.input.bits := sourceDataBits.data
   aligner.io.input.valid := Mux(isAlpha, alphaForegroundBuffer.io.deq.valid,
-    reader.io.data.valid && !fastWordBlit)
-  aligner.io.input.bits := Mux(isAlpha, alphaForegroundBuffer.io.deq.bits, reader.io.data.bits.data)
+    sourceDataValid && !fastWordBlit)
+  aligner.io.input.bits := Mux(isAlpha, alphaForegroundBuffer.io.deq.bits, sourceDataBits.data)
   alphaForegroundBuffer.io.deq.ready := isAlpha && aligner.io.input.ready
   alphaBackgroundBuffer.io.enq.valid := backgroundReader.io.data.valid
   alphaBackgroundBuffer.io.enq.bits := backgroundReader.io.data.bits.data

@@ -33,6 +33,12 @@ class GpuApbRegs extends Module {
     val perfUnderflows = Input(UInt(64.W))
     val perfRenderGrants = Input(UInt(64.W))
     val perfScanoutGrants = Input(UInt(64.W))
+    val perfCacheBytes = Input(UInt(64.W))
+    val textureCacheValid = Input(Bool())
+    val textureCacheBusy = Input(Bool())
+    val textureCacheError = Input(Bool())
+    val textureCacheLoad = Valid(new TextureCacheLoad)
+    val textureCacheInvalidate = Output(Bool())
     val irqClear = Output(Bool())
     val perfClear = Output(Bool())
     val qosLowWatermark = Output(UInt(12.W))
@@ -59,12 +65,31 @@ class GpuApbRegs extends Module {
   private val perfUnderflows = RegInit(0.U(64.W))
   private val perfRenderGrants = RegInit(0.U(64.W))
   private val perfScanoutGrants = RegInit(0.U(64.W))
+  private val perfCacheBytes = RegInit(0.U(64.W))
+  private val textureCacheBase = RegInit(0.U(32.W))
+  private val textureCacheBytes = RegInit(0.U(13.W))
   private val qosLowWatermark = RegInit(256.U(12.W))
   private val qosHighWatermark = RegInit(1536.U(12.W))
   private val qosAdaptiveEnable = RegInit(true.B)
   private val qosWrite = transfer && write && address === GpuRegisterMap.QosWatermarks.U
   private val qosWriteValid = writeData(30, 28) === 0.U && writeData(15, 12) === 0.U &&
     writeData(11, 0) < writeData(27, 16)
+  private val textureCacheControlWrite = transfer && write &&
+    address === GpuRegisterMap.TextureCacheControl.U
+  private val textureCacheLoad = writeData(1, 0) === 1.U
+  private val textureCacheInvalidate = writeData(1, 0) === 2.U
+  private val textureCacheControlValid = writeData(31, 2) === 0.U &&
+    (textureCacheLoad || textureCacheInvalidate)
+  private val textureCacheEnd = textureCacheBase.pad(64) + textureCacheBytes.pad(64)
+  private val textureCacheRangeValid = textureCacheBase(1, 0) === 0.U &&
+    textureCacheBytes >= 4.U && textureCacheBytes <= 4096.U &&
+    textureCacheBytes(1, 0) === 0.U &&
+    textureCacheBase >= GpuMemoryMap.AssetStart.U &&
+    textureCacheEnd <= GpuMemoryMap.AssetEndExclusive.U(64.W)
+  private val textureCacheIdle = io.queueEmpty && !io.engineBusy && !io.textureCacheBusy
+  private val textureCacheControlError = textureCacheControlWrite &&
+    (!textureCacheControlValid || !textureCacheIdle ||
+      (textureCacheLoad && !textureCacheRangeValid))
 
   when(setup) {
     pending := true.B
@@ -81,7 +106,13 @@ class GpuApbRegs extends Module {
   io.irqClear := transfer && write && address === GpuRegisterMap.Control.U && writeData(1)
   io.perfClear := transfer && write && address === GpuRegisterMap.PerfControl.U && writeData(1)
   io.pslverror := transfer && (!legalOffset || (submit && !io.command.ready) ||
-    (qosWrite && !qosWriteValid))
+    (qosWrite && !qosWriteValid) || textureCacheControlError)
+  io.textureCacheLoad.valid := textureCacheControlWrite && textureCacheLoad &&
+    !textureCacheControlError
+  io.textureCacheLoad.bits.base := textureCacheBase
+  io.textureCacheLoad.bits.bytes := textureCacheBytes
+  io.textureCacheInvalidate := textureCacheControlWrite && textureCacheInvalidate &&
+    !textureCacheControlError
   io.qosLowWatermark := qosLowWatermark
   io.qosHighWatermark := qosHighWatermark
   io.qosAdaptiveEnable := qosAdaptiveEnable
@@ -95,6 +126,7 @@ class GpuApbRegs extends Module {
     perfUnderflows := io.perfUnderflows
     perfRenderGrants := io.perfRenderGrants
     perfScanoutGrants := io.perfScanoutGrants
+    perfCacheBytes := io.perfCacheBytes
   }.elsewhen(io.perfClear) {
     perfCycles := 0.U
     perfPixels := 0.U
@@ -104,6 +136,7 @@ class GpuApbRegs extends Module {
     perfUnderflows := 0.U
     perfRenderGrants := 0.U
     perfScanoutGrants := 0.U
+    perfCacheBytes := 0.U
   }
 
   when(transfer && write && legalOffset) {
@@ -133,13 +166,15 @@ class GpuApbRegs extends Module {
           qosAdaptiveEnable := writeData(31)
         }
       }
+      is(GpuRegisterMap.TextureCacheBase.U) { textureCacheBase := writeData }
+      is(GpuRegisterMap.TextureCacheBytes.U) { textureCacheBytes := writeData(12, 0) }
     }
   }
 
   io.prdata := 0.U
   switch(address) {
     is(GpuRegisterMap.Id.U) { io.prdata := "h32444750".U }
-    is(GpuRegisterMap.Version.U) { io.prdata := "h00010000".U }
+    is(GpuRegisterMap.Version.U) { io.prdata := "h00010100".U }
     is(GpuRegisterMap.Status.U) {
       io.prdata := Cat(
         0.U(18.W), io.irqPending, io.queueHighWater,
@@ -179,5 +214,13 @@ class GpuApbRegs extends Module {
     is(GpuRegisterMap.PerfRenderGrantsHi.U) { io.prdata := perfRenderGrants(63, 32) }
     is(GpuRegisterMap.PerfScanoutGrantsLo.U) { io.prdata := perfScanoutGrants(31, 0) }
     is(GpuRegisterMap.PerfScanoutGrantsHi.U) { io.prdata := perfScanoutGrants(63, 32) }
+    is(GpuRegisterMap.TextureCacheBase.U) { io.prdata := textureCacheBase }
+    is(GpuRegisterMap.TextureCacheBytes.U) { io.prdata := textureCacheBytes }
+    is(GpuRegisterMap.TextureCacheStatus.U) {
+      io.prdata := Cat(0.U(29.W), io.textureCacheError, io.textureCacheBusy,
+        io.textureCacheValid)
+    }
+    is(GpuRegisterMap.PerfCacheBytesLo.U) { io.prdata := perfCacheBytes(31, 0) }
+    is(GpuRegisterMap.PerfCacheBytesHi.U) { io.prdata := perfCacheBytes(63, 32) }
   }
 }
