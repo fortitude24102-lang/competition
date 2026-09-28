@@ -43,6 +43,12 @@ int main(void) {
  gpu_platform_sync();
  e=bullet_prepare_texture_cache(&gpu,1,10000000u); if(e) return e;
  framebuffer_pair buffers; framebuffer_init(&buffers);
+ e=bullet_prepare_frame(&state,32,0,7); if(e) return e;
+ e=bullet_build_frame(&state,buffers.back,0,1,BULLET_MAX_COMMANDS,&scene); if(e) return e;
+ e=perf_render_gpu(&gpu,scene.commands,scene.count,10000000u); if(e) return e;
+ e=framebuffer_present(&gpu,&buffers,10000000u); if(e) return e;
+ uint64_t warm=gpu_platform_cycles();
+ while(gpu_platform_cycles()-warm<BSP_CLINT_HZ/20u) {}
  static const unsigned tiers[]={32,64,128,256,512};
  static const unsigned ticks[]={0,90,180};
  for(unsigned ti=0;ti<5;ti++) for(unsigned ki=0;ki<3;ki++) {
