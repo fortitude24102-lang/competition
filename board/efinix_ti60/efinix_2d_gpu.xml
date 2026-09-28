@@ -53,6 +53,10 @@
     <efx:design_file name="../../generated/efinix_gpu/RectAddressGen.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/AxiReadEngine.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/AxiReadEngine_1.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/ram_2x33.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/Queue2_AxiReadBeat.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/memory_1024x32.sv" version="default" library="default" />
+    <efx:design_file name="../../generated/efinix_gpu/TextureCache.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/PixelReadAligner.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/Rgb565WordAligner.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/ram_33x32.sv" version="default" library="default" />

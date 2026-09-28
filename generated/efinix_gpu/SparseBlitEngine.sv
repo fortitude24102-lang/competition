@@ -242,6 +242,7 @@ module SparseBlitEngine(	// src/main/scala/gpu/SparseBlitEngine.scala:7:7
     .io_request_bits_bytes   (32'h4),
     .io_data_ready           (reader_io_data_ready),	// src/main/scala/gpu/SparseBlitEngine.scala:63:34
     .io_data_valid           (_reader_io_data_valid),
+    .io_data_bits_address    (/* unused */),
     .io_data_bits_data       (_reader_io_data_bits_data),
     .io_axiAr_ready          (io_axi_ar_ready),
     .io_axiAr_valid          (io_axi_ar_valid),

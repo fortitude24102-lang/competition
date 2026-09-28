@@ -9,6 +9,10 @@ $hdmiRelative = 'rtl/display/hdmi_subsystem.v'
 $boardTopRelative = 'rtl/board_top.v'
 $adapterRelative = 'rtl/efinix_sapphire_adapter.v'
 $generatedTopRelative = '../../generated/efinix_gpu/Efinix2dGpuTop.sv'
+$cacheQueueRelative = '../../generated/efinix_gpu/Queue2_AxiReadBeat.sv'
+$cacheMemoryRelative = '../../generated/efinix_gpu/memory_1024x32.sv'
+$cacheRelative = '../../generated/efinix_gpu/TextureCache.sv'
+$denseBlitRelative = '../../generated/efinix_gpu/DenseBlitEngine.sv'
 $sparseDecoderRelative = '../../generated/efinix_gpu/SparseDecoder.sv'
 $sparseBlitRelative = '../../generated/efinix_gpu/SparseBlitEngine.sv'
 $renderEngineRelative = '../../generated/efinix_gpu/RenderEngine.sv'
@@ -18,7 +22,7 @@ $perfTestbenchPath = Join-Path $projectRoot 'tb/verilog/tb_gpu_perf_underflow.sv
 $iverilog = 'D:\FPGA\iverilog\bin\iverilog.exe'
 $vvp = 'D:\FPGA\iverilog\bin\vvp.exe'
 
-if (!(Test-Path -LiteralPath $iverilog) -or !(Test-Path -LiteralPath $vvp)) {
+if (!$StaticOnly -and (!(Test-Path -LiteralPath $iverilog) -or !(Test-Path -LiteralPath $vvp))) {
     throw 'Direct Windows Icarus tools are required at D:\FPGA\iverilog\bin.'
 }
 
@@ -42,6 +46,15 @@ if ([Array]::IndexOf($sourceList, $boardTopRelative) -lt 0) {
 $sparseDecoderIndex = [Array]::IndexOf($sourceList, $sparseDecoderRelative)
 $sparseBlitIndex = [Array]::IndexOf($sourceList, $sparseBlitRelative)
 $renderEngineIndex = [Array]::IndexOf($sourceList, $renderEngineRelative)
+$cacheQueueIndex = [Array]::IndexOf($sourceList, $cacheQueueRelative)
+$cacheMemoryIndex = [Array]::IndexOf($sourceList, $cacheMemoryRelative)
+$cacheIndex = [Array]::IndexOf($sourceList, $cacheRelative)
+$denseBlitIndex = [Array]::IndexOf($sourceList, $denseBlitRelative)
+if ($cacheQueueIndex -lt 0 -or $cacheMemoryIndex -lt 0 -or $cacheIndex -lt 0 -or
+    $denseBlitIndex -lt 0 -or $cacheQueueIndex -gt $cacheIndex -or
+    $cacheMemoryIndex -gt $cacheIndex -or $cacheIndex -gt $denseBlitIndex) {
+    throw 'FAIL generated integration: TextureCache dependencies must precede TextureCache and DenseBlitEngine.'
+}
 if ($sparseDecoderIndex -lt 0 -or $sparseBlitIndex -lt 0) {
     throw 'FAIL generated integration: Sparse decoder/blit RTL is absent from the Efinity source list.'
 }
@@ -105,6 +118,9 @@ if ($adapter -notmatch '\.io_underflow_pulse_gpu\s*\(\s*gpu_underflow_pulse_gpu\
 }
 
 $generatedTop = Get-Content -Raw (Join-Path $generatedRoot 'Efinix2dGpuTop.sv')
+if ($generatedTop -notmatch '(?s)RenderEngine\s+render\s*\(.*?\.io_textureCacheLoad_valid\s*\(\s*_regs_io_textureCacheLoad_valid\s*\).*?\.io_perfCacheBytes\s*\(\s*_render_io_perfCacheBytes\s*\).*?\);') {
+    throw 'FAIL generated integration: generated top does not route the APB cache request and cache-byte counter through RenderEngine.'
+}
 if ($generatedTop -notmatch '(?m)^\s*input\s+io_underflow_pulse_gpu\s*[,)]') {
     throw 'FAIL generated integration: generated top lacks io_underflow_pulse_gpu.'
 }
@@ -117,6 +133,10 @@ if ($generatedTop -notmatch '\.io_perfUnderflows\s*\(\s*_render_io_perfUnderflow
 $generatedRender = Get-Content -Raw (Join-Path $generatedRoot 'RenderEngine.sv')
 if ($generatedRender -notmatch '(?s)GpuPerfCounters\s+perf\s*\(.*?\.io_underflow\s*\(\s*io_underflowPulse\s*\).*?\.io_underflows\s*\(\s*io_perfUnderflows\s*\).*?\);') {
     throw 'FAIL generated integration: RenderEngine underflow input/output is not connected through GpuPerfCounters.'
+}
+$generatedDense = Get-Content -Raw (Join-Path $generatedRoot 'DenseBlitEngine.sv')
+if ($generatedDense -notmatch '(?s)TextureCache\s+textureCache\s*\(.*?\.io_load_valid\s*\(\s*io_textureCacheLoad_valid\s*\).*?\.io_hitBytes\s*\(\s*io_textureCacheHitBytes\s*\).*?\);') {
+    throw 'FAIL generated integration: DenseBlitEngine does not connect TextureCache load and hit-byte interfaces.'
 }
 $generatedPerf = Get-Content -Raw $perfSourcePath
 if ($generatedPerf -notmatch '(?m)^\s*output\s+\[63:0\]\s+io_cycles[\s\S]*?io_underflows' -or

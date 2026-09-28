@@ -52,7 +52,8 @@ module AxiReadEngine(	// src/main/scala/gpu/AxiReadEngine.scala:17:7
                 io_request_bits_bytes,	// src/main/scala/gpu/AxiReadEngine.scala:19:14
   input         io_data_ready,	// src/main/scala/gpu/AxiReadEngine.scala:19:14
   output        io_data_valid,	// src/main/scala/gpu/AxiReadEngine.scala:19:14
-  output [31:0] io_data_bits_data,	// src/main/scala/gpu/AxiReadEngine.scala:19:14
+  output [31:0] io_data_bits_address,	// src/main/scala/gpu/AxiReadEngine.scala:19:14
+                io_data_bits_data,	// src/main/scala/gpu/AxiReadEngine.scala:19:14
   input         io_axiAr_ready,	// src/main/scala/gpu/AxiReadEngine.scala:19:14
   output        io_axiAr_valid,	// src/main/scala/gpu/AxiReadEngine.scala:19:14
   output [31:0] io_axiAr_bits_addr,	// src/main/scala/gpu/AxiReadEngine.scala:19:14
@@ -69,6 +70,7 @@ module AxiReadEngine(	// src/main/scala/gpu/AxiReadEngine.scala:17:7
 
   reg  [1:0]  state;	// src/main/scala/gpu/AxiReadEngine.scala:29:30
   reg  [31:0] currentAddress;	// src/main/scala/gpu/AxiReadEngine.scala:30:35
+  reg  [31:0] beatAddress;	// src/main/scala/gpu/AxiReadEngine.scala:31:32
   reg  [31:0] remainingBeats;	// src/main/scala/gpu/AxiReadEngine.scala:32:35
   reg  [8:0]  beatsLeftInBurst;	// src/main/scala/gpu/AxiReadEngine.scala:33:37
   reg         errorSeen;	// src/main/scala/gpu/AxiReadEngine.scala:34:34
@@ -134,15 +136,19 @@ module AxiReadEngine(	// src/main/scala/gpu/AxiReadEngine.scala:17:7
       errorReg <= _GEN_4 & _errorReg_T;	// src/main/scala/gpu/AxiReadEngine.scala:36:33, :67:25, :87:22, :90:41, :91:28, :93:34, :94:15, :95:16
     end
     if (~_GEN_1 | _io_data_bits_last_T) begin	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/AxiReadEngine.scala:64:39, :67:25, :87:22, :93:34
+      if (_GEN)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
+        currentAddress <= {io_request_bits_address[31:2], 2'h0};	// src/main/scala/gpu/AxiReadEngine.scala:17:7, :30:35, :70:{26,50}
+      if (_GEN_0)	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
+        beatAddress <= currentAddress;	// src/main/scala/gpu/AxiReadEngine.scala:30:35, :31:32
       if (_GEN) begin	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35
         automatic logic [32:0] _remainingBeats_T =
           {31'h0, io_request_bits_address[1:0]} + {1'h0, io_request_bits_bytes} + 33'h3;	// src/main/scala/gpu/AxiReadEngine.scala:68:45, :69:59, :71:35
-        currentAddress <= {io_request_bits_address[31:2], 2'h0};	// src/main/scala/gpu/AxiReadEngine.scala:17:7, :30:35, :70:{26,50}
         remainingBeats <= {1'h0, _remainingBeats_T[32:2]};	// src/main/scala/gpu/AxiReadEngine.scala:32:35, :69:59, :71:{20,35,42}
       end
     end
     else begin	// src/main/scala/gpu/AxiReadEngine.scala:67:25, :87:22, :93:34
       currentAddress <= currentAddress + 32'h4;	// src/main/scala/gpu/AxiReadEngine.scala:30:35, :100:40
+      beatAddress <= beatAddress + 32'h4;	// src/main/scala/gpu/AxiReadEngine.scala:31:32, :101:34
       remainingBeats <= remainingBeats - 32'h1;	// src/main/scala/gpu/AxiReadEngine.scala:32:35, :99:40
     end
     if (~_GEN_1 | _io_data_bits_last_T | expectedLast) begin	// src/main/scala/chisel3/util/ReadyValidIO.scala:48:35, src/main/scala/gpu/AxiReadEngine.scala:64:39, :67:25, :81:23, :87:22, :88:41, :93:34, :102:26, :105:26
@@ -167,7 +173,8 @@ module AxiReadEngine(	// src/main/scala/gpu/AxiReadEngine.scala:17:7
         end	// src/main/scala/gpu/AxiReadEngine.scala:17:7
         state = _RANDOM[2'h0][1:0];	// src/main/scala/gpu/AxiReadEngine.scala:17:7, :29:30
         currentAddress = {_RANDOM[2'h0][31:2], _RANDOM[2'h1][1:0]};	// src/main/scala/gpu/AxiReadEngine.scala:17:7, :29:30, :30:35
-        remainingBeats = {_RANDOM[2'h2][31:2], _RANDOM[2'h3][1:0]};	// src/main/scala/gpu/AxiReadEngine.scala:17:7, :32:35
+        beatAddress = {_RANDOM[2'h1][31:2], _RANDOM[2'h2][1:0]};	// src/main/scala/gpu/AxiReadEngine.scala:17:7, :30:35, :31:32
+        remainingBeats = {_RANDOM[2'h2][31:2], _RANDOM[2'h3][1:0]};	// src/main/scala/gpu/AxiReadEngine.scala:17:7, :31:32, :32:35
         beatsLeftInBurst = _RANDOM[2'h3][10:2];	// src/main/scala/gpu/AxiReadEngine.scala:17:7, :32:35, :33:37
         errorSeen = _RANDOM[2'h3][11];	// src/main/scala/gpu/AxiReadEngine.scala:17:7, :32:35, :34:34
         doneReg = _RANDOM[2'h3][12];	// src/main/scala/gpu/AxiReadEngine.scala:17:7, :32:35, :35:32
@@ -180,6 +187,7 @@ module AxiReadEngine(	// src/main/scala/gpu/AxiReadEngine.scala:17:7
   `endif // ENABLE_INITIAL_REG_
   assign io_request_ready = io_request_ready_0;	// src/main/scala/gpu/AxiReadEngine.scala:17:7, :43:29
   assign io_data_valid = _io_axiR_ready_T & io_axiR_valid;	// src/main/scala/gpu/AxiReadEngine.scala:17:7, :61:{26,42}
+  assign io_data_bits_address = beatAddress;	// src/main/scala/gpu/AxiReadEngine.scala:17:7, :31:32
   assign io_data_bits_data = io_axiR_bits_data;	// src/main/scala/gpu/AxiReadEngine.scala:17:7
   assign io_axiAr_valid = io_axiAr_valid_0;	// src/main/scala/gpu/AxiReadEngine.scala:17:7, :49:27
   assign io_axiAr_bits_addr = currentAddress;	// src/main/scala/gpu/AxiReadEngine.scala:17:7, :30:35

@@ -11,6 +11,10 @@ CommandValidator.sv
 RectAddressGen.sv
 AxiReadEngine.sv
 AxiReadEngine_1.sv
+ram_2x33.sv
+Queue2_AxiReadBeat.sv
+memory_1024x32.sv
+TextureCache.sv
 PixelReadAligner.sv
 Rgb565WordAligner.sv
 ram_33x32.sv

@@ -165,6 +165,7 @@ module ScanoutDma(	// src/main/scala/gpu/ScanoutDma.scala:13:7
     .io_request_bits_bytes   (32'h780),
     .io_data_ready           (_aligner_io_input_ready),	// src/main/scala/gpu/ScanoutDma.scala:35:31
     .io_data_valid           (_reader_io_data_valid),
+    .io_data_bits_address    (/* unused */),
     .io_data_bits_data       (_reader_io_data_bits_data),
     .io_axiAr_ready          (io_axi_ar_ready),
     .io_axiAr_valid          (io_axi_ar_valid),
