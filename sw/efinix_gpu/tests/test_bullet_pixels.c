@@ -18,12 +18,19 @@ static uint16_t oracle[960*540];
 static gpu_command submitted[BULLET_MAX_COMMANDS];
 static unsigned submit_count,wait_count,fetch_count;
 static int fail_fetch;
+static int cache_load_result;
+static uint32_t cache_load_base,cache_load_bytes,cache_load_polls;
 int gpu_submit(gpu_device *d,const gpu_command *c,uint32_t polls,uint16_t *tag) {
  assert(d && polls && submit_count<BULLET_MAX_COMMANDS);
  submitted[submit_count++]=*c; *tag=(uint16_t)submit_count; return 0;
 }
 int gpu_wait_tag(gpu_device *d,uint16_t tag,uint32_t polls) {
  assert(d && polls && tag==submit_count); ++wait_count; return 0;
+}
+int gpu_texture_cache_load(gpu_device *d,uint32_t base,uint32_t bytes,uint32_t polls) {
+ assert(d);
+ cache_load_base=base; cache_load_bytes=bytes; cache_load_polls=polls;
+ return cache_load_result;
 }
 int gpu_fill_async(gpu_device *d,uint32_t dst,uint32_t stride,uint16_t w,uint16_t h,uint16_t color,uint16_t *tag) {
  gpu_command c={.op=GPU_OP_FILL,.dst_addr=dst,.dst_stride=stride,.width_pixels=w,.height_pixels=h,.color=color};
@@ -93,6 +100,10 @@ int main(void) {
  assert(golden_crc32((void *)(uintptr_t)BULLET_LOCAL_BACKGROUND,GPU_FRAME_BYTES)==BULLET_BACKGROUND_CRC);
  assert(golden_crc32((void *)(uintptr_t)BULLET_LOCAL_ATLAS,BULLET_ATLAS_BYTES)==BULLET_ATLAS_CRC);
  assert(!bullet_prepare_assets(GPU_APB_BASE,7) && fetch_count==2);
+ gpu_device cache_device={0};
+ assert(!bullet_prepare_texture_cache(&cache_device,0,123));
+ assert(cache_load_base==BULLET_ATLAS_ADDR && cache_load_bytes==BULLET_ATLAS_BYTES &&
+  cache_load_polls==123);
  for(int failed=101;failed<=102;failed++) {
   fetch_count=0; fail_fetch=failed;
   memset((void *)(uintptr_t)BULLET_LOCAL_BACKGROUND,0xaa,GPU_FRAME_BYTES);
@@ -103,6 +114,21 @@ int main(void) {
   memset((void *)(uintptr_t)BULLET_ATLAS_ADDR,0xee,BULLET_ATLAS_BYTES);
   compare_file("sw/efinix_gpu/assets/bullet/background.rgb565",BULLET_LOCAL_BACKGROUND,GPU_FRAME_BYTES);
   compare_file("sw/efinix_gpu/assets/bullet/atlas.rgb565",BULLET_LOCAL_ATLAS,BULLET_ATLAS_BYTES);
+  cache_load_result=GPU_DRIVER_HARDWARE;
+  uint32_t atlas_crc=golden_crc32((void *)(uintptr_t)BULLET_LOCAL_ATLAS,BULLET_ATLAS_BYTES);
+  assert(!bullet_prepare_frame(&state,32,37,7));
+  assert(!bullet_build_frame(&state,GPU_FRAMEBUFFER_A,0,1,BULLET_MAX_COMMANDS,&scene));
+  memset((void *)(uintptr_t)GPU_FRAMEBUFFER_A,0,GPU_FRAME_BYTES);
+  assert(!perf_render_cpu(scene.commands,scene.count));
+  uint32_t cpu_crc=golden_crc32((void *)(uintptr_t)GPU_FRAMEBUFFER_A,GPU_FRAME_BYTES);
+  memset((void *)(uintptr_t)GPU_FRAMEBUFFER_A,0,GPU_FRAME_BYTES);
+  assert(bullet_prepare_texture_cache(&cache_device,NETWORK_TIMEOUT,456)==GPU_DRIVER_HARDWARE);
+  assert(cache_load_base==BULLET_LOCAL_ATLAS && cache_load_bytes==BULLET_ATLAS_BYTES &&
+   cache_load_polls==456);
+  assert(golden_crc32((void *)(uintptr_t)BULLET_LOCAL_ATLAS,BULLET_ATLAS_BYTES)==atlas_crc);
+  assert(!perf_render_cpu(scene.commands,scene.count));
+  assert(golden_crc32((void *)(uintptr_t)GPU_FRAMEBUFFER_A,GPU_FRAME_BYTES)==cpu_crc);
+  cache_load_result=0;
  }
  fail_fetch=0; fetch_count=0;
  assert(!bullet_prepare_assets(GPU_APB_BASE,7));

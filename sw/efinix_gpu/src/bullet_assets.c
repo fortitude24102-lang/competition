@@ -94,3 +94,8 @@ int bullet_prepare_assets(uintptr_t base,uint32_t session) {
  if(e) bullet_init_local_assets();
  return e;
 }
+
+int bullet_prepare_texture_cache(gpu_device *gpu,int network_result,uint32_t poll_limit) {
+ uint32_t base=network_result==0?BULLET_ATLAS_ADDR:BULLET_LOCAL_ATLAS;
+ return gpu_texture_cache_load(gpu,base,BULLET_ATLAS_BYTES,poll_limit);
+}

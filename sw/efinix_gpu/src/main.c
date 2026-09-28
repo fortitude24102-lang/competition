@@ -44,9 +44,11 @@ static int profile_stage(gpu_device *gpu,const char *name,const gpu_command *com
  uint32_t us=(uint32_t)((gpu_platform_cycles()-t)/(BSP_CLINT_HZ/1000000u));
  if(e) return e;
  e=gpu_read_perf_snapshot(gpu,&hw); if(e) return e;
- bsp_printf("PROFILE,%s,count=%d,us=%d,pixels=%d,rd=%d,wr=%d,stalls=%d,render_grants=%d,scan_grants=%d,under=%d\r\n",
+ uint32_t cache_status=*(volatile uint32_t *)(uintptr_t)(GPU_APB_BASE+GPU_REG_TEXTURE_CACHE_STATUS);
+ bsp_printf("PROFILE,%s,count=%d,us=%d,pixels=%d,rd=%d,wr=%d,stalls=%d,render_grants=%d,scan_grants=%d,under=%d,cache=%d,cache_status=%d\r\n",
   name,count,us,(uint32_t)hw.pixels,(uint32_t)hw.read_bytes,(uint32_t)hw.write_bytes,
-  (uint32_t)hw.stalls,(uint32_t)hw.render_grants,(uint32_t)hw.scanout_grants,(uint32_t)hw.underflows);
+  (uint32_t)hw.stalls,(uint32_t)hw.render_grants,(uint32_t)hw.scanout_grants,
+  (uint32_t)hw.underflows,(uint32_t)hw.cache_bytes,cache_status);
  return 0;
 }
 static int profile_run(gpu_device *gpu,framebuffer_pair *buffers,int network) {
@@ -102,6 +104,12 @@ int main(void) {
  perf_init_local_assets();
 #endif
  gpu_platform_sync();
+#if BULLET_DEMO_DEFAULT
+ int texture_cache_result=bullet_prepare_texture_cache(&gpu,network_result,10000000u);
+ bsp_printf("TEXTURE_CACHE,result=%d,base=%x,bytes=%d,network=%d\r\n",
+  texture_cache_result,network_result==0?BULLET_ATLAS_ADDR:BULLET_LOCAL_ATLAS,
+  BULLET_ATLAS_BYTES,network);
+#endif
  framebuffer_pair buffers; framebuffer_init(&buffers);
 #ifdef V2_PROFILE
  bsp_printf("V2 profile: scene=%s network_result=%d, target=32\r\n",

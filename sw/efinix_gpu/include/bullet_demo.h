@@ -48,4 +48,5 @@ void bullet_init_local_assets(void);
 int bullet_load_network_assets(uintptr_t base,uint32_t session);
 /* Failure regenerates disjoint local assets, even if a DMA abort is unfinished. */
 int bullet_prepare_assets(uintptr_t base,uint32_t session);
+int bullet_prepare_texture_cache(gpu_device *gpu,int network_result,uint32_t poll_limit);
 #endif
