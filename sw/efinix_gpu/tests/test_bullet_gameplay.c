@@ -51,6 +51,59 @@ int main(void) {
   assert(!bullet_reset(&s,1,7)); s.round_tick=times[n]-1;
   assert(!bullet_step(&s) && s.player_x==xs[n]);
  }
+ /* Four 60-tick waves reuse the same slots, but change the launch pattern.
+  * Check both radial/spiral lanes and the alternating biased fan. */
+ static const int wave_vx[]={384,0,-512,0,384};
+ static const int wave_vy[]={0,448,0,-576,0};
+ static const int fan_vx[]={355,171,474,220,355};
+ static const int fan_vy[]={147,414,196,533,147};
+ for(unsigned wave=0;wave<5;wave++) {
+  assert(!bullet_reset(&s,3,7));
+  s.round_tick=wave ? wave*60u-1u : 0u;
+  for(unsigned i=0;i<3;i++) s.objects[i].x=960*256;
+  assert(!bullet_step(&s));
+  assert(s.objects[0].vx==wave_vx[wave] && s.objects[0].vy==wave_vy[wave]);
+  assert(s.objects[0].shape==(wave&3u));
+  assert(s.objects[1].vx==fan_vx[wave] && s.objects[1].vy==fan_vy[wave]);
+  assert(s.objects[2].vx==wave_vx[wave] && s.objects[2].vy==wave_vy[wave]);
+ }
+ /* The maximum-density unattended showcase must reach all four waves before
+  * its first death, rather than merely supporting forced phase fixtures. */
+ assert(!bullet_reset(&s,512,7));
+ unsigned seen_waves=0;
+ for(unsigned frame=0;frame<240u && s.hp;frame++) {
+  assert(!bullet_step(&s));
+  for(unsigned i=0;i<s.count;i++) if(s.objects[i].age==0) {
+   unsigned wave=(s.objects[i].shape+BULLET_SHAPE_COUNT-i%BULLET_SHAPE_COUNT)%BULLET_SHAPE_COUNT;
+   if(wave<4u) seen_waves|=1u<<wave;
+  }
+ }
+ assert(seen_waves==15u);
+ /* The existing three Alpha halos telegraph a wave change for 16 ticks.
+  * Their geometry and the overall command/pixel budget stay fixed. */
+ assert(!bullet_reset(&s,1,7));
+ s.round_tick=59;
+ assert(!bullet_build_frame(&s,GPU_FRAMEBUFFER_A,0,1,BULLET_MAX_COMMANDS,&stream));
+ unsigned warning_count=stream.count,warning_alpha=stream.alpha_commands;
+ uint32_t warning_pixels=stream.alpha_pixels;
+ for(unsigned n=0;n<3;n++) {
+  const gpu_command *c=&stream.commands[stream.count-6u+n*2u];
+  assert(c->op==GPU_OP_ALPHA && c->alpha==208);
+ }
+ s.round_tick=60;
+ assert(!bullet_build_frame(&s,GPU_FRAMEBUFFER_A,0,1,BULLET_MAX_COMMANDS,&stream));
+ assert(stream.count==warning_count && stream.alpha_commands==warning_alpha &&
+        stream.alpha_pixels==warning_pixels);
+ for(unsigned n=0;n<3;n++) assert(stream.commands[stream.count-6u+n*2u].alpha==80);
+ s.round_tick=43;
+ assert(!bullet_build_frame(&s,GPU_FRAMEBUFFER_A,0,1,BULLET_MAX_COMMANDS,&stream));
+ assert(stream.commands[stream.count-6u].alpha==80);
+ s.round_tick=44;
+ assert(!bullet_build_frame(&s,GPU_FRAMEBUFFER_A,0,1,BULLET_MAX_COMMANDS,&stream));
+ assert(stream.commands[stream.count-6u].alpha==88);
+ s.hp=0; s.round_tick=59;
+ assert(!bullet_build_frame(&s,GPU_FRAMEBUFFER_A,0,1,BULLET_MAX_COMMANDS,&stream));
+ assert(stream.commands[stream.count-6u].alpha==80);
  /* Full effect budget and no partial stream on exhaustion. */
  assert(!bullet_reset(&s,512,7));
  for(unsigned i=0;i<512;i++) place(i,100,100);

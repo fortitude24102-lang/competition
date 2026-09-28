@@ -180,7 +180,9 @@ int main(void) {
   scene.visible,scene.count,total,golden_crc32(oracle,sizeof oracle));
  printf("PASS bullet gameplay: tick=%u hp=%u score=%u grazes=%u alpha_commands=%u alpha_pixels=%u\n",
   state.tick,state.hp,state.score,state.grazes,scene.alpha_commands,scene.alpha_pixels);
- for(unsigned tick=0;tick<=180;tick+=90) {
+ static const unsigned preview_ticks[]={0,90,110,180};
+ for(unsigned sample=0;sample<sizeof preview_ticks/sizeof preview_ticks[0];sample++) {
+  unsigned tick=preview_ticks[sample];
   assert(!bullet_prepare_frame(&state,512,tick,7));
   assert(!bullet_build_frame(&state,GPU_FRAMEBUFFER_A,0,1,BULLET_MAX_COMMANDS,&scene));
   m.sprites=(uint16_t)scene.visible;

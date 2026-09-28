@@ -8,6 +8,13 @@ six 8x8 keyed bullet shapes, a 16x16 auto-pilot player, bounded Alpha glows and
 three downward-facing 16x16 aircraft emitters, over an
 original star/circuit arena background. R5 adds automatic movement, HP,
 mask-based collision, graze scoring, protection and failure/restart mechanics.
+R7 cycles four 60-tick attack waves: radial/spiral lanes turn a quarter circle,
+the downward fan alternates right/left-biased lanes, recycled bullets accelerate from 1.5 to
+2.25 pixels per update and rotate through the six shapes. Existing aircraft
+halos brighten for the 16 ticks before each wave change; no extra commands or
+Alpha pixels are added. The 600-tick CPU/GPU replay window still resets the
+same deterministic game state. These are automatic showcase mechanics only;
+physical buttons and one-way CPU-to-GPU presentation await lead approval.
 This is an unattended survival demonstration, not yet a complete playable game.
 UART/network keyboard input remains a future independent task.
 

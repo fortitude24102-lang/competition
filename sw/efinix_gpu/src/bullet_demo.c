@@ -8,15 +8,17 @@ static const int16_t directions[16][2]={
 static void spawn(bullet_state *s,unsigned i,int warm) {
  bullet_object *b=&s->objects[i];
  unsigned kind=i%3u;
- unsigned direction=((i/3u)+(s->seed^7u)+(kind==2?s->tick/8u:0u))&15u;
+ unsigned wave=(s->round_tick/60u)&3u;
+ unsigned direction=((i/3u)+(s->seed^7u)+(kind==2?s->tick/8u:0u)+wave*4u)&15u;
  unsigned radius=warm ? 16u+((i/48u)%10u)*16u : 0u;
  int cx=kind==1?240:kind==2?720:480,cy=kind==1?100:kind==2?220:280;
- if(kind==1) direction=1u+(i/3u)%7u; /* Downward fan. */
+ if(kind==1) direction=1u+(i/3u)%5u+((wave&1u)?2u:0u); /* Right/left-biased downward fans. */
  b->x=cx*256+directions[direction][0]*(int)radius;
  b->y=cy*256+directions[direction][1]*(int)radius;
- b->vx=(int16_t)(directions[direction][0]*3/2);
- b->vy=(int16_t)(directions[direction][1]*3/2);
- b->kind=(uint8_t)kind; b->shape=(uint8_t)(i%BULLET_SHAPE_COUNT); b->age=0; b->grazed=0;
+ int speed=6+(int)wave; /* Q8 speed 1.5, 1.75, 2, 2.25 pixels/update. */
+ b->vx=(int16_t)(directions[direction][0]*speed/4);
+ b->vy=(int16_t)(directions[direction][1]*speed/4);
+ b->kind=(uint8_t)kind; b->shape=(uint8_t)((i+wave)%BULLET_SHAPE_COUNT); b->age=0; b->grazed=0;
 }
 int bullet_reset(bullet_state *s,unsigned count,uint32_t seed) {
  if(!s || !count || count>BULLET_MAX_OBJECTS) return GPU_DRIVER_ARGUMENT;
@@ -180,9 +182,11 @@ int bullet_build_frame(const bullet_state *s,uint32_t dst,int network,int glow,u
   s->player_x-6,s->player_y-6,12,s->invulnerable?192:64,-1,&v);
  if(!e && s->hp) e=sprite(out,cap,dst,atlas+BULLET_PLAYER_OFFSET,s->player_x-8,s->player_y-8,16,0,-1,&v);
  static const int centers[3][2]={{480,280},{240,100},{720,220}};
+ unsigned warning=s->round_tick%60u;
+ int emitter_alpha=s->hp && warning>=44u?80+(int)(warning-43u)*8:80;
  for(unsigned i=0;!e && i<3;i++) {
   if(glow) e=sprite(out,cap,dst,atlas+BULLET_GLOW_OFFSET,
-   centers[i][0]-6,centers[i][1]-6,12,80,-1,&v);
+   centers[i][0]-6,centers[i][1]-6,12,emitter_alpha,-1,&v);
   if(!e) e=sprite(out,cap,dst,atlas+BULLET_EMITTER_OFFSET+i*512u,
    centers[i][0]-8,centers[i][1]-8,16,0,-1,&v);
  }

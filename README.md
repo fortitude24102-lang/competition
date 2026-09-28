@@ -22,6 +22,8 @@ R5 增加有上限的弹幕 Alpha 光晕、护盾，以及自动移动、生命�
 
 R6 修正性能 HUD 字母拥挤：使用 5×7 字体、2 倍整数放大和 4 像素字间/行间留白，保留原有 960×72 HUD、缓存与计数口径，见 [字体清晰度修复与仿真](docs/efinix_2d_gpu/bullet_demo_r6_acceptance.md)。
 
+R7 软件场景增加四段循环弹幕：敌机出弹方向、速度与弹形逐段变化，切换前 16 帧用原有 Alpha 光晕预警；绘制命令数与像素预算不增加，见 [离线验证和预览](docs/efinix_2d_gpu/bullet_demo_r7_acceptance.md)。实体按键及 CPU→GPU 单向展示仍待负责人审批，未接入。
+
 - 负责人：锁定当前同场景 CPU/GPU 基准，定位帧时间和 DDR/命令瓶颈，逐项优化并用同一测试口径复测。性能代码在 `sw/efinix_gpu/src/perf_demo.c`、`main.c`，GPU 在 `chisel/src/main/scala/gpu/`。
 - 组员：优化游戏画面和资源，复用许可明确的现有素材与逻辑；素材在 `sw/efinix_gpu/assets/v2/`，生成器在 `tools/build_v2_assets.py`。改动应保持 CPU/GPU 两种模式读取同一场景，不把 PC 变成渲染节点。每个 `.v` 文件仍只能含一个模块。
 
