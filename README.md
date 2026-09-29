@@ -51,6 +51,10 @@ Key 降至 2.621～2.796 ms，FULL 降至 12.304～12.365 ms，分别改善
 40.0～58.1 FPS、300 帧 P5=30，不能宣称稳定 60 FPS；主要瓶颈已转向
 全屏背景 Copy 和显示节拍。本次普通演示因 PC 的 UDP 8080 服务进程已
 退出而使用内容相同的本地后备图集，不计作新的以太网成功加载证据。
+板测前应在仓库根目录运行
+`powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run-bullet-asset-server.ps1`
+并保持该终端开启；脚本会检查素材、`192.168.1.2` 和 UDP 8080 所有者，
+但不会修改网卡、防火墙或结束其他进程。
 完整设计、哈希、复现命令及原始记录见
 [纹理 Cache 板测](docs/efinix_2d_gpu/texture_cache_20260928.md)。仅 JTAG 临时
 验证，未写 Flash、未替换 `release/v2/`；CPU 基础路径未接入 Cache。

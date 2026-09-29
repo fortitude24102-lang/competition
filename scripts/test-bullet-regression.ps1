@@ -32,12 +32,14 @@ try {
  Run 'v2_assets' @('net_asset_server','asset_protocol','asset_cache')
  & $HostGcc @flags sw/efinix_gpu/tools/asset_server/asset_server.c sw/efinix_gpu/src/asset_protocol.c sw/efinix_gpu/src/net_asset_server.c -lws2_32 -o "$out/asset_server.exe"
  if($LASTEXITCODE -ne 0){throw 'asset server build failed'}
+ & ./scripts/test-bullet-asset-server-launcher.ps1 -ServerPath "$out/asset_server.exe"
+ if($LASTEXITCODE -ne 0){throw 'asset server launcher failed'}
  foreach($catalog in @('v2','bullet')) {
   $env:ASSET_SERVER_TEST_DIRECTORY="sw/efinix_gpu/assets/$catalog"
   & $Python sw/efinix_gpu/tests/test_asset_server_udp.py "$out/asset_server.exe"
   if($LASTEXITCODE -ne 0){throw "UDP catalog $catalog failed"}
  }
- Write-Output 'PASS native regression: 12 existing C suites, V2 and bullet UDP catalogs'
+ Write-Output 'PASS native regression: 12 existing C suites, foreground launcher, V2 and bullet UDP catalogs'
 } finally {
  $env:PYTHONHOME=$savedPythonHome
  $env:ASSET_SERVER_TEST_DIRECTORY=$savedAssetDir

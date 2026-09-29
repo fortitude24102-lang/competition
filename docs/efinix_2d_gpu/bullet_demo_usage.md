@@ -40,12 +40,17 @@ build success does not mean board validation.
 The defaults retain the Sept26 network configuration:
 board 192.168.1.3, PC 192.168.1.2, UDP 8080. Both are configurable with
 -NetworkLocalIp and -NetworkPeerIp. No PC IP/firewall changes are automated.
-Use an existing V2 asset_server.exe or the newly regression-built Windows
-server, with:
+Start the existing server through the checked foreground launcher:
 
 ```powershell
-./release/v2/asset_server.exe ./sw/efinix_gpu/assets/bullet/manifest.csv 8080
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run-bullet-asset-server.ps1
 ```
+
+Keep that terminal open until the board run ends. The launcher validates the
+server, manifest resources, PC address and UDP owner, but never changes the
+adapter or firewall and never terminates an unrelated port owner. If Windows
+asks for network access, allow the selected `asset_server.exe` on the board's
+current private/direct network before retrying.
 
 For legacy firmware use assets/v2/manifest.csv instead. The new IDs 101/102
 reuse the current GET/DATA protocol, packet CRC protection and asset DMA.
@@ -57,9 +62,9 @@ Any partial-load failure regenerates both local resources and shows
 NET FAIL FALLBACK; this is not network acceptance.
 
 Use the V2 temporary JTAG bitstream/load procedure with the freshly selected
-firmware, not a V1 bitstream. No board is currently available: physical download
-and display/keys/network behavior are still unverified. Do not flash this
-candidate as part of offline testing.
+firmware, not a V1 bitstream. A build or host test is not board acceptance;
+capture the UART resource byte counts, retries and result for each physical
+run. Do not flash this candidate as part of testing.
 
 Makefile alternative: DEMO=bullet (default), or DEMO=legacy; supply your SOC and
 TOOLCHAIN paths. Rebuild on mode switches; FORCE prevents stale mode binaries.
