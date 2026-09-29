@@ -42,6 +42,7 @@ int bullet_shape_opaque(unsigned shape,unsigned x,unsigned y);
 int bullet_step(bullet_state *state);
 int bullet_build_frame(const bullet_state *state,uint32_t dst,int network,int glow,
                       unsigned capacity,bullet_stream *stream);
+int bullet_clip_background_for_hud(bullet_stream *stream,unsigned hud_height);
 int bullet_prepare_frame(bullet_state *state,unsigned count,unsigned frame,uint32_t seed);
 int bullet_finish_window(bullet_state *state,bullet_state *start,int gpu_window);
 void bullet_init_local_assets(void);

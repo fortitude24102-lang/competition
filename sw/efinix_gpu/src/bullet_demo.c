@@ -190,3 +190,20 @@ int bullet_build_frame(const bullet_state *s,uint32_t dst,int network,int glow,u
  if(e) out->count=out->visible=out->scene_pixels=out->alpha_commands=out->alpha_pixels=0;
  return e;
 }
+int bullet_clip_background_for_hud(bullet_stream *s,unsigned hud_height) {
+ if(!s || !s->count || hud_height>=GPU_FRAME_HEIGHT) return GPU_DRIVER_ARGUMENT;
+ const gpu_command *c=&s->commands[0];
+ uint64_t bytes=(uint64_t)GPU_FRAME_STRIDE*GPU_FRAME_HEIGHT;
+ if(c->op!=GPU_OP_COPY || c->width_pixels!=GPU_FRAME_WIDTH ||
+    c->height_pixels!=GPU_FRAME_HEIGHT || c->src_stride!=GPU_FRAME_STRIDE ||
+    c->dst_stride!=GPU_FRAME_STRIDE ||
+    (c->dst_addr!=GPU_FRAMEBUFFER_A && c->dst_addr!=GPU_FRAMEBUFFER_B) ||
+    (uint64_t)c->src_addr+bytes>GPU_DDR_END_EXCLUSIVE ||
+    s->scene_pixels<GPU_FRAME_WIDTH*GPU_FRAME_HEIGHT) return GPU_DRIVER_ARGUMENT;
+ uint32_t skip=hud_height*GPU_FRAME_STRIDE;
+ s->commands[0].src_addr+=skip;
+ s->commands[0].dst_addr+=skip;
+ s->commands[0].height_pixels=(uint16_t)(GPU_FRAME_HEIGHT-hud_height);
+ s->scene_pixels-=GPU_FRAME_WIDTH*hud_height;
+ return 0;
+}

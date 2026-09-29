@@ -11,7 +11,7 @@
 #include <sys/mman.h>
 
 static bullet_state state;
-static bullet_stream scene;
+static bullet_stream scene,clipped;
 static hud_command_stream hud;
 static hud_raster_cache cache;
 static uint16_t oracle[960*540];
@@ -89,6 +89,35 @@ static unsigned reference(const gpu_command *commands,unsigned count,FILE *vecto
  }
  return total;
 }
+static void compare_hud_clipped_frames(void) {
+ static const unsigned ticks[]={0,90,180};
+ for(unsigned network=0;network<2;network++) for(unsigned i=0;i<3;i++) {
+  uint32_t full_dst=((network+i)&1u)?GPU_FRAMEBUFFER_B:GPU_FRAMEBUFFER_A;
+  uint32_t clipped_dst=full_dst==GPU_FRAMEBUFFER_A?GPU_FRAMEBUFFER_B:GPU_FRAMEBUFFER_A;
+  assert(!bullet_prepare_frame(&state,64,ticks[i],7));
+  state.objects[0].x=100*256; state.objects[0].y=68*256; state.objects[0].shape=0;
+  assert(!bullet_build_frame(&state,full_dst,(int)network,1,BULLET_MAX_COMMANDS,&scene));
+  assert(!bullet_build_frame(&state,clipped_dst,(int)network,1,BULLET_MAX_COMMANDS,&clipped));
+  uint32_t full_pixels=clipped.scene_pixels;
+  assert(!bullet_clip_background_for_hud(&clipped,72));
+  assert(clipped.commands[0].height_pixels==468);
+  assert(clipped.commands[0].src_addr==scene.commands[0].src_addr+138240u);
+  assert(clipped.commands[0].dst_addr==clipped_dst+138240u);
+  assert(clipped.scene_pixels==full_pixels-69120u);
+  hud_comparison metrics={.sprites=(uint16_t)clipped.visible,.gpu_active=1,
+   .network_ready=(uint8_t)network,.bullet_demo=1,.gameplay=1,.hp=state.hp,
+   .score=state.score,.grazes=state.grazes,.alpha_commands=(uint16_t)clipped.alpha_commands};
+  assert(!hud_update_cache(&metrics,&cache,&hud));
+  gpu_command full_hud,clipped_hud;
+  assert(!hud_cached_command(full_dst,&cache,&full_hud));
+  assert(!hud_cached_command(clipped_dst,&cache,&clipped_hud));
+  memset((void *)(uintptr_t)full_dst,0x11,GPU_FRAME_BYTES);
+  memset((void *)(uintptr_t)clipped_dst,0x22,GPU_FRAME_BYTES);
+  assert(!perf_render_cpu(scene.commands,scene.count)); assert(!perf_render_cpu(&full_hud,1));
+  assert(!perf_render_cpu(clipped.commands,clipped.count)); assert(!perf_render_cpu(&clipped_hud,1));
+  assert(!memcmp((void *)(uintptr_t)full_dst,(void *)(uintptr_t)clipped_dst,GPU_FRAME_BYTES));
+ }
+}
 int main(void) {
  const size_t bytes=0x00d00000u;
  void *memory=mmap((void *)(uintptr_t)GPU_FRAMEBUFFER_A,bytes,PROT_READ|PROT_WRITE,
@@ -132,6 +161,7 @@ int main(void) {
  }
  fail_fetch=0; fetch_count=0;
  assert(!bullet_prepare_assets(GPU_APB_BASE,7));
+ compare_hud_clipped_frames();
  unsigned tiers[]={32,64,128,256,512};
  for(unsigned t=0;t<5;t++) {
   assert(!bullet_prepare_frame(&state,tiers[t],37,7));

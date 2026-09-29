@@ -6,6 +6,11 @@
 static bullet_state state,replay;
 static bullet_state frames[30],start;
 static bullet_stream scene;
+static void reject_clip_unchanged(bullet_stream value,unsigned height) {
+ bullet_stream before=value;
+ assert(bullet_clip_background_for_hud(&value,height)==GPU_DRIVER_ARGUMENT);
+ assert(!memcmp(&value,&before,sizeof value));
+}
 int main(void) {
  /* Missing reset/motion would leave these independently specified coordinates wrong. */
  assert(bullet_reset(&state,32,7)==0);
@@ -23,6 +28,34 @@ int main(void) {
  assert(bullet_build_frame(&state,GPU_FRAMEBUFFER_A,0,1,BULLET_MAX_COMMANDS,&scene)==0);
  assert(scene.visible>0 && scene.visible<=512 && scene.count<=BULLET_MAX_COMMANDS);
  assert(scene.commands[0].op==GPU_OP_COPY && scene.commands[0].width_pixels==960);
+ bullet_stream before=scene;
+ assert(!bullet_clip_background_for_hud(&scene,72));
+ assert(scene.commands[0].src_addr==BULLET_LOCAL_BACKGROUND+138240u);
+ assert(scene.commands[0].dst_addr==GPU_FRAMEBUFFER_A+138240u);
+ assert(scene.commands[0].height_pixels==468 && scene.commands[0].width_pixels==960);
+ assert(scene.commands[0].src_stride==1920 && scene.commands[0].dst_stride==1920);
+ assert(scene.scene_pixels==before.scene_pixels-69120u);
+ assert(scene.count==before.count && scene.visible==before.visible &&
+  scene.alpha_commands==before.alpha_commands && scene.alpha_pixels==before.alpha_pixels);
+ assert(!memcmp(scene.commands+1,before.commands+1,(scene.count-1u)*sizeof scene.commands[0]));
+ assert(!bullet_build_frame(&state,GPU_FRAMEBUFFER_B,1,1,BULLET_MAX_COMMANDS,&scene));
+ assert(!bullet_clip_background_for_hud(&scene,72));
+ assert(scene.commands[0].src_addr==BULLET_BACKGROUND_ADDR+138240u);
+ assert(scene.commands[0].dst_addr==GPU_FRAMEBUFFER_B+138240u && scene.commands[0].height_pixels==468);
+ assert(!bullet_build_frame(&state,GPU_FRAMEBUFFER_A,0,1,BULLET_MAX_COMMANDS,&scene));
+ before=scene; assert(!bullet_clip_background_for_hud(&scene,0));
+ assert(!memcmp(&scene,&before,sizeof scene));
+ assert(bullet_clip_background_for_hud(NULL,72)==GPU_DRIVER_ARGUMENT);
+ bullet_stream invalid={0}; reject_clip_unchanged(invalid,72);
+ invalid=before; reject_clip_unchanged(invalid,540);
+ invalid=before; invalid.commands[0].op=GPU_OP_FILL; reject_clip_unchanged(invalid,72);
+ invalid=before; invalid.commands[0].width_pixels=959; reject_clip_unchanged(invalid,72);
+ invalid=before; invalid.commands[0].height_pixels=539; reject_clip_unchanged(invalid,72);
+ invalid=before; invalid.commands[0].src_stride=1918; reject_clip_unchanged(invalid,72);
+ invalid=before; invalid.commands[0].dst_stride=1918; reject_clip_unchanged(invalid,72);
+ invalid=before; invalid.commands[0].dst_addr=GPU_FRAMEBUFFER_A+2; reject_clip_unchanged(invalid,72);
+ invalid=before; invalid.commands[0].src_addr=GPU_DDR_END_EXCLUSIVE-GPU_FRAME_BYTES+2u; reject_clip_unchanged(invalid,72);
+ invalid=before; invalid.scene_pixels=GPU_FRAME_WIDTH*GPU_FRAME_HEIGHT-1u; reject_clip_unchanged(invalid,72);
  unsigned planes=0,shapes=0;
  for(unsigned i=0;i<state.count;i++) shapes|=1u<<state.objects[i].shape;
  assert(shapes==63);
