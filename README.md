@@ -59,6 +59,20 @@ Key 降至 2.621～2.796 ms，FULL 降至 12.304～12.365 ms，分别改善
 [纹理 Cache 板测](docs/efinix_2d_gpu/texture_cache_20260928.md)。仅 JTAG 临时
 验证，未写 Flash、未替换 `release/v2/`；CPU 基础路径未接入 Cache。
 
+**HUD 覆盖区背景裁剪候选（2026-09-29，尚未发布）：** 普通 GPU 模式
+不再搬运随后会被 960×72 HUD 完全覆盖的背景行；背景 Copy 由 960×540
+缩为 960×468，每帧少读、少写各 138,240 B。Profile、CPU 对照、对象、
+Alpha、960×540 RGB565 双缓冲和 100 MHz 主频均未改变。板端 64 档十组
+GPU 命令时间为 **8.100～8.118 ms，中位 8.104 ms**，比同场景纹理
+Cache 基线中位 9.300 ms 降低 **12.9%**；CPU 保持约 297.1 ms。
+屏显窗口仍为 **40.0～58.1 FPS**，300 个 GPU 样本 P5=30、欠流/错误
+0/0、`windowed_60fps=0`，因此仍不能宣称稳定 60 FPS。网络素材 101/102
+均为零重试，Cache 使用网络图集；Profile 计数确认未裁剪控制仍搬运
+518,400 像素、读写各 1,036,800 B。完整日志见
+[HUD 背景裁剪板测](docs/efinix_2d_gpu/evidence/bullet-board-20260929/hud-background-clip.log)。
+本轮仅 JTAG 临时加载，没有写 Flash 或替换 `release/v2/`；已知非 GPU
+基线异常 `SoftwareDriverSpec`、`PangoBringupSpec` 仍保留。
+
 R2 软件完善增加原创星空/电路场地与飞船素材、HUD 栅格缓存，以及经过像素比对的 512 档位多时刻预览，见 [离线验证记录](docs/efinix_2d_gpu/bullet_demo_r2_acceptance.md)。
 
 R3 将三个发射器替换为飞机，并加入圆、菱形、针、十字、星形和空心环六种子弹；仍仅改软件素材，见 [新画面与离线验证](docs/efinix_2d_gpu/bullet_demo_r3_acceptance.md)。

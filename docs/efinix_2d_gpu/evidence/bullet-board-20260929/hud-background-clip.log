@@ -1,0 +1,85 @@
+HUD-covered background clip board evidence, 2026-09-29
+
+Scope
+- Candidate BIT: D:/efinity_builds/texture_cache_20260928/outflow/efinix_2d_gpu.bit
+- BIT SHA-256: 84B2E64670B1878B806AA6504AF0826280C3A99830FC60A1F79906662639057A
+- Profile BIN SHA-256: ACF43D20E819B9133DB9AEE4C87B5395DBAC975BDA5A829CCDC6D32C1363018C
+- Normal BIN SHA-256: 168D3822310E4DF220AA658723A479AE02F8DEEB1E65AFE68D68A58BDE1371D7
+- GPU/CLINT clock: 100000000 Hz
+- Logical framebuffer: 960x540 RGB565; HDMI output: 1920x1080
+- Load method: JTAG only; no Flash write and no release/v2 replacement
+- Asset server: foreground process, UDP 0.0.0.0:8080, PC 192.168.1.2/24
+
+Geometry contract from the host test
+- Profile/unmodified command 0: COPY, source row 0, destination row 0,
+  width 960, height 540, source/destination stride 1920 bytes.
+- Ordinary GPU command 0: COPY, source row 72, destination row 72,
+  width 960, height 468, source/destination stride 1920 bytes.
+- Saved per frame: 69120 pixels, 138240 read bytes and 138240 write bytes.
+- CPU mode and Profile mode do not call the clip helper.
+- Pixel comparison covers local/network sources, both framebuffer destinations,
+  ticks 0/90/180 and objects crossing row 72.
+
+Profile control (full 540-row background)
+BULLET_ASSET,id=101,bytes=1036800,retries=0,result=0
+BULLET_ASSET,id=102,bytes=3104,retries=0,result=0
+TEXTURE_CACHE,result=0,base=02a00000,bytes=3104,network=1
+V2 profile: scene=BULLET network_result=0, target=32
+PROFILE,BACKGROUND,count=1,us=4222,pixels=518400,rd=1036800,wr=1036800,stalls=74794,render_grants=2566,scan_grants=0,under=286,cache=0,cache_status=1
+PROFILE,KEY,count=36,us=268,pixels=3072,rd=0,wr=2888,stalls=320,render_grants=320,scan_grants=0,under=18,cache=6144,cache_status=1
+PROFILE,ALPHA,count=8,us=105,pixels=1152,rd=2352,wr=2304,stalls=192,render_grants=192,scan_grants=0,under=7,cache=2304,cache_status=1
+PROFILE,FULL,count=45,us=4462,pixels=522624,rd=1039152,wr=1041992,stalls=75938,render_grants=3078,scan_grants=0,under=302,cache=8448,cache_status=1
+PROFILE,PRESENT,us=10313
+PROFILE,BACKGROUND,count=1,us=8717,pixels=518400,rd=1036800,wr=1036800,stalls=5226795,render_grants=2566,scan_grants=698,under=148,cache=0,cache_status=1
+PROFILE,KEY,count=36,us=405,pixels=3072,rd=0,wr=2888,stalls=9876,render_grants=321,scan_grants=32,under=7,cache=6144,cache_status=1
+PROFILE,ALPHA,count=8,us=207,pixels=1152,rd=2448,wr=2304,stalls=9336,render_grants=192,scan_grants=16,under=3,cache=2304,cache_status=1
+PROFILE,FULL,count=45,us=9184,pixels=522624,rd=1039248,wr=1041992,stalls=550189,render_grants=3079,scan_grants=738,under=155,cache=8448,cache_status=1
+PROFILE,PRESENT,us=16623
+V2 profile stopped: result=0 hardware=0
+
+The Profile under fields are short per-stage diagnostics during startup/active
+scanout, not the accepted normal-run delta. The formal normal-run 300-sample
+summary below reports zero new underflows and zero hardware errors after a fresh
+BIT load.
+
+Normal firmware startup after fresh BIT load
+BULLET_ASSET,id=101,bytes=1036800,retries=0,result=0
+BULLET_ASSET,id=102,bytes=3104,retries=0,result=0
+TEXTURE_CACHE,result=0,base=02a00000,bytes=3104,network=1
+SCENE BULLET: AUTO survival, HP/graze/shield/restart, deterministic replay; no physical input
+V2 comparison: CLINT Hz=100000000 network_result=0; KEY1 less KEY2 more
+
+Ten complete 64-target CPU/GPU windows
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=296156
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=563,render_us=8102
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=297100
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=581,render_us=8105
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=297172
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=581,render_us=8104
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=297287
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=487,render_us=8117
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=297109
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=462,render_us=8103
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=297107
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=429,render_us=8100
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=297108
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=487,render_us=8104
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=297128
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=400,render_us=8118
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=297114
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=515,render_us=8116
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=297144
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=450,render_us=8101
+
+BULLET_GPU_300,target=64,frames=300,p5_fps=30,underflows=0,errors=0,windowed_60fps=0
+
+Summary
+- CPU render_us median 297111.5, range 296156..297287; CPU was not optimized.
+- GPU render_us median 8104, range 8100..8118.
+- Previous same-scene texture-cache median was 9300 us; reduction is 1196 us,
+  or 12.86 percent. This is command/render time, not HDMI refresh rate.
+- Displayed GPU windows are 40.0..58.1 FPS, median 48.7 FPS.
+- GPU 300-sample P5 is 30 FPS; windowed_60fps remains 0.
+- Fixed 64-target probes have 64 clipped-visible bullets and 12 Alpha commands;
+  no object, Alpha, resolution or clock reduction was used for the gain.
+- Accepted normal run: network retries 0/0, underflow delta 0, hardware errors 0.

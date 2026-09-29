@@ -304,3 +304,40 @@ PC 仍只提供静态素材，Sapphire 仍负责请求、校验、状态和 GPU 
 原始命令、UART、哈希与环境见
 [network-launcher.log](evidence/bullet-board-20260929/network-launcher.log)。
 本次只用 JTAG，没有写 Flash 或替换 `release/v2/`。
+
+## 2026-09-29 HUD 覆盖区背景裁剪
+
+普通 GPU 模式的第 0 条命令原本把 960×540 背景完整 Copy 到后缓冲，
+随后 960×72 HUD 又完全覆盖顶部区域。本轮只在普通 GPU 模式把背景
+命令改为从源、目标第 72 行开始，尺寸为 960×468；CPU 路径与 Profile
+保持完整 540 行。每帧因此减少 69,120 像素、138,240 B 读和 138,240 B
+写，未改变背景可见像素、对象数量、Alpha、分辨率、主频或显示 QoS。
+
+Host 像素比较覆盖本地/网络背景、A/B 后缓冲、tick 0/90/180，以及穿过
+第 72 行的对象；Icarus 重放 599,464 个像素通过。板端 Profile 对照实际
+报告背景 518,400 像素、读写各 1,036,800 B，证明 Profile 仍为完整
+960×540。普通 64 档固定探针为 64 个可见子弹、12 条 Alpha 命令。
+
+干净重载同一纹理 Cache 位流后，网络素材 101/102 均零重试，网络图集
+Cache 有效。十组完整 CPU/GPU 30 帧窗口结果如下：
+
+| 指标 | CPU 基础路径 | GPU 裁剪候选 |
+| --- | ---: | ---: |
+| `render_us` 中位数 | 297,111.5 | 8,104 |
+| `render_us` 范围 | 296,156～297,287 | 8,100～8,118 |
+| 屏显窗口 FPS | 2.8 | 40.0～58.1（中位 48.7） |
+
+GPU 相比同场景纹理 Cache 基线中位 9,300 us 减少 1,196 us，即
+**12.86%**。300 个 GPU 样本为 `p5_fps=30`、新增欠流 0、硬件错误 0、
+`windowed_60fps=0`。因此接受此候选作为 GPU 命令时间优化，但不把
+8.104 ms 倒数当作游戏 FPS，也不宣称稳定 60 FPS；屏显节拍/HUD/Present
+仍限制整帧。CPU 没有优化，PC 仍只提供静态资源。
+
+位流 SHA-256 为
+`84b2e64670b1878b806aa6504af0826280c3a99830fc60a1f79906662639057a`，
+普通固件 SHA-256 为
+`168d3822310e4df220aa658723a479ae02f8deeb1e65afe68d68a58bde1371d7`。
+原始 Profile、十组窗口、300 样本摘要、命令几何和加载边界见
+[hud-background-clip.log](evidence/bullet-board-20260929/hud-background-clip.log)。
+只用 JTAG 临时加载，未写 Flash、未替换 `release/v2/`；已知非 GPU
+`SoftwareDriverSpec`、`PangoBringupSpec` 异常未在本轮处理。
