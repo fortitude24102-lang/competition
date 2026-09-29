@@ -280,3 +280,27 @@ LUT 28,835→29,274、FF 27,238→27,354、DSP48 10→14，RAM10 不变。
 `7f77708a18e0a71a33800fb1a62bdce094a9c21418e32244bde7b2feac327d34`；
 只通过 JTAG 临时加载，没有写 Flash 或覆盖 `release/v2/`。实现、完整
 对比表和证据索引见 [半字相位 DMA](key_phase_dma_20260928.md)。
+
+## 2026-09-29 前台资源服务器复验
+
+新增 `scripts/run-bullet-asset-server.ps1`，在运行现有 C 服务器前检查素材
+清单、PC IPv4 和 UDP 端口所有者；服务器仍以前台进程运行，脚本不修改
+网卡、防火墙，也不结束未知占用进程。进程级测试覆盖正常前台运行、同一
+服务器重复启动、外部端口占用、缺失资源和错误本机地址；现有真实 GET、
+分块、LAST 和 CRC 测试对弹幕目录为 2/2 通过。
+
+PC `192.168.1.2/24`、千兆链路和 UDP 8080 监听确认后，重新通过 JTAG
+临时加载纹理 Cache 候选位流与普通弹幕固件。COM13 实测如下：
+
+```text
+BULLET_ASSET,id=101,bytes=1036800,retries=0,result=0
+BULLET_ASSET,id=102,bytes=3104,retries=0,result=0
+TEXTURE_CACHE,result=0,base=02a00000,bytes=3104,network=1
+```
+
+这证明此前网络超时是 PC 服务进程未持续监听造成的运行前置条件缺失，
+不是 PHY、板端 IP、协议或素材 CRC 故障。本轮没有改 C 服务器和协议；
+PC 仍只提供静态素材，Sapphire 仍负责请求、校验、状态和 GPU 命令。
+原始命令、UART、哈希与环境见
+[network-launcher.log](evidence/bullet-board-20260929/network-launcher.log)。
+本次只用 JTAG，没有写 Flash 或替换 `release/v2/`。

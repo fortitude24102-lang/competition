@@ -1,0 +1,40 @@
+2026-09-29 foreground asset-server board acceptance
+
+PC preconditions
+IP=192.168.1.2/24 adapter=以太网 2 state=Preferred
+adapter_status=Up speed=1 Gbps
+UDP=0.0.0.0:8080 PID=24504
+server_path=D:\ZYNQ\smallproject\.worktrees\pango-riscv-cpu\generated\verification\v2-network-software\asset_server.exe
+
+Launcher
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run-bullet-asset-server.ps1
+ASST server already running: PID=24504 path=D:\ZYNQ\smallproject\.worktrees\pango-riscv-cpu\generated\verification\v2-network-software\asset_server.exe UDP=8080
+
+Build
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-efinix-software.ps1 -FirmwareOnly -Demo bullet -NetworkLocalIp 0xc0a80103 -NetworkPeerIp 0xc0a80102
+PASS: Sapphire ELF/BIN/Intel HEX; scene=bullet profile=False local=0xc0a80103 peer=0xc0a80102 (not board executed)
+
+Volatile JTAG load
+D:\efinity\pgm\bin\ftdi_pgm.bat D:\efinity_builds\texture_cache_20260928\outflow\efinix_2d_gpu.bit -m jtag
+Device ID read from JTAG: 0x10660A79
+finished with JTAG programming
+
+D:\efinity\risc_v_gcc\openocd\bin\openocd.exe -f ftdi_ti.cfg -f debug_ti.cfg -c "init; reset halt; load_image <worktree>/generated/verification/efinix-software/gpu_demo.bin 0x1000 bin; resume 0x1000; shutdown"
+[fpga_spinal.cpu0] Target successfully examined.
+shutdown command invoked
+
+COM13, 115200 baud, UART after reset/load
+BULLET_ASSET,id=101,bytes=1036800,retries=0,result=0
+BULLET_ASSET,id=102,bytes=3104,retries=0,result=0
+TEXTURE_CACHE,result=0,base=02a00000,bytes=3104,network=1
+SCENE BULLET: AUTO survival, HP/graze/shield/restart, deterministic replay; no physical input
+V2 comparison: CLINT Hz=100000000 network_result=0; KEY1 less KEY2 more
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=297128
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=300,render_us=9270
+
+SHA-256
+84B2E64670B1878B806AA6504AF0826280C3A99830FC60A1F79906662639057A  efinix_2d_gpu.bit
+E84A6FEB410B3DE1248DF27CD9126F924579030F37C400A504B23193D6FFBAAB  gpu_demo.bin
+BDF36BA7D5DBFA7E2E3E70A98E130FB84B061099670DA35879FDADFFC2DA8B53  asset_server.exe
+
+No Flash operation was issued. release/v2 was not modified.
