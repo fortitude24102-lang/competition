@@ -48,13 +48,19 @@ try {
    '-ServerPath',$server,'-Manifest',$manifest,'-Port',$port,'-PcAddress','127.0.0.1')
  $processes.Add($wrapper)
  $owner=Wait-Owner $port
+ $serverProcess=Get-Process -Id $owner -ErrorAction Stop
+ $processes.Add($serverProcess)
  if($wrapper.HasExited) { throw "foreground wrapper exited early: $([IO.File]::ReadAllText($stderr))" }
- $ownerPath=(Get-Process -Id $owner).Path
+ $ownerPath=$serverProcess.Path
  if([IO.Path]::GetFullPath($ownerPath) -ne $server) { throw "wrong UDP owner: $ownerPath" }
 
  $again=Run-Launcher @('-ServerPath',$server,'-Manifest',$manifest,'-Port',"$port",'-PcAddress','127.0.0.1')
  if($again.Code -ne 0 -or $again.Text -notlike '*already running*') { throw "duplicate detection failed: $($again.Text)" }
  if((Wait-Owner $port) -ne $owner) { throw 'duplicate invocation replaced the original server' }
+ $otherAsset=Join-Path $temp 'other.bin'; [IO.File]::WriteAllBytes($otherAsset,[byte[]](5,6,7,8))
+ $otherManifest=Join-Path $temp 'other.csv'; [IO.File]::WriteAllText($otherManifest,"8,other.bin`n",[Text.Encoding]::ASCII)
+ Assert-Fails @('-ServerPath',$server,'-Manifest',$otherManifest,'-Port',"$port",'-PcAddress','127.0.0.1') 'different manifest'
+ if((Wait-Owner $port) -ne $owner) { throw 'mismatched invocation replaced the original server' }
 
  Stop-Process -Id $owner -Force
  if(!$wrapper.WaitForExit(5000)) { throw 'wrapper did not exit with its foreground server' }
@@ -77,7 +83,10 @@ try {
  Write-Output 'PASS bullet asset server launcher: foreground, duplicate, foreign owner, inputs'
 } finally {
  foreach($process in $processes) {
-  if(!$process.HasExited) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
+  if(!$process.HasExited) {
+   Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+   [void]$process.WaitForExit(5000)
+  }
  }
  if(Test-Path -LiteralPath $temp) {
   $resolved=[IO.Path]::GetFullPath($temp)

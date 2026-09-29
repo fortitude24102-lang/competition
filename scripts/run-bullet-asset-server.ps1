@@ -53,7 +53,12 @@ if($endpoints) {
  $owner=Get-Process -Id $owners[0] -ErrorAction Stop
  $ownerPath=if($owner.Path){[IO.Path]::GetFullPath($owner.Path)}else{'<unavailable>'}
  if($ownerPath.Equals($server,[StringComparison]::OrdinalIgnoreCase)) {
-  Write-Output "ASST server already running: PID=$($owner.Id) path=$ownerPath UDP=$Port"
+  $commandLine=(Get-CimInstance Win32_Process -Filter "ProcessId=$($owner.Id)" -ErrorAction SilentlyContinue).CommandLine
+  $sameManifest=$commandLine -match ('(?i)(?:^|\s)"?' + [Regex]::Escape($manifestPath) + '"?\s+' + $Port + '\s*$')
+  if(!$sameManifest) {
+   throw "UDP $Port uses the same asset server with a different manifest or unverifiable command line: PID=$($owner.Id)"
+  }
+  Write-Output "ASST server already running: PID=$($owner.Id) path=$ownerPath manifest=$manifestPath UDP=$Port"
   return
  }
  throw "UDP $Port is already owned by PID=$($owner.Id) path=$ownerPath"
