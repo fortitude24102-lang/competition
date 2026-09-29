@@ -67,6 +67,8 @@ try {
  Wait-Owner $foreignPort | Out-Null
  Assert-Fails @('-ServerPath',$server,'-Manifest',$manifest,'-Port',"$foreignPort",'-PcAddress','127.0.0.1') 'already owned'
  if($foreign.HasExited) { throw 'launcher terminated the foreign UDP owner' }
+ $emptyManifest=Join-Path $temp 'empty.csv'; [IO.File]::WriteAllText($emptyManifest,"# no assets`n",[Text.Encoding]::ASCII)
+ Assert-Fails @('-ServerPath',$server,'-Manifest',$emptyManifest,'-Port',"$foreignPort",'-PcAddress','127.0.0.1') 'no assets'
 
  Assert-Fails @('-ServerPath',$server,'-Manifest',(Join-Path $temp 'missing.csv'),'-Port',"$(Free-Port)",'-PcAddress','127.0.0.1') 'manifest'
  $badManifest=Join-Path $temp 'bad.csv'; [IO.File]::WriteAllText($badManifest,"8,missing.bin`n",[Text.Encoding]::ASCII)

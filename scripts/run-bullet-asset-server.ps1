@@ -23,6 +23,7 @@ if(!(Test-Path -LiteralPath $server -PathType Leaf)) { throw "asset server not f
 if(!(Test-Path -LiteralPath $manifestPath -PathType Leaf)) { throw "asset manifest not found: $manifestPath" }
 
 $manifestRoot=Split-Path $manifestPath -Parent
+$assetCount=0
 foreach($line in [IO.File]::ReadAllLines($manifestPath)) {
  $line=$line.Trim()
  if(!$line -or $line.StartsWith('#')) { continue }
@@ -33,7 +34,9 @@ foreach($line in [IO.File]::ReadAllLines($manifestPath)) {
  }
  $resource=[IO.Path]::GetFullPath((Join-Path $manifestRoot $fields[1].Trim()))
  if(!(Test-Path -LiteralPath $resource -PathType Leaf)) { throw "manifest resource not found: $resource" }
+ ++$assetCount
 }
+if(!$assetCount) { throw "asset manifest contains no assets: $manifestPath" }
 
 [Net.IPAddress]$parsed=$null
 if(![Net.IPAddress]::TryParse($PcAddress,[ref]$parsed) -or $parsed.AddressFamily -ne [Net.Sockets.AddressFamily]::InterNetwork) {
