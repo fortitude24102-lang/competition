@@ -153,6 +153,7 @@ int main(void) {
   }
 #if BULLET_DEMO_DEFAULT
   e=bullet_build_frame(&bullets,buffers.back,network,1,BULLET_MAX_COMMANDS,&scene);
+  if(!e && mode) e=bullet_clip_background_for_hud(&scene,HUD_CACHE_HEIGHT);
 #else
   e=perf_build_frame(buffers.back,tiers[tier],frame,network,&scene);
 #endif
