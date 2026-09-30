@@ -44,7 +44,7 @@ try {
  Check 'bullet RTL simulation'
  & $Python tools/bullet_preview.py "$out/frame.rgb565" "$out/preview.png"
  Check 'encode preview'
- foreach($tick in @('000','090','180')) {
+ foreach($tick in @('000','090','110','180')) {
   & $Python tools/bullet_preview.py "$out/frame512_$tick.rgb565" "$out/preview512_$tick.png"
   Check "encode 512 preview $tick"
  }

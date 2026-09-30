@@ -1,0 +1,22 @@
+R7 integration and temporary JTAG load, 2026-09-30
+Source: A-work c0e155d4b55fa5a91bab365bed86bf63d4f8f713
+Integration parent: ec8387c (texture Cache, GPU HUD DMA, GPU-only background clip)
+BIT: D:/efinity_builds/texture_cache_20260928/outflow/efinix_2d_gpu.bit
+BIT SHA-256: 84B2E64670B1878B806AA6504AF0826280C3A99830FC60A1F79906662639057A
+BIN: generated/verification/bullet-demo/r7-board/gpu_demo.bin
+BIN SHA-256: 4612FA887ADC22DD3C47FDC71D8217CF8EC664B42996BF3D81B31D771649FE43
+Build: scripts/test-bullet-clip-firmware.ps1 normal artifact, board 192.168.1.3, PC 192.168.1.2
+Load: fresh BIT via ftdi_pgm -m jtag; OpenOCD reset halt, load_image BIN 0x1000 bin, resume 0x1000, shutdown
+Server: scripts/run-bullet-asset-server.ps1 foreground, bullet manifest, UDP 8080
+UART: COM13 115200
+No Flash write; release/v2 unchanged.
+
+BULLET_ASSET,id=101,bytes=1036800,retries=0,result=0
+BULLET_ASSET,id=102,bytes=3104,retries=0,result=0
+TEXTURE_CACHE,result=0,base=02a00000,bytes=3104,network=1
+SCENE BULLET: AUTO survival, HP/graze/shield/restart, deterministic replay; no physical input
+V2 comparison: CLINT Hz=100000000 network_result=0; KEY1 less KEY2 more
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=296316
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=563,render_us=8099
+
+This is a startup and one-window run check, not 300-frame stability or visual acceptance.

@@ -83,6 +83,16 @@ R5 增加有上限的弹幕 Alpha 光晕、护盾，以及自动移动、生命�
 
 R6 修正性能 HUD 字母拥挤：使用 5×7 字体、2 倍整数放大和 4 像素字间/行间留白，保留原有 960×72 HUD、缓存与计数口径，见 [字体清晰度修复与仿真](docs/efinix_2d_gpu/bullet_demo_r6_acceptance.md)。
 
+R7 软件场景增加四段循环弹幕：敌机出弹方向、速度与弹形逐段变化，切换前 16 帧用原有 Alpha 光晕预警；绘制命令数与像素预算不增加，见 [离线验证和预览](docs/efinix_2d_gpu/bullet_demo_r7_acceptance.md)。实体按键及 CPU→GPU 单向展示仍待负责人审批，未接入。
+
+2026-09-30 已将 A-work `c0e155d` 的 R7 合入当前性能候选，并通过 JTAG
+临时加载运行。GPU 纹理 Cache、HUD DMA、背景 72 行裁剪保留；CPU
+基础路径保留。两份素材加载均零重试；首个 64 档 GPU 30 帧窗口为
+56.3 FPS、场景 8.099 ms，仅作运行检查。上方 R6 的十窗口/300 样本
+性能结果仍是历史基线，不能直接作为 R7 的稳定性验收。合并后的游戏
+边界、最终像素等价、RTL 重放和普通/Profile 固件入口检查通过；见
+[R7 集成记录](docs/efinix_2d_gpu/bullet_demo_r7_acceptance.md#2026-09-30-性能候选集成与临时加载)。
+
 - 负责人：锁定当前同场景 CPU/GPU 基准，定位帧时间和 DDR/命令瓶颈，逐项优化并用同一测试口径复测。性能代码在 `sw/efinix_gpu/src/perf_demo.c`、`main.c`，GPU 在 `chisel/src/main/scala/gpu/`。
 - 组员：优化游戏画面和资源，复用许可明确的现有素材与逻辑；素材在 `sw/efinix_gpu/assets/v2/`，生成器在 `tools/build_v2_assets.py`。改动应保持 CPU/GPU 两种模式读取同一场景，不把 PC 变成渲染节点。每个 `.v` 文件仍只能含一个模块。
 
