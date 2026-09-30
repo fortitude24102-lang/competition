@@ -161,3 +161,23 @@ int hud_build_comparison(uint32_t dst,const hud_comparison *m,hud_command_stream
  }
  return 0;
 }
+
+/* Reuse the exact existing bitmaps without changing the CPU raster path.
+ * Opaque cells include the 3px top margin, 4px gutter and trailing black row. */
+void hud_init_glyph_atlas(void) {
+ _Static_assert(sizeof(HUD_GLYPH_CHARACTERS)-1u==HUD_GLYPH_COUNT,"glyph count");
+ _Static_assert(HUD_CACHE_ADDR+HUD_CACHE_BYTES<=HUD_GLYPH_ATLAS_ADDR,"HUD/atlas separation");
+ _Static_assert(HUD_GLYPH_ATLAS_ADDR+HUD_GLYPH_ATLAS_BYTES<=GPU_DDR_END_EXCLUSIVE,"glyph DDR bounds");
+ uint16_t *out=(uint16_t *)(uintptr_t)HUD_GLYPH_ATLAS_ADDR;
+ for(unsigned bank=0;bank<2;bank++) for(unsigned glyph=0;glyph<HUD_GLYPH_COUNT;glyph++) {
+  unsigned char ch=(unsigned char)HUD_GLYPH_CHARACTERS[glyph];
+  for(unsigned y=0;y<HUD_GLYPH_HEIGHT;y++) {
+   unsigned row=y>=3 && y<17?(y-3)/2:7;
+   unsigned bits=row==7?0:ch>='A'&&ch<='Z'?comparison_letters[ch-'A'][row]:
+    ch>='0'&&ch<='9'?comparison_digits[ch-'0'][row]:
+    ch=='-'?(row==3?14:0):ch=='.'?(row==6?4:0):0;
+   for(unsigned x=0;x<HUD_GLYPH_WIDTH;x++)
+    *out++=x<10 && (bits&(16u>>(x/2)))?(bank?0x07e0:0xffff):0;
+  }
+ }
+}

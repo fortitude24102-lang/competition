@@ -32,6 +32,7 @@ try {
   'sw/efinix_gpu/src/assets.c','sw/efinix_gpu/src/sparse_pack.c',
   'sw/efinix_gpu/src/golden_renderer.c','sw/efinix_gpu/src/rgb565.c')
  Run-Test 'test_hud_cache' (@('sw/efinix_gpu/tests/test_hud_cache.c','sw/efinix_gpu/src/hud_cache.c')+$render) $mapped
+ Run-Test 'test_hud_gpu_cache' (@('sw/efinix_gpu/tests/test_hud_gpu_cache.c','sw/efinix_gpu/src/hud_gpu_cache.c','sw/efinix_gpu/src/hud_cache.c')+$render) $mapped
  Run-Test 'test_bullet_pixels' (@('sw/efinix_gpu/tests/test_bullet_pixels.c',
   'sw/efinix_gpu/src/bullet_demo.c','sw/efinix_gpu/src/bullet_assets.c','sw/efinix_gpu/src/hud_cache.c')+$render) $mapped
  Run-Test 'test_perf_demo' (@('sw/efinix_gpu/tests/test_perf_demo.c')+$render) $mapped

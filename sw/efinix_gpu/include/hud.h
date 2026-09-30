@@ -28,6 +28,14 @@ int hud_build_comparison(uint32_t destination,const hud_comparison *metrics,hud_
 #define HUD_CACHE_ADDR 0x02c10000u
 #define HUD_CACHE_HEIGHT 72u
 #define HUD_CACHE_BYTES (GPU_FRAME_STRIDE*HUD_CACHE_HEIGHT)
+#define HUD_GLYPH_ATLAS_ADDR (HUD_CACHE_ADDR+0x30000u)
+#define HUD_GLYPH_CHARACTERS "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-. "
+#define HUD_GLYPH_COUNT 39u
+#define HUD_GLYPH_WIDTH 14u
+#define HUD_GLYPH_HEIGHT 18u
+#define HUD_GLYPH_CELL_BYTES (HUD_GLYPH_WIDTH*HUD_GLYPH_HEIGHT*2u)
+#define HUD_GLYPH_BANK_BYTES (HUD_GLYPH_COUNT*HUD_GLYPH_CELL_BYTES)
+#define HUD_GLYPH_ATLAS_BYTES (2u*HUD_GLYPH_BANK_BYTES)
 typedef struct {
  char text[HUD_COMPARISON_LINES][HUD_COMPARISON_COLUMNS];
  uint32_t rebuilds;
@@ -36,5 +44,11 @@ typedef struct {
 /* Zero-initialize cache; scratch must be static/BSS (too large for board stack).
  * Caller synchronizes DDR after update, before consuming the cached COPY. */
 int hud_update_cache(const hud_comparison *metrics,hud_raster_cache *cache,hud_command_stream *scratch);
+/* Generate once before sampling; caller synchronizes DDR before GPU reads.
+ * GPU updater waits for all writes before committing shared cache metadata.
+ * CPU updater above intentionally retains its original full software raster. */
+void hud_init_glyph_atlas(void);
+int hud_update_gpu_cache(gpu_device *device,const hud_comparison *metrics,
+ hud_raster_cache *cache,hud_command_stream *scratch,uint32_t poll_limit);
 int hud_cached_command(uint32_t destination,const hud_raster_cache *cache,gpu_command *command);
 #endif
