@@ -32,11 +32,11 @@
 
 **Interfaces:** Produces `void hud_init_glyph_atlas(void)` and `int hud_update_gpu_cache(gpu_device *, const hud_comparison *, hud_raster_cache *, hud_command_stream *, uint32_t)`; consumes existing font tables, formatted text and `perf_render_gpu`.
 
-- [ ] Write the raster test first: existing full redraw oracle versus GPU commands; 6→7 copies exactly 504 bytes and uses one Copy; unchanged text uses zero commands; long→short and mode/network/maximum fields match; injected timeout invalidates and retry restores full raster; invalid arguments have no writes.
-- [ ] Run `powershell -NoProfile -File scripts/test-hud-glyphs.ps1`; expected RED for missing new symbols.
-- [ ] Generate cells directly from existing static font tables at startup; implement changed-cell batch with final-tag wait and post-success text commit.
-- [ ] Run the test; expected all cases PASS, canaries intact. Run existing CPU HUD test and C suite to preserve baseline.
-- [ ] Commit tested Task 1 files.
+- [x] Write the raster test first: existing full redraw oracle versus GPU commands; 6→7 copies exactly 504 bytes and uses one Copy; unchanged text uses zero commands; long→short and mode/network/maximum fields match; injected timeout invalidates and retry restores full raster; invalid arguments have no writes.
+- [x] Run `powershell -NoProfile -File scripts/test-hud-glyphs.ps1`; expected RED for missing new symbols.
+- [x] Generate cells directly from existing static font tables at startup; implement changed-cell batch with final-tag wait and post-success text commit.
+- [x] Run the test; expected all cases PASS, canaries intact. Run existing CPU HUD test and C suite to preserve baseline.
+- [x] Commit tested Task 1 files.
 
 ### Task 2: Integration and measured acceptance
 
@@ -44,8 +44,10 @@
 
 **Interfaces:** Consumes Task 1 atlas/updater; ordinary GPU calls new updater, CPU calls unchanged updater. Keep existing final HUD Copy and frame timing definitions.
 
-- [ ] Add linked-image test for reachable new updater in ordinary main, absent from Profile/legacy. Build and observe RED before routing change.
-- [ ] Initialize atlas before performance sampling and platform sync. Route only ordinary bullet GPU frames to new updater; retain CPU and Profile/legacy behavior.
-- [ ] Run host pixel tests, linked entry checks, existing software suite and board hook build; expected PASS. CPU golden code unchanged.
-- [ ] Read board availability. If accessible, JTAG-load unchanged BIT and candidate BIN; measure GPU HUD update and ordinary ten 30-frame windows / 300 GPU samples, network result, errors and underflows. If unavailable, record the blocker without inventing board results.
-- [ ] Record results, compare against historical R7 and HUD baselines with their different sampling boundaries; decide whether descriptor/glyph hardware is justified. Commit; do not push without user request.
+- [x] Add linked-image test for reachable new updater in ordinary main, absent from Profile/legacy. Build and observe RED before routing change.
+- [x] Initialize atlas before performance sampling and platform sync. Route only ordinary bullet GPU frames to new updater; retain CPU and Profile/legacy behavior.
+- [x] Run host pixel tests, linked entry checks, existing software suite and board hook build; expected PASS. CPU golden code unchanged.
+- [x] Read board availability. If accessible, JTAG-load unchanged BIT and candidate BIN; measure GPU HUD update and ordinary ten 30-frame windows / 300 GPU samples, network result, errors and underflows. If unavailable, record the blocker without inventing board results.
+- [x] Record results, compare against historical R7 and HUD baselines with their different sampling boundaries; decide whether descriptor/glyph hardware is justified. Commit; do not push without user request.
+
+Completed locally on 2026-09-30, commits `5cf07d9` and `6abf188`; independent review found no blocking issues. Performance, unresolved warm-reload underflows and two deferred test/capture gaps: `docs/efinix_2d_gpu/hud_glyphs_20260930.md`.
