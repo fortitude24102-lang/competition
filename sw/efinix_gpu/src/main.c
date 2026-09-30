@@ -118,6 +118,10 @@ int main(void) {
  bsp_printf("V2 profile stopped: result=%d hardware=%d\r\n",profile_result,gpu.hardware_error);
  return profile_result!=0;
 #endif
+#if BULLET_DEMO_DEFAULT && !defined(V2_PROFILE)
+ hud_init_glyph_atlas();
+ gpu_platform_sync();
+#endif
  perf_window samples[2]={{0},{0}};
  hud_comparison metrics={.network_ready=(uint8_t)network};
 #if BULLET_DEMO_DEFAULT
@@ -174,7 +178,8 @@ int main(void) {
   metrics.alpha_commands=(uint16_t)scene.alpha_commands;
 #endif
 #if BULLET_DEMO_DEFAULT
-  e=hud_update_cache(&metrics,&hud_cache,&overlay); if(e) break;
+  e=mode?hud_update_gpu_cache(&gpu,&metrics,&hud_cache,&overlay,10000000u):
+   hud_update_cache(&metrics,&hud_cache,&overlay); if(e) break;
   gpu_platform_sync();
   e=hud_cached_command(buffers.back,&hud_cache,&overlay.commands[0]); if(e) break;
   overlay.count=1;

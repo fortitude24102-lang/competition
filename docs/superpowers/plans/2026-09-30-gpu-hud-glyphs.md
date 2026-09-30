@@ -40,7 +40,7 @@
 
 ### Task 2: Integration and measured acceptance
 
-**Files:** Modify `src/main.c`, `tests/test_board_hud_dma.c`; update README and create dated evidence/report under `docs/efinix_2d_gpu/`.
+**Files:** Modify `src/main.c`, `tests/test_board_hud_dma.c`, build-board-hud-dma-test.ps1 and bullet_demo_usage.md; create test-hud-glyph-entry.ps1, measure-hud-glyphs-board.ps1, test_board_hud_glyphs.c and test_board_hud_glyph_sweep.c; update README and create dated evidence/report under `docs/efinix_2d_gpu/`.
 
 **Interfaces:** Consumes Task 1 atlas/updater; ordinary GPU calls new updater, CPU calls unchanged updater. Keep existing final HUD Copy and frame timing definitions.
 

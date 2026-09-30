@@ -1,0 +1,16 @@
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=298770
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=601,render_us=8104
+BULLET_ASSET,id=101,bytes=1036800,retries=0,result=0
+BULLET_ASSET,id=102,bytes=3104,retries=0,result=0
+GLYPH_SWEEP_START,network_result=0,warmup=30,samples=300
+GLYPH_SWEEP,target=32,frames=300,fps_x10=601,render_us=7809,p5_fps=60,underflows=0,errors=0,qualified=1
+GLYPH_SWEEP_PHASE,target=32,cache_us=147,hud_dma_us=1196,present_us=6916,max_cache_us=1232,max_render_us=7895,max_before_present_us=10885
+GLYPH_SWEEP,target=64,frames=300,fps_x10=601,render_us=8250,p5_fps=60,underflows=0,errors=0,qualified=1
+GLYPH_SWEEP_PHASE,target=64,cache_us=163,hud_dma_us=1196,present_us=5984,max_cache_us=1202,max_render_us=8308,max_before_present_us=11846
+GLYPH_SWEEP,target=128,frames=300,fps_x10=601,render_us=8761,p5_fps=60,underflows=0,errors=0,qualified=1
+GLYPH_SWEEP_PHASE,target=128,cache_us=187,hud_dma_us=1200,present_us=4323,max_cache_us=1180,max_render_us=8822,max_before_present_us=13434
+GLYPH_SWEEP,target=256,frames=300,fps_x10=597,render_us=9813,p5_fps=60,underflows=0,errors=0,qualified=1
+GLYPH_SWEEP_PHASE,target=256,cache_us=220,hud_dma_us=1193,present_us=989,max_cache_us=1355,max_render_us=9905,max_before_present_us=16806
+GLYPH_SWEEP,target=512,frames=300,fps_x10=300,render_us=11200,p5_fps=30,underflows=0,errors=0,qualified=0
+GLYPH_SWEEP_PHASE,target=512,cache_us=258,hud_dma_us=1197,present_us=11398,max_cache_us=1365,max_render_us=11297,max_before_present_us=23260
+GLYPH_SWEEP_STOP,result=0,hardw

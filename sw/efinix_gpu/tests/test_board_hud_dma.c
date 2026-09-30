@@ -4,7 +4,16 @@
 #include "perf_demo.h"
 #include "hud.h"
 #include "bsp.h"
-static unsigned scene_gpu,cpu_huds,passed;
+static unsigned scene_gpu,cpu_huds,passed,glyph_updates;
+static int checked_cpu_cache(const hud_comparison *m,hud_raster_cache *cache,hud_command_stream *scratch) {
+ if(scene_gpu) return GPU_DRIVER_HARDWARE;
+ return hud_update_cache(m,cache,scratch);
+}
+static int checked_gpu_cache(gpu_device *gpu,const hud_comparison *m,hud_raster_cache *cache,hud_command_stream *scratch,uint32_t polls) {
+ if(!scene_gpu) return GPU_DRIVER_HARDWARE;
+ ++glyph_updates;
+ return hud_update_gpu_cache(gpu,m,cache,scratch,polls);
+}
 static int checked_cpu(const gpu_command *commands,unsigned count) {
  if(count==1 && commands[0].src_addr==HUD_CACHE_ADDR) {
   if(scene_gpu) {
@@ -25,7 +34,7 @@ static int checked_gpu(gpu_device *gpu,const gpu_command *commands,unsigned coun
  e=perf_render_gpu(gpu,commands,count,polls); if(e) return e;
  e=gpu_read_perf_snapshot(gpu,&after); if(e) return e;
  /* 960x72 RGB565: 69120 pixels, 138240 bytes in each direction. */
- passed=scene_gpu && cpu_huds && !gpu->hardware_error &&
+ passed=scene_gpu && cpu_huds && glyph_updates && !gpu->hardware_error &&
   after.pixels-before.pixels==69120 &&
   after.read_bytes-before.read_bytes==138240 &&
   after.write_bytes-before.write_bytes==138240 &&
@@ -39,6 +48,8 @@ static int checked_gpu(gpu_device *gpu,const gpu_command *commands,unsigned coun
 }
 #define perf_render_cpu checked_cpu
 #define perf_render_gpu checked_gpu
+#define hud_update_cache checked_cpu_cache
+#define hud_update_gpu_cache checked_gpu_cache
 #define main application_main
 #include "../src/main.c"
 #undef main

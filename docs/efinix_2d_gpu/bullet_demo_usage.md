@@ -92,7 +92,11 @@ flashes automatically.
 - CPU and GPU each render 30 frames of the same saved state, then the next window
   advances. The sequence resets after 600 logical frames. It never depends on
   measured wall-clock frame duration. No quadratic per-frame replay rebuilding.
-- Both use the same commands/assets and common CPU-rendered HUD. FPS includes
+- Both use the same scene/assets and produce identical final HUD pixels. The
+  ordinary GPU clips only the opaque HUD-covered background, updates changed
+  text cells with its glyph atlas and copies the cached HUD using GPU Copy.
+  CPU keeps the original full scene, CPU HUD raster and software HUD Copy.
+  FPS includes
   HUD and PRESENT; RENDER MS is scene rendering only. Unmeasured FPS/render
   fields show --; HP/score/graze fields are computed game state, not FPS.
 - UFL is cumulative hardware underflows; ERR is the current GPU hardware error.
@@ -100,11 +104,12 @@ flashes automatically.
   windowed_60fps flag is NOT proof of 300 uninterrupted 60-FPS frames. Formal
   continuous-load/endurance acceptance still needs a board and dedicated run.
 - 8x8 bullets touch 64 source pixels versus 5,120 for the old 64x80 sprites
-  (80x fewer per full sprite). Background still copies all 518,400 pixels and
-  HUD is still copied in full. In R2, visible text changes rebuild a 960x72
-  raster at 0x02c10000 (138,240 bytes); each frame uses one common CPU COPY,
-  rather than hundreds of glyph FILL commands. This is NOT a measured FPS gain;
-  compare CPU/GPU within the new scene, not new FPS against old scene FPS.
+  (80x fewer per full sprite). CPU/Profile retain the full background; ordinary
+  GPU copies 960x468 rows. HUD is still copied in full from 0x02c10000 (138,240
+  bytes), but only GPU-mode text changes use dirty glyph cells. The 39,312-byte
+  white/green atlas at 0x02c40000 is initialized once from existing font tables,
+  separate from the Sprite Cache. CPU retains its original complete rebuild.
+  Compare CPU/GPU within the same scene, not new FPS against old scene FPS.
 
 ## Offline verification
 

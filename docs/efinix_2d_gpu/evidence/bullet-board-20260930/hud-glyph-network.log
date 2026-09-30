@@ -1,0 +1,26 @@
+BULLET_ASSET,id=101,bytes=1036800,retries=0,result=0
+BULLET_ASSET,id=102,bytes=3104,retries=0,result=0
+TEXTURE_CACHE,result=0,base=02a00000,bytes=3104,network=1
+SCENE BULLET: AUTO survival, HP/graze/shield/restart, deterministic replay; no physical input
+V2 comparison: CLINT Hz=100000000 network_result=0; KEY1 less KEY2 more
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=297753
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=601,render_us=8089
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=298872
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=601,render_us=8089
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=298889
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=601,render_us=8087
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=298907
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=601,render_us=8114
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=298719
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=601,render_us=8096
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=298898
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=601,render_us=8104
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=298776
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=601,render_us=8106
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=27,render_us=298801
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=601,render_us=8130
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=298828
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=601,render_us=8107
+BULLET_PERF,mode=CPU,target=64,frames=30,fps_x10=28,render_us=298833
+BULLET_GPU_300,target=64,frames=300,p5_fps=60,underflows=80700,errors=0,windowed_60fps=0
+BULLET_PERF,mode=GPU,target=64,frames=30,fps_x10=601,render_us=8100
