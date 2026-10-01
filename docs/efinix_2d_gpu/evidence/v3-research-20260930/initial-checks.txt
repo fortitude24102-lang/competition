@@ -1,0 +1,12 @@
+COPY_GEOMETRY,ROI_bytes=898560,start_offset_4KiB=3072,burst_max_bytes=1024,row_bursts=1112,contiguous_bursts=878,reduction_pct=21.043,PASS
+AXI32_100MHz,one_direction_MBps=400,one_way_floor_us=2246.4,serial_floor_us=4492.8,ideal_overlap_floor_us=2246.4
+
+Negative controls executed against tools/probe_damage_tiles.c:
+PROBE_WRONG_HISTORY: process rejected at ROI memcmp assertion (expected).
+PROBE_SKIP_INVALIDATE: process rejected at ROI memcmp assertion (expected).
+These are deliberate host model faults, not production test failures.
+
+Frozen release verification:
+release/software.sha256: all listed files match.
+release/v2/manifest.sha256: all listed files match.
+No production source, RTL, board mapping or release file changed in this task.
