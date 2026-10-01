@@ -55,6 +55,8 @@ class CopyStreamSpec extends AnyFunSpec with StableChiselSim with Matchers {
           var readWords = 0
           var writtenWords = 0
           var peakBuffered = 0
+          var readGaps = 0
+          var writeGaps = 0
           var cycles = 0
           while (!completed && cycles < 5000) {
             dut.io.command.valid.poke(!submitted)
@@ -89,6 +91,8 @@ class CopyStreamSpec extends AnyFunSpec with StableChiselSim with Matchers {
             val awFire = awReady && dut.io.axi.aw.valid.peek().litToBoolean
             val wFire = wReady && dut.io.axi.w.valid.peek().litToBoolean
             val bFire = responseDelay == 0 && dut.io.axi.b.ready.peek().litToBoolean
+            if (readBeats > 0 && !rFire) readGaps += 1
+            if (writeBeats > 0 && !wFire) writeGaps += 1
             if (arFire) {
               readBeats shouldBe 0
               readAddress = dut.io.axi.ar.bits.addr.peek().litValue.longValue
@@ -143,7 +147,7 @@ class CopyStreamSpec extends AnyFunSpec with StableChiselSim with Matchers {
           reads.toSeq shouldBe expectedReads
           writes.toSeq shouldBe expectedWrites
           if (enabled && stride == width * 2) { peakBuffered should be > 1; peakBuffered should be <= 16 }
-          println(s"COPY enabled=$enabled tag=$tag fault=$fault words=$writtenWords AR=${reads.size} AW=${writes.size} cycles=$cycles fifo_peak=$peakBuffered")
+          println(s"COPY enabled=$enabled tag=$tag fault=$fault words=$writtenWords AR=${reads.size} AW=${writes.size} cycles=$cycles fifo_peak=$peakBuffered r_gap=$readGaps w_gap=$writeGaps")
           // Completion is stable until acknowledged; idle must not accept a second command.
           dut.io.command.valid.poke(false)
           dut.io.command.ready.expect(false)

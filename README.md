@@ -2,6 +2,12 @@
 
 比赛主线复用官方 Sapphire RISC-V、DDR3 和 HDMI Demo，在其上增加 Chisel 二维 GPU。PC 只保存和提供资源；资源选择、完整 CRC 校验、游戏逻辑和 GPU 命令调度由板上的 RISC-V 完成，渲染由 FPGA 完成。自研 CPU 已退出比赛主线。
 
+## V3 负责人执行进度（2026-10-01）
+
+负责人第1～4天的连续Copy离线候选已完成：连续二维区域展开、16字FIFO、原通路回退及读写错误/复位/Copy→Alpha顺序保护。GPU回归14套件76/76通过，独立审查无阻断项。CPU绘图和R7画面未改，尚未综合/时序/上板，不宣称FPS提高或V3封版。
+
+[阶段记录、检查入口和边界](docs/efinix_2d_gpu/v3_copy_progress_20261001.md)；[基线哈希及地址检查](docs/efinix_2d_gpu/v3_baseline_manifest.md)。新源码仍是候选；独立生成物在generated/verification/v3/copy/rtl，**板级默认源清单和generated/efinix_gpu仍为旧版**，下一步需独立工程集成和同R7实测。A/B功能模块、GPU背景恢复尚未完成，release/v2不变。
+
 ## V2 研发阶段收尾（2026-09-30）
 
 本 README 总结 V1 至 V2 的研发成果；**结束的是第二版研发阶段，不是宣称赛题全部达标，也不是覆盖正式发布包。**
@@ -9,7 +15,7 @@
 - 当前总结的源码基点：85b7dc0，包含 R7 场景、纹理 Cache、GPU HUD 字形更新及分段诊断。
 - 最新已板测硬件：2026-09-28 纹理 Cache 候选，GPU/SoC 100 MHz；正常固件与诊断固件分开管理。
 - [release/v2](release/v2/README.md) 仍冻结于 2026-09-26 首轮网络板测，**不包含后续优化**；release 根目录仍是 V1 固件。不可混用位流、固件、资源与哈希。
-- [下一月设计革新与功能创新调研](docs/efinix_2d_gpu/v3_research_20260930.md) 给出开源来源、当前瓶颈、初步校验和推荐取舍；新架构尚未实施。
+- [下一月设计革新与功能创新调研](docs/efinix_2d_gpu/v3_research_20260930.md) 给出开源来源、当前瓶颈、初步校验和推荐取舍；V3实施状态见上方进度，不把调研预测当成实测。
 - [V3 两周开发计划](docs/efinix_2d_gpu/v3_two_week_plan_20261001.md) 与 [固定架构接口](docs/efinix_2d_gpu/v3_interface_design_20261001.md)：负责人做 GPU 与顶层集成，A/B 做网口性能网页、键盘交互、回放及游戏/画面模块；[Word 计划书](docs/word/Efinix_2D图像渲染V3两周开发计划书_网口交互与GPU优化版.docx) 包含接口附录。此处是后续计划，不是 V3 已完成声明。
 - [V2 逐阶段历史记录](docs/efinix_2d_gpu/v2_development_history.md) 保留原 README 详细过程与异常，不删除旧证据、不把历史试验当成当前成绩。
 
