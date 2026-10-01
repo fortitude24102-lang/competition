@@ -3,7 +3,7 @@ package gpu
 import chisel3._
 import chisel3.util._
 
-class DenseBlitEngine extends Module {
+class DenseBlitEngine(enableCopyStream: Boolean = true) extends Module {
   val io = IO(new Bundle {
     val command = Flipped(Decoupled(new GpuCommand))
     val pixelRequest = Decoupled(new PixelTransaction)
@@ -32,9 +32,10 @@ class DenseBlitEngine extends Module {
   private val alphaBackgroundBuffer = Module(new Queue(UInt(32.W), 33))
   private val packer = Module(new PixelWritePacker)
   private val writer = Module(new AxiWriteEngine)
+  private val copyStream = Module(new CopyStreamEngine)
   private val readAddressArbiter = Module(new RRArbiter(new Axi4Address, 2))
 
-  private val idle :: startRect :: startWrite :: startAligner :: startRead :: startAlphaAligners :: startAlphaReads :: waitAlphaReads :: requestPixel :: waitPixel :: waitRow :: finish :: Nil = Enum(12)
+  private val idle :: startRect :: startWrite :: startAligner :: startRead :: startAlphaAligners :: startAlphaReads :: waitAlphaReads :: requestPixel :: waitPixel :: waitRow :: finish :: streamCopy :: Nil = Enum(13)
   private val state = RegInit(idle)
   private val commandReg = Reg(new GpuCommand)
   private val srcRowBase = Reg(UInt(32.W))
@@ -68,6 +69,14 @@ class DenseBlitEngine extends Module {
   io.textureCacheHitBytes := textureCache.io.hitBytes
 
   io.command.ready := state === idle && !textureCache.io.busy
+  private val streamingCopy = state === streamCopy
+  private val selectCopyStream = enableCopyStream.B && copyStream.io.eligible
+  copyStream.io.command.valid := io.command.valid && io.command.ready && selectCopyStream
+  copyStream.io.command.bits := io.command.bits
+  copyStream.io.readDone := reader.io.done && streamingCopy
+  copyStream.io.readError := reader.io.error
+  copyStream.io.writeDone := writer.io.done && streamingCopy
+  copyStream.io.writeError := writer.io.error
   private val incomingCommand = io.command.bits
   private val incomingAligned = incomingCommand.srcAddr(1, 0) === 0.U &&
     incomingCommand.dstAddr(1, 0) === 0.U && incomingCommand.srcStride(1, 0) === 0.U &&
@@ -104,7 +113,7 @@ class DenseBlitEngine extends Module {
     dynamicWriteOutstanding := false.B
     completionError := GpuError.None.U
     useTextureCache := incomingCacheHit
-    state := startRect
+    state := Mux(selectCopyStream, streamCopy, startRect)
   }
 
   private val isCopy = commandReg.op === GpuOpcode.Copy.U
@@ -130,12 +139,14 @@ class DenseBlitEngine extends Module {
   private val fixedWriteRequest = state === startWrite
   private val dynamicWriteRequest = isColorKey && !fastWordBlit &&
     packer.io.output.valid && !dynamicWriteOutstanding
-  writer.io.request.valid := fixedWriteRequest || dynamicWriteRequest
-  writer.io.request.bits.address := Mux(dynamicWriteRequest, packer.io.output.bits.address,
-    Mux(isAlpha, alphaChunkDstAddress, dstRowBase))
-  writer.io.request.bits.beats := Mux(dynamicWriteRequest, 1.U,
-    Mux(isAlpha, alphaChunkBeats, rowBeats))
-  when(writer.io.request.fire) {
+  writer.io.request.valid := Mux(streamingCopy, copyStream.io.writeRequest.valid,
+    fixedWriteRequest || dynamicWriteRequest)
+  writer.io.request.bits.address := Mux(streamingCopy, copyStream.io.writeRequest.bits.address,
+    Mux(dynamicWriteRequest, packer.io.output.bits.address, Mux(isAlpha, alphaChunkDstAddress, dstRowBase)))
+  writer.io.request.bits.beats := Mux(streamingCopy, copyStream.io.writeRequest.bits.beats,
+    Mux(dynamicWriteRequest, 1.U, Mux(isAlpha, alphaChunkBeats, rowBeats)))
+  copyStream.io.writeRequest.ready := writer.io.request.ready && streamingCopy
+  when(writer.io.request.fire && !streamingCopy) {
     when(dynamicWriteRequest) {
       dynamicWriteOutstanding := true.B
     }.otherwise {
@@ -183,9 +194,11 @@ class DenseBlitEngine extends Module {
     textureCache.io.readRequest.ready, reader.io.request.ready)
   private val sourceReadValid = startingSourceRead ||
     (startingAlphaReads && backgroundReader.io.request.ready)
-  reader.io.request.valid := sourceReadValid && !useTextureCache
-  reader.io.request.bits.address := sourceReadAddress
-  reader.io.request.bits.bytes := sourceReadBytes
+  reader.io.request.valid := Mux(streamingCopy, copyStream.io.readRequest.valid,
+    sourceReadValid && !useTextureCache)
+  reader.io.request.bits.address := Mux(streamingCopy, copyStream.io.readRequest.bits.address, sourceReadAddress)
+  reader.io.request.bits.bytes := Mux(streamingCopy, copyStream.io.readRequest.bits.bytes, sourceReadBytes)
+  copyStream.io.readRequest.ready := reader.io.request.ready && streamingCopy
   textureCache.io.readRequest.valid := sourceReadValid && useTextureCache
   textureCache.io.readRequest.bits.address := sourceReadAddress
   textureCache.io.readRequest.bits.bytes := sourceReadBytes
@@ -253,15 +266,18 @@ class DenseBlitEngine extends Module {
   private val keyWordStrobe = Cat(
     Fill(2, validLanes(1) && wordData(31, 16) =/= commandReg.colorKey),
     Fill(2, validLanes(0) && wordData(15, 0) =/= commandReg.colorKey))
-  writer.io.data.valid := Mux(fastWordBlit,
-    Mux(directWordBlit, sourceDataValid, wordAligner.io.output.valid), packer.io.output.valid)
-  writer.io.data.bits.data := Mux(fastWordBlit, wordData, packer.io.output.bits.data)
-  writer.io.data.bits.strb := Mux(fastWordBlit, Mux(isColorKey, keyWordStrobe, "hf".U), packer.io.output.bits.strb)
+  writer.io.data.valid := Mux(streamingCopy, copyStream.io.writeData.valid, Mux(fastWordBlit,
+    Mux(directWordBlit, sourceDataValid, wordAligner.io.output.valid), packer.io.output.valid))
+  writer.io.data.bits.data := Mux(streamingCopy, copyStream.io.writeData.bits.data,
+    Mux(fastWordBlit, wordData, packer.io.output.bits.data))
+  writer.io.data.bits.strb := Mux(streamingCopy, copyStream.io.writeData.bits.strb,
+    Mux(fastWordBlit, Mux(isColorKey, keyWordStrobe, "hf".U), packer.io.output.bits.strb))
+  copyStream.io.writeData.ready := writer.io.data.ready && streamingCopy
   packer.io.output.ready := !fastWordBlit && writer.io.data.ready
   // Transparent pixels are processed too; partial first/last words count only valid lanes.
-  io.copyWordDone := fastWordBlit && writer.io.data.fire
+  io.copyWordDone := (fastWordBlit || streamingCopy) && writer.io.data.fire
   io.wordPixelsDone := Mux(io.copyWordDone,
-    Mux(directWordBlit, 2.U, wordAligner.io.output.bits.pixels), 0.U)
+    Mux(streamingCopy || directWordBlit, 2.U, wordAligner.io.output.bits.pixels), 0.U)
   wordAligner.io.output.ready := fastWordBlit && !directWordBlit && writer.io.data.ready
 
   when(writer.io.done) {
@@ -310,9 +326,10 @@ class DenseBlitEngine extends Module {
     }
   }
 
-  io.completion.valid := state === finish
-  io.completion.bits.tag := commandReg.tag
-  io.completion.bits.error := completionError
+  io.completion.valid := Mux(streamingCopy, copyStream.io.completion.valid, state === finish)
+  io.completion.bits.tag := Mux(streamingCopy, copyStream.io.completion.bits.tag, commandReg.tag)
+  io.completion.bits.error := Mux(streamingCopy, copyStream.io.completion.bits.error, completionError)
+  copyStream.io.completion.ready := io.completion.ready && streamingCopy
   when(io.completion.fire) {
     state := idle
   }
@@ -336,7 +353,9 @@ class DenseBlitEngine extends Module {
     textureCache.io.axi.ar.bits, readAddressArbiter.io.out.bits)
   textureCache.io.axi.ar.ready := io.axi.ar.ready && textureCacheOwnsAxi
   readAddressArbiter.io.out.ready := io.axi.ar.ready && !textureCacheOwnsAxi
-  private val backgroundResponse = io.axi.r.bits.id === 1.U
+  // Only Alpha issues background reads. A bad RID=1 during Copy must reach
+  // the foreground reader, which drains it and reports an AXI error.
+  private val backgroundResponse = isAlpha && io.axi.r.bits.id === 1.U
   textureCache.io.axi.r.valid := io.axi.r.valid && textureCacheOwnsAxi
   textureCache.io.axi.r.bits := io.axi.r.bits
   reader.io.axiR.valid := io.axi.r.valid && !textureCacheOwnsAxi && !backgroundResponse
@@ -355,7 +374,9 @@ class DenseBlitEngine extends Module {
   private val sourceDataReady = Mux(isAlpha, alphaForegroundBuffer.io.enq.ready,
     Mux(fastWordBlit, Mux(directWordBlit, writer.io.data.ready,
       wordAligner.io.input.ready), aligner.io.input.ready))
-  reader.io.data.ready := sourceDataReady && !useTextureCache
+  reader.io.data.ready := Mux(streamingCopy, copyStream.io.readData.ready, sourceDataReady && !useTextureCache)
+  copyStream.io.readData.valid := reader.io.data.valid && streamingCopy
+  copyStream.io.readData.bits := reader.io.data.bits
   textureCache.io.readData.ready := sourceDataReady && useTextureCache
   wordAligner.io.input.valid := fastWordBlit && !directWordBlit && sourceDataValid
   wordAligner.io.input.bits := sourceDataBits.data

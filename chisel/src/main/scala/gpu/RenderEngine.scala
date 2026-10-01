@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 
 /** Queues and validates software commands, then runs dense, sparse, or present engines. */
-class RenderEngine extends Module {
+class RenderEngine(enableCopyStream: Boolean = true) extends Module {
   val io = IO(new Bundle {
     val command = Flipped(Decoupled(new GpuCommand))
     val vblank = Input(Bool())
@@ -40,7 +40,7 @@ class RenderEngine extends Module {
 
   private val queue = Module(new CommandQueue)
   private val validator = Module(new CommandValidator)
-  private val blit = Module(new DenseBlitEngine)
+  private val blit = Module(new DenseBlitEngine(enableCopyStream))
   private val sparse = Module(new SparseBlitEngine)
   private val swap = Module(new FrameSwapController)
   private val pixel = Module(new PixelPipeHarness)

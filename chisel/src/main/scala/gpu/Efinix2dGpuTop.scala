@@ -14,7 +14,7 @@ class ApbSlavePort extends Bundle {
   val pslverror = Output(Bool())
 }
 
-class Efinix2dGpuTop extends Module {
+class Efinix2dGpuTop(enableCopyStream: Boolean = true) extends Module {
   val io = IO(new Bundle {
     val apb = new ApbSlavePort
     val axi = new Axi4MasterPort
@@ -39,7 +39,7 @@ class Efinix2dGpuTop extends Module {
   private val regs = Module(new GpuApbRegs)
   private val assetRegs = Module(new AssetDmaRegs)
   private val assetWriter = Module(new AssetDmaWriter)
-  private val render = Module(new RenderEngine)
+  private val render = Module(new RenderEngine(enableCopyStream))
   private val scanout = Module(new ScanoutDma)
   private val ddr = Module(new DdrQosArbiter)
   private val lastDoneTag = RegInit(0.U(16.W))
