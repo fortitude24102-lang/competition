@@ -20,8 +20,14 @@ $testFilter = 'set Test / unmanagedSources := (Test / unmanagedSources).value.fi
 $test = if ($Suite.Count) { 'testOnly ' + ($Suite -join ' ') } else { 'test' }
 $generateCommand = if ($Generate) { " 'runMain gpu.GenerateEfinix2dGpu --target-dir ../generated/verification/v3/copy/rtl --split-verilog'" } else { '' }
 $command = "set -euo pipefail`n" + $environment + "`ncd '$wslRoot/chisel'`nexec bash /mnt/d/Chisel-environment/sbt/bin/sbt '$compileFilter' '$testFilter' '$test'$generateCommand`n"
-$command.Replace("`r`n", "`n") | & wsl.exe -d Ubuntu -- bash -s *> $LogPath
-$result = $LASTEXITCODE
+# Windows PowerShell 5 turns native stderr (including WSL proxy warnings) into
+# ErrorRecords. Capture those warnings without mistaking them for test failure.
+$savedPreference = $ErrorActionPreference
+try {
+  $ErrorActionPreference = 'Continue'
+  $command.Replace("`r`n", "`n") | & wsl.exe -d Ubuntu -- bash -s *> $LogPath
+  $result = $LASTEXITCODE
+} finally { $ErrorActionPreference = $savedPreference }
 Get-Content $LogPath | Select-Object -Last 24
 if ($result -ne 0) { throw "V3 GPU checks failed ($result); log: $LogPath" }
 if (-not (Select-String -LiteralPath $LogPath -SimpleMatch 'All tests passed.')) {
