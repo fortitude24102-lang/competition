@@ -2,11 +2,13 @@
 
 比赛主线复用官方 Sapphire RISC-V、DDR3 和 HDMI Demo，在其上增加 Chisel 二维 GPU。PC 只保存和提供资源；资源选择、完整 CRC 校验、游戏逻辑和 GPU 命令调度由板上的 RISC-V 完成，渲染由 FPGA 完成。自研 CPU 已退出比赛主线。
 
-## V3 负责人执行进度（2026-10-01）
+## V3 负责人执行进度（2026-10-02）
 
-负责人第1～4天的连续Copy离线候选已完成：连续二维区域展开、16字FIFO、原通路回退及读写错误/复位/Copy→Alpha顺序保护。GPU回归14套件76/76通过，独立审查无阻断项。CPU绘图和R7画面未改，尚未综合/时序/上板，不宣称FPS提高或V3封版。
+负责人第1～4天的连续Copy离线候选已完成，10/01 GPU回归14套件76/76通过。第5天已完成独立工程、100MHz时序与新旧通路JTAG对照；本轮不重复未修改的长仿真。CPU绘图和R7画面未改，不宣称V3封版。
 
-[阶段记录、检查入口和边界](docs/efinix_2d_gpu/v3_copy_progress_20261001.md)；[基线哈希及地址检查](docs/efinix_2d_gpu/v3_baseline_manifest.md)。新源码仍是候选；独立生成物在generated/verification/v3/copy/rtl，**板级默认源清单和generated/efinix_gpu仍为旧版**，下一步需独立工程集成和同R7实测。A/B功能模块、GPU背景恢复尚未完成，release/v2不变。
+[离线阶段记录](docs/efinix_2d_gpu/v3_copy_progress_20261001.md)、[第5天上板结果及复现入口](docs/efinix_2d_gpu/v3_copy_board_20261002.md)、[基线清单](docs/efinix_2d_gpu/v3_baseline_manifest.md)。同R7、每档300帧：64/256档均60.1FPS，512档仍30FPS；512完整帧工作19.265→19.153ms，收益仅约0.6%，未达到60FPS预算。双方测量窗口下溢/错误均0，四类DDR像素核对均通过，但离屏大Copy候选反而略慢。**不将这点微小、受场景影响的差异当作明确净收益，因此保留旧硬件基线**；下一步做物理双缓冲背景恢复。
+
+候选生成物在generated/verification/v3/copy/rtl；独立工程使用完整filelist，**板级默认源清单和generated/efinix_gpu仍为旧版**，release/v2不变。A/B功能模块、GPU背景恢复尚未完成。上板仅JTAG、不写Flash；CPU-only热重载/耐久和历史SoC异常未因此解决。测试准备阶段CPU批量写DDR曾引发新旧通路下溢，原失败证据保留，不能把隔离测试通过写成此类并发压力已修复。
 
 ## V2 研发阶段收尾（2026-09-30）
 
