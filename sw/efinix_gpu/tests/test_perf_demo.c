@@ -9,13 +9,16 @@
 #include <limits.h>
 
 static unsigned submitted,waited;
+static unsigned fail_submit_after=UINT_MAX;
+static int wait_result;
 static gpu_command captured[PERF_MAX_SPRITES+1];
 int gpu_submit(gpu_device *d,const gpu_command *c,uint32_t polls,uint16_t *tag) {
  assert(d && polls && submitted<PERF_MAX_SPRITES+1);
+ if(submitted==fail_submit_after) return GPU_DRIVER_TIMEOUT;
  captured[submitted++]=*c; *tag=(uint16_t)submitted; return 0;
 }
 int gpu_wait_tag(gpu_device *d,uint16_t tag,uint32_t polls) {
- assert(d && polls && tag==submitted); ++waited; return 0;
+ assert(d && polls && tag==submitted); ++waited; return wait_result;
 }
 int gpu_fill_async(gpu_device *d,uint32_t dst,uint32_t stride,uint16_t w,uint16_t h,uint16_t color,uint16_t *tag) {
  gpu_command c={.op=GPU_OP_FILL,.dst_addr=dst,.dst_stride=stride,.width_pixels=w,.height_pixels=h,.color=color};
@@ -88,6 +91,34 @@ int main(void) {
   assert(captured[i].op==scene.commands[i].op);
   assert(captured[i].dst_addr==scene.commands[i].dst_addr);
  }
+ /* Missing damage integration would keep submitting the full background.
+  * Real wrapper must preserve every current command, and NEVER replay on error. */
+ static gpu_damage_state damage;
+ static gpu_damage_result damage_plan;
+ gpu_damage_config damage_config={16,0,128,{1000,100,768}};
+ gpu_command small[3]={
+  {.op=GPU_OP_COPY,.src_addr=ASSET_SCENE_ADDR+72*1920,.dst_addr=GPU_FRAMEBUFFER_A+72*1920,
+   .src_stride=1920,.dst_stride=1920,.width_pixels=960,.height_pixels=468},
+  {.op=GPU_OP_ALPHA,.src_addr=PERF_LOCAL_ALPHA,.src_stride=32,.dst_stride=1920,
+   .dst_addr=GPU_FRAMEBUFFER_A+72*1920,.width_pixels=16,.height_pixels=16,.alpha=112},
+  {.op=GPU_OP_COLOR_KEY,.src_addr=PERF_LOCAL_SPRITE,.src_stride=32,.dst_stride=1920,
+   .dst_addr=GPU_FRAMEBUFFER_A+72*1920,.width_pixels=16,.height_pixels=16,.color_key=0xf81f}};
+ assert(!gpu_damage_init(&damage,&damage_config));
+ submitted=waited=0;
+ assert(!perf_render_gpu_damage(&device,&damage,small,3,1,&damage_plan,100));
+ assert(submitted==3 && waited==1 && damage.valid[0]);
+ submitted=waited=0;
+ small[1].dst_addr+=800; small[2].dst_addr+=800;
+ assert(!perf_render_gpu_damage(&device,&damage,small,3,1,&damage_plan,100));
+ assert(submitted==3 && waited==1 && captured[0].width_pixels==16);
+ assert(!memcmp(captured+1,small+1,2*sizeof *small));
+ submitted=waited=0; fail_submit_after=2;
+ assert(perf_render_gpu_damage(&device,&damage,small,3,1,&damage_plan,100)==GPU_DRIVER_TIMEOUT);
+ assert(submitted==2 && !waited && !damage.valid[0] && !damage.valid[1]);
+ fail_submit_after=UINT_MAX; submitted=waited=0; wait_result=GPU_DRIVER_HARDWARE;
+ assert(perf_render_gpu_damage(&device,&damage,small,3,1,&damage_plan,100)==GPU_DRIVER_HARDWARE);
+ assert(submitted==3 && waited==1 && !damage.valid[0] && !damage.valid[1]);
+ wait_result=0;
  /* Network path reads the validated scene/sprite addresses; fallback upload cannot touch them. */
  memset((void *)(uintptr_t)ASSET_SCENE_ADDR,0x35,ASSET_SCENE_BYTES);
  memset((void *)(uintptr_t)ASSET_FLOWER_ADDR,0x73,ASSET_FLOWER_BYTES);

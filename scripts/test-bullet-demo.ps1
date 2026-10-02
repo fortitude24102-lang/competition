@@ -28,7 +28,7 @@ try {
  Run-Test 'test_bullet_gameplay' @('sw/efinix_gpu/tests/test_bullet_gameplay.c','sw/efinix_gpu/src/bullet_demo.c') | Tee-Object "$out/final-gameplay-boundaries.log"
  $mapped=@('-DGPU_TEST_BACKEND','-Isw/efinix_gpu/tests/host_compat',
   '-include','sw/efinix_gpu/tests/host_compat/host_addresses.h')
- $render=@('sw/efinix_gpu/src/perf_demo.c','sw/efinix_gpu/src/hud.c',
+ $render=@('sw/efinix_gpu/src/perf_demo.c','sw/efinix_gpu/src/gpu_damage.c','sw/efinix_gpu/src/hud.c',
   'sw/efinix_gpu/src/assets.c','sw/efinix_gpu/src/sparse_pack.c',
   'sw/efinix_gpu/src/golden_renderer.c','sw/efinix_gpu/src/rgb565.c')
  Run-Test 'test_hud_cache' (@('sw/efinix_gpu/tests/test_hud_cache.c','sw/efinix_gpu/src/hud_cache.c')+$render) $mapped

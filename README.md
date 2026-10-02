@@ -4,11 +4,15 @@
 
 ## V3 负责人执行进度（2026-10-02）
 
-负责人第1～4天的连续Copy离线候选已完成，10/01 GPU回归14套件76/76通过。第5天已完成独立工程、100MHz时序与新旧通路JTAG对照；本轮不重复未修改的长仿真。CPU绘图和R7画面未改，不宣称V3封版。
+负责人第1～4天Copy离线候选、第5天工程/时序/新旧JTAG对照、第6～7天背景恢复模块与板测已完成；CPU绘图、R7画面和硬件基线未改，不宣称V3封版。本轮只验证受影响软件，不重复未修改的76项RTL长仿真。
+
+[第6～7天实现、成本模型、板测和复现入口](docs/efinix_2d_gpu/v3_damage_progress_20261002.md)：物理双缓冲覆盖/epoch、HUD裁剪、失败失效及碎片成本回退；八个C套件和18000帧ROI逐字节一致，板上36帧像素全部一致。规划时间由4.80/3.77ms压至2.20/1.52ms。低档严格验收每项300帧，64档work10.09→5.56ms，256档13.29→11.29ms，均60.1FPS、欠载/错误/工作预算超时/呈现迟到0；收益是GPU余量，不是HDMI超过60Hz。512档最佳约30.5FPS、P5仍30，额外规划/碎片命令抵消硬件带宽收益，**不默认开启恢复候选**。`-Damage`可生成正常候选，不覆盖release。
 
 [离线阶段记录](docs/efinix_2d_gpu/v3_copy_progress_20261001.md)、[第5天上板结果及复现入口](docs/efinix_2d_gpu/v3_copy_board_20261002.md)、[基线清单](docs/efinix_2d_gpu/v3_baseline_manifest.md)。同R7、每档300帧：64/256档均60.1FPS，512档仍30FPS；512完整帧工作19.265→19.153ms，收益仅约0.6%，未达到60FPS预算。双方测量窗口下溢/错误均0，四类DDR像素核对均通过，但离屏大Copy候选反而略慢。**不将这点微小、受场景影响的差异当作明确净收益，因此保留旧硬件基线**；下一步做物理双缓冲背景恢复。
 
-候选生成物在generated/verification/v3/copy/rtl；独立工程使用完整filelist，**板级默认源清单和generated/efinix_gpu仍为旧版**，release/v2不变。A/B功能模块、GPU背景恢复尚未完成。上板仅JTAG、不写Flash；CPU-only热重载/耐久和历史SoC异常未因此解决。测试准备阶段CPU批量写DDR曾引发新旧通路下溢，原失败证据保留，不能把隔离测试通过写成此类并发压力已修复。
+Copy生成物在generated/verification/v3/copy/rtl，恢复源码在sw/efinix_gpu/src/gpu_damage.c，独立软件入口为`powershell -File scripts/test-v3-gpu.ps1 -SoftwareOnly`；**板级默认源清单和generated/efinix_gpu仍为旧硬件**，release/v2不变。A/B功能模块未交付：10/02检查远端A-work=c0e155d、B-work=047656c，第8天需要管理网口/网关/网页、输入驱动/回放/游戏模块及各自独立检查，具体清单见恢复记录。上板仅JTAG、不写Flash；CPU-only热重载/耐久和历史SoC异常未解决。准备阶段CPU批量写DDR曾引发新旧通路下溢，原失败证据保留，不能把隔离测试通过写成此类并发压力已修复。
+
+本阶段收尾恢复原bit/normal，64档CPU2.8/GPU60.1FPS，素材服务保持运行，无烧录进程。候选未替换正式发布包。
 
 ## V2 研发阶段收尾（2026-09-30）
 

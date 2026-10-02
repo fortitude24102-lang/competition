@@ -1,7 +1,8 @@
 param(
   [string[]]$Suite = @(),
   [string]$LogPath = '',
-  [switch]$Generate
+  [switch]$Generate,
+  [switch]$SoftwareOnly
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
@@ -12,6 +13,19 @@ if (-not $LogPath) { $LogPath = Join-Path $projectRoot 'generated/verification/v
 $LogPath = [IO.Path]::GetFullPath($LogPath)
 New-Item -ItemType Directory -Force -Path (Split-Path $LogPath) | Out-Null
 $wslRoot = '/mnt/' + $projectRoot.Substring(0, 1).ToLowerInvariant() + $projectRoot.Substring(2).Replace('\', '/')
+if ($SoftwareOnly -and ($Generate -or $Suite.Count)) { throw 'SoftwareOnly cannot select/generate RTL.' }
+if (Test-Path (Join-Path $projectRoot 'scripts/test-v3-damage.sh')) {
+ $softwareLog=$LogPath+'.software.log'
+ $savedPreference=$ErrorActionPreference
+ try {
+  $ErrorActionPreference='Continue'
+  & wsl.exe -d Ubuntu -- bash "$wslRoot/scripts/test-v3-damage.sh" *> $softwareLog
+  $softwareResult=$LASTEXITCODE
+ } finally { $ErrorActionPreference=$savedPreference }
+ Get-Content $softwareLog | Select-Object -Last 8
+ if($softwareResult -ne 0 -or !(Select-String -LiteralPath $softwareLog -SimpleMatch 'DAMAGE_SUITE,PASS')) { throw "Damage software checks failed: $softwareLog" }
+ if($SoftwareOnly) { Write-Host '[PASS] Damage software only; board/RTL NOT RUN.'; return }
+}
 $environment = Get-Content (Join-Path $PSScriptRoot 'test-chisel.sh') -Raw
 $environment = $environment.Substring($environment.IndexOf('export JAVA_HOME='))
 $environment = $environment.Substring(0, $environment.IndexOf('bash "$project_root/scripts/build-rv32i-tests.sh"'))

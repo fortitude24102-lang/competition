@@ -75,6 +75,26 @@ int perf_render_gpu(gpu_device *d,const gpu_command *commands,unsigned count,uin
  return gpu_wait_tag(d,tag,polls);
 }
 
+int perf_render_gpu_damage(gpu_device *d,gpu_damage_state *s,const gpu_command *c,
+ unsigned count,uint32_t epoch,gpu_damage_result *p,uint32_t polls) {
+ if(!d || !s || !p || !polls) { gpu_damage_invalidate(s); return GPU_DRIVER_ARGUMENT; }
+ int e=gpu_damage_plan(s,c,count,epoch,p);
+ if(e<0) return e;
+ uint16_t tag=0;
+ for(unsigned i=0;i<p->count;i++) {
+  e=gpu_submit(d,p->commands+i,polls,&tag); if(e) goto done;
+ }
+ /* Every Sprite once, including Alpha and overlaps, in its original order. */
+ for(unsigned i=1;i<count;i++) {
+  e=gpu_submit(d,c+i,polls,&tag); if(e) goto done;
+ }
+ if(p->count || count>1) e=gpu_wait_tag(d,tag,polls);
+ else e=0;
+done:
+ gpu_damage_commit(s,e==0);
+ return e; /* No replay after partial submission; the next clean frame is full. */
+}
+
 int perf_window_add(perf_window *w,uint64_t wall,uint64_t render) {
  if(!w || !wall || render>wall || w->frames>=PERF_WINDOW_FRAMES ||
     UINT64_MAX-w->wall_ticks<wall || UINT64_MAX-w->render_ticks<render)

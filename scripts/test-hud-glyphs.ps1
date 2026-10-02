@@ -6,7 +6,7 @@ try {
  $out='generated/verification/hud-glyphs'
  New-Item -ItemType Directory -Force $out | Out-Null
  $common=@('sw/efinix_gpu/src/hud.c','sw/efinix_gpu/src/hud_cache.c',
-  'sw/efinix_gpu/src/perf_demo.c','sw/efinix_gpu/src/assets.c','sw/efinix_gpu/src/sparse_pack.c',
+  'sw/efinix_gpu/src/perf_demo.c','sw/efinix_gpu/src/gpu_damage.c','sw/efinix_gpu/src/assets.c','sw/efinix_gpu/src/sparse_pack.c',
   'sw/efinix_gpu/src/golden_renderer.c','sw/efinix_gpu/src/rgb565.c')
  $gpuSources=@('sw/efinix_gpu/src/hud_gpu_cache.c')
  foreach($test in @('hud_gpu_cache','hud_cache')) {

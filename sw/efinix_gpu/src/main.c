@@ -19,6 +19,13 @@ void gpu_platform_sync(void) {
 #ifndef BULLET_DEMO_DEFAULT
 #define BULLET_DEMO_DEFAULT 1
 #endif
+#ifndef V3_GPU_DAMAGE
+#define V3_GPU_DAMAGE 0 /* Candidate only until a net frame-time gain is verified. */
+#endif
+#if BULLET_DEMO_DEFAULT && V3_GPU_DAMAGE
+static gpu_damage_state damage;
+static gpu_damage_result damage_plan;
+#endif
 #if BULLET_DEMO_DEFAULT
 static bullet_stream scene;
 static bullet_state bullets,window_start;
@@ -111,6 +118,11 @@ int main(void) {
   BULLET_ATLAS_BYTES,network);
 #endif
  framebuffer_pair buffers; framebuffer_init(&buffers);
+#if BULLET_DEMO_DEFAULT && V3_GPU_DAMAGE
+ const gpu_damage_config damage_config=GPU_DAMAGE_DEFAULT_CONFIG;
+ e=gpu_damage_init(&damage,&damage_config); if(e) return 1;
+ bsp_printf("V3_DAMAGE,tile=%d,gap=%d,epoch=1\r\n",damage_config.tile,damage_config.gap);
+#endif
 #ifdef V2_PROFILE
  bsp_printf("V2 profile: scene=%s network_result=%d, target=32\r\n",
   BULLET_DEMO_DEFAULT?"BULLET":"LEGACY",network_result);
@@ -164,8 +176,14 @@ int main(void) {
   if(e) break;
   gpu_platform_sync();
   uint64_t render_start=gpu_platform_cycles();
+#if BULLET_DEMO_DEFAULT && V3_GPU_DAMAGE
+  if(!mode) gpu_damage_invalidate(&damage); /* CPU writes invalidate BOTH buffers. */
+  e=mode?perf_render_gpu_damage(&gpu,&damage,scene.commands,scene.count,1,&damage_plan,10000000u):
+   perf_render_cpu(scene.commands,scene.count);
+#else
   e=mode?perf_render_gpu(&gpu,scene.commands,scene.count,10000000u):
    perf_render_cpu(scene.commands,scene.count);
+#endif
   gpu_platform_sync();
   uint64_t render=gpu_platform_cycles()-render_start;
   if(e) break;
@@ -244,6 +262,9 @@ int main(void) {
    samples[mode]=(perf_window){0}; mode^=1u; frame=0;
   }
  }
+#if BULLET_DEMO_DEFAULT && V3_GPU_DAMAGE
+ gpu_damage_invalidate(&damage); /* Includes post-scene HUD/PRESENT failures. */
+#endif
  bsp_printf("V2 comparison stopped: result=%d hardware=%d\r\n",e,gpu.hardware_error);
  return 1;
 }
