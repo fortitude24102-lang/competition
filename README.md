@@ -2,6 +2,12 @@
 
 比赛主线复用官方 Sapphire RISC-V、DDR3 和 HDMI Demo，在其上增加 Chisel 二维 GPU。PC 只保存和提供资源；资源选择、完整 CRC 校验、游戏逻辑和 GPU 命令调度由板上的 RISC-V 完成，渲染由 FPGA 完成。自研 CPU 已退出比赛主线。
 
+## V3 A/B 功能包交接（A-work，2026-10-05）
+
+按最新 main `79a0b7f` 的两周计划与冻结接口，A/B 自有模块现提供在 **A-work**：[联合交接与负责人接入顺序](docs/efinix_2d_gpu/v3_ab_handoff_20261005.md)。包含管理网口 RX/CRC/CDC/APB/包级 TX、32/128 B 共享 MAC、本地键盘网关和遥测网页、非阻塞输入驱动、手动生存射击、600 tick 公平回放及带 epoch/CRC/许可的实际资源包。旧 R7 路径保持，生产 main、SoC adapter、GPU、工程源清单和 release 未改。
+
+独立入口：`scripts/test-v3-control-rtl.ps1`、`scripts/test-v3-game.ps1`；[网关启动与键位](docs/efinix_2d_gpu/v3_control_usage.md)、[游戏/回放集成](docs/efinix_2d_gpu/v3_game_usage.md)。已完成受影响离线检查和假板/实际浏览器验证；**不是已接入板卡的 V3 固件**。负责人下一步从第8天集成 A/B 候选，并测实板输入/遥测、性能扰动与耐久；512@60目标及历史异常的状态不变。下方10/02“A/B未交付”是当时主线状态，不能覆盖本次分支交接，也不能倒写成当时已完成。
+
 ## V3 负责人执行进度（2026-10-02）
 
 负责人第1～4天Copy离线候选、第5天工程/时序/新旧JTAG对照、第6～7天背景恢复模块与板测已完成；CPU绘图、R7画面和硬件基线未改，不宣称V3封版。本轮只验证受影响软件，不重复未修改的76项RTL长仿真。

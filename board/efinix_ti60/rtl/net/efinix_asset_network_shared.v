@@ -1,9 +1,7 @@
 `timescale 1ns/1ps
-// Frozen resource-only entry point (ports and hierarchy are V2 compatible).
-// Opt-in V3 shared-MAC integration uses efinix_asset_network_shared instead;
-// both entry points use the bounded, backward-compatible GE wrapper.
-module efinix_asset_network #(
-    parameter integer TX_TIMEOUT_CYCLES=2500000
+module efinix_asset_network_shared #(
+    parameter integer TX_TIMEOUT_CYCLES=2500000,
+    parameter integer ENABLE_CONTROL=0
 ) (
     input wire gpu_clk,gpu_reset,ge_clk,ge_reset,
     input wire [15:0] paddr,input wire psel,penable,pwrite,input wire [31:0] pwdata,
@@ -15,7 +13,13 @@ module efinix_asset_network #(
     output wire [31:0] meta_session,meta_asset_id,meta_offset,meta_sequence,meta_crc32,
     output wire [15:0] meta_length,meta_flags,
     output wire payload_valid,input wire payload_ready,
-    output wire [7:0] payload_data,output wire payload_last,stream_error
+    output wire [7:0] payload_data,output wire payload_last,stream_error,
+    output wire [7:0] control_rx_byte,output wire control_rx_valid,input wire control_rx_ready,
+    output wire control_rx_last,output wire [15:0] control_rx_length,
+    input wire control_tx_valid,output wire control_tx_ready,
+    input wire [1023:0] control_tx_packet,input wire [15:0] control_tx_length,
+    input wire [31:0] control_tx_session,control_tx_ports,control_tx_peer_ip,control_tx_local_ip,
+    output wire control_tx_done,control_tx_error
 );
     wire reset=gpu_reset|ge_reset;
     reg [1:0] gpu_reset_pipe,ge_reset_pipe;
@@ -78,36 +82,47 @@ module efinix_asset_network #(
     pixel_async_fifo #(.DATA_WIDTH(384),.DEPTH(4),.ADDRESS_WIDTH(2)) u_request(
         .wr_clk(gpu_clk),.wr_reset(reset),.wr_data({asset_session,ports,peer_ip,local_ip,header}),.wr_valid(send),.wr_ready(descriptor_ready),
         .rd_clk(ge_clk),.rd_reset(reset),.rd_data(descriptor),.rd_valid(descriptor_valid),.rd_ready(descriptor_take));
-    reg [383:0] active_descriptor;
-    reg pending;
-    wire mac_ready,mac_done,mac_error;
-    assign descriptor_take=!pending && mac_ready;
-    always @(posedge ge_clk or posedge ge_rst) begin
-        if(ge_rst) begin active_descriptor<={32'b0,32'h1f901f90,32'hc0a80003,32'hc0a80002,256'b0};pending<=0;end
-        else begin
-            if(descriptor_valid && descriptor_take) begin active_descriptor<=descriptor;pending<=1;end
-            else if(pending && mac_ready) pending<=0;
-        end
-    end
+    wire mac_ready,mac_done,mac_error,mac_valid,asset_done,asset_error;
+    wire [1023:0] mac_packet;wire [15:0] mac_length;
+    wire [31:0] mac_session,mac_ports,mac_peer_ip,mac_local_ip;
+    // A control session is never substituted for the Asset DMA session.
+    // Resource descriptor delivery is an atomic GPU-to-GE session snapshot.
+    reg [31:0] resource_session;
+    always @(posedge ge_clk or posedge ge_rst)
+        if(ge_rst) resource_session<=0;
+        else if(descriptor_valid && descriptor_take) resource_session<=descriptor[383:352];
+    udp_tx_arbiter u_tx_arbiter(
+        .clk(ge_clk),.reset(ge_rst),.asset_tx_valid(descriptor_valid),.asset_tx_ready(descriptor_take),
+        .asset_session(descriptor[383:352]),.asset_ports(descriptor[351:320]),.asset_peer_ip(descriptor[319:288]),.asset_local_ip(descriptor[287:256]),
+        .asset_length(16'd32),.asset_packet({768'b0,descriptor[255:0]}),.asset_done(asset_done),.asset_error(asset_error),
+        .control_tx_valid(ENABLE_CONTROL ? control_tx_valid : 1'b0),.control_tx_ready(control_tx_ready),
+        .control_session(control_tx_session),.control_ports(control_tx_ports),.control_peer_ip(control_tx_peer_ip),.control_local_ip(control_tx_local_ip),
+        .control_length(control_tx_length),.control_packet(control_tx_packet),.control_done(control_tx_done),.control_error(control_tx_error),
+        .tx_valid(mac_valid),.tx_ready(mac_ready),.tx_session(mac_session),.tx_ports(mac_ports),.tx_peer_ip(mac_peer_ip),.tx_local_ip(mac_local_ip),
+        .tx_length(mac_length),.tx_packet(mac_packet),.tx_done(mac_done),.tx_error(mac_error));
     pixel_async_fifo #(.DATA_WIDTH(1),.DEPTH(4),.ADDRESS_WIDTH(2)) u_response(
-        .wr_clk(ge_clk),.wr_reset(reset),.wr_data(mac_error),.wr_valid(mac_done),.wr_ready(),
+        .wr_clk(ge_clk),.wr_reset(reset),.wr_data(asset_error),.wr_valid(asset_done),.wr_ready(),
         .rd_clk(gpu_clk),.rd_reset(reset),.rd_data(response_error),.rd_valid(response_valid),.rd_ready(1'b1));
     wire [7:0] rx_byte;
     wire rx_valid,rx_ready,rx_last;
     wire [15:0] rx_length;
-    efinix_ge_mac_wrapper #(.TX_TIMEOUT_CYCLES(TX_TIMEOUT_CYCLES)) u_ge(
+    efinix_ge_mac_wrapper #(.TX_TIMEOUT_CYCLES(TX_TIMEOUT_CYCLES),.ENABLE_VARIABLE_TX(1)) u_ge(
         .clk(ge_clk),.reset(ge_rst),.gmii_rx_valid(gmii_rx_valid),.gmii_rx_data(gmii_rx_data),
         .gmii_tx_valid(gmii_tx_valid),.gmii_tx_data(gmii_tx_data),
-        .tx_valid(pending),.tx_ready(mac_ready),.tx_header(active_descriptor[255:0]),
-        .local_ip(active_descriptor[287:256]),.peer_ip(active_descriptor[319:288]),.ports(active_descriptor[351:320]),
+        .tx_valid(mac_valid),.tx_ready(mac_ready),.tx_header(mac_packet[255:0]),.tx_packet(mac_packet),.tx_length(mac_length),
+        .local_ip(mac_local_ip),.peer_ip(mac_peer_ip),.ports(mac_ports),
         .tx_done(mac_done),.tx_error(mac_error),.rx_byte(rx_byte),.rx_valid(rx_valid),.rx_ready(rx_ready),.rx_last(rx_last),.rx_length(rx_length));
     wire [191:0] m_in,m_out;
     wire m_valid,m_ready,m_out_valid,m_out_ready;
     wire [8:0] p_in,p_out;
     wire p_valid,p_ready,p_out_valid,p_out_ready;
+    wire [7:0] asset_rx_byte;wire asset_rx_valid,asset_rx_ready,asset_rx_last;wire [15:0] asset_rx_length;
+    udp_payload_router u_router(.clk(ge_clk),.reset(ge_rst),.rx_byte(rx_byte),.rx_valid(rx_valid),.rx_ready(rx_ready),.rx_last(rx_last),.rx_length(rx_length),
+        .asset_byte(asset_rx_byte),.asset_valid(asset_rx_valid),.asset_ready(asset_rx_ready),.asset_last(asset_rx_last),.asset_length(asset_rx_length),
+        .control_byte(control_rx_byte),.control_valid(control_rx_valid),.control_ready(ENABLE_CONTROL ? control_rx_ready : 1'b1),.control_last(control_rx_last),.control_length(control_rx_length));
     asset_udp_rx u_parser(
-        .clk(ge_clk),.reset(ge_rst),.rx_byte(rx_byte),.rx_valid(rx_valid),.rx_ready(rx_ready),.rx_last(rx_last),.rx_length(rx_length),
-        .current_session(active_descriptor[383:352]),
+        .clk(ge_clk),.reset(ge_rst),.rx_byte(asset_rx_byte),.rx_valid(asset_rx_valid),.rx_ready(asset_rx_ready),.rx_last(asset_rx_last),.rx_length(asset_rx_length),
+        .current_session(resource_session),
         .meta_valid(m_valid),.meta_ready(m_ready),.meta_session(m_in[191:160]),.meta_asset_id(m_in[159:128]),.meta_offset(m_in[127:96]),
         .meta_length(m_in[95:80]),.meta_flags(m_in[79:64]),.meta_sequence(m_in[63:32]),.meta_crc32(m_in[31:0]),
         .payload_valid(p_valid),.payload_ready(p_ready),.payload_data(p_in[7:0]),.payload_last(p_in[8]),.stream_error(),.error_count());

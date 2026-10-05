@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "resource_epoch": 196609,
+  "scene": "V3 interactive survival",
+  "format": "RGB565_LE",
+  "color_key": 63519,
+  "atlas_bytes": 3104,
+  "texture_cache_limit": 4096,
+  "invalidate_both_buffers_before_load": true,
+  "require_complete_crc_before_visible": true,
+  "baseline_art": "R7 procedural art; identical bytes, separate game input",
+  "source": "tools/build_bullet_assets.py",
+  "assets": [
+    {
+      "id": 101,
+      "file": "background.rgb565",
+      "width": 960,
+      "height": 540,
+      "stride_bytes": 1920,
+      "format": "RGB565_LE",
+      "bytes": 1036800,
+      "ddr_address": 42991616,
+      "crc32": "4a9556cc",
+      "sha256": "efd775574d23578fe2d7c7d01ad39c7f9b42f21336342f957ff1826d1e21858e",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": 102,
+      "file": "atlas.rgb565",
+      "width": null,
+      "height": null,
+      "stride_bytes": null,
+      "format": "RGB565_LE",
+      "bytes": 3104,
+      "ddr_address": 44040192,
+      "crc32": "9d6b31f2",
+      "sha256": "c27a2d3d02f35af807874bfb3903a308c797ac16b522c1419ad8dc4aa9d8b0e4",
+      "license": "CC0-1.0"
+    }
+  ],
+  "atlas_layout": [
+    {
+      "name": "bullet_0",
+      "offset": 0,
+      "width": 8,
+      "height": 8,
+      "stride_bytes": 16
+    },
+    {
+      "name": "bullet_1",
+      "offset": 128,
+      "width": 8,
+      "height": 8,
+      "stride_bytes": 16
+    },
+    {
+      "name": "bullet_2",
+      "offset": 256,
+      "width": 8,
+      "height": 8,
+      "stride_bytes": 16
+    },
+    {
+      "name": "bullet_3",
+      "offset": 384,
+      "width": 8,
+      "height": 8,
+      "stride_bytes": 16
+    },
+    {
+      "name": "bullet_4",
+      "offset": 512,
+      "width": 8,
+      "height": 8,
+      "stride_bytes": 16
+    },
+    {
+      "name": "bullet_5",
+      "offset": 640,
+      "width": 8,
+      "height": 8,
+      "stride_bytes": 16
+    },
+    {
+      "name": "player",
+      "offset": 768,
+      "width": 16,
+      "height": 16,
+      "stride_bytes": 32
+    },
+    {
+      "name": "glow",
+      "offset": 1280,
+      "width": 12,
+      "height": 12,
+      "stride_bytes": 24
+    },
+    {
+      "name": "enemy_0",
+      "offset": 1568,
+      "width": 16,
+      "height": 16,
+      "stride_bytes": 32
+    },
+    {
+      "name": "enemy_1",
+      "offset": 2080,
+      "width": 16,
+      "height": 16,
+      "stride_bytes": 32
+    },
+    {
+      "name": "enemy_2",
+      "offset": 2592,
+      "width": 16,
+      "height": 16,
+      "stride_bytes": 32
+    }
+  ]
+}

@@ -31,12 +31,14 @@ static int pixel_coordinate(int32_t q8);
 static void add_score(bullet_state *s,uint32_t points) {
  s->score=UINT32_MAX-s->score<points?UINT32_MAX:s->score+points;
 }
-int bullet_step(bullet_state *s) {
+static int step(bullet_state *s,int manual,int player_x,int player_y) {
  if(!s || !s->count || s->count>BULLET_MAX_OBJECTS || s->hp>BULLET_START_HP ||
     s->invulnerable>BULLET_PROTECTION_TICKS ||
     (!s->hp && (!s->game_over_ticks || s->game_over_ticks>BULLET_RESTART_TICKS)))
   return GPU_DRIVER_ARGUMENT;
- for(unsigned i=0;i<s->count;i++) if(s->objects[i].kind>2 ||
+ if(manual && (player_x<8 || player_x>952 || player_y<80 || player_y>532))
+  return GPU_DRIVER_ARGUMENT;
+ for(unsigned i=0;i<s->count;i++) if(s->objects[i].kind>(manual?3:2) ||
   s->objects[i].shape>=BULLET_SHAPE_COUNT) return GPU_DRIVER_ARGUMENT;
  ++s->tick;
  if(!s->hp) {
@@ -48,13 +50,27 @@ int bullet_step(bullet_state *s) {
  }
  ++s->round_tick;
  int phase=(int)(s->round_tick%240u);
- s->player_x=480+3*(phase<60?phase:phase<180?120-phase:phase-240);
- s->player_y=480;
+ s->player_x=manual?player_x:480+3*(phase<60?phase:phase<180?120-phase:phase-240);
+ s->player_y=manual?player_y:480;
  int protected=s->invulnerable!=0;
  if(protected) --s->invulnerable;
  if(!(s->round_tick%30u)) add_score(s,1);
  for(unsigned i=0;i<s->count;i++) {
   bullet_object *b=&s->objects[i];
+  if(b->kind==3) {
+   if(b->age==UINT16_MAX) continue;
+   b->x+=b->vx; b->y+=b->vy; ++b->age;
+   int bx=pixel_coordinate(b->x)+4,by=pixel_coordinate(b->y)+4;
+   if(bx<0 || bx>=960 || by<72 || by>=540) { b->age=UINT16_MAX; continue; }
+   static const int targets[3][2]={{480,280},{240,100},{720,220}};
+   for(unsigned enemy=0;enemy<3;enemy++) {
+    int dx=bx-targets[enemy][0],dy=by-targets[enemy][1];
+    if(dx>=-10 && dx<=10 && dy>=-10 && dy<=10) {
+     b->age=UINT16_MAX; add_score(s,25); break;
+    }
+   }
+   continue;
+  }
   if(b->x<=-8*256 || b->x>=960*256 || b->y<64*256 || b->y>=540*256 ||
      b->age>=240u+i%120u) { spawn(s,i,0); continue; }
   b->x+=b->vx; b->y+=b->vy; ++b->age;
@@ -83,6 +99,8 @@ int bullet_step(bullet_state *s) {
  }
  return 0;
 }
+int bullet_step(bullet_state *s) { return step(s,0,0,0); }
+int bullet_step_player(bullet_state *s,int x,int y) { return step(s,1,x,y); }
 int bullet_prepare_frame(bullet_state *s,unsigned count,unsigned frame,uint32_t seed) {
  if(frame>=BULLET_REPLAY_FRAMES) return GPU_DRIVER_ARGUMENT;
  int e=bullet_reset(s,count,seed); if(e) return e;
@@ -154,7 +172,7 @@ static int pixel_coordinate(int32_t q8) {
  int n=q8/256;
  return q8<0 && q8%256 ? n-1:n;
 }
-int bullet_build_frame(const bullet_state *s,uint32_t dst,int network,int glow,unsigned cap,bullet_stream *out) {
+static int build_frame(const bullet_state *s,uint32_t dst,int network,int glow,unsigned cap,bullet_stream *out,int manual) {
  if(!out) return GPU_DRIVER_ARGUMENT;
  out->count=out->visible=out->scene_pixels=out->alpha_commands=out->alpha_pixels=0;
  if(!s || !s->count || s->count>BULLET_MAX_OBJECTS || !cap || cap>BULLET_MAX_COMMANDS ||
@@ -168,12 +186,14 @@ int bullet_build_frame(const bullet_state *s,uint32_t dst,int network,int glow,u
  /* Halos precede keyed cores, so blending does not dull the bullet faces. */
  for(unsigned i=0;!e && glow && i<s->count;i+=8u) {
   const bullet_object *b=&s->objects[i];
+  if(manual && b->kind==3 && b->age==UINT16_MAX) continue;
   e=sprite(out,cap,dst,atlas+BULLET_GLOW_OFFSET,
    pixel_coordinate(b->x)-2,pixel_coordinate(b->y)-2,12,64+(int)(s->tick%16u)*4,-1,&v);
  }
  for(unsigned i=0;!e && i<s->count;i++) {
   const bullet_object *b=&s->objects[i];
-  if(b->kind>2 || b->shape>=BULLET_SHAPE_COUNT) { e=GPU_DRIVER_ARGUMENT; break; }
+  if(b->kind>(manual?3:2) || b->shape>=BULLET_SHAPE_COUNT) { e=GPU_DRIVER_ARGUMENT; break; }
+  if(b->kind==3 && b->age==UINT16_MAX) continue;
   e=sprite(out,cap,dst,atlas+b->shape*128u,
    pixel_coordinate(b->x),pixel_coordinate(b->y),8,0,b->shape,&v);
   if(!e) out->visible+=(unsigned)v;
@@ -193,6 +213,12 @@ int bullet_build_frame(const bullet_state *s,uint32_t dst,int network,int glow,u
  /* On failure the caller cannot accidentally render a truncated frame. */
  if(e) out->count=out->visible=out->scene_pixels=out->alpha_commands=out->alpha_pixels=0;
  return e;
+}
+int bullet_build_frame(const bullet_state *s,uint32_t dst,int network,int glow,unsigned cap,bullet_stream *out) {
+ return build_frame(s,dst,network,glow,cap,out,0);
+}
+int bullet_build_frame_player(const bullet_state *s,uint32_t dst,int network,int glow,unsigned cap,bullet_stream *out) {
+ return build_frame(s,dst,network,glow,cap,out,1);
 }
 int bullet_clip_background_for_hud(bullet_stream *s,unsigned hud_height) {
  if(!s || !s->count || hud_height>=GPU_FRAME_HEIGHT) return GPU_DRIVER_ARGUMENT;

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AetherGX V3 control & telemetry</title><link rel="stylesheet" href="/styles.css"><script defer src="/dashboard.js"></script></head>
+<body><main>
+<header><p class="eyebrow">AETHERGX · V3</p><h1>Board control & telemetry</h1><p>Local keyboard bridge. Gameplay and rendering run on Sapphire and the FPGA.</p></header>
+<div id="banner" class="warning" role="status">Connecting to local gateway…</div>
+<section class="panel"><h2>Keyboard control</h2><div class="buttons"><button id="acquire">Acquire control in this tab</button><button id="release" class="secondary">Release & clear keys</button><span id="keys">0x00</span></div>
+<p id="control-status" role="status">Control is released. One tab can own control at a time.</p>
+<p class="key-guide">Arrows / WASD: move · Space / Z: shoot · Shift: slow · R: restart · C: request comparison replay</p>
+<p class="muted">Leaving this tab releases control. Reacquire explicitly when returning. A missing browser heartbeat clears keys after 250 ms.</p></section>
+<section class="cards" aria-label="Latest complete snapshot">
+<article><h2>GPU full-frame FPS</h2><p id="gpu-fps" class="large">Unavailable</p><span>Reported by the board</span></article>
+<article><h2>CPU full-frame FPS</h2><p id="cpu-fps" class="large">Unavailable</p><span id="cpu-age">No CPU result</span></article>
+<article><h2>Visible / requested sprites</h2><p id="sprites" class="large">Unavailable</p><span>Same complete snapshot</span></article>
+</section>
+<section class="panel"><h2>Reported frame-rate history</h2><p class="muted">GPU (green) / CPU (gold), latest 120 snapshots. Display only; no inferred rendering rate.</p><canvas id="chart" width="960" height="240" aria-label="Reported GPU and CPU FPS"></canvas><p id="mode">No board telemetry</p></section>
+<section class="panel"><div class="section-title"><h2>Raw snapshot fields</h2><button id="export" class="secondary">Export raw CSV</button></div><p class="muted">Unavailable means the board validity flag is clear. Raw CSV retains every original word, including flags, for up to 600 snapshots.</p>
+<p>Gateway discarded packets: <span id="packet-drops">0</span></p><div class="table-scroll"><table><thead><tr><th>Field / board unit</th><th>Value</th></tr></thead><tbody id="metrics"></tbody></table></div></section>
+<footer>Management UDP 8090 · Resource service UDP 8080 remains independent · HTTP is local to this PC</footer>
+</main></body></html>

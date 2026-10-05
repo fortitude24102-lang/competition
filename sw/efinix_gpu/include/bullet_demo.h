@@ -26,7 +26,7 @@ typedef struct { int32_t x,y; int16_t vx,vy; uint16_t age; uint8_t kind,shape,gr
 typedef struct {
  bullet_object objects[BULLET_MAX_OBJECTS];
  uint32_t seed,tick; unsigned count;
- int player_x,player_y; /* Deterministic auto-pilot; physical input remains deferred. */
+ int player_x,player_y; /* Legacy auto-pilot or explicit interactive coordinates. */
  uint32_t round_tick,score,grazes;
  uint16_t invulnerable,game_over_ticks;
  uint8_t hp;
@@ -40,8 +40,13 @@ int bullet_reset(bullet_state *state,unsigned count,uint32_t seed);
 /* Analytic atlas mask for clipped visibility; zero for invalid shape/texel. */
 int bullet_shape_opaque(unsigned shape,unsigned x,unsigned y);
 int bullet_step(bullet_state *state);
+/* Interactive-only entry: manual coordinates and kind=3 friendly projectiles.
+ * The legacy entry above retains its original validation and auto-pilot. */
+int bullet_step_player(bullet_state *state,int player_x,int player_y);
 int bullet_build_frame(const bullet_state *state,uint32_t dst,int network,int glow,
                       unsigned capacity,bullet_stream *stream);
+int bullet_build_frame_player(const bullet_state *state,uint32_t dst,int network,int glow,
+                             unsigned capacity,bullet_stream *stream);
 int bullet_clip_background_for_hud(bullet_stream *stream,unsigned hud_height);
 int bullet_prepare_frame(bullet_state *state,unsigned count,unsigned frame,uint32_t seed);
 int bullet_finish_window(bullet_state *state,bullet_state *start,int gpu_window);
