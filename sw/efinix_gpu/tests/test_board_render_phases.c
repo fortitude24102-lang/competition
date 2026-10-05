@@ -1,5 +1,5 @@
 /* Throwaway diagnostic firmware: no CPU/render algorithm/RTL changes.
- * Three tiers, uninstrumented control + timed submission on identical replay.
+ * Five tiers, uninstrumented control + timed submission on identical replay.
  * HW busy overlaps CPU submission and includes queue/DDR waits; never add them.
  * Split-stage runs preserve command order but intentionally break pipelining. */
 #define main reference_main
@@ -7,6 +7,7 @@
 #undef main
 #include <limits.h>
 #include "submit_probe.h"
+#include "damage_acceptance.h"
 static uint64_t probe_clock(void) { return gpu_platform_cycles(); }
 #define PHASE_SAMPLES 300u
 #define GPU_CLOCK_HZ 100000000u
@@ -31,7 +32,7 @@ static int continuous(gpu_device *gpu,framebuffer_pair *buffers,unsigned target,
  perf_window window={0};
  for(unsigned i=0;i<PHASE_COUNT;i++) totals[i]=0;
  uint64_t previous=gpu_platform_cycles(),previous_under=0,read_bytes=0,write_bytes=0,cache_bytes=0;
- unsigned commands=0,blocked_calls=0,min_visible=UINT_MAX,max_visible=0,missed=0;
+ unsigned commands=0,blocked_calls=0,min_visible=UINT_MAX,max_visible=0,missed=0,cadence_missed=0;
  for(unsigned frame=0;frame<30u+PHASE_SAMPLES;frame++) {
   uint64_t v[PHASE_COUNT]={0},t=gpu_platform_cycles();
   e=bullet_build_frame(&bullets,buffers->back,1,1,BULLET_MAX_COMMANDS,&scene); if(e) return e;
@@ -76,6 +77,7 @@ static int continuous(gpu_device *gpu,framebuffer_pair *buffers,unsigned target,
     .underflow_count=(uint16_t)(delta>UINT16_MAX?UINT16_MAX:delta),.error_count=gpu->hardware_error?1:0};
    work_samples[n]=phase_us(v[WORK],1);
    missed+=v[WORK]>BSP_CLINT_HZ/60u;
+   cadence_missed+=v[WALL]>BSP_CLINT_HZ/60u;
    commands+=scene.count; blocked_calls+=submit_probe.blocked_calls;
    if(scene.visible<min_visible) min_visible=scene.visible;
    if(scene.visible>max_visible) max_visible=scene.visible;
@@ -111,6 +113,9 @@ static int continuous(gpu_device *gpu,framebuffer_pair *buffers,unsigned target,
  bsp_printf("RENDER_FRAME,target=%d,probe=%d,hud_cache_us=%d,hud_copy_us=%d,present_us=%d,work_us=%d,work_p95_us=%d,work_max_us=%d,missed=%d\r\n",
   target,enabled,phase_us(totals[CACHE],PHASE_SAMPLES),phase_us(totals[HUD],PHASE_SAMPLES),
   phase_us(totals[PRESENT],PHASE_SAMPLES),phase_us(totals[WORK],PHASE_SAMPLES),p95,max,missed);
+ bsp_printf("RENDER_CADENCE,target=%d,probe=%d,late_present=%d,qualified=%d,stable=%d\r\n",
+  target,enabled,cadence_missed,damage_run_qualified(&summary,PHASE_SAMPLES,missed,cadence_missed),
+  summary.stable_sprite_count);
  return summary.total_errors || summary.total_underflows ? GPU_DRIVER_HARDWARE : 0;
 }
 static int isolated(gpu_device *gpu,const char *name,const gpu_command *commands,unsigned count,unsigned target,unsigned tick) {
@@ -139,11 +144,11 @@ int main(void) {
  e=bullet_prepare_texture_cache(&gpu,0,10000000u); if(e) goto stop;
  framebuffer_pair buffers; framebuffer_init(&buffers);
  e=gpu_set_qos(&gpu,256,1536,1); if(e) goto stop;
- static const unsigned targets[]={64,256,512},ticks[]={0,90,180};
- for(unsigned i=0;i<3;i++) for(int enabled=0;enabled<2;enabled++) {
+ static const unsigned targets[]={32,64,128,256,512},ticks[]={0,90,180};
+ for(unsigned i=0;i<sizeof targets/sizeof targets[0];i++) for(int enabled=0;enabled<2;enabled++) {
   e=continuous(&gpu,&buffers,targets[i],enabled); if(e) goto stop;
  }
- for(unsigned i=0;i<3;i++) for(unsigned j=0;j<3;j++) {
+ for(unsigned i=0;i<sizeof targets/sizeof targets[0];i++) for(unsigned j=0;j<sizeof ticks/sizeof ticks[0];j++) {
   e=bullet_prepare_frame(&bullets,targets[i],ticks[j],7); if(e) goto stop;
   e=bullet_build_frame(&bullets,buffers.back,1,1,BULLET_MAX_COMMANDS,&scene); if(e) goto stop;
   e=bullet_clip_background_for_hud(&scene,HUD_CACHE_HEIGHT); if(e) goto stop;
