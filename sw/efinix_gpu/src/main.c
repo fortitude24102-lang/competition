@@ -7,6 +7,13 @@
 #include "bsp.h"
 #include "gpio.h"
 #include "vexriscv.h"
+#ifndef V3_INTERACTIVE
+#define V3_INTERACTIVE 0
+#endif
+#if V3_INTERACTIVE
+#include "v3_demo.h"
+#include "net_control.h"
+#endif
 
 uint64_t gpu_platform_cycles(void) { return clint_getTime(BSP_CLINT); }
 void gpu_platform_sync(void) {
@@ -133,6 +140,11 @@ int main(void) {
 #if BULLET_DEMO_DEFAULT && !defined(V2_PROFILE)
  hud_init_glyph_atlas();
  gpu_platform_sync();
+#endif
+#if V3_INTERACTIVE
+ if(*(volatile uint32_t *)(uintptr_t)(GPU_APB_BASE+NC_REG_ID)==NC_ID_VALUE)
+  return v3_demo_run(&gpu,&buffers,network,&scene,&overlay,&hud_cache);
+ bsp_printf("V3_CONTROL absent: frozen R7 fallback\r\n");
 #endif
  perf_window samples[2]={{0},{0}};
  hud_comparison metrics={.network_ready=(uint8_t)network};

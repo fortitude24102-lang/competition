@@ -15,6 +15,7 @@ module tb_net_control_mac;
     reg [1023:0] control_tx_packet=0;reg [15:0] control_tx_length=128;
     reg [31:0] control_tx_session=32'hdeadbeef,control_tx_local_ip=32'hc0a80002,control_tx_peer_ip=32'hc0a80003,control_tx_ports=32'h1f9a1f9a;
     wire [7:0] control_rx_byte;wire control_rx_valid,control_rx_last;reg control_rx_ready=1;wire [15:0] control_rx_length;
+    wire [31:0] configured_local_ip,configured_peer_ip;
     efinix_asset_network_shared #(.TX_TIMEOUT_CYCLES(20000),.ENABLE_CONTROL(1)) dut(.*);
     reg peer_req=0,peer_wr=0,peer_arp_req=0;reg [7:0] peer_data=0;reg [15:0] peer_length=32;
     wire peer_ram_req,peer_end,peer_rx_valid;wire [15:0] peer_rx_length;

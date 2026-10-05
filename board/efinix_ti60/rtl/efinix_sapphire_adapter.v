@@ -439,7 +439,7 @@ ddr3_top #(.AXI_ID_WIDTH(AXI_ID_WIDTH)) u_ddr3_top
 
 
 //***************************************************************************
-wire network_select = gpu_apb_paddr[15:8] == 8'h02;
+wire network_select = gpu_apb_paddr[15:8] == 8'h02 || gpu_apb_paddr[15:8] == 8'h03;
 wire [31:0] core_prdata, network_prdata;
 wire core_pready, core_pslverror, network_pready, network_pslverror;
 assign gpu_apb_prdata = network_select ? network_prdata : core_prdata;
@@ -450,7 +450,7 @@ wire [31:0] asset_session, meta_session, meta_asset_id, meta_offset, meta_sequen
 wire [15:0] meta_length, meta_flags;
 wire [7:0] asset_payload_data;
 wire asset_payload_last, asset_active, asset_abort, asset_drop, asset_stream_error;
-efinix_asset_network u_asset_network (
+efinix_network_subsystem u_asset_network (
     .gpu_clk(user_clk), .gpu_reset(gpu_stream_reset), .ge_clk(ge_clk), .ge_reset(ge_reset),
     .paddr(gpu_apb_paddr), .psel(gpu_apb_psel && network_select),
     .penable(gpu_apb_penable), .pwrite(gpu_apb_pwrite), .pwdata(gpu_apb_pwdata),

@@ -345,3 +345,12 @@ create_clock -period 1.344537815 hdmi_tx_fast_clk
 set_max_delay 6.722689076 \
   -from [get_cells {*u_underflow_sync*pixel_event_gray*}] \
   -to [get_cells {*u_underflow_sync*gpu_gray_sync0*}]
+
+# V3 management: registered Gray counters only, bound routing to one source
+# clock period. Do not hide the remaining control/data functional paths.
+set_max_delay 10.000 \
+  -from [get_cells {*u_control_bridge*time_gray*}] \
+  -to [get_cells {*u_control_bridge*time_sync1*}]
+set_max_delay 8.000 \
+  -from [get_cells {*u_control_bridge*drop_gray*}] \
+  -to [get_cells {*u_control_bridge*drop_sync1*}]

@@ -98,6 +98,12 @@
     <efx:design_file name="rtl/net/asset_udp_rx.v" version="default" library="default" />
     <efx:design_file name="rtl/net/efinix_ge_mac_wrapper.v" version="default" library="default" />
     <efx:design_file name="rtl/net/efinix_asset_network.v" version="default" library="default" />
+    <efx:design_file name="rtl/net/udp_payload_router.v" version="default" library="default" />
+    <efx:design_file name="rtl/net/control_udp_rx.v" version="default" library="default" />
+    <efx:design_file name="rtl/net/net_control_bridge.v" version="default" library="default" />
+    <efx:design_file name="rtl/net/udp_tx_arbiter.v" version="default" library="default" />
+    <efx:design_file name="rtl/net/efinix_asset_network_shared.v" version="default" library="default" />
+    <efx:design_file name="rtl/net/efinix_network_subsystem.v" version="default" library="default" />
     <efx:design_file name="vendor/ge_udp/rtl/heijin_test/rgmii2gmii_altera/util_gmii_to_rgmii.v" version="default" library="default" />
     <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/arp_cache.v" version="default" library="default" />
     <efx:design_file name="vendor/ge_udp/rtl/heijin_test/mac/crc.v" version="default" library="default" />
@@ -177,7 +183,7 @@
   <efx:place_and_route tool_name="efx_pnr">
     <efx:param name="work_dir" value="work_pnr" value_type="e_string" />
     <efx:param name="verbose" value="off" value_type="e_bool" />
-    <efx:param name="seed" value="1" value_type="e_integer" />
+    <efx:param name="seed" value="2" value_type="e_integer" />
     <efx:param name="placer_effort_level" value="2" value_type="e_option" />
     <efx:param name="max_threads" value="-1" value_type="e_integer" />
     <efx:param name="beneficial_skew" value="on" value_type="e_option" />

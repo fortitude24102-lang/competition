@@ -5,6 +5,7 @@ param(
     [ValidateSet('bullet','legacy')][string]$Demo = 'bullet',
     [switch]$Profile,
     [switch]$Damage,
+    [switch]$Interactive,
     [ValidatePattern('^0x[0-9a-fA-F]{8}$')][string]$NetworkLocalIp = '0xc0a80002',
     [ValidatePattern('^0x[0-9a-fA-F]{8}$')][string]$NetworkPeerIp = '0xc0a80003',
     [switch]$PublishRelease
@@ -15,7 +16,8 @@ Push-Location $root
 try {
     if ($Profile -and $PublishRelease) { throw 'Profile firmware must not replace the production release.' }
     if ($Damage -and ($Profile -or $PublishRelease -or $Demo -ne 'bullet')) { throw 'Damage candidate is normal R7 firmware only; no release overwrite.' }
-    $out = 'generated/verification/efinix-software'
+    if ($Interactive -and ($Profile -or $Damage -or $PublishRelease -or $Demo -ne 'bullet')) { throw 'Interactive candidate is separate from R7 profile/damage/release.' }
+    $out = if($Interactive) {'generated/verification/v3/integration'} else {'generated/verification/efinix-software'}
     New-Item -ItemType Directory -Force $out | Out-Null
     # WSL host compiler avoids the incomplete MinGW installation on this PC.
     if (!$FirmwareOnly) {
@@ -78,6 +80,7 @@ try {
     $profileFlag = @()
     if ($Profile) { $profileFlag += '-DV2_PROFILE' }
     if ($Damage) { $profileFlag += '-DV3_GPU_DAMAGE=1' }
+    if ($Interactive) { $profileFlag += '-DV3_INTERACTIVE=1' }
     & $RiscvGcc -std=gnu11 -Os -Wall -Wextra -Werror '-Wstack-usage=2048' -march=rv32im_zicsr -mabi=ilp32 -ffreestanding -ffunction-sections -fdata-sections "-DNETWORK_LOCAL_IP=$NetworkLocalIp" "-DNETWORK_PEER_IP=$NetworkPeerIp" $sceneFlag @profileFlag -Isw/efinix_gpu/include -Isw/efinix_gpu/assets/v2 -Isw/efinix_gpu/assets/bullet -isystem "$bsp/include" -isystem "$soc/software/standalone/driver" -DUSE_GP -DNO_LIBC_INIT_ARRAY -nostartfiles "-T$bsp/linker/default.ld" '-Tsw/efinix_gpu/linker.ld' '-Wl,--gc-sections' "-Wl,-Map,$out/gpu_demo.map" "$soc/software/standalone/common/start.S" @firmwareSources -o "$out/gpu_demo.elf"
     if ($LASTEXITCODE -ne 0) { throw 'Sapphire ELF link failed' }
     $objcopy = Join-Path (Split-Path $RiscvGcc) 'riscv-none-elf-objcopy.exe'

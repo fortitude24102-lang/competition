@@ -20,6 +20,7 @@ typedef struct {
  uint32_t score,grazes;
  uint16_t alpha_commands;
  uint8_t gameplay,hp,invulnerable,game_over;
+ uint8_t v3_mode,cpu_stale,logic_slow; /* zero preserves frozen R7 text */
 } hud_comparison;
 #define HUD_COMPARISON_LINES 4u
 #define HUD_COMPARISON_COLUMNS 64u

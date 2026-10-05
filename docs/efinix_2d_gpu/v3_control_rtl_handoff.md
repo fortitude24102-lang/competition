@@ -1,5 +1,7 @@
 # V3 A control RTL handoff
 
+2026-10-05 owner integration update: see `v3_integration_20261005.md` for current board evidence and limits. The independent-delivery notes below describe the original A-work handoff. The owner now wires `efinix_network_subsystem`, and shared `configured_local_ip/configured_peer_ip` outputs feed the bridge's same-named GPU-domain inputs. TX COMMIT snapshots these two addresses into the existing packet CDC; bridge `tx_local_ip/tx_peer_ip` outputs are GE-domain descriptor fields. No APB/wire contract changed. Wildcard test harnesses must declare these added ports. Do not hard-code a second management subnet.
+
 Implemented on `A-work`, starting from `79a0b7f`, using the frozen 2026-10-01 interface and two-week plan. This is an independent simulation deliverable; it has not been integrated into the Sapphire adapter, synthesized, timed, or tested on a board. No vendor sources, GPU logic, C code, adapter, project lists, or release files are changed by this RTL task.
 
 ## Files and integration

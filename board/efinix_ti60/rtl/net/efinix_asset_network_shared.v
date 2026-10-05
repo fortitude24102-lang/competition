@@ -19,7 +19,8 @@ module efinix_asset_network_shared #(
     input wire control_tx_valid,output wire control_tx_ready,
     input wire [1023:0] control_tx_packet,input wire [15:0] control_tx_length,
     input wire [31:0] control_tx_session,control_tx_ports,control_tx_peer_ip,control_tx_local_ip,
-    output wire control_tx_done,control_tx_error
+    output wire control_tx_done,control_tx_error,
+    output wire [31:0] configured_local_ip,configured_peer_ip
 );
     wire reset=gpu_reset|ge_reset;
     reg [1:0] gpu_reset_pipe,ge_reset_pipe;
@@ -34,6 +35,8 @@ module efinix_asset_network_shared #(
     always @(posedge gpu_clk or posedge gpu_rst)
         if(gpu_rst) asset_drop_pending<=0; else asset_drop_pending<=asset_drop;
     reg [31:0] local_ip,peer_ip,ports,tx_count;
+    assign configured_local_ip=local_ip;
+    assign configured_peer_ip=peer_ip;
     reg [255:0] header;
     reg busy,done,error;
     wire descriptor_ready,descriptor_valid,descriptor_take;

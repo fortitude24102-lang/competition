@@ -107,10 +107,12 @@ int hud_comparison_text(const hud_comparison *m,char lines[HUD_COMPARISON_LINES]
   if(valid[i]) {
    p=number(p,f/10); p=text(p,"."); p=number(p,f%10);
    p=text(p,"  RENDER MS "); p=number(p,ms); p=text(p,".");
-   number(p,(us[i]/100u)%10);
+   p=number(p,(us[i]/100u)%10);
+   if(!i && m->v3_mode && m->cpu_stale) text(p," STALE");
   } else text(p,"--  RENDER MS --");
  }
  char *p=text(lines[2],m->gpu_active?"MODE GPU  ":"MODE CPU  ");
+ if(m->v3_mode) p=text(p,m->v3_mode==1?"LIVE ":"REPLAY ");
  p=text(p,m->bullet_demo?"BULLETS ":"N ");
  p=number(p,m->sprites);
  if(m->bullet_demo && m->gameplay) { p=text(p," ALPHA "); p=number(p,m->alpha_commands); }
@@ -121,7 +123,7 @@ int hud_comparison_text(const hud_comparison *m,char lines[HUD_COMPARISON_LINES]
   p=text(p," GRAZE "); p=number(p,m->grazes>9999u?9999u:m->grazes);
   p=text(p," UFL "); p=number(p,m->underflows);
   p=text(p," ERR "); p=number(p,m->error_code);
-  text(p,m->game_over?" OVER":m->invulnerable?" SHIELD":" AUTO");
+  text(p,m->game_over?" OVER":m->invulnerable?" SHIELD":m->v3_mode?(m->logic_slow?" SLOW":" PLAY"):" AUTO");
  } else if(m->bullet_demo) {
   p=text(lines[3],"UFL "); p=number(p,m->underflows);
   p=text(p," ERR "); p=number(p,m->error_code);

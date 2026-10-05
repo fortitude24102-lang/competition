@@ -8,16 +8,19 @@ module net_control_bridge #(
     input wire [255:0] rx_packet,input wire rx_packet_valid,output wire rx_packet_ready,
     input wire [31:0] rx_arrival_ms,rx_drop_count,output wire [31:0] ge_time_ms,
     output wire [1023:0] tx_packet,output wire tx_packet_valid,input wire tx_packet_ready,
-    output wire [15:0] tx_length,input wire tx_done,tx_error
+    output wire [15:0] tx_length,input wire tx_done,tx_error,
+    input wire [31:0] configured_local_ip,configured_peer_ip,
+    output wire [31:0] tx_local_ip,tx_peer_ip
 );
     wire reset=gpu_reset|ge_reset;
     reg [1:0] gpu_pipe,ge_pipe;
     always @(posedge gpu_clk or posedge reset) if(reset) gpu_pipe<=3;else gpu_pipe<={gpu_pipe[0],1'b0};
     always @(posedge ge_clk or posedge reset) if(reset) ge_pipe<=3;else ge_pipe<={ge_pipe[0],1'b0};
     wire gpu_rst=gpu_pipe[1],ge_rst=ge_pipe[1];
-    reg [31:0] tick_divider,time_ms,time_gray;
+    reg [31:0] tick_divider,time_ms;
+    (* syn_keep="true" *) reg [31:0] time_gray;
     (* ASYNC_REG="TRUE" *) reg [31:0] time_sync1,time_sync2,drop_sync1,drop_sync2;
-    reg [31:0] drop_gray;
+    (* syn_keep="true" *) reg [31:0] drop_gray;
     function [31:0] gray_binary;
         input [31:0] gray;integer b;
         begin gray_binary[31]=gray[31];for(b=30;b>=0;b=b-1) gray_binary[b]=gray_binary[b+1]^gray[b];end
@@ -44,7 +47,7 @@ module net_control_bridge #(
     reg [1023:0] tx_shadow;reg [31:0] written;reg [15:0] length_shadow;
     reg busy,error;reg [31:0] done_count;
     wire tx_fifo_ready,response_valid,response_error;
-    wire [1039:0] tx_descriptor;
+    wire [1103:0] tx_descriptor;
     wire access=psel&&penable;
     wire rx_word=paddr>=16'h0320 && paddr<=16'h033c;
     wire tx_word=paddr>=16'h0340 && paddr<=16'h03bc;
@@ -98,10 +101,13 @@ module net_control_bridge #(
             end
         end
     end
-    pixel_async_fifo #(.DATA_WIDTH(1040),.DEPTH(4),.ADDRESS_WIDTH(2)) u_tx(
-        .wr_clk(gpu_clk),.wr_reset(reset),.wr_data({length_shadow,tx_shadow}),.wr_valid(commit),.wr_ready(tx_fifo_ready),
+    // IP configuration is GPU-domain data: snapshot with the packet, never
+    // sample a live multibit APB register across the GE clock boundary.
+    pixel_async_fifo #(.DATA_WIDTH(1104),.DEPTH(4),.ADDRESS_WIDTH(2)) u_tx(
+        .wr_clk(gpu_clk),.wr_reset(reset),.wr_data({configured_peer_ip,configured_local_ip,length_shadow,tx_shadow}),.wr_valid(commit),.wr_ready(tx_fifo_ready),
         .rd_clk(ge_clk),.rd_reset(reset),.rd_data(tx_descriptor),.rd_valid(tx_packet_valid),.rd_ready(tx_packet_ready));
     assign tx_packet=tx_descriptor[1023:0];assign tx_length=tx_descriptor[1039:1024];
+    assign tx_local_ip=tx_descriptor[1071:1040];assign tx_peer_ip=tx_descriptor[1103:1072];
     pixel_async_fifo #(.DATA_WIDTH(1),.DEPTH(4),.ADDRESS_WIDTH(2)) u_done(
         .wr_clk(ge_clk),.wr_reset(reset),.wr_data(tx_error),.wr_valid(tx_done),.wr_ready(),
         .rd_clk(gpu_clk),.rd_reset(reset),.rd_data(response_error),.rd_valid(response_valid),.rd_ready(1'b1));
