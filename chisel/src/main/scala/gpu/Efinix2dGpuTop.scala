@@ -14,7 +14,7 @@ class ApbSlavePort extends Bundle {
   val pslverror = Output(Bool())
 }
 
-class Efinix2dGpuTop(enableCopyStream: Boolean = true) extends Module {
+class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val apb = new ApbSlavePort
     val axi = new Axi4MasterPort
@@ -36,7 +36,8 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true) extends Module {
     val irq = Output(Bool())
   })
 
-  private val regs = Module(new GpuApbRegs)
+  private val regs = Module(new GpuApbRegs(enableInstances))
+  private val instances = if (enableInstances) Some(Module(new InstanceStream)) else None
   private val assetRegs = Module(new AssetDmaRegs)
   private val assetWriter = Module(new AssetDmaWriter)
   private val render = Module(new RenderEngine(enableCopyStream))
@@ -49,19 +50,58 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true) extends Module {
   private val scanoutEverEnabled = RegInit(false.B)
 
   private val assetSelect = io.apb.paddr(15, 8) === 1.U
+  private val instanceSelect = if (enableInstances) io.apb.paddr(15, 8) === 4.U else false.B
+  private val instanceActive = instances.map(_.io.active).getOrElse(false.B)
+  // Candidate-only response stage: break the decoded read mux -> Sapphire
+  // path without changing the default legacy APB timing or register ABI.
+  private val responseValid = if (enableInstances) RegInit(false.B) else false.B
+  private val localSelect = io.apb.psel && !responseValid
+  private val responseData = WireDefault(Mux(assetSelect, assetRegs.io.prdata, regs.io.prdata))
+  private val responseReady = WireDefault(Mux(assetSelect, assetRegs.io.pready, regs.io.pready))
+  private val responseError = WireDefault(Mux(assetSelect, assetRegs.io.pslverror, regs.io.pslverror))
   regs.io.paddr := io.apb.paddr
-  regs.io.psel := io.apb.psel && !assetSelect
+  regs.io.psel := localSelect && !assetSelect && !instanceSelect
   regs.io.penable := io.apb.penable
   regs.io.pwrite := io.apb.pwrite
   regs.io.pwdata := io.apb.pwdata
   assetRegs.io.paddr := io.apb.paddr
-  assetRegs.io.psel := io.apb.psel && assetSelect
+  assetRegs.io.psel := localSelect && assetSelect
   assetRegs.io.penable := io.apb.penable
   assetRegs.io.pwrite := io.apb.pwrite
   assetRegs.io.pwdata := io.apb.pwdata
-  io.apb.prdata := Mux(assetSelect, assetRegs.io.prdata, regs.io.prdata)
-  io.apb.pready := Mux(assetSelect, assetRegs.io.pready, regs.io.pready)
-  io.apb.pslverror := Mux(assetSelect, assetRegs.io.pslverror, regs.io.pslverror)
+  instances.foreach { frontend =>
+    frontend.io.apb.paddr := io.apb.paddr
+    frontend.io.apb.psel := localSelect && instanceSelect
+    frontend.io.apb.penable := io.apb.penable
+    frontend.io.apb.pwrite := io.apb.pwrite
+    frontend.io.apb.pwdata := io.apb.pwdata
+    frontend.io.idle := !render.io.busy && !render.io.textureCacheBusy
+    frontend.io.hardwareError := lastError
+    when(instanceSelect) {
+      responseData := frontend.io.apb.prdata
+      responseReady := frontend.io.apb.pready
+      responseError := frontend.io.apb.pslverror
+    }
+  }
+  if (enableInstances) {
+    val data = Reg(UInt(32.W))
+    val error = RegInit(false.B)
+    when(localSelect && io.apb.penable && responseReady) {
+      data := responseData
+      error := responseError
+      responseValid := true.B
+    }
+    when(!io.apb.psel || !io.apb.penable || responseValid) {
+      responseValid := false.B
+    }
+    io.apb.prdata := data
+    io.apb.pready := responseValid && io.apb.psel && io.apb.penable
+    io.apb.pslverror := io.apb.pready && error
+  } else {
+    io.apb.prdata := responseData
+    io.apb.pready := responseReady
+    io.apb.pslverror := responseError
+  }
 
   assetRegs.io.metaIn <> io.assetMeta
   assetWriter.io.meta <> assetRegs.io.metaOut
@@ -80,13 +120,22 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true) extends Module {
   io.assetDropPacket := assetRegs.io.dropPacket
   io.assetAbort := assetRegs.io.abort || assetWriter.io.packetFailed
 
-  render.io.command <> regs.io.command
+  render.io.command.valid := regs.io.command.valid && !instanceActive
+  render.io.command.bits := regs.io.command.bits
+  regs.io.command.ready := render.io.command.ready && !instanceActive
+  instances.foreach { frontend =>
+    frontend.io.command.ready := render.io.command.ready && instanceActive
+    when(instanceActive) {
+      render.io.command.valid := frontend.io.command.valid
+      render.io.command.bits := frontend.io.command.bits
+    }
+  }
   render.io.vblank := io.vblank
   regs.io.queueLevel := render.io.queueLevel
   regs.io.queueHighWater := render.io.queueHighWater
-  regs.io.queueFull := render.io.queueFull
-  regs.io.queueEmpty := render.io.queueEmpty
-  regs.io.engineBusy := render.io.busy
+  regs.io.queueFull := render.io.queueFull || instanceActive
+  regs.io.queueEmpty := render.io.queueEmpty && !instanceActive
+  regs.io.engineBusy := render.io.busy || instanceActive
   regs.io.irqPending := irq
   regs.io.lastDoneTag := lastDoneTag
   regs.io.lastError := lastError

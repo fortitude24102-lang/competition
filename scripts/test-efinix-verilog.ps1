@@ -114,7 +114,7 @@ try {
         (Join-Path $testbench 'tb_display_scale2x_1080p.sv')
     )
 
-    Invoke-IcarusTest -Name 'hdmi-subsystem' -Top 'tb_hdmi_subsystem' -Sources @(
+    $displaySources = @(
         $fifo,
         (Join-Path $encoder 'dvi_encoder.v'),
         (Join-Path $encoder 'encode.v'),
@@ -125,9 +125,10 @@ try {
         (Join-Path $display 'underflow_pulse_cdc.v'),
         (Join-Path $display 'rgb565_to_rgb888.v'),
         (Join-Path $display 'hdmi_tx_adapter.v'),
-        (Join-Path $display 'hdmi_subsystem.v'),
-        (Join-Path $testbench 'tb_hdmi_subsystem.sv')
+        (Join-Path $display 'hdmi_subsystem.v')
     )
+    Invoke-IcarusTest -Name 'hdmi-subsystem' -Top 'tb_hdmi_subsystem' -Sources ($displaySources + (Join-Path $testbench 'tb_hdmi_subsystem.sv'))
+    Invoke-IcarusTest -Name 'hdmi-warm-reset' -Top 'tb_hdmi_warm_reset' -Sources ($displaySources + (Join-Path $testbench 'tb_hdmi_warm_reset.sv'))
 
     $sourceVcd = Join-Path $testbench 'underflow_pulse_cdc.vcd'
     if (!(Test-Path -LiteralPath $sourceVcd -PathType Leaf)) {
@@ -142,7 +143,7 @@ try {
     $evidenceVcd = Join-Path $evidence 'member_a_underflow_final.vcd'
     Copy-Item -LiteralPath $sourceVcd -Destination $evidenceVcd -Force
     Write-Output "[EVIDENCE] $evidenceVcd"
-    Write-Output 'PASS member A direct-Windows-Icarus regression: 7 simulations'
+    Write-Output 'PASS member A direct-Windows-Icarus regression: 8 simulations'
 } finally {
     if ([IO.Directory]::Exists($tempRoot)) {
         [IO.Directory]::Delete($tempRoot, $true)

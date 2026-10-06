@@ -47,25 +47,37 @@ module hdmi_subsystem (
     reg scale_underflow_prev;
     wire [7:0] red, green, blue;
 
+    // Sapphire debug reset also resets scanout and flushes the pixel FIFO.
+    // Drop the old row origin with that stream; release only on pixel clocks.
+    wire display_reset_request = pixel_reset | gpu_reset;
+    (* async_reg = "true" *) reg [1:0] display_reset_release;
+    wire display_reset = display_reset_release[1];
+    always @(posedge pixel_clk or posedge display_reset_request) begin
+        if (display_reset_request)
+            display_reset_release <= 2'b11;
+        else
+            display_reset_release <= {display_reset_release[0], 1'b0};
+    end
+
     pixel_async_fifo u_fifo (
         .wr_clk(gpu_clk), .wr_reset(gpu_reset),
         .wr_data({gpu_pixel, gpu_line_last, gpu_frame_last}),
         .wr_valid(gpu_valid), .wr_ready(gpu_ready), .wr_level(fifo_level),
         .wr_level_low(fifo_level_low), .wr_level_high(fifo_level_high),
-        .rd_clk(pixel_clk), .rd_reset(pixel_reset), .rd_data(fifo_read_data),
+        .rd_clk(pixel_clk), .rd_reset(display_reset), .rd_data(fifo_read_data),
         .rd_valid(fifo_read_valid), .rd_ready(fifo_read_ready), .rd_level(fifo_read_level),
         .full(fifo_full), .empty(fifo_empty)
     );
 
     display_line_buffer u_line_buffer (
-        .clk(pixel_clk), .reset(pixel_reset), .input_data(fifo_read_data),
+        .clk(pixel_clk), .reset(display_reset), .input_data(fifo_read_data),
         .input_valid(fifo_read_valid), .input_ready(fifo_read_ready),
         .line_begin(line_begin), .line_done(line_done), .read_index(line_read_index),
         .read_pixel(line_pixel), .line_valid(line_valid), .protocol_error(protocol_error)
     );
 
     display_scale2x_1080p u_scale (
-        .clk(pixel_clk), .reset(pixel_reset), .line_pixel(line_pixel), .line_valid(line_valid),
+        .clk(pixel_clk), .reset(display_reset), .line_pixel(line_pixel), .line_valid(line_valid),
         .line_read_index(line_read_index), .line_begin(line_begin), .line_done(line_done),
         .rgb565(video_rgb565), .hs(video_hs), .vs(video_vs), .de(video_de), .vblank(vblank),
         .underflow(scale_underflow)
@@ -73,8 +85,8 @@ module hdmi_subsystem (
 
     // Latch an underflow event (sticky) and count underflow episodes (rising edge),
     // so the fixed black background on a missing line is observable to software/HUD.
-    always @(posedge pixel_clk or posedge pixel_reset) begin
-        if (pixel_reset) begin
+    always @(posedge pixel_clk or posedge display_reset) begin
+        if (display_reset) begin
             underflow_event <= 1'b0;
             underflow_count <= 16'd0;
             scale_underflow_prev <= 1'b0;
@@ -88,12 +100,12 @@ module hdmi_subsystem (
     end
 
     vblank_pulse_sync u_vblank_sync (
-        .src_clk(pixel_clk), .src_reset(pixel_reset), .src_vblank(vblank),
+        .src_clk(pixel_clk), .src_reset(display_reset), .src_vblank(vblank),
         .dst_clk(gpu_clk), .dst_reset(gpu_reset), .dst_pulse(vblank_gpu)
     );
 
     underflow_pulse_cdc u_underflow_sync (
-        .pixel_clk(pixel_clk), .pixel_reset(pixel_reset), .scale_underflow(scale_underflow),
+        .pixel_clk(pixel_clk), .pixel_reset(display_reset), .scale_underflow(scale_underflow),
         .gpu_clk(gpu_clk), .gpu_reset(gpu_reset), .underflow_pulse_gpu(underflow_pulse_gpu)
     );
 
@@ -102,7 +114,7 @@ module hdmi_subsystem (
     );
 
     hdmi_tx_adapter u_hdmi (
-        .pixelclk(pixel_clk), .rst(pixel_reset), .red(red), .green(green), .blue(blue),
+        .pixelclk(pixel_clk), .rst(display_reset), .red(red), .green(green), .blue(blue),
         .hs(video_hs), .vs(video_vs), .de(video_de),
         .tmds_data0_o(tmds_data0_o), .tmds_data1_o(tmds_data1_o),
         .tmds_data2_o(tmds_data2_o), .tmds_clk_o(tmds_clk_o),

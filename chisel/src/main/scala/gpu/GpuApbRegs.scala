@@ -3,7 +3,7 @@ package gpu
 import chisel3._
 import chisel3.util._
 
-class GpuApbRegs extends Module {
+class GpuApbRegs(instancePresent: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val paddr = Input(UInt(16.W))
     val psel = Input(Bool())
@@ -177,7 +177,7 @@ class GpuApbRegs extends Module {
     is(GpuRegisterMap.Version.U) { io.prdata := "h00010100".U }
     is(GpuRegisterMap.Status.U) {
       io.prdata := Cat(
-        0.U(18.W), io.irqPending, io.queueHighWater,
+        (if (instancePresent) 1.U(18.W) else 0.U(18.W)), io.irqPending, io.queueHighWater,
         io.engineBusy, io.queueFull, io.queueEmpty, io.queueLevel
       )
     }

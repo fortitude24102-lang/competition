@@ -15,6 +15,8 @@ $serial=New-Object IO.Ports.SerialPort 'COM13',115200,'None',8,'One'
 $serial.ReadTimeout=100
 try {
  $serial.Open()
+ # Do not let buffered telemetry from the previous firmware satisfy StopPattern.
+ $serial.DiscardInBuffer()
  if($LoadBit) {
   & D:/efinity/pgm/bin/ftdi_pgm.bat D:/efinity_builds/texture_cache_20260928/outflow/efinix_2d_gpu.bit -m jtag
   if($LASTEXITCODE -ne 0) { throw 'JTAG BIT load failed' }
