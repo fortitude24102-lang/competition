@@ -24,8 +24,13 @@ module asset_udp_rx #(
 );
     localparam [2:0] IDLE=0, RECEIVE=1, CHECK=2, META=3, PAYLOAD=4, DROP=5;
     reg [2:0] state;
-    reg [7:0] packet [0:1055];
+    // Only the 32-byte header needs parallel field reads. Synchronous payload
+    // reads avoid an 8K-bit register array and a 1024:1 combinational mux.
+    reg [7:0] header [0:31];
+    (* syn_ramstyle="block_ram" *) reg [7:0] payload_ram [0:1023];
+    reg [7:0] payload_q;
     reg [10:0] received, sent;
+    wire [9:0] payload_wr_address = received - 11'd32;
     reg [15:0] declared_length;
     reg length_changed;
     reg [31:0] idle_cycles;
@@ -43,13 +48,13 @@ module asset_udp_rx #(
         end
     endfunction
 
-    wire [31:0] magic = {packet[0],packet[1],packet[2],packet[3]};
-    wire [15:0] version = {packet[4],packet[5]};
-    wire [15:0] packet_type = {packet[6],packet[7]};
-    wire [31:0] session = {packet[8],packet[9],packet[10],packet[11]};
-    wire [15:0] data_length = {packet[20],packet[21]};
-    wire [15:0] flags = {packet[22],packet[23]};
-    wire [31:0] offset = {packet[16],packet[17],packet[18],packet[19]};
+    wire [31:0] magic = {header[0],header[1],header[2],header[3]};
+    wire [15:0] version = {header[4],header[5]};
+    wire [15:0] packet_type = {header[6],header[7]};
+    wire [31:0] session = {header[8],header[9],header[10],header[11]};
+    wire [15:0] data_length = {header[20],header[21]};
+    wire [15:0] flags = {header[22],header[23]};
+    wire [31:0] offset = {header[16],header[17],header[18],header[19]};
     wire valid_packet = !length_changed && {5'b0,received} == declared_length &&
         declared_length >= 33 && declared_length <= 1056 &&
         magic == 32'h41535354 && version == 16'd1 && packet_type == 16'd2 &&
@@ -57,13 +62,29 @@ module asset_udp_rx #(
         data_length != 0 && data_length <= 1024 &&
         declared_length == 32 + data_length && flags[15:2] == 0 &&
         flags[1]==0 && (flags[0] || data_length[1:0]==0) &&
-        ~payload_crc == {packet[28],packet[29],packet[30],packet[31]};
+        ~payload_crc == {header[28],header[29],header[30],header[31]};
 
     assign rx_ready = state == IDLE || state == RECEIVE || state == DROP;
     assign meta_valid = state == META;
     assign payload_valid = state == PAYLOAD;
-    assign payload_data = packet[32 + sent];
+    assign payload_data = payload_q;
     assign payload_last = {5'b0,sent} == meta_length - 1'b1;
+    wire payload_read = (state==META && meta_ready) ||
+                        (state==PAYLOAD && payload_ready && !payload_last);
+    wire [9:0] payload_rd_address = state==META ? 10'd0 : sent[9:0]+10'd1;
+
+    // No RAM reset: validity is owned by state and a complete verified packet.
+    // Metadata acceptance prefetches byte zero. Each consumed byte prefetches
+    // its successor, so data remains stable under stalls and has no bubbles.
+    always @(posedge clk) begin
+        if(!reset) begin
+            if(state==RECEIVE && rx_valid && received>=32 && received<1056)
+                payload_ram[payload_wr_address] <= rx_byte;
+            // One syntactic read port is essential to Efinity RAM inference.
+            if(payload_read)
+                payload_q <= payload_ram[payload_rd_address];
+        end
+    end
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -92,7 +113,7 @@ module asset_udp_rx #(
             case (state)
                 IDLE: if (rx_valid) begin
                     payload_crc <= 32'hffffffff;
-                    packet[0] <= rx_byte;
+                    header[0] <= rx_byte;
                     received <= 1;
                     declared_length <= rx_length;
                     length_changed <= 0;
@@ -113,7 +134,7 @@ module asset_udp_rx #(
                         error_count <= error_count + 1'b1;
                     end else if (rx_valid) begin
                         if (rx_length != declared_length) length_changed <= 1;
-                        if (received < 1056) packet[received] <= rx_byte;
+                        if (received < 32) header[received[4:0]] <= rx_byte;
                         if (received>=32 && received<1056) payload_crc<=crc_byte(payload_crc,rx_byte);
                         received <= received + 1'b1;
                         if (rx_last) state <= CHECK;
@@ -126,12 +147,12 @@ module asset_udp_rx #(
                 end
                 CHECK: if (valid_packet) begin
                     meta_session <= session;
-                    meta_asset_id <= {packet[12],packet[13],packet[14],packet[15]};
+                    meta_asset_id <= {header[12],header[13],header[14],header[15]};
                     meta_offset <= offset;
                     meta_length <= data_length;
                     meta_flags <= flags;
-                    meta_sequence <= {packet[24],packet[25],packet[26],packet[27]};
-                    meta_crc32 <= {packet[28],packet[29],packet[30],packet[31]};
+                    meta_sequence <= {header[24],header[25],header[26],header[27]};
+                    meta_crc32 <= {header[28],header[29],header[30],header[31]};
                     sent <= 0;
                     state <= META;
                 end else begin

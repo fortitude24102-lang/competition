@@ -62,15 +62,31 @@ module tb_asset_udp_rx;
             for(i=0;i<length-32;i=i+1) begin
                 payload_ready=(i%3!=0);
                 if(!payload_ready) begin
-                    if(!payload_valid || payload_data!=8'(i)) $fatal(1,"unstable payload");
+                    if(payload_valid!==1'b1 || payload_data!==packet[32+i]) $fatal(1,"unstable payload at %0d",i);
                     @(negedge clk);
                     payload_ready=1;
                 end
-                if(!payload_valid || payload_data!=8'(i) || payload_last!=(i==length-33))
+                if(payload_valid!==1'b1 || payload_data!==packet[32+i] || payload_last!==(i==length-33))
                     $fatal(1,"payload mismatch at byte %0d",i);
                 @(negedge clk);
             end
             payload_ready=0;
+        end
+    endtask
+
+    // Catch synchronous-read off-by-one/address wrapping and stale data after
+    // reset; expected bytes are the independently generated transmitted packet.
+    task automatic varied_payload;
+        integer i,b;
+        reg [31:0] c;
+        begin
+            c=32'hffffffff;
+            for(i=32;i<1056;i=i+1) begin
+                packet[i]=8'((i-32)^((i-32)>>3)^8'hb6);
+                c=c^packet[i];
+                for(b=0;b<8;b=b+1) c=c[0] ? (c>>1)^32'hedb88320 : c>>1;
+            end
+            {packet[28],packet[29],packet[30],packet[31]}=~c;
         end
     endtask
 
@@ -107,6 +123,15 @@ module tb_asset_udp_rx;
         repeat(3) @(negedge clk);
         if(meta_valid || error_count!=7) $fatal(1,"unaligned non-LAST accepted");
         make_packet(35);send_packet(35,35);receive_packet(35);
+        make_packet(1056);varied_payload;send_packet(1056,1056);receive_packet(1056);
+        make_packet(96);send_packet(96,96);
+        repeat(3) @(negedge clk);meta_ready=1;
+        @(negedge clk);meta_ready=0;payload_ready=1;
+        repeat(2) @(negedge clk);reset=1;payload_ready=0;
+        @(negedge clk);reset=0;
+        repeat(3) @(negedge clk);
+        if(meta_valid || payload_valid || error_count!=0) $fatal(1,"reset retained a buffered packet");
+        make_packet(33);send_packet(33,33);receive_packet(33);
         $display("PASS asset_udp_rx valid/bad type/truncation/session/backpressure/boundaries/timeout/recovery");
         $finish;
     end

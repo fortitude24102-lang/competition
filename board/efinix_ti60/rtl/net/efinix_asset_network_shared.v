@@ -82,7 +82,8 @@ module efinix_asset_network_shared #(
             endcase
         end
     end
-    pixel_async_fifo #(.DATA_WIDTH(384),.DEPTH(4),.ADDRESS_WIDTH(2)) u_request(
+    // The APB busy state permits one GET in flight until its completion.
+    net_async_mailbox #(.DATA_WIDTH(384)) u_request(
         .wr_clk(gpu_clk),.wr_reset(reset),.wr_data({asset_session,ports,peer_ip,local_ip,header}),.wr_valid(send),.wr_ready(descriptor_ready),
         .rd_clk(ge_clk),.rd_reset(reset),.rd_data(descriptor),.rd_valid(descriptor_valid),.rd_ready(descriptor_take));
     wire mac_ready,mac_done,mac_error,mac_valid,asset_done,asset_error;

@@ -96,6 +96,7 @@
     <efx:design_file name="rtl/efinix_ge_phy.v" version="default" library="default" />
     <efx:design_file name="rtl/net/asset_stream_guard.v" version="default" library="default" />
     <efx:design_file name="rtl/net/asset_udp_rx.v" version="default" library="default" />
+    <efx:design_file name="rtl/net/net_async_mailbox.v" version="default" library="default" />
     <efx:design_file name="rtl/net/efinix_ge_mac_wrapper.v" version="default" library="default" />
     <efx:design_file name="rtl/net/efinix_asset_network.v" version="default" library="default" />
     <efx:design_file name="rtl/net/udp_payload_router.v" version="default" library="default" />

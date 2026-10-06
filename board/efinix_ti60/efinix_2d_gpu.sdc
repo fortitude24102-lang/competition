@@ -354,3 +354,17 @@ set_max_delay 10.000 \
 set_max_delay 8.000 \
   -from [get_cells {*u_control_bridge*drop_gray*}] \
   -to [get_cells {*u_control_bridge*drop_sync1*}]
+
+# Single-outstanding network mailboxes: a captured snapshot stays unchanged
+# until destination consumption and synchronized acknowledgment. Bound only
+# the actual bundled-data CDC and first synchronizers to the shorter period.
+# Do not false-path all GPU/GE traffic or hide either domain's ordinary paths.
+set_max_delay 8.000 \
+  -from [get_cells {*u_tx*request~FF *u_request*request~FF}] \
+  -to [get_cells {*u_tx*request_sync0* *u_request*request_sync0*}]
+set_max_delay 8.000 \
+  -from [get_cells {*u_tx*acknowledge~FF *u_request*acknowledge~FF}] \
+  -to [get_cells {*u_tx*acknowledge_sync0* *u_request*acknowledge_sync0*}]
+set_max_delay 8.000 \
+  -from [get_cells {*u_tx*wr_snapshot* *u_request*wr_snapshot*}] \
+  -to [get_cells {*u_asset_network/tx_packet[*]~FF *u_asset_network/tx_length[*]~FF *u_asset_network/tx_local_ip[*]~FF *u_asset_network/tx_peer_ip[*]~FF *u_shared/descriptor[*]~FF}]

@@ -103,7 +103,9 @@ module net_control_bridge #(
     end
     // IP configuration is GPU-domain data: snapshot with the packet, never
     // sample a live multibit APB register across the GE clock boundary.
-    pixel_async_fifo #(.DATA_WIDTH(1104),.DEPTH(4),.ADDRESS_WIDTH(2)) u_tx(
+    // busy forbids another commit until TX completion, so four BRAM-backed
+    // slots add no concurrency. Retain an atomic snapshot in one CDC mailbox.
+    net_async_mailbox #(.DATA_WIDTH(1104)) u_tx(
         .wr_clk(gpu_clk),.wr_reset(reset),.wr_data({configured_peer_ip,configured_local_ip,length_shadow,tx_shadow}),.wr_valid(commit),.wr_ready(tx_fifo_ready),
         .rd_clk(ge_clk),.rd_reset(reset),.rd_data(tx_descriptor),.rd_valid(tx_packet_valid),.rd_ready(tx_packet_ready));
     assign tx_packet=tx_descriptor[1023:0];assign tx_length=tx_descriptor[1039:1024];

@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 out=generated/verification/v3/control-rtl
 mkdir -p "$out"
 mapfile -t mac < <(find board/efinix_ti60/vendor/ge_udp/rtl/heijin_test/mac -name '*.v')
-for top in tb_net_control tb_net_control_arbiter tb_net_control_mac; do
+for top in tb_net_async_mailbox tb_net_control tb_net_control_arbiter tb_net_control_mac; do
   verilator --binary --timing -j 4 -Wno-fatal --top-module "$top" \
     --Mdir "$out/$top" -o run "tb/verilog/$top.sv" \
     board/efinix_ti60/rtl/net/*.v board/efinix_ti60/rtl/display/pixel_async_fifo.v \
