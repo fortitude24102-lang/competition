@@ -1,0 +1,12 @@
+{
+    "width":  200,
+    "height":  70,
+    "stride_bytes":  400,
+    "source_height":  1772,
+    "format":  "RGB565_LE",
+    "license":  "User-supplied competition mark; not CC0",
+    "bytes":  28000,
+    "crc32":  "b4cc6853",
+    "source_sha256":  "28143ccb9222bf9b22c1ef09a7ec6165c4bb27e95c7b8cd9b62293b9d3babcc8",
+    "source_width":  5087
+}

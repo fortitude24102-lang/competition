@@ -37,10 +37,22 @@ int hud_build_comparison(uint32_t destination,const hud_comparison *metrics,hud_
 #define HUD_GLYPH_CELL_BYTES (HUD_GLYPH_WIDTH*HUD_GLYPH_HEIGHT*2u)
 #define HUD_GLYPH_BANK_BYTES (HUD_GLYPH_COUNT*HUD_GLYPH_CELL_BYTES)
 #define HUD_GLYPH_ATLAS_BYTES (2u*HUD_GLYPH_BANK_BYTES)
+/* Optional user-supplied mark, loaded/CRC-checked once into private DDR.
+ * Keep the 960x72 HUD copy and original CPU scene renderer unchanged. */
+#define HUD_LOGO_ASSET_ID 103u
+#define HUD_LOGO_ADDR 0x02c50000u
+#define HUD_LOGO_WIDTH 200u
+#define HUD_LOGO_HEIGHT 70u
+#define HUD_LOGO_X 752u
+#define HUD_LOGO_Y 1u
+#define HUD_LOGO_BYTES (HUD_LOGO_WIDTH*HUD_LOGO_HEIGHT*2u)
+void hud_set_logo_enabled(int enabled);
+int hud_logo_fits(char lines[HUD_COMPARISON_LINES][HUD_COMPARISON_COLUMNS]);
 typedef struct {
  char text[HUD_COMPARISON_LINES][HUD_COMPARISON_COLUMNS];
  uint32_t rebuilds;
  uint8_t valid;
+ uint8_t logo_visible;
 } hud_raster_cache;
 /* Zero-initialize cache; scratch must be static/BSS (too large for board stack).
  * Caller synchronizes DDR after update, before consuming the cached COPY. */

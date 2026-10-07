@@ -1,4 +1,6 @@
 *.sh text eol=lf
+# Raw pixels are binary even when a particular image contains no NUL bytes.
+*.rgb565 binary
 # Keep the generated GPU candidate byte-identical across Windows/Linux checkouts.
 generated/efinix_gpu/* text eol=lf
 # Evidence SHA-256 covers archived bytes, including log line endings.

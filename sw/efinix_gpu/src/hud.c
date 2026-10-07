@@ -1,4 +1,14 @@
 #include "hud.h"
+static uint8_t logo_enabled;
+void hud_set_logo_enabled(int enabled) { logo_enabled=(uint8_t)(enabled!=0); }
+int hud_logo_fits(char lines[HUD_COMPARISON_LINES][HUD_COMPARISON_COLUMNS]) {
+ if(!logo_enabled || !lines) return 0;
+ for(unsigned line=0;line<HUD_COMPARISON_LINES;line++) {
+  unsigned n=0;while(n<HUD_COMPARISON_COLUMNS && lines[line][n]) ++n;
+  if(n==HUD_COMPARISON_COLUMNS || 8u+n*HUD_GLYPH_WIDTH>HUD_LOGO_X) return 0;
+ }
+ return 1;
+}
 static const uint8_t digits[10][5]={
  {7,5,5,5,7},{2,6,2,2,7},{7,1,7,4,7},{7,1,7,1,7},{5,5,7,1,1},
  {7,4,7,1,7},{7,4,7,5,7},{7,1,1,1,1},{7,5,7,5,7},{7,5,7,1,7}
@@ -161,6 +171,13 @@ int hud_build_comparison(uint32_t dst,const hud_comparison *m,hud_command_stream
    }
   }
  }
+ if(hud_logo_fits(lines)) {
+  if(s->count>=HUD_MAX_COMMANDS) return GPU_DRIVER_FULL;
+  s->commands[s->count++]=(gpu_command){.op=GPU_OP_COPY,.src_addr=HUD_LOGO_ADDR,
+   .dst_addr=dst+HUD_LOGO_Y*GPU_FRAME_STRIDE+HUD_LOGO_X*2u,
+   .src_stride=HUD_LOGO_WIDTH*2u,.dst_stride=GPU_FRAME_STRIDE,
+   .width_pixels=HUD_LOGO_WIDTH,.height_pixels=HUD_LOGO_HEIGHT};
+ }
  return 0;
 }
 
@@ -170,6 +187,9 @@ void hud_init_glyph_atlas(void) {
  _Static_assert(sizeof(HUD_GLYPH_CHARACTERS)-1u==HUD_GLYPH_COUNT,"glyph count");
  _Static_assert(HUD_CACHE_ADDR+HUD_CACHE_BYTES<=HUD_GLYPH_ATLAS_ADDR,"HUD/atlas separation");
  _Static_assert(HUD_GLYPH_ATLAS_ADDR+HUD_GLYPH_ATLAS_BYTES<=GPU_DDR_END_EXCLUSIVE,"glyph DDR bounds");
+ _Static_assert(HUD_GLYPH_ATLAS_ADDR+HUD_GLYPH_ATLAS_BYTES<=HUD_LOGO_ADDR,"glyph/logo separation");
+ _Static_assert(HUD_LOGO_ADDR+HUD_LOGO_BYTES<=0x02d00000u,"logo/runtime separation");
+ _Static_assert(HUD_LOGO_X+HUD_LOGO_WIDTH<=GPU_FRAME_WIDTH && HUD_LOGO_Y+HUD_LOGO_HEIGHT<=HUD_CACHE_HEIGHT,"logo HUD bounds");
  uint16_t *out=(uint16_t *)(uintptr_t)HUD_GLYPH_ATLAS_ADDR;
  for(unsigned bank=0;bank<2;bank++) for(unsigned glyph=0;glyph<HUD_GLYPH_COUNT;glyph++) {
   unsigned char ch=(unsigned char)HUD_GLYPH_CHARACTERS[glyph];

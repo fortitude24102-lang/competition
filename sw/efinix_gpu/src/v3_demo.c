@@ -4,8 +4,10 @@
 #include "hud.h"
 #include "benchmark.h"
 #include "bsp.h"
+#include "network_assets.h"
+#include "../assets/hud/hud_logo_catalog.h"
 #define V3_BUILD_ID 0x20261007u
-#define V3_RESOURCE_EPOCH 0x00030001u
+#define V3_RESOURCE_EPOCH 0x00030002u
 #define V3_STATE_ADDRESS 0x02d00000u
 #define V3_POLLS 10000000u
 #ifndef V3_START_COUNT
@@ -41,6 +43,17 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  if(e) {bsp_printf("V3_CONTROL,unavailable=%d; use frozen R7 firmware\r\n",e);return 1;}
  e=v3_runtime_init(runtime,V3_START_COUNT,7,V3_RESOURCE_EPOCH);if(e) return 1;
  e=gpu_set_qos(gpu,256,1536,1);if(e) return 1;
+ /* Optional decoration: a failed/missing mark must not break the game or
+  * validate partial DDR. Fetch before sampling; no per-frame resource I/O. */
+ hud_set_logo_enabled(0);
+ network_asset_report logo_report={0};
+ uint32_t logo_session=(uint32_t)gpu_platform_cycles();
+ int logo_result=network?network_asset_fetch(GPU_APB_BASE,BSP_CLINT_HZ,logo_session?logo_session:1,
+  HUD_LOGO_ASSET_ID,HUD_LOGO_ADDR,HUD_LOGO_BYTES,HUD_LOGO_CRC32,&logo_report):NETWORK_UNAVAILABLE;
+ hud_set_logo_enabled(logo_result==NETWORK_OK);
+ hud_cache->valid=0;
+ bsp_printf("HUD_LOGO,id=%d,bytes=%d,retries=%d,result=%d,enabled=%d\r\n",
+  HUD_LOGO_ASSET_ID,logo_report.committed_bytes,logo_report.retries,logo_result,logo_result==NETWORK_OK);
  hud_comparison metrics={.bullet_demo=1,.gameplay=1,.network_ready=(uint8_t)network};
  nc_telemetry telemetry={.firmware_build_id=V3_BUILD_ID,.resource_epoch=V3_RESOURCE_EPOCH};
  perf_window window={0};uint32_t cpu_fps=0,cpu_us=0,gpu_fps=0,gpu_us=0;

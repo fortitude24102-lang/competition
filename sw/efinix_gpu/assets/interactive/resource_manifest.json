@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "resource_epoch": 196609,
+  "resource_epoch": 196610,
   "scene": "V3 interactive survival",
   "format": "RGB565_LE",
   "color_key": 63519,
@@ -8,7 +8,7 @@
   "texture_cache_limit": 4096,
   "invalidate_both_buffers_before_load": true,
   "require_complete_crc_before_visible": true,
-  "baseline_art": "R7 procedural art; identical bytes, separate game input",
+  "baseline_art": "R7 scene/atlas identical bytes; separate optional HUD competition mark",
   "source": "tools/build_bullet_assets.py",
   "assets": [
     {
@@ -36,6 +36,19 @@
       "crc32": "9d6b31f2",
       "sha256": "c27a2d3d02f35af807874bfb3903a308c797ac16b522c1419ad8dc4aa9d8b0e4",
       "license": "CC0-1.0"
+    },
+    {
+      "id": 103,
+      "file": "competition_logo.rgb565",
+      "width": 200,
+      "height": 70,
+      "stride_bytes": 400,
+      "format": "RGB565_LE",
+      "bytes": 28000,
+      "ddr_address": 46465024,
+      "crc32": "b4cc6853",
+      "sha256": "1d6851348fa1417de22d7fdf5c7386ec8015c6fec7b1c36a91cbc459397158a2",
+      "license": "User-supplied competition mark; not CC0"
     }
   ],
   "atlas_layout": [

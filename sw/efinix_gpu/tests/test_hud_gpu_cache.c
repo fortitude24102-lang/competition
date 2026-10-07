@@ -10,6 +10,7 @@
 #include <sys/mman.h>
 #define ATLAS_ADDR (HUD_CACHE_ADDR+0x30000u)
 #define ATLAS_BYTES 39312u
+#define LOGO_ADDRESS 0x02c50000u
 static hud_command_stream scratch,oracle_commands;
 static unsigned submitted,waits,fills;
 static uint32_t copied_bytes;
@@ -25,9 +26,10 @@ int gpu_submit(gpu_device *d,const gpu_command *c,uint32_t polls,uint16_t *tag) 
   assert(!golden_fill(&dst,(uint16_t)((off%1920)/2),(uint16_t)(off/1920),c->width_pixels,c->height_pixels,c->color));
   ++fills;
  } else {
-  assert(c->op==GPU_OP_COPY && c->src_addr>=ATLAS_ADDR && c->src_addr<ATLAS_ADDR+ATLAS_BYTES);
+  assert(c->op==GPU_OP_COPY);
   unsigned bytes=(c->height_pixels-1u)*c->src_stride+c->width_pixels*2u;
-  assert(c->src_addr+bytes<=ATLAS_ADDR+ATLAS_BYTES);
+  assert((c->src_addr>=ATLAS_ADDR && c->src_addr+bytes<=ATLAS_ADDR+ATLAS_BYTES) ||
+   (c->src_addr==LOGO_ADDRESS && bytes==28000u && c->width_pixels==200 && c->height_pixels==70));
   golden_surface src={(uint8_t *)(uintptr_t)c->src_addr,bytes,c->width_pixels,c->height_pixels,c->src_stride};
   assert(!golden_copy(&dst,(uint16_t)((off%1920)/2),(uint16_t)(off/1920),&src,0,0,c->width_pixels,c->height_pixels));
   copied_bytes+=c->width_pixels*c->height_pixels*2u;
@@ -107,7 +109,53 @@ int main(void) {
   assert(((uint8_t *)(uintptr_t)(ATLAS_ADDR+ATLAS_BYTES))[i]==0x5a);
  }
  assert(golden_crc32((void *)(uintptr_t)ATLAS_ADDR,ATLAS_BYTES)==atlas_crc);
+ /* A white/blue test image, independent of the uploaded artwork encoder. */
+ uint16_t *logo=(uint16_t *)(uintptr_t)LOGO_ADDRESS;
+ for(unsigned i=0;i<14000;i++) logo[i]=i==2411?0x193f:0xffff;
+ m=(hud_comparison){.bullet_demo=1,.gameplay=1,.hp=3,.gpu_active=1,.network_ready=1,
+  .gpu_valid=1,.gpu_fps_x10=601,.gpu_render_us=8100,.sprites=64,.alpha_commands=11};
+ assert(!hud_update_gpu_cache(&gpu,&m,&cache,&scratch,1000));
+ hud_set_logo_enabled(1);
+ before=submitted;copied_bytes=0;
+ assert(!hud_update_gpu_cache(&gpu,&m,&cache,&scratch,1000));
+ const uint16_t *pixels=(const uint16_t *)(uintptr_t)HUD_CACHE_ADDR;
+ assert(pixels[960+752]==0xffff); /* Old cache paints black here: expected RED. */
+ assert(submitted==before+1 && copied_bytes==28000); exact(&m);
+ assert(pixels[13*960+763]==0x193f);
+ before=submitted;
+ assert(!hud_update_gpu_cache(&gpu,&m,&cache,&scratch,1000) && submitted==before);
+ m.score=1;copied_bytes=0;
+ assert(!hud_update_gpu_cache(&gpu,&m,&cache,&scratch,1000));
+ assert(submitted==before+1 && copied_bytes==504); exact(&m);
+ /* Long warnings have priority. Hide and restore without stale white pixels
+  * or blank glyph tail copies overwriting the newly restored logo. */
+ m.score=999999;m.grazes=9999;m.underflows=UINT32_MAX;m.error_code=255;m.hp=255;m.invulnerable=1;
+ copied_bytes=0;
+ assert(!hud_update_gpu_cache(&gpu,&m,&cache,&scratch,1000));exact(&m);
+ assert(copied_bytes<28000 && pixels[70*960+950]==0);
+ m.score=1;m.grazes=0;m.underflows=0;m.error_code=0;m.hp=3;m.invulnerable=0;
+ assert(!hud_update_gpu_cache(&gpu,&m,&cache,&scratch,1000));exact(&m);
+ assert(pixels[960+752]==0xffff);
+ m.score=2;
+ assert(!hud_update_cache(&m,&cache,&scratch));exact(&m);
+ gpu_command hud_copy;
+ assert(!hud_cached_command(GPU_FRAMEBUFFER_B,&cache,&hud_copy));
+ assert(hud_copy.width_pixels==960 && hud_copy.height_pixels==72);
+ assert(!perf_render_cpu(&hud_copy,1));
+ assert(((uint16_t *)(uintptr_t)GPU_FRAMEBUFFER_B)[960+752]==0xffff);
+ hud_set_logo_enabled(0);
+ assert(!hud_update_cache(&m,&cache,&scratch));exact(&m);
+ assert(pixels[960+752]==0);
+ hud_set_logo_enabled(1);
+ fail_after=0;
+ assert(hud_update_gpu_cache(&gpu,&m,&cache,&scratch,1000)==GPU_DRIVER_TIMEOUT && !cache.valid);
+ fail_after=-1;
+ assert(!hud_update_gpu_cache(&gpu,&m,&cache,&scratch,1000));exact(&m);
+ assert(pixels[960+752]==0xffff);
+ hud_set_logo_enabled(0);
+ assert(!hud_update_gpu_cache(&gpu,&m,&cache,&scratch,1000));exact(&m);
+ assert(pixels[960+752]==0);
  assert(!munmap(mem,bytes));
- puts("PASS GPU HUD glyphs: exact raster, one changed digit=504B/one Copy, hit=zero commands, shorten, CPU switch, partial failure recovery, canaries");
+ puts("PASS GPU HUD glyphs and logo: exact raster, one changed digit=504B/one Copy, cache hit=zero commands, warning priority, CPU/GPU switch, A/B copy, partial failure recovery, canaries");
  return 0;
 }
