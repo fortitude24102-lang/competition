@@ -90,3 +90,17 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/capture-v3-telemetry
 流式保存所有观察到的新快照（不受600份限制），内存只存一份上一快照和计数；重复状态保存在JSONL但不重复CSV行。输入错误、断网、无遥测、模拟标签、无效错误组、非零under/error/miss窗口及snapshot序号缺口均保留，原始无效数值不替换成0。收到不同build/序号重置记discontinuity，不把复位前后窗口拼作同版耐久；相同身份字段改变但snapshot_id不变拒绝为撕裂快照。采集完成也不证明未观察期间零错误，存在序号缺口/HTTP错误/无效组时尤其不能据此宣称全程合格。
 
 默认CPU慢回放时遥测可低频并过期；不要为填网页而开逐命令探针。采集器HTTP轮询/磁盘成本在PC端，未实测FPGA GPU P95扰动；真正30分钟资格仍由负责人结合逐帧串口、同版哈希和显示状态判定。原资源服务UDP8080、管理UDP8090、HTTP8765职责不变；自动PC共存检查用独立临时端口，不占用用户已运行的服务。
+
+## 分阶段实际操控检查
+
+负责人已选定并加载候选、资源服务和控制网关在运行，且明确执行板测时，可运行原入口的严格版：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-v3-board-control.ps1 -Out generated/verification/v3/control-20261007/run01 -SerialPort COM13 -Replay -HoldAcrossReplay
+```
+
+脚本不加载位流/固件、不写Flash，COM口可指定。它会主动获取网页控制并发送真实按键，因此不能与手动游玩或另一板测脚本争用；先重开避免从GAME OVER开始。RIGHT/UP段加长以获取至少两份约500ms周期的LIVE日志，断开心跳后单独采集EXPIRE。失败/死亡冻结时据实报失败，不修改游戏保护或自动驾驶来强行通过。
+
+`.serial.log`仍是原始UART；`.phases.json`只记录ASCII字符偏移，不在半行中插入标记。只使用完全落在本段内的完整V3_PERF行；RIGHT须x增加且y不动，UP须y减少且x不动，tick和输入seq按模2^32新鲜，age≤250ms；EXPIRE须LIVE零键且age=-1。重开阶段的坐标变化不计入方向证据，缺段/单样本/反向/旧序号/候选V3_FAIL均不能PASS。四份输出任一存在就拒绝覆盖。
+
+可只读重查：`python sw/efinix_gpu/tools/control_gateway/control_evidence.py --serial <run.serial.log> --phases <run.phases.json> --out <新的check.json>`；保留CRLF和偏移，短迹线最大4MiB。历史无phase侧文件的板测不自动升级成新的严格资格。本工具通过表示段内移动/释放证据满足条件，不证明输入P95、HDMI完整性、FPS或耐久。本轮只做离线反例/CLI/脚本语法检查，没有打开COM口。

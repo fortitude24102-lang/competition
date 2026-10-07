@@ -1,15 +1,20 @@
-param([string]$Out='generated/verification/v3/board-control-20261005',[switch]$Replay,[switch]$HoldAcrossReplay)
+param([string]$Out='generated/verification/v3/board-control-20261005',[switch]$Replay,[switch]$HoldAcrossReplay,
+ [string]$SerialPort='COM13',[string]$Python='C:/efinity/efinity/python311/bin/python.exe')
 # Uses the already running candidate. No bitstream, firmware or Flash writes.
 $ErrorActionPreference='Stop'
-if(Test-Path "$Out.serial.log") {throw 'Refusing to overwrite board evidence'}
+foreach($evidenceSuffix in @('.serial.log','.status.jsonl','.phases.json','.control-check.json')) {
+ if(Test-Path "$Out$evidenceSuffix") {throw 'Refusing to overwrite board evidence'}
+}
 New-Item -ItemType Directory -Force (Split-Path $Out) | Out-Null
 $url='http://127.0.0.1:8765'
 $token=(Invoke-RestMethod "$url/api/bootstrap").token
 $client=[Guid]::NewGuid().ToString('N')
-$serial=New-Object IO.Ports.SerialPort 'COM13',115200,'None',8,'One'
+$serial=New-Object IO.Ports.SerialPort $SerialPort,115200,'None',8,'One'
 $script:received=''
 $script:lastStatus=0
 $timer=[Diagnostics.Stopwatch]::StartNew()
+$script:phases=@()
+$script:phaseStart=0
 function Capture {
  $chunk=$serial.ReadExisting()
  if($chunk) {
@@ -38,6 +43,28 @@ function Pump([int]$milliseconds,[int]$held=-1,[int]$action=0) {
   Start-Sleep -Milliseconds 33
  }
 }
+function Begin-Phase([string]$name) {
+ Capture
+ $script:phaseStart=$script:received.Length
+}
+function End-Phase([string]$name) {
+ Capture
+ $script:phases+=@{name=$name;start=$script:phaseStart;end=$script:received.Length}
+ # Sidecar offsets preserve the original raw UART stream, including CRLF and
+ # partial reads. Never splice markers into the middle of a firmware record.
+ $phaseJson=ConvertTo-Json -InputObject @($script:phases) -Depth 4
+ [IO.File]::WriteAllText("$Out.phases.json",$phaseJson)
+}
+function Check-Phases {
+ $boardControlPriorPythonHome=$env:PYTHONHOME
+ try {
+  if(($Python -replace '\\','/') -like '*/efinity/python311/bin/python.exe') {
+   $env:PYTHONHOME=Split-Path (Split-Path $Python)
+  }
+  & $Python (Join-Path (Split-Path $PSScriptRoot -Parent) 'sw/efinix_gpu/tools/control_gateway/control_evidence.py') --serial "$Out.serial.log" --phases "$Out.phases.json" --out "$Out.control-check.json"
+  if($LASTEXITCODE -ne 0) {throw 'Per-phase RIGHT/UP/EXPIRE evidence failed'}
+ } finally {$env:PYTHONHOME=$boardControlPriorPythonHome}
+}
 try {
  $serial.Open()
  Pump 1200
@@ -45,19 +72,19 @@ try {
  # not by changing gameplay's intentional death freeze. Action1 is restart.
  Pump 600 64 1
  Pump 100 0 1
- Pump 1500 2 1
+ Begin-Phase 'RIGHT'
+ Pump 1800 2 1
+ End-Phase 'RIGHT'
  $status=Invoke-RestMethod "$url/api/status"
  if(!$status.acknowledged -or $status.simulated) {throw 'No real FPGA HELLO ACK'}
- Pump 1000 4 1
+ Begin-Phase 'UP'
+ Pump 1500 4 1
+ End-Phase 'UP'
  # Deliberately stop browser heartbeats: latest keys must expire, not stick.
- $releaseOffset=$script:received.Length
+ Begin-Phase 'EXPIRE'
  Pump 1500
- $released=$script:received.Substring($releaseOffset)
- if($released -notmatch 'keys=00000000,age=-1') {throw 'Expired input was not released on FPGA'}
- if($script:received -notmatch 'keys=00000002' -or $script:received -notmatch 'keys=00000004') {throw 'FPGA did not consume RIGHT/UP'}
- $positions=[regex]::Matches($script:received,'x=(\d+),y=(\d+)')
- if(($positions|ForEach-Object {$_.Groups[1].Value}|Sort-Object -Unique).Count -lt 2 -or
-    ($positions|ForEach-Object {$_.Groups[2].Value}|Sort-Object -Unique).Count -lt 2) {throw 'RISC-V player position did not change'}
+ End-Phase 'EXPIRE'
+ Check-Phases
  Write-Output 'PASS actual HTTP -> UDP -> FPGA -> Sapphire input, telemetry ACK, movement, lease release'
  if($Replay) {
   $lastLive=[regex]::Matches($script:received,'V3_PERF,mode=0,tick=(\d+)')

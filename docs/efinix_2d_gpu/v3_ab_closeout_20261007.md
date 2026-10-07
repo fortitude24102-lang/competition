@@ -44,9 +44,9 @@
 
 接口：verify_trace(text) 返回各阶段样本、坐标变化和序号/逻辑tick摘要；CLI --serial <path> 输出JSON，缺证据或失败非零。RIGHT/UP每段至少两个同方向有效LIVE样本，tick/seq新鲜且坐标按该方向变化；EXPIRE须零键age=-1。没有阶段标记的历史证据只作历史，不能自动升级成新验收。
 
-- [ ] 先写“只有RESTART变位置但RIGHT/UP不动”失败用例、反向/缺段/旧tick拒绝、正常方向及释放通过，观察RED后实现。
-- [ ] 只读检查既有板测脚本语法及新标记使用；不执行COM13板测。记录main已知宽松谓词被替换，缺物理板的边界。
-- [ ] 测试通过后提交本任务。
+- [x] 先写“只有RESTART变位置但RIGHT/UP不动”失败用例、反向/缺段/旧tick拒绝、正常方向及释放通过，观察RED后实现。
+- [x] 只读检查既有板测脚本语法及新标记使用；不执行COM13板测。记录main已知宽松谓词被替换，缺物理板的边界。
+- [x] 测试通过后提交本任务。
 
 ## Task 3：B 收尾生命周期/长逻辑回归与交接
 
@@ -63,3 +63,5 @@
 2026-10-07：A-work 从 fbde986 快进同步至 b3fc15d，main未动。现有Node行为基线PASS。预检：网页/采集只消费27字快照；证据检查只消费V3_PERF串口记录；B使用负责人v3_runtime API不改其生产文件，接口无循环依赖。
 
 Task 1：完成。Node年龄/输入/CSV行为PASS，Python采集7项PASS；真实Edge/两个启动脚本入口PASS。采集工具缺文件RED；慢HTTP回执时间曾记录为0ms（期望≥100ms）RED，按故障定位流程确认时间戳取在请求之前，改为响应后打点并GREEN。真实PC三服务同时运行：原ASST服务完整背景/图集逐字节CRC、HTTP按键→管理UDP假板ACK、文档采集脚本输出及失联释放PASS；临时端口与SIMULATED标签不冒充FPGA。未重跑未改RTL。
+
+Task 2：完成。10项Python检查PASS，板测脚本仅做PowerShell语法检查PASS，没有运行串口。缺实现RED后新增严格检查；额外非对象phase原先抛AttributeError，补例RED后改为明确拒绝GREEN。原始串口不插入人为标记，另外保存ASCII字符偏移sidecar；仅完整落在RIGHT/UP段内且tick/seq前进的LIVE样本计入，重开移动不再抵扣方向证据。已有输出拒绝覆盖。需负责人以后用新脚本重新取物理操作证据，旧记录不升级。
