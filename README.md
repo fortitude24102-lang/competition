@@ -2,6 +2,12 @@
 
 比赛主线复用官方 Sapphire RISC-V、DDR3 和 HDMI Demo，在其上增加 Chisel 二维 GPU。PC 只保存和提供资源；资源选择、完整 CRC 校验、游戏逻辑和 GPU 命令调度由板上的 RISC-V 完成，渲染由 FPGA 完成。自研 CPU 已退出比赛主线。
 
+## V3 A/B 第13～14天离线收尾（A-work，2026-10-07）
+
+以最新main `b3fc15d` 为基点，继续已集成A/B的收尾，不改生产入口、GPU硬件、源清单或release：[实施/验证记录与剩余板测](docs/efinix_2d_gpu/v3_ab_closeout_20261007.md)。A补网页真实快照年龄、旧CPU结果标记和超过600条历史的只读流式采集；A/B补严格RIGHT/UP/断连释放证据检查，R重开移动不能抵扣方向测试。B补网口驱动→输入去重→已集成runtime→游戏/回放跨模块检查，覆盖108,000次计划内LIVE更新、18轮CPU/GPU各600tick、现场恢复、持续R/C、租约/会话/epoch隔离。**加速逻辑检查不是30分钟板测，也不提高512档帧率。**
+
+不依赖WSL的软件入口：`powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-v3-ab-closeout.ps1`。[采集/控制用法](docs/efinix_2d_gpu/v3_control_usage.md)、[游戏生命周期与收尾入口](docs/efinix_2d_gpu/v3_game_usage.md)。负责人仍需最终综合/消融和真实30分钟矩阵、CPU慢回放、输入P95/遥测P95扰动；这次交付不宣称V3封版、512@60或1024固件可运行。以下main板测总结和历史失败边界保留。
+
 ## V3 第12天冻结与提交小优化（2026-10-07）
 
 保留旧GPU硬件，采用“每次阻塞提交完整校验一次＋GPU热函数内联”，不改CPU绘图或网口功能：[全过程、失败候选和扩档检查](docs/efinix_2d_gpu/v3_freeze_20261007.md)。固定R7旧→新→旧反向对照，各档各300帧：512工作均值17.404→17.127→17.403ms，约节约1.6%，**仍30FPS**；384最终59.9FPS但1帧迟到，不算稳定60。前两个代码修订反而变慢，未接入；LegacyValidation可回退。

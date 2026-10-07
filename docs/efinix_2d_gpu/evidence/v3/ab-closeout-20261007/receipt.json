@@ -1,0 +1,284 @@
+{
+    "scheduled_live_updates":  108000,
+    "c_suites":  8,
+    "board_latency":  false,
+    "created_utc":  "2026-10-07T11:49:07.7371539Z",
+    "host_gcc":  "D:/aaa/mingw64/bin/gcc.exe",
+    "board_endurance":  false,
+    "comparison_rounds":  18,
+    "replay_updates":  21600,
+    "riscv_gcc":  "C:/efinity/riscv/toolchain/bin/riscv-none-elf-gcc.exe",
+    "linked_firmware":  false,
+    "python":  "C:/efinity/efinity/python311/bin/python.exe",
+    "qualification":  "offline_software_and_simulated_loopback_only",
+    "rtl_rerun":  false,
+    "rv32_objects":  6,
+    "node":  "C:/Program Files/nodejs/node.exe",
+    "sources":  [
+                    {
+                        "sha256":  "3dfd27cd2dc4230fbb31143514b968e41375764b11b8e824c3fe1748cab41548",
+                        "path":  "sw/efinix_gpu/include/asset_cache.h"
+                    },
+                    {
+                        "sha256":  "0c007696290d2ca61aeb812a051757ba5631695daae57a69fda92a27cfbba612",
+                        "path":  "sw/efinix_gpu/include/asset_dma.h"
+                    },
+                    {
+                        "sha256":  "668ac039e8a9d9d68626ce9c59c6b252029b0abbebde5ffb8bede708b9585753",
+                        "path":  "sw/efinix_gpu/include/asset_protocol.h"
+                    },
+                    {
+                        "sha256":  "3a85164b4923cd1878e869798240340c869415147824abd8b4ebe55093530e7f",
+                        "path":  "sw/efinix_gpu/include/assets.h"
+                    },
+                    {
+                        "sha256":  "506310c7b5a8e3aac5b04e988e3e4e0232e85944d6e1bfc6caba51d3d0ab161e",
+                        "path":  "sw/efinix_gpu/include/benchmark.h"
+                    },
+                    {
+                        "sha256":  "4a5d66c3f0e7e2f673c63e78f45e3f286cc883dd2f798479cc2954c6f9ed54a9",
+                        "path":  "sw/efinix_gpu/include/bullet_demo.h"
+                    },
+                    {
+                        "sha256":  "cf39489a92e4c84735894b9fc4417e9c736789f5d84068bf755815791c8be307",
+                        "path":  "sw/efinix_gpu/include/framebuffer.h"
+                    },
+                    {
+                        "sha256":  "3054b957d769c2f2ec2dbae5525ffe1d932b8a6e96f3478a6b710980db730914",
+                        "path":  "sw/efinix_gpu/include/game.h"
+                    },
+                    {
+                        "sha256":  "ffb25d9a36e000116440e9a2909119c99a3a8ea815f515e90dafe315c9831a93",
+                        "path":  "sw/efinix_gpu/include/golden_renderer.h"
+                    },
+                    {
+                        "sha256":  "973f9ec6eab7bf89c14b207e6a200c919e93883b67bcf75a0f0936f77da7f249",
+                        "path":  "sw/efinix_gpu/include/gpu.h"
+                    },
+                    {
+                        "sha256":  "efddaaae70441f6ee144a23854cf7476a8d2662077741a8043794e667896fb38",
+                        "path":  "sw/efinix_gpu/include/gpu_damage.h"
+                    },
+                    {
+                        "sha256":  "67534e5ff74965d9daed89857628902ab319d1325f235f72b1f661359518d26f",
+                        "path":  "sw/efinix_gpu/include/gpu_instances.h"
+                    },
+                    {
+                        "sha256":  "a26ce70e023fb41564e6f435b0cb6460e53056550ddbb4e3c279c56de6f878c7",
+                        "path":  "sw/efinix_gpu/include/gpu_regs.h"
+                    },
+                    {
+                        "sha256":  "1b852fabc4c3b5cb06f2bf34e9c97d55915b25368e3d58f72a78f4033d4fb26c",
+                        "path":  "sw/efinix_gpu/include/hud.h"
+                    },
+                    {
+                        "sha256":  "d391b8a167b2aa97c5b2ea9d9ec2b796b091c7bb56e9e55701baccced7bd7ecf",
+                        "path":  "sw/efinix_gpu/include/input_state.h"
+                    },
+                    {
+                        "sha256":  "22d3b1ba3bf1b9131475bb9287f66876f14a30b8713f8a5f10677dae06ee4ce3",
+                        "path":  "sw/efinix_gpu/include/interactive_game.h"
+                    },
+                    {
+                        "sha256":  "7df2c0543bdf6bc61b4cfaf7b96e82def3e0c9e38b433349fe4a49f9d7769910",
+                        "path":  "sw/efinix_gpu/include/lane_game.h"
+                    },
+                    {
+                        "sha256":  "4501f51429250966a8842a3cc774b68d1ae19f040f1b239b66ddf4bf136b6518",
+                        "path":  "sw/efinix_gpu/include/lane_scene.h"
+                    },
+                    {
+                        "sha256":  "9d1232026381d353df8d553a1753be3d51b5c908cc70d66766ad2643aa2f6f70",
+                        "path":  "sw/efinix_gpu/include/net_asset_server.h"
+                    },
+                    {
+                        "sha256":  "c4b511f94c0380360b5436719801c8e52899382268d3b6eafbb6f424dca5675d",
+                        "path":  "sw/efinix_gpu/include/net_control.h"
+                    },
+                    {
+                        "sha256":  "751ea36dc1cdd5573e49d2a8aa88fbbf1185a20019c35c610188021a92209ac1",
+                        "path":  "sw/efinix_gpu/include/network_assets.h"
+                    },
+                    {
+                        "sha256":  "256ebfc3ea264f4a12011f53d7e465df582a2e05a08f44af354d88659ca3c36d",
+                        "path":  "sw/efinix_gpu/include/perf_demo.h"
+                    },
+                    {
+                        "sha256":  "55872595f5408981473ccf1e18d7ed6f0ac98ffce565e3e2e5611375a03b7c74",
+                        "path":  "sw/efinix_gpu/include/replay_input.h"
+                    },
+                    {
+                        "sha256":  "1a9ff4c27487ed9d6cfa747572d3bbc3aa73edc86236d40a10acd5bddde2f0d8",
+                        "path":  "sw/efinix_gpu/include/rgb565.h"
+                    },
+                    {
+                        "sha256":  "96f725fe9bdb06cb9b75f715100a01117b403733701bdc614ada0144c11d04ae",
+                        "path":  "sw/efinix_gpu/include/sparse_format.h"
+                    },
+                    {
+                        "sha256":  "d046f9e84a9f3c12bd9c55716dbaa812c83e897682ea98ddf662264cc391a77e",
+                        "path":  "sw/efinix_gpu/include/v3_control_protocol.h"
+                    },
+                    {
+                        "sha256":  "59b7753d887df2961e7396abb88a8efeedfdb6bca11d628d6d57c87d944817fb",
+                        "path":  "sw/efinix_gpu/include/v3_demo.h"
+                    },
+                    {
+                        "sha256":  "bb19e280bc4d67c89721c3bda2be1e170cf6d5135622f065f4f28888c8531013",
+                        "path":  "sw/efinix_gpu/include/v3_frame_stats.h"
+                    },
+                    {
+                        "sha256":  "1c2a4914172091b702b1044e7c991615c9e1e057d42e79e8a1080668f064f5e0",
+                        "path":  "sw/efinix_gpu/include/v3_runtime.h"
+                    },
+                    {
+                        "sha256":  "190fbaa23762499fea4f5d5ce0d6d72635a3db5b4b704bcb0c290c1a956431eb",
+                        "path":  "sw/efinix_gpu/tests/test_control_capture.py"
+                    },
+                    {
+                        "sha256":  "ad17015185e8174c7e75371c6c50014f859a5ca940575bed6acd07154db7d27c",
+                        "path":  "sw/efinix_gpu/tests/test_control_dashboard.js"
+                    },
+                    {
+                        "sha256":  "927a5f5e05a6d7756ca2589c30f73a9f1b0f6315877ffa48b82cd9e5ed7252b7",
+                        "path":  "sw/efinix_gpu/tests/test_control_dashboard_browser.js"
+                    },
+                    {
+                        "sha256":  "d72d1f0136ef3cb41660211b2e7fc6e0574f085a39b1243c3b59bcdd8ad408c1",
+                        "path":  "sw/efinix_gpu/tests/test_control_evidence.py"
+                    },
+                    {
+                        "sha256":  "e1dcbb161ea48b983e73846591bd3e7c3edb5fc186b54b70aca0fa19e4dff7f3",
+                        "path":  "sw/efinix_gpu/tests/test_control_gateway.py"
+                    },
+                    {
+                        "sha256":  "6e125fa970fca5800478716fc7d1230f181a73fb64642144a3cf855e1ebad1eb",
+                        "path":  "sw/efinix_gpu/tests/test_interactive_assets.py"
+                    },
+                    {
+                        "sha256":  "b0ab9f03ac0ae5714c003738a8260bbf5d58c07a1fbaa95ce2e76b00d6b6338c",
+                        "path":  "sw/efinix_gpu/tests/test_v3_ab_coexistence.py"
+                    },
+                    {
+                        "sha256":  "599efc770e5b86d017d7756a6d89e188950540bab79bd6462f99c48dd27fbb6f",
+                        "path":  "sw/efinix_gpu/tests/test_v3_ab_lifecycle.c"
+                    },
+                    {
+                        "sha256":  "f419b6439810d02568c060315ea146c9c14c24f79be173b2bad502f04dd79ccc",
+                        "path":  "sw/efinix_gpu/tools/control_gateway/capture.py"
+                    },
+                    {
+                        "sha256":  "1297c0c70f26aa67c6d4487bdf1accd1ed1bee5960e66bc1ce89b5d18cf57006",
+                        "path":  "sw/efinix_gpu/tools/control_gateway/control_evidence.py"
+                    },
+                    {
+                        "sha256":  "af75090aa94d1b681d375a9ffbeb21dc8003fa28cbf34f89ffded324b73f6dcb",
+                        "path":  "sw/efinix_gpu/tools/control_gateway/fake_board.py"
+                    },
+                    {
+                        "sha256":  "7731be48e9440380e06766d2420363bf8f057b7f757d17883935b3e2044681e5",
+                        "path":  "sw/efinix_gpu/tools/control_gateway/gateway.py"
+                    },
+                    {
+                        "sha256":  "79996da7661dba4a3b5317eeb31453256cd7dc3275cab6286ce6e6af6e391009",
+                        "path":  "sw/efinix_gpu/tools/control_gateway/protocol.py"
+                    },
+                    {
+                        "sha256":  "0d7c703bd20a1d029ce4bf2964760613bfe8f69f1b9ce79342aa39435fb16f9d",
+                        "path":  "sw/efinix_gpu/tools/control_gateway/web/dashboard.js"
+                    },
+                    {
+                        "sha256":  "65735e76cc153ba0adba2aedef65163849393bdbe33eadff9783ca67a1354d89",
+                        "path":  "sw/efinix_gpu/tools/control_gateway/web/index.html"
+                    },
+                    {
+                        "sha256":  "b1a5e15c6222f5feeff07e0490ce1252a02738cf05c712ba444aac5b575b78c0",
+                        "path":  "sw/efinix_gpu/tools/control_gateway/web/styles.css"
+                    },
+                    {
+                        "sha256":  "849267f12d9684a6db91cc0046bdd385e49c838da5315e63a9c86f7dc9af9960",
+                        "path":  "scripts/capture-v3-telemetry.ps1"
+                    },
+                    {
+                        "sha256":  "51c6b78ee6b9faf8bbfdd06484ea65d4a7611c0a061cac8c5f21b523170b916b",
+                        "path":  "scripts/test-v3-ab-closeout.ps1"
+                    },
+                    {
+                        "sha256":  "721700d295a3db16105b7909cfe66899a8aa42f001293a4db8aa2accf31e704f",
+                        "path":  "scripts/test-v3-board-control.ps1"
+                    },
+                    {
+                        "sha256":  "3a5755e6f182dd18679de91e7bffa5f4e8d7da49ae61412024a090e9de19750b",
+                        "path":  "sw/efinix_gpu/src/asset_protocol.c"
+                    },
+                    {
+                        "sha256":  "35b15bd280d2880e69275d2ac37cf4c28e882ea9595bfd595e272ef9bbfdb0e4",
+                        "path":  "sw/efinix_gpu/src/bullet_demo.c"
+                    },
+                    {
+                        "sha256":  "800228d675ff2b6464de056ec631f5543a18455c3b38188f1b151cfebd6db853",
+                        "path":  "sw/efinix_gpu/src/input_state.c"
+                    },
+                    {
+                        "sha256":  "ec19ec4f561fe00d464a01829477f82be78cb2811861dfbea6cbd9b905f0f6fb",
+                        "path":  "sw/efinix_gpu/src/interactive_game.c"
+                    },
+                    {
+                        "sha256":  "0571431321385bd3f0e329417a5c3a0873172b0fece030caa979d7ccbf69ed05",
+                        "path":  "sw/efinix_gpu/src/net_asset_server.c"
+                    },
+                    {
+                        "sha256":  "b874f176c5a5204f965f66e71717768688de0647aa094c6199fbd15f49b03c5e",
+                        "path":  "sw/efinix_gpu/src/net_control.c"
+                    },
+                    {
+                        "sha256":  "1db9a89983d9b4aea2f7ee3116eff9c370324e6228dafc4fb1b559ec4be52642",
+                        "path":  "sw/efinix_gpu/src/replay_input.c"
+                    },
+                    {
+                        "sha256":  "8ff3be2fd75a3f7256b81a170c899f736f5ccdd5bb99a678272e8ae20cea6499",
+                        "path":  "sw/efinix_gpu/src/v3_runtime.c"
+                    },
+                    {
+                        "sha256":  "cd4bd9ff6a8b61b9384a8358e94cdc9599d0fde38b9a8e189bdc78399eff013c",
+                        "path":  "sw/efinix_gpu/tests/test_input_replay.c"
+                    },
+                    {
+                        "sha256":  "5c6c38f373d1a1a51220c07c4aab4064cffa670c440611052f02c4a2c17efa33",
+                        "path":  "sw/efinix_gpu/tests/test_input_state.c"
+                    },
+                    {
+                        "sha256":  "a37779a942f2220ef250ddc8742c6a665cbd8f981800f3990783d94bd9fba4b3",
+                        "path":  "sw/efinix_gpu/tests/test_interactive_game.c"
+                    },
+                    {
+                        "sha256":  "887be2e50e111228eca5ee1c20fd83002355d92abb4e96ed0f957ad66e90883f",
+                        "path":  "sw/efinix_gpu/tests/test_net_control.c"
+                    },
+                    {
+                        "sha256":  "2428f521e4065f4a75e78ddded405f747e2c6cb2d9aff7c268088eaf71c878a1",
+                        "path":  "sw/efinix_gpu/tests/test_r7_frozen.c"
+                    },
+                    {
+                        "sha256":  "599efc770e5b86d017d7756a6d89e188950540bab79bd6462f99c48dd27fbb6f",
+                        "path":  "sw/efinix_gpu/tests/test_v3_ab_lifecycle.c"
+                    },
+                    {
+                        "sha256":  "af45b3d9ec7b2df4e4277954ef77afcee13ba3e1470574ab973ef171f447ac7d",
+                        "path":  "sw/efinix_gpu/tests/test_v3_capacity.c"
+                    },
+                    {
+                        "sha256":  "37ec5e3799b4713e7de1398a730cd5a7f9bd14c6d83f129abaabdaaa5d9ef90b",
+                        "path":  "sw/efinix_gpu/tests/test_v3_closeout_entry.py"
+                    },
+                    {
+                        "sha256":  "594075a06eb0512cb2439442bdf6c2353bd657615cb3c7d039fb5741635833ec",
+                        "path":  "sw/efinix_gpu/tests/test_v3_runtime.c"
+                    },
+                    {
+                        "sha256":  "0b61e1adeaaf967eef5e03bd727dc41bbbe10878f087549eac804bf8f6c39041",
+                        "path":  "sw/efinix_gpu/tools/asset_server/asset_server.c"
+                    }
+                ],
+    "additional_live_restore_updates":  18
+}
