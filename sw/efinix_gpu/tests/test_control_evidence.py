@@ -23,7 +23,7 @@ def trace(right=None, up=None, expire=None):
     text = perf(1, 5, 100, 100, 64) + perf(2, 6, 480, 480, 64)
     blocks = dict(RIGHT=right or [perf(30, 10, 500, 480, 2), perf(60, 20, 620, 480, 2)],
                   UP=up or [perf(90, 30, 620, 440, 4), perf(120, 40, 620, 320, 4)],
-                  EXPIRE=expire or [perf(150, 40, 620, 320, 0, -1)])
+                  EXPIRE=expire or [perf(150, 0, 620, 320, 0, -1)])
     for name, lines in blocks.items():
         text += f'V3_CHECK_PHASE,name={name},event=BEGIN\r\n'
         text += ''.join(lines)
@@ -73,7 +73,7 @@ class ControlEvidenceTest(unittest.TestCase):
 
     def test_sidecar_offsets_preserve_crlf_and_cli_never_overwrites(self):
         text = ''.join([perf(30, 10, 500, 480, 2), perf(60, 20, 620, 480, 2),
-                        perf(90, 30, 620, 440, 4), perf(120, 40, 620, 320, 4), perf(150, 40, 620, 320, 0, -1)])
+                        perf(90, 30, 620, 440, 4), perf(120, 40, 620, 320, 4), perf(150, 0, 620, 320, 0, -1)])
         lengths = [len(perf(30, 10, 500, 480, 2) + perf(60, 20, 620, 480, 2)),
                    len(perf(90, 30, 620, 440, 4) + perf(120, 40, 620, 320, 4))]
         phases = [dict(name='RIGHT', start=0, end=lengths[0]),
@@ -110,6 +110,31 @@ class ControlEvidenceTest(unittest.TestCase):
         phases.insert(1, None)
         with self.assertRaises(ValueError):
             evidence.verify_trace(text, phases)
+
+    def test_release_cannot_hide_subsequent_reasserted_keys(self):
+        with self.assertRaises(ValueError):
+            evidence.verify_trace(trace(expire=[perf(150, 0, 620, 320, 0, -1),
+                                                 perf(180, 41, 620, 200, 4)]))
+
+    def test_old_expiry_cannot_follow_newer_up_phase(self):
+        with self.assertRaises(ValueError):
+            evidence.verify_trace(trace(expire=[perf(1, 0, 620, 320, 0, -1)]))
+
+    def test_grace_then_continuous_release_accepts_driver_sequence_reset(self):
+        result = evidence.verify_trace(trace(expire=[perf(130, 41, 620, 280, 4, 200),
+                                                     perf(150, 0, 620, 280, 0, -1),
+                                                     perf(180, 0, 620, 280, 0, -1)]))
+        self.assertEqual(result['EXPIRE']['samples'], 2)
+        self.assertEqual(result['EXPIRE']['last']['tick'], 180)
+
+    def test_release_rejects_stale_grace_or_backward_input_sequence(self):
+        for row in (perf(130, 41, 620, 280, 4, 251), perf(130, 39, 620, 280, 4, 20)):
+            with self.assertRaises(ValueError):
+                evidence.verify_trace(trace(expire=[row, perf(150, 0, 620, 280, 0, -1)]))
+
+    def test_direction_phase_chronology_cannot_restart(self):
+        with self.assertRaises(ValueError):
+            evidence.verify_trace(trace(up=[perf(1, 30, 620, 440, 4), perf(2, 40, 620, 320, 4)]))
 
 
 if __name__ == '__main__':

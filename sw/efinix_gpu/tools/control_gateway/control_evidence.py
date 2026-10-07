@@ -70,10 +70,28 @@ def verify_trace(text, phases=None):
         rows = [_perf(m.group()) for m in matches if phase['start'] <= m.start() and m.end() <= phase['end']]
         name = phase['name']
         if name == 'EXPIRE':
-            rows = [r for r in rows if r['mode'] == 0 and r['keys'] == 0 and r['age'] == -1]
             if not rows:
+                raise ValueError('EXPIRE: no complete samples')
+            previous = result['UP']['last']
+            expired = []
+            for row in rows:
+                if row['mode'] != 0 or not _newer(row['tick'], previous['tick']):
+                    raise ValueError('EXPIRE: non-LIVE or repeated/backward tick across phases')
+                released = row['keys'] == 0 and row['age'] == -1
+                if expired and not released:
+                    raise ValueError('EXPIRE: keys/connection reasserted after confirmed release')
+                if released:
+                    # nc_poll clears sequence on disconnection. Its zero is
+                    # not an out-of-order connected packet; tick must advance.
+                    expired.append(row)
+                elif (row['keys'] not in (0, result['UP']['last']['keys'])
+                      or not 0 <= row['age'] <= 250
+                      or (row['seq'] != previous['seq'] and not _newer(row['seq'], previous['seq']))):
+                    raise ValueError('EXPIRE: stale/unexpected keys or backward sequence during lease grace')
+                previous = row
+            if not expired:
                 raise ValueError('EXPIRE: no LIVE zero keys with age=-1')
-            result[name] = dict(samples=len(rows), last=rows[-1])
+            result[name] = dict(samples=len(expired), total_samples=len(rows), first=expired[0], last=rows[-1])
             continue
         key = 2 if name == 'RIGHT' else 4
         rows = [r for r in rows if r['mode'] == 0 and r['keys'] == key]
@@ -81,6 +99,10 @@ def verify_trace(text, phases=None):
             raise ValueError(name + ': at least two same-direction LIVE samples required')
         if any(not 0 <= r['age'] <= 250 for r in rows):
             raise ValueError(name + ': stale held input')
+        if name == 'UP':
+            previous = result['RIGHT']['last']
+            if not _newer(rows[0]['tick'], previous['tick']) or not _newer(rows[0]['seq'], previous['seq']):
+                raise ValueError('UP: repeated/backward tick or sequence across direction phases')
         for previous, current in zip(rows, rows[1:]):
             if not _newer(current['tick'], previous['tick']) or not _newer(current['seq'], previous['seq']):
                 raise ValueError(name + ': repeated/backward tick or input sequence')

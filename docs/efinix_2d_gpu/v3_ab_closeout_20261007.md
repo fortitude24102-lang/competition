@@ -56,7 +56,7 @@
 
 - [x] 新增跨模块回归，生产已满足的行为测试可直接PASS，不伪造RED；发现缺陷则单独补失败回归后仅修其所属模块。
 - [x] 一键入口运行Node/Python收尾测试、严格C与生产RV32编译；只回归受影响路径，不重复未改76项RTL。
-- [ ] 做一次新上下文只读整分支复核，修严重问题并保存真实结果/源码哈希，提交推送A-work。
+- [x] 做一次新上下文只读整分支复核，修严重问题并保存真实结果/源码哈希，完成交付提交；推送结果以远端确认与对话回报为准。
 
 ## 执行记录
 
@@ -66,7 +66,7 @@ Task 1：完成。Node年龄/输入/CSV行为PASS，Python采集7项PASS；真�
 
 Task 2：完成。10项Python检查PASS，板测脚本仅做PowerShell语法检查PASS，没有运行串口。缺实现RED后新增严格检查；额外非对象phase原先抛AttributeError，补例RED后改为明确拒绝GREEN。原始串口不插入人为标记，另外保存ASCII字符偏移sidecar；仅完整落在RIGHT/UP段内且tick/seq前进的LIVE样本计入，重开移动不再抵扣方向证据。已有输出拒绝覆盖。需负责人以后用新脚本重新取物理操作证据，旧记录不升级。
 
-Task 3：软件实现及最终入口检查通过，待一次整分支复核。2026-10-07运行 `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-v3-ab-closeout.ps1` 返回0，完整原始日志位于 `generated/verification/v3/ab-closeout-20261007-194843-271`；[源码哈希/准确资格回执](evidence/v3/ab-closeout-20261007/receipt.json) 随分支交付。8个严格C套件、Node行为、Python40项（19网关+7采集+10控制证据+1资源+1三服务+2入口保护）PASS。108000计划内LIVE更新+18恢复LIVE更新、21600回放更新、18次比较；每步全部规范状态/命令字段一致，Alpha保留。6个生产RV32对象成功，text合计8644 B、data/bss均0，单函数栈最高272 B；不是固件链接或整机栈证明。新生命周期测试消费已经合格的生产API，首跑PASS，不伪造功能实现RED。
+Task 3：离线收尾完成。2026-10-07最终运行 `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-v3-ab-closeout.ps1` 返回0，完整原始日志位于 `generated/verification/v3/ab-closeout-20261007-195639-941`；[源码哈希/准确资格回执](evidence/v3/ab-closeout-20261007/receipt.json) 随分支交付。8个严格C套件、Node行为、Python45项（19网关+7采集+15控制证据+1资源+1三服务+2入口保护）PASS。108000计划内LIVE更新+18恢复LIVE更新、21600回放更新、18次比较；每步全部规范状态/命令字段一致，Alpha保留。6个生产RV32对象成功，text合计8644 B、data/bss均0，单函数栈最高272 B；不是固件链接或整机栈证明。新生命周期测试消费已经合格的生产API，首跑PASS，不伪造功能实现RED。复核前40项的旧日志保留在 `ab-closeout-20261007-194843-271`，不覆盖历史。
 
 额外入口保护验证缺失Node会非零退出、没有PASS回执，已有输出保持原内容。收尾入口本身恢复临时环境变量，并为每次测试创建独占目录。没有修改生产C、板级RTL、GPU、SoC胶合、工程源清单或release，没有运行串口/板测。文档修正旧“恢复LIVE清零输入去重”的危险建议，与main已修复的动作序号保持行为一致。
 
@@ -76,3 +76,21 @@ Task 3：软件实现及最终入口检查通过，待一次整分支复核。20
 2. 第14天真实≥30分钟高负载互动+遥测，冷启动/完整复位/热重载/缺服务器/断网/比较恢复矩阵，以及输入P95≤100ms条件、网页开关/慢连接的GPU P95增量。
 3. 使用新的分阶段控制脚本取RIGHT/UP/释放证据，CPU慢600tick回放及GPU同记录结果；A/B本轮没有物理板测资格，历史板测不覆盖新脚本。
 4. 候选异常与512@60、1024RAM失败仍留档；旧SoftwareDriverSpec/PangoBringupSpec异常不由本轮定向通过消除。release/v3位流/固件/资源/哈希由负责人完成，release/v2不变。
+
+## 一次整分支复核与结论
+
+执行计划要求的唯一新上下文只读复核（b3fc15d..8826a7e）：无Critical、无Minor，发现1个Important/P2。EXPIRE原先过滤掉非零键反证，只需出现一次零键便会通过；还会接受UP之后的旧tick释放记录。该问题属于证据门误判，不说明生产驱动租约有缺陷。
+
+Final: fixed EXPIRE反证丢失/跨阶段旧tick — `test_release_cannot_hide_subsequent_reasserted_keys`、`test_old_expiry_cannot_follow_newer_up_phase`、`test_release_rejects_stale_grace_or_backward_input_sequence`、`test_direction_phase_chronology_cannot_restart` 实际RED→GREEN；最终45/45 Python、8/8严格C、Node、6/6RV32及脚本语法PASS。允许初始租约宽限，释放后每条记录继续检查而非过滤；按实际nc_poll的断开seq清零语义处理。只做这一轮修复，无重复复核派发。
+
+独立复核没有认定下列资格，逐项采纳为明确边界，而非待修改的软件问题：
+
+- Final: Ruling: 真实RIGHT/UP/释放、CPU慢回放与长按R/C仍依赖上板 — 本轮不连接硬件，离线工具不能升级为物理表现 — 代价为新物理证据仍需负责人补齐。
+- Final: Ruling: ≥30分钟墙钟耐久、输入P95及网页/慢连接GPU P95扰动不由快跑验证 — 逻辑量与物理时间不同 — 代价为最终耐久和延迟资格仍未取得。
+- Final: Ruling: HDMI目视、最终像素、冷启动/复位/热重载/缺服务/断网矩阵不重新认证 — 本轮无硬件/绘图修改，保留已存在像素证据且不拓宽 — 代价为新最终矩阵需另测。
+- Final: Ruling: RTL时序/CDC/PHY/资源/消融净收益归负责人 — 冻结且未改的硬件不重复长仿真或综合 — 代价为新封版资源/收益报告仍须负责人与实际候选配套。
+- Final: Ruling: RV32对象不证明完整链接RAM/动态栈 — 当前只有模块编译和静态栈报告 — 代价为容量/整机栈最终资格仍需map和实测高水位。
+- Final: Ruling: 512稳定60、1024可运行、正式release和历史SoC异常没有被本轮证明 — main实际失败边界保留 — 代价为这些目标/异常仍未完成，不能据此封版。
+- Final: Ruling: 不宣称未改生产入口/渲染器/既有模块全面正确 — 定向生命周期只覆盖相关接口 — 代价为其他未覆盖问题仍可能存在。
+
+Deferred minors：无。全部本轮交付在A-work，main及release不改；临时复核副本可清理，原始测试日志和用户工作目录保留。

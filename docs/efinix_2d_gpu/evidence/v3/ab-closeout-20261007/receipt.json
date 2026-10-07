@@ -2,7 +2,7 @@
     "scheduled_live_updates":  108000,
     "c_suites":  8,
     "board_latency":  false,
-    "created_utc":  "2026-10-07T11:49:07.7371539Z",
+    "created_utc":  "2026-10-07T11:57:00.5056176Z",
     "host_gcc":  "D:/aaa/mingw64/bin/gcc.exe",
     "board_endurance":  false,
     "comparison_rounds":  18,
@@ -144,7 +144,7 @@
                         "path":  "sw/efinix_gpu/tests/test_control_dashboard_browser.js"
                     },
                     {
-                        "sha256":  "d72d1f0136ef3cb41660211b2e7fc6e0574f085a39b1243c3b59bcdd8ad408c1",
+                        "sha256":  "1d28d33e0060f3de468a489eebaf97efdc8a68910e867d84bb12443175e918f7",
                         "path":  "sw/efinix_gpu/tests/test_control_evidence.py"
                     },
                     {
@@ -168,7 +168,7 @@
                         "path":  "sw/efinix_gpu/tools/control_gateway/capture.py"
                     },
                     {
-                        "sha256":  "1297c0c70f26aa67c6d4487bdf1accd1ed1bee5960e66bc1ce89b5d18cf57006",
+                        "sha256":  "9830476e427b632954f6611a790c7b6f7162b58890242897ebf427e3365891c7",
                         "path":  "sw/efinix_gpu/tools/control_gateway/control_evidence.py"
                     },
                     {
