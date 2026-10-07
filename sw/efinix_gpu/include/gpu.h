@@ -1,6 +1,9 @@
 #ifndef EFINIX_GPU_H
 #define EFINIX_GPU_H
 #include "gpu_regs.h"
+#ifndef GPU_SUBMIT_SHADOW
+#define GPU_SUBMIT_SHADOW 0
+#endif
 enum gpu_opcode { GPU_OP_NOP=0, GPU_OP_FILL=1, GPU_OP_COPY=2,
     GPU_OP_COLOR_KEY=3, GPU_OP_ALPHA=4, GPU_OP_SPARSE=5, GPU_OP_PRESENT=6 };
 enum gpu_error { GPU_ERROR_NONE=0, GPU_ERROR_INVALID_OPCODE=1,
@@ -50,6 +53,13 @@ typedef struct {
  uint32_t submitted_count;
  uint16_t first_tag, next_tag, last_done, pending_tag;
  uint8_t ready, pending, outstanding, hardware_error, queue_high_watermark;
+#if GPU_SUBMIT_SHADOW
+ /* Optional GPU-only delta submit. Single owner must use gpu_init after reset
+  * or any out-of-driver write to the legacy command shadow registers.
+  * Build all translation units with the same GPU_SUBMIT_SHADOW setting. */
+ uint8_t shadow_valid;
+ uint32_t shadow_words[8];
+#endif
 } gpu_device;
 int gpu_init(gpu_device *d, uintptr_t base);
 int gpu_try_submit(gpu_device *d,const gpu_command *command,uint16_t *tag);

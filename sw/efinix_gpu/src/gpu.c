@@ -2,6 +2,9 @@
 #ifndef GPU_SUBMIT_REVALIDATE
 #define GPU_SUBMIT_REVALIDATE 0 /* Same-R7 board gate: small net benefit; 1 restores legacy. */
 #endif
+#ifndef GPU_SUBMIT_SHADOW
+#define GPU_SUBMIT_SHADOW 0 /* Candidate only, requires same-scene board gate. */
+#endif
 #ifdef GPU_TEST_BACKEND
 uint32_t gpu_io_read(uintptr_t a);
 void gpu_io_write(uintptr_t a,uint32_t v);
@@ -77,13 +80,30 @@ static int refresh(gpu_device *d) {
  return 0;
 }
 
+static inline __attribute__((always_inline)) void write_field(gpu_device *d,unsigned r,uint32_t v) {
+#if GPU_SUBMIT_SHADOW
+ unsigned index=(r-GPU_REG_OP)/4u;
+ if(!d->shadow_valid || d->shadow_words[index]!=v) {
+  wr(d,r,v);d->shadow_words[index]=v;
+ }
+#else
+ wr(d,r,v);
+#endif
+}
 static inline __attribute__((always_inline)) void write_command(gpu_device *d,const gpu_command *c,uint16_t tag) {
- wr(d,GPU_REG_OP,c->op); wr(d,GPU_REG_SRC_ADDR,c->src_addr); wr(d,GPU_REG_DST_ADDR,c->dst_addr);
- wr(d,GPU_REG_SIZE,gpu_pack_size(c->width_pixels,c->height_pixels));
- wr(d,GPU_REG_SRC_STRIDE,c->src_stride); wr(d,GPU_REG_DST_STRIDE,c->dst_stride);
- wr(d,GPU_REG_COLOR_KEY,gpu_pack_color_key(c->color,c->color_key));
- wr(d,GPU_REG_ALPHA_FLAGS,gpu_pack_alpha_flags(c->alpha,c->flags)); wr(d,GPU_REG_TAG,tag);
+#if GPU_SUBMIT_SHADOW
+ /* PRESENT is shared with the pure-CPU comparison; keep its original writes. */
+ if(c->op==GPU_OP_PRESENT) d->shadow_valid=0;
+#endif
+ write_field(d,GPU_REG_OP,c->op); write_field(d,GPU_REG_SRC_ADDR,c->src_addr); write_field(d,GPU_REG_DST_ADDR,c->dst_addr);
+ write_field(d,GPU_REG_SIZE,gpu_pack_size(c->width_pixels,c->height_pixels));
+ write_field(d,GPU_REG_SRC_STRIDE,c->src_stride); write_field(d,GPU_REG_DST_STRIDE,c->dst_stride);
+ write_field(d,GPU_REG_COLOR_KEY,gpu_pack_color_key(c->color,c->color_key));
+ write_field(d,GPU_REG_ALPHA_FLAGS,gpu_pack_alpha_flags(c->alpha,c->flags)); wr(d,GPU_REG_TAG,tag);
  gpu_io_fence(); wr(d,GPU_REG_CONTROL,GPU_CONTROL_SUBMIT); gpu_io_fence();
+#if GPU_SUBMIT_SHADOW
+ d->shadow_valid=1;
+#endif
 }
 
 int gpu_init(gpu_device *d,uintptr_t base) {

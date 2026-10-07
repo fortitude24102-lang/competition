@@ -30,7 +30,7 @@ tools/test_build_hud_logo.ps1用原生转换器生成四条色带，直接读取
 
 修正版使用同一已合格位流，仅JTAG热重载固件，并刷新资源服务器的内存缓存。背景101、图集102、图片103都零重试、result=0，图片committed_bytes=28000、enabled=1；V3_READY为build20261007/epoch00030002。启动首窗59.2FPS，随后64请求档稳态短窗60.1FPS、under=0、miss=0。真实HTTP→UDP→FPGA→Sapphire的RIGHT/UP/租约释放分阶段检查通过。没有重新跑CPU600tick慢回放、512档或30分钟耐久。
 
-修正版BIN SHA256：ec966d397e4d085e7fb40eac59a17eb865cd948396bbe1647256343830c0613c；text37712/data0/BSS78956。用户原照片已确认位置，但修正版白底及实际可读性仍待用户目视确认，不能用FPS或完整CRC替代该确认；200×70缩图本身不能保证原图的小英文全部可读。
+修正版BIN SHA256：ec966d397e4d085e7fb40eac59a17eb865cd948396bbe1647256343830c0613c；text37712/data0/BSS78956。用户原照片已确认位置，并在重载修正版后反馈“改善了”。这是用户目视反馈，不是板端逐像素截图oracle；200×70缩图本身不能保证原图的小英文全部可读。
 
 本地构建和完整原始日志：generated/verification/v3/hud-logo-20261007。提交的[证据包](evidence/hud_logo_20261007.zip)包含旧失败、新编码检查、构建、修正版UART/控制证据和对应固件；不删旧失败，不据此宣称V3封版。GPU/CPU主渲染器、正式RTL、时钟、release/v2均未改。
 

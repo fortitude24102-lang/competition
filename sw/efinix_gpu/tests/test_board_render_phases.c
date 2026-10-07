@@ -26,7 +26,9 @@ static unsigned percentile_work(unsigned percentile) {
  }
  return work_samples[(PHASE_SAMPLES*percentile+99u)/100u-1u];
 }
-static int continuous(gpu_device *gpu,framebuffer_pair *buffers,unsigned target,int enabled) {
+/* Keep the diagnostic entry out-of-line in every driver variant. Otherwise
+ * GCC may inline only one cohort into main, confounding submit comparisons. */
+static __attribute__((noinline)) int continuous(gpu_device *gpu,framebuffer_pair *buffers,unsigned target,int enabled) {
  int e=bullet_reset(&bullets,target,7); if(e) return e;
  hud_comparison m={.bullet_demo=1,.gameplay=1,.gpu_active=1,.network_ready=1};
  perf_window window={0};
@@ -149,9 +151,22 @@ int main(void) {
 #ifdef RENDER_VALIDATION_COHORT
  /* Identical automaticR7 ticks, probesOFF, GPU driver only. Not live inputs. */
  static const unsigned targets[]={256,384,512};
+#ifdef RENDER_QOS_SWEEP
+ /* SAME executable and old ordered backend; adaptive protection never disabled.
+  * Repeat original parameters at the end to expose drift/ordering effects. */
+ static const uint16_t highs[]={1536,1024,768,512,1536};
+ for(unsigned q=0;q<sizeof highs/sizeof highs[0];q++) {
+  e=gpu_set_qos(&gpu,256,highs[q],1);if(e) goto stop;
+  bsp_printf("QOS_COHORT,index=%d,low=256,high=%d,adaptive=1,probe=0\r\n",q,highs[q]);
+  for(unsigned i=0;i<sizeof targets/sizeof targets[0];i++) {
+   e=continuous(&gpu,&buffers,targets[i],0);if(e) goto stop;
+  }
+ }
+#else
  for(unsigned i=0;i<sizeof targets/sizeof targets[0];i++) {
   e=continuous(&gpu,&buffers,targets[i],0);if(e) goto stop;
  }
+#endif
 #else
  static const unsigned targets[]={32,64,128,256,512},ticks[]={0,90,180};
  for(unsigned i=0;i<sizeof targets/sizeof targets[0];i++) for(int enabled=0;enabled<2;enabled++) {
@@ -167,6 +182,11 @@ int main(void) {
  }
 #endif
 stop:
+#ifdef RENDER_QOS_SWEEP
+ /* Restore safe old admission settings even when a candidate failed. */
+ {int restore=gpu_set_qos(&gpu,256,1536,1);if(!e) e=restore;}
+ bsp_printf("QOS_SWEEP_STOP,result=%d,hardware=%d\r\n",e,gpu.hardware_error);
+#endif
  bsp_printf("RENDER_PHASE_STOP,result=%d,hardware=%d\r\n",e,gpu.hardware_error);
  return e;
 }
