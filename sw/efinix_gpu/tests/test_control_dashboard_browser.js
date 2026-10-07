@@ -66,6 +66,8 @@ async function main() {
     assert.equal(conflict,409);
     await until(async()=>(await page.locator('#metric-firmware_build_id').textContent())!=='Unavailable');
     assert.equal(await page.locator('#gpu-fps').textContent(),'Unavailable');
+    await until(async()=>(await page.locator('#cpu-age').textContent()).includes('no valid CPU result'));
+    assert.equal(await page.locator('#gpu-age').textContent(),'Unavailable');
     const downloadPromise=page.waitForEvent('download');await page.locator('#export').click();
     const download=await downloadPromise;await download.saveAs(path.join(root,'generated/verification/v3/gateway/browser-raw.csv'));
     await page.screenshot({path:path.join(root,'generated/verification/v3/gateway/dashboard.png'),fullPage:true});

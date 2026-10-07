@@ -79,6 +79,30 @@
     }
   }
 
+  class TelemetryFreshness {
+    constructor() { this.identity=null;this.anchor=0;this.age=0;this.flags=0;this.cpuObserved=null;this.failed=false; }
+    observe(view,now) {
+      this.failed=false;
+      const t=view.telemetry;
+      if(!t) {this.identity=null;this.flags=0;return;}
+      const identity=[t.session,t.sequence,t.words[0],t.words[1]].join(':');
+      const age=Math.max(0,Number(view.age_ms)||0);
+      const fresh=identity!==this.identity;
+      this.age=fresh?age:Math.max(age,this.age+Math.max(0,now-this.anchor));
+      this.identity=identity;this.anchor=now;this.flags=t.words[21];
+      // Time of the last fresh telemetry observation, NOT the CPU sample time.
+      if(fresh && (this.flags&(1<<17)) && !(this.flags&32)) this.cpuObserved=now-this.age;
+    }
+    disconnect() {this.failed=true;}
+    view(now) {
+      const age=this.identity===null?null:this.age+Math.max(0,now-this.anchor);
+      return {stale:this.failed || age===null || age>=500,snapshot_age_ms:age,
+        gpu_age_ms:(this.flags&(1<<16))?age:null,
+        cpu_valid:!!(this.flags&(1<<17)),cpu_stale:!!(this.flags&32),
+        cpu_observation_age_ms:this.cpuObserved===null?null:Math.max(0,now-this.cpuObserved)};
+    }
+  }
+
   async function boot() {
     const $=id=>document.getElementById(id);
     const banner=$('banner'), control=$('control-status'), keys=new KeyboardState(), samples=new SnapshotBuffer();
@@ -129,7 +153,8 @@
       const row=document.createElement('tr'); const label=document.createElement('th');const value=document.createElement('td');
       label.textContent=name; value.id='metric-'+name;value.textContent='Unavailable';row.append(label,value);table.append(row);
     }
-    const history=[];let lastReceive=-Infinity;let lastView=null;let streamFailed=false;
+    const history=[];let lastView=null;let streamFailed=false;
+    const freshness=new TelemetryFreshness();
     function draw() {
       const canvas=$('chart'),ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
       ctx.clearRect(0,0,w,h);ctx.strokeStyle='#29415a';ctx.lineWidth=1;
@@ -146,34 +171,42 @@
     const events=new EventSource('/api/events');
     events.onmessage=event=>{
       const view=JSON.parse(event.data);lastView=view;streamFailed=false;
+      freshness.observe(view,performance.now());
       const t=view.telemetry;
       if(t && samples.add(t,new Date().toISOString())) {
-        lastReceive=performance.now(); history.push({...t.display});if(history.length>120)history.shift();draw();
+        history.push({...t.display});if(history.length>120)history.shift();draw();
       }
       if(t) {
         for(const name of FIELDS) $('metric-'+name).textContent=formatValue(t.display[name],name);
         $('gpu-fps').textContent=formatValue(t.display.gpu_full_frame_fps_x100,'gpu_full_frame_fps_x100');
         $('cpu-fps').textContent=formatValue(t.display.cpu_full_frame_fps_x100,'cpu_full_frame_fps_x100');
         $('sprites').textContent=t.raw.visible_sprites+' / '+t.raw.requested_sprites;
-        $('cpu-age').textContent=(t.raw.status_flags & 32)?'CPU result marked expired':'Latest retained CPU result';
         $('mode').textContent=['GPU live','Comparison replay','Loading','Local fallback','Control ACK','CPU expired','Probes enabled','Invalid counters','Paused','Recovery']
           .filter((_,i)=>t.raw.status_flags & (1<<i)).join(' · ') || 'No active status flags';
       }
       $('packet-drops').textContent=String(view.dropped_packets);
       if(pump.active) control.textContent=view.acknowledged ? 'This tab controls the board' : 'Waiting for board ACK…';
     };
-    events.onerror=()=>{streamFailed=true; clear();};
+    events.onerror=()=>{streamFailed=true;freshness.disconnect(); clear();};
     setInterval(()=>{
-      const stale=!lastView || lastView.stale || performance.now()-lastReceive>=500 || streamFailed;
+      const ages=freshness.view(performance.now());
+      const stale=!lastView || lastView.stale || ages.stale || streamFailed;
       banner.className=stale?'warning':'healthy';
       banner.textContent=(simulated?'SIMULATED — not board measurements. ':'')+
         (stale?'Telemetry stale / unavailable':'Telemetry current')+
-        (lastView && lastView.age_ms!==null?' · Snapshot age '+lastView.age_ms+' ms':'');
+        (ages.snapshot_age_ms!==null?' · Snapshot age '+Math.round(ages.snapshot_age_ms)+' ms':'');
+      $('gpu-age').textContent=ages.gpu_age_ms===null?'Unavailable':
+        'Snapshot age '+Math.round(ages.gpu_age_ms)+' ms'+(stale?' · stale':'');
+      $('cpu-age').textContent=!ages.cpu_valid?'Unavailable — no valid CPU result':
+        (ages.cpu_stale?'Expired retained CPU result':'CPU result reported fresh')+
+        (ages.cpu_observation_age_ms===null?' · Fresh observation time unknown':
+          ' · Last fresh observation '+Math.round(ages.cpu_observation_age_ms)+' ms ago')+
+        ' · CPU sample age not transmitted';
       $('chart').classList.toggle('stale',stale);
     },100);
   }
 
-  const api={ControlPump,KeyboardState,SnapshotBuffer,formatValue};
+  const api={ControlPump,KeyboardState,SnapshotBuffer,TelemetryFreshness,formatValue};
   if(typeof module!=='undefined' && module.exports) module.exports=api;
   if(typeof document!=='undefined') document.addEventListener('DOMContentLoaded',boot);
   root.AetherGXDashboard=api;

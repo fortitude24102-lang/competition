@@ -5,7 +5,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const file = path.join(__dirname, '../tools/control_gateway/web/dashboard.js');
 assert.ok(fs.existsSync(file), 'browser keyboard controller missing');
-const {ControlPump, KeyboardState, SnapshotBuffer, formatValue} = require(file);
+const {ControlPump, KeyboardState, SnapshotBuffer, TelemetryFreshness, formatValue} = require(file);
 
 class Clock {
   constructor() { this.now = 0; this.tasks = []; }
@@ -23,6 +23,31 @@ class Clock {
 }
 
 async function main() {
+  const freshness=new TelemetryFreshness();
+  function view(sequence,flags,age=0) {
+    const words=Array(27).fill(0);words[0]=20261007;words[21]=flags;
+    return {stale:age>=500,age_ms:age,telemetry:{session:7,sequence,words}};
+  }
+  freshness.observe(view(1,(1<<16)|(1<<17)),1000);
+  assert.equal(freshness.view(1000).gpu_age_ms,0);
+  assert.equal(freshness.view(1000).cpu_observation_age_ms,0);
+  // A repeated SSE heartbeat with an unchanged age must not revive old data.
+  freshness.observe(view(1,(1<<16)|(1<<17)),1600);
+  assert.equal(freshness.view(1600).stale,true);
+  assert.equal(freshness.view(1600).gpu_age_ms,600);
+  assert.equal(freshness.view(1600).cpu_observation_age_ms,600);
+  freshness.observe(view(2,(1<<16)|(1<<17)|32,10),2000);
+  assert.equal(freshness.view(2100).gpu_age_ms,110);
+  assert.equal(freshness.view(2100).cpu_stale,true);
+  assert.equal(freshness.view(2100).cpu_observation_age_ms,1100);
+  freshness.observe(view(3,1<<21),2200);
+  assert.equal(freshness.view(2200).gpu_age_ms,null);
+  assert.equal(freshness.view(2200).cpu_valid,false);
+  const unseen=new TelemetryFreshness();
+  unseen.observe(view(1,(1<<17)|32),0);
+  assert.equal(unseen.view(100).cpu_observation_age_ms,null,'retained CPU value does not invent an observation date');
+  freshness.disconnect();
+  assert.equal(freshness.view(2200).stale,true);
   const clock = new Clock(); const sent = []; const pending = [];
   const pump = new ControlPump({send: state => { sent.push({...state}); return new Promise(resolve => pending.push(resolve)); },
     now: () => clock.now, setTimer: clock.set, clearTimer: clock.clear});

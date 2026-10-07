@@ -1,5 +1,7 @@
 # V3 local control gateway (member A)
 
+2026-10-07收尾：已同步 main `b3fc15d`，负责人已将网口/游戏接入候选并做过板测；本页工具的独立验证不是本轮新的板测。GPU/CPU卡片补充年龄口径，只读采集入口见下方“长测留证”。不改变固定27字协议、已验证网口RTL或正式固件。
+
 源码基点：`79a0b7f`，A-work 独立模块。协议依据 `v3_interface_design_20261001.md`；本工具不修改主程序、SoC 顶层、GPU 或 ASST。Python 标准库及原生 HTML/JavaScript，无安装依赖。这里只证明本地软件/假板合同，不能代表实际板卡、HDMI、性能或整机耐久已验收。
 
 ## 启动真实板卡
@@ -7,7 +9,7 @@
 在仓库根目录运行；将板卡地址和 PC 网卡地址替换为实际配置：
 
 ```powershell
-powershell -File scripts/run-control-gateway.ps1 -BoardIp 192.168.1.50 -UdpBind 192.168.1.100
+powershell -File scripts/run-control-gateway.ps1 -BoardIp 192.168.1.50 -UdpBind 192.168.1.100 -Python C:/efinity/efinity/python311/bin/python.exe
 ```
 
 HTTP 固定绑定 `127.0.0.1`，默认端口 `8765`。打开 `http://127.0.0.1:8765/`（不要用 localhost 别名）。网关 UDP 默认监听 `0.0.0.0:8090`，可通过 `-UdpBind` 限定本机网卡；目的地址/端口启动时固定，默认板卡 UDP `8090`，收到 UDP 仅接受该地址及端口。板端必须把管理 ACK/遥测发送到该 PC 的 `8090`。`-BoardPort`、`-UdpPort`、`-HttpPort` 可调整；浏览器端不提供目的地址或任意包发送入口。原 ASST 资源服务继续单独监听 UDP `8080`。
@@ -70,3 +72,21 @@ node sw/efinix_gpu/tests/test_control_dashboard.js
 Python 检查真实本机 HTTP/UDP、固定向量、CRC/保留位、ACK门控、错误来源、租约、竞争者、限频、最新键、序号回绕、旧固件/旧资源、复位、新session、假板租约及慢 SSE/包压力。Node 使用内置断言检查单在途请求、最新状态覆盖、33 ms 限频、释放停止心跳、别名键与动作边沿、有效性和有界原始 CSV；不依赖浏览器框架。保存证据于 `generated/verification/v3/gateway/`。完整浏览器人工键盘、真实网口与板端渲染联调、长期压力与 30 分钟耐久仍由集成上板阶段验收。
 
 验证环境若已有 Playwright/Edge，可额外运行 `test_control_dashboard_browser.js`（这不是工具运行依赖）；设置 `NODE_PATH` 指向已有 Playwright 所在模块目录。设置 `GATEWAY_TEST_LAUNCHER=1` 同时覆盖 PowerShell 两种启动入口。该检查使用真实浏览器验证页面事件、ACK、独占冲突、模仿标签、无效 FPS、CSV 下载与关闭页面清键，并保存 `dashboard.png`、`browser-raw.csv`。不会安装浏览器或包，结束只清理自己启动的进程。
+
+## GPU/CPU年龄口径与长测留证（2026-10-07）
+
+GPU卡片显示有效快照的年龄，重复SSE心跳不能让旧快照重新变新。500ms无新遥测/连接断开继续标过期。CPU卡片先看bit17有效，再看bit5旧成绩标记；未测量显示Unavailable，不能把原始0解释为已经测得0 FPS。固定协议没有CPU采样时间戳，界面只显示“最后新鲜遥测观察距今”或未知，并明确CPU sample age not transmitted；该观察不是CPU完成测量的精确时间，也不是输入端到端延迟。
+
+浏览器CSV仍最多600个完整快照（5Hz约2分钟），刷新即清空。30分钟/更长收尾应另开终端运行只读流式采集：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/capture-v3-telemetry.ps1 -Out generated/verification/v3/endurance-20261007/run01 -Seconds 1800
+```
+
+需**已在运行**的资源服务、网关与负责人选择的候选；不要因本命令而覆盖/重载位流固件。`-Url http://127.0.0.1:8765`、`-Interval 0.2`、`-Python`可指定；HTTP仅允许127.0.0.1根地址，禁止重定向及系统HTTP代理，响应上限64KiB、超时500ms。采集器只GET `/api/status`，不获取控制、不发HELLO/按键、不开放新网络端口，因此无人操作时仍零输入。要实际操控仍在网页点击获取；不要同时运行争用控制的板测脚本。
+
+输出按前缀**追加后缀**：`.csv`原始27字与collector接收UTC/elapsed、session/snapshot_id、snapshot_age/simulated；`.jsonl`保存每次状态或错误（含owned/ACK/stale/网关drop）；`.summary.json`保存有界统计。任一目标已存在即拒绝，不覆盖旧证据。CLI 0表示采集过程未出现HTTP/格式错误，1表示完成但有错误，2为参数/文件失败，130为中断；**0不表示板卡已合格**。异常中断保留部分文件且summary标aborted，不悄悄删证据。
+
+流式保存所有观察到的新快照（不受600份限制），内存只存一份上一快照和计数；重复状态保存在JSONL但不重复CSV行。输入错误、断网、无遥测、模拟标签、无效错误组、非零under/error/miss窗口及snapshot序号缺口均保留，原始无效数值不替换成0。收到不同build/序号重置记discontinuity，不把复位前后窗口拼作同版耐久；相同身份字段改变但snapshot_id不变拒绝为撕裂快照。采集完成也不证明未观察期间零错误，存在序号缺口/HTTP错误/无效组时尤其不能据此宣称全程合格。
+
+默认CPU慢回放时遥测可低频并过期；不要为填网页而开逐命令探针。采集器HTTP轮询/磁盘成本在PC端，未实测FPGA GPU P95扰动；真正30分钟资格仍由负责人结合逐帧串口、同版哈希和显示状态判定。原资源服务UDP8080、管理UDP8090、HTTP8765职责不变；自动PC共存检查用独立临时端口，不占用用户已运行的服务。
