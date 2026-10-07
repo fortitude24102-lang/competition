@@ -41,10 +41,14 @@ function Pump([int]$milliseconds,[int]$held=-1,[int]$action=0) {
 try {
  $serial.Open()
  Pump 1200
- Pump 1500 2
+ # A live game may already be GAME OVER. Verify movement from a fresh round,
+ # not by changing gameplay's intentional death freeze. Action1 is restart.
+ Pump 600 64 1
+ Pump 100 0 1
+ Pump 1500 2 1
  $status=Invoke-RestMethod "$url/api/status"
  if(!$status.acknowledged -or $status.simulated) {throw 'No real FPGA HELLO ACK'}
- Pump 1000 4
+ Pump 1000 4 1
  # Deliberately stop browser heartbeats: latest keys must expire, not stick.
  $releaseOffset=$script:received.Length
  Pump 1500
@@ -58,18 +62,18 @@ try {
  if($Replay) {
   $lastLive=[regex]::Matches($script:received,'V3_PERF,mode=0,tick=(\d+)')
   $liveTick=[uint32]$lastLive[$lastLive.Count-1].Groups[1].Value
-  Pump 1500 128 1
-  Keys 0 1 $true
+  Pump 1500 128 2
+  Keys 0 2 $true
   $deadline=$timer.Elapsed.TotalSeconds+420
   while($script:received -notmatch 'V3_REPLAY,GPU_DONE,frames=600,LIVE_RESTORED') {
    if($timer.Elapsed.TotalSeconds -ge $deadline) {throw '600 tick comparison deadline'}
-   if($HoldAcrossReplay -and $script:received -match 'V3_REPLAY,CPU_DONE') {Keys 192 2}
+   if($HoldAcrossReplay -and $script:received -match 'V3_REPLAY,CPU_DONE') {Keys 192 3}
    Capture
    Start-Sleep -Milliseconds 33
   }
   if($script:received -notmatch 'V3_REPLAY,CPU_DONE,crc=[0-9a-f]+,frames=600') {throw 'CPU replay incomplete'}
   if($HoldAcrossReplay) {
-   Pump 1200 192 2
+   Pump 1200 192 3
    $restored=$script:received.Substring($script:received.IndexOf('V3_REPLAY,GPU_DONE'))
    $last=[regex]::Matches($restored,'V3_PERF,mode=0,tick=(\d+)')
    if(!$last.Count -or [uint32]$last[$last.Count-1].Groups[1].Value -lt $liveTick) {throw 'Held R/C retriggered on LIVE restore'}
@@ -78,6 +82,6 @@ try {
   Write-Output 'PASS CPU/GPU each600 recorded tick replay and LIVE restore; not a high-load qualification'
  }
 } finally {
- try {Keys 0 1 $true} catch {Write-Warning 'Gateway release failed; 250ms FPGA lease still applies'}
+ try {Keys 0 3 $true} catch {Write-Warning 'Gateway release failed; 250ms FPGA lease still applies'}
  if($serial.IsOpen) {$serial.Close()};$serial.Dispose()
 }

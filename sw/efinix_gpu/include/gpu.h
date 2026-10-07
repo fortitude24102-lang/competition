@@ -53,6 +53,7 @@ typedef struct {
 } gpu_device;
 int gpu_init(gpu_device *d, uintptr_t base);
 int gpu_try_submit(gpu_device *d,const gpu_command *command,uint16_t *tag);
+/* command must remain immutable until this blocking call returns. */
 int gpu_submit(gpu_device *d,const gpu_command *command,uint32_t poll_limit,uint16_t *tag);
 int gpu_poll(gpu_device *d,uint16_t tag);
 int gpu_fill_async(gpu_device *d,uint32_t dst,uint32_t stride,uint16_t w,uint16_t h,uint16_t color,uint16_t *tag);

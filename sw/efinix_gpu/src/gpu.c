@@ -1,4 +1,7 @@
 #include "gpu.h"
+#ifndef GPU_SUBMIT_REVALIDATE
+#define GPU_SUBMIT_REVALIDATE 0 /* Same-R7 board gate: small net benefit; 1 restores legacy. */
+#endif
 #ifdef GPU_TEST_BACKEND
 uint32_t gpu_io_read(uintptr_t a);
 void gpu_io_write(uintptr_t a,uint32_t v);
@@ -22,7 +25,7 @@ static int surface(uint32_t address,uint32_t stride,uint16_t width,uint16_t heig
  return 0;
 }
 
-static int validate(const gpu_command *c) {
+static inline __attribute__((always_inline)) int validate(const gpu_command *c) {
  if(!c || c->flags) return GPU_DRIVER_ARGUMENT;
  int e;
  if(c->op==GPU_OP_FILL) return surface(c->dst_addr,c->dst_stride,c->width_pixels,c->height_pixels);
@@ -74,7 +77,7 @@ static int refresh(gpu_device *d) {
  return 0;
 }
 
-static void write_command(gpu_device *d,const gpu_command *c,uint16_t tag) {
+static inline __attribute__((always_inline)) void write_command(gpu_device *d,const gpu_command *c,uint16_t tag) {
  wr(d,GPU_REG_OP,c->op); wr(d,GPU_REG_SRC_ADDR,c->src_addr); wr(d,GPU_REG_DST_ADDR,c->dst_addr);
  wr(d,GPU_REG_SIZE,gpu_pack_size(c->width_pixels,c->height_pixels));
  wr(d,GPU_REG_SRC_STRIDE,c->src_stride); wr(d,GPU_REG_DST_STRIDE,c->dst_stride);
@@ -95,9 +98,7 @@ int gpu_init(gpu_device *d,uintptr_t base) {
  return 0;
 }
 
-int gpu_try_submit(gpu_device *d,const gpu_command *c,uint16_t *tag) {
- if(!d || !d->ready || !tag) return GPU_DRIVER_ARGUMENT;
- int e=validate(c); if(e) return e;
+static inline __attribute__((always_inline)) int try_submit_validated(gpu_device *d,const gpu_command *c,uint16_t *tag) {
  d->hardware_error=(uint8_t)(rd(d,GPU_REG_ERROR)&GPU_ERROR_MASK);
  if(d->hardware_error) return GPU_DRIVER_HARDWARE;
  uint32_t status=rd(d,GPU_REG_STATUS);
@@ -115,9 +116,23 @@ int gpu_try_submit(gpu_device *d,const gpu_command *c,uint16_t *tag) {
  return 0;
 }
 
+int gpu_try_submit(gpu_device *d,const gpu_command *c,uint16_t *tag) {
+ if(!d || !d->ready || !tag) return GPU_DRIVER_ARGUMENT;
+ int e=validate(c);if(e) return e;
+ return try_submit_validated(d,c,tag);
+}
+
 int gpu_submit(gpu_device *d,const gpu_command *c,uint32_t poll_limit,uint16_t *tag) {
+#if !GPU_SUBMIT_REVALIDATE
+ if(!d || !d->ready || !tag) return GPU_DRIVER_ARGUMENT;
+ int error=validate(c);if(error) return error;
+#endif
  while(1) {
+#if GPU_SUBMIT_REVALIDATE
   int e=gpu_try_submit(d,c,tag);
+#else
+  int e=try_submit_validated(d,c,tag);
+#endif
   if(e!=GPU_DRIVER_AGAIN) return e;
   if(!poll_limit--) return GPU_DRIVER_TIMEOUT;
   e=refresh(d); if(e) return e;

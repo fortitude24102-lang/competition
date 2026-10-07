@@ -6,6 +6,12 @@ param(
     [switch]$Profile,
     [switch]$Damage,
     [switch]$Interactive,
+    [string]$OutDirectory,
+    [ValidateRange(0,2048)][int]$StartCount=0,
+    [ValidateSet(512,1024)][int]$ObjectCapacity=512,
+    [switch]$ValidateOnce,
+    [switch]$LegacyValidation,
+    [ValidateRange(0,200000)][int]$ProbeFrames=0,
     [ValidatePattern('^0x[0-9a-fA-F]{8}$')][string]$NetworkLocalIp = '0xc0a80002',
     [ValidatePattern('^0x[0-9a-fA-F]{8}$')][string]$NetworkPeerIp = '0xc0a80003',
     [switch]$PublishRelease
@@ -17,7 +23,14 @@ try {
     if ($Profile -and $PublishRelease) { throw 'Profile firmware must not replace the production release.' }
     if ($Damage -and ($Profile -or $PublishRelease -or $Demo -ne 'bullet')) { throw 'Damage candidate is normal R7 firmware only; no release overwrite.' }
     if ($Interactive -and ($Profile -or $Damage -or $PublishRelease -or $Demo -ne 'bullet')) { throw 'Interactive candidate is separate from R7 profile/damage/release.' }
+    if ($ValidateOnce -and $LegacyValidation) {throw 'Choose one submission path'}
+    if ($OutDirectory -and $PublishRelease) {throw 'Separate candidate output cannot publish a release'}
+    if (($StartCount -or $ProbeFrames -or $ObjectCapacity -ne 512 -or $ValidateOnce -or $LegacyValidation) -and (!$Interactive -or !$OutDirectory)) { throw 'Interactive measurement options require a separate OutDirectory.' }
     $out = if($Interactive) {'generated/verification/v3/integration'} else {'generated/verification/efinix-software'}
+    if($OutDirectory) {
+        $out=$OutDirectory
+        if(Test-Path -LiteralPath $out) { throw 'Refusing to overwrite candidate output directory.' }
+    }
     New-Item -ItemType Directory -Force $out | Out-Null
     # WSL host compiler avoids the incomplete MinGW installation on this PC.
     if (!$FirmwareOnly) {
@@ -81,6 +94,11 @@ try {
     if ($Profile) { $profileFlag += '-DV2_PROFILE' }
     if ($Damage) { $profileFlag += '-DV3_GPU_DAMAGE=1' }
     if ($Interactive) { $profileFlag += '-DV3_INTERACTIVE=1' }
+    if ($StartCount) { $profileFlag += "-DV3_START_COUNT=$StartCount" }
+    if ($ProbeFrames) { $profileFlag += "-DV3_PROBE_FRAMES=$ProbeFrames" }
+    $profileFlag += "-DBULLET_OBJECT_CAPACITY=$ObjectCapacity"
+    if($ValidateOnce) {$profileFlag += '-DGPU_SUBMIT_REVALIDATE=0'}
+    if($LegacyValidation) {$profileFlag += '-DGPU_SUBMIT_REVALIDATE=1'}
     & $RiscvGcc -std=gnu11 -Os -Wall -Wextra -Werror '-Wstack-usage=2048' -march=rv32im_zicsr -mabi=ilp32 -ffreestanding -ffunction-sections -fdata-sections "-DNETWORK_LOCAL_IP=$NetworkLocalIp" "-DNETWORK_PEER_IP=$NetworkPeerIp" $sceneFlag @profileFlag -Isw/efinix_gpu/include -Isw/efinix_gpu/assets/v2 -Isw/efinix_gpu/assets/bullet -isystem "$bsp/include" -isystem "$soc/software/standalone/driver" -DUSE_GP -DNO_LIBC_INIT_ARRAY -nostartfiles "-T$bsp/linker/default.ld" '-Tsw/efinix_gpu/linker.ld' '-Wl,--gc-sections' "-Wl,-Map,$out/gpu_demo.map" "$soc/software/standalone/common/start.S" @firmwareSources -o "$out/gpu_demo.elf"
     if ($LASTEXITCODE -ne 0) { throw 'Sapphire ELF link failed' }
     $objcopy = Join-Path (Split-Path $RiscvGcc) 'riscv-none-elf-objcopy.exe'

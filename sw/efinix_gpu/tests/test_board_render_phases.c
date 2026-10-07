@@ -118,6 +118,7 @@ static int continuous(gpu_device *gpu,framebuffer_pair *buffers,unsigned target,
   summary.stable_sprite_count);
  return summary.total_errors || summary.total_underflows ? GPU_DRIVER_HARDWARE : 0;
 }
+#ifndef RENDER_VALIDATION_COHORT
 static int isolated(gpu_device *gpu,const char *name,const gpu_command *commands,unsigned count,unsigned target,unsigned tick) {
  gpu_perf_snapshot before,after;
  int e=gpu_read_perf_snapshot(gpu,&before); if(e) return e;
@@ -134,6 +135,7 @@ static int isolated(gpu_device *gpu,const char *name,const gpu_command *commands
   (unsigned)(after.underflows-before.underflows));
  return after.underflows!=before.underflows ? GPU_DRIVER_HARDWARE : 0;
 }
+#endif
 int main(void) {
  bsp_init(); gpu_device gpu; int e=gpu_init(&gpu,GPU_APB_BASE); if(e) return e;
  uint32_t session=(uint32_t)gpu_platform_cycles();
@@ -144,6 +146,13 @@ int main(void) {
  e=bullet_prepare_texture_cache(&gpu,0,10000000u); if(e) goto stop;
  framebuffer_pair buffers; framebuffer_init(&buffers);
  e=gpu_set_qos(&gpu,256,1536,1); if(e) goto stop;
+#ifdef RENDER_VALIDATION_COHORT
+ /* Identical automaticR7 ticks, probesOFF, GPU driver only. Not live inputs. */
+ static const unsigned targets[]={256,384,512};
+ for(unsigned i=0;i<sizeof targets/sizeof targets[0];i++) {
+  e=continuous(&gpu,&buffers,targets[i],0);if(e) goto stop;
+ }
+#else
  static const unsigned targets[]={32,64,128,256,512},ticks[]={0,90,180};
  for(unsigned i=0;i<sizeof targets/sizeof targets[0];i++) for(int enabled=0;enabled<2;enabled++) {
   e=continuous(&gpu,&buffers,targets[i],enabled); if(e) goto stop;
@@ -156,6 +165,7 @@ int main(void) {
   e=isolated(&gpu,"SPRITES_ORDERED",scene.commands+1,scene.count-1,targets[i],ticks[j]); if(e) goto stop;
   e=framebuffer_present(&gpu,&buffers,10000000u); if(e) goto stop;
  }
+#endif
 stop:
  bsp_printf("RENDER_PHASE_STOP,result=%d,hardware=%d\r\n",e,gpu.hardware_error);
  return e;

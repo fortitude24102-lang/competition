@@ -4,10 +4,20 @@
 #include "hud.h"
 #include "benchmark.h"
 #include "bsp.h"
-#define V3_BUILD_ID 0x20261005u
+#define V3_BUILD_ID 0x20261007u
 #define V3_RESOURCE_EPOCH 0x00030001u
 #define V3_STATE_ADDRESS 0x02d00000u
 #define V3_POLLS 10000000u
+#ifndef V3_START_COUNT
+#define V3_START_COUNT 64u
+#endif
+#ifndef V3_PROBE_FRAMES
+#define V3_PROBE_FRAMES 0u
+#endif
+_Static_assert(V3_START_COUNT>=32 && V3_START_COUNT<=BULLET_MAX_OBJECTS,"start count capacity");
+#if V3_PROBE_FRAMES
+#include "v3_frame_stats.h"
+#endif
 /* Runtime + record are private CPU data in disjoint DDR. They are never GPU
  * input and need no per-tick cache flush. This is not CPU rendering tuning. */
 _Static_assert(V3_STATE_ADDRESS>=HUD_GLYPH_ATLAS_ADDR+HUD_GLYPH_ATLAS_BYTES,"state/assets overlap");
@@ -29,7 +39,7 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  nc_device control;nc_input raw={0};game_input input={0};
  int e=nc_init(&control,GPU_APB_BASE);
  if(e) {bsp_printf("V3_CONTROL,unavailable=%d; use frozen R7 firmware\r\n",e);return 1;}
- e=v3_runtime_init(runtime,64,7,V3_RESOURCE_EPOCH);if(e) return 1;
+ e=v3_runtime_init(runtime,V3_START_COUNT,7,V3_RESOURCE_EPOCH);if(e) return 1;
  e=gpu_set_qos(gpu,256,1536,1);if(e) return 1;
  hud_comparison metrics={.bullet_demo=1,.gameplay=1,.network_ready=(uint8_t)network};
  nc_telemetry telemetry={.firmware_build_id=V3_BUILD_ID,.resource_epoch=V3_RESOURCE_EPOCH};
@@ -39,7 +49,12 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  uint64_t sampled_underflows=0;
  uint8_t previous_mode=V3_MODE_LIVE;unsigned frame=0;
  int cpu_fresh=0;
- bsp_printf("V3_READY,build=%x,epoch=%x,network=%d,state=%x,mode=LIVE,count=64\r\n",V3_BUILD_ID,V3_RESOURCE_EPOCH,network,V3_STATE_ADDRESS);
+#if V3_PROBE_FRAMES
+ v3_frame_stats stats={0};unsigned probe_frame=0;uint32_t previous_log=0;
+ uint64_t probe_underflows=0;
+ bsp_printf("V3_PROBE_START,warm=30,samples=%d,log_windows=1\r\n",V3_PROBE_FRAMES);
+#endif
+ bsp_printf("V3_READY,build=%x,epoch=%x,network=%d,state=%x,mode=LIVE,count=%d\r\n",V3_BUILD_ID,V3_RESOURCE_EPOCH,network,V3_STATE_ADDRESS,V3_START_COUNT);
  for(;;) {
   uint64_t start=previous_present;
   gpu_perf_snapshot before,after;
@@ -76,7 +91,8 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   e=mode==V3_MODE_CPU?perf_render_cpu(overlay->commands,1):perf_render_gpu(gpu,overlay->commands,1,V3_POLLS);if(e) break;
   gpu_platform_sync();uint64_t present_start=gpu_platform_cycles();
   e=gpu_read_perf_snapshot(gpu,&after);if(e) break;
-  uint32_t work_us=us(gpu_platform_cycles()-start);
+  uint64_t work_ticks=gpu_platform_cycles()-start;
+  uint32_t work_us=us(work_ticks);
   e=framebuffer_present(gpu,buffers,V3_POLLS);if(e) break;
   previous_present=gpu_platform_cycles();uint64_t wall=previous_present-start;
   e=perf_window_add(&window,wall,(uint64_t)render_us*(BSP_CLINT_HZ/1000000u));if(e) break;
@@ -84,12 +100,29 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   if(mode!=V3_MODE_CPU && us(wall)>20000u) ++miss_delta;
   under_delta+=(uint32_t)(after.underflows-sampled_underflows);
   sampled_underflows=after.underflows; /* Include inter-frame/PRESENT events. */
+#if V3_PROBE_FRAMES
+  if(mode!=V3_MODE_LIVE) {e=GPU_DRIVER_ARGUMENT;break;} /* No mixed CPU/GPU sample. */
+  gpu_perf_snapshot probe_after;
+  e=gpu_read_perf_snapshot(gpu,&probe_after);if(e) break;
+  if(probe_frame++>=30u)
+   v3_frame_stats_add(&stats,BSP_CLINT_HZ,(uint32_t)work_ticks,(uint32_t)wall,
+    previous_log,(uint32_t)(probe_after.underflows-probe_underflows),gpu->hardware_error!=0,
+    scene->visible,scene->alpha_commands);
+  probe_underflows=probe_after.underflows; /* Includes PRESENT/inter-frame events. */
+  previous_log=0;
+#endif
   uint32_t p95_us=p95(frame);
   if(frame==PERF_WINDOW_FRAMES) {
    uint32_t fps=perf_fps_x10(&window,BSP_CLINT_HZ),avg=perf_render_us(&window,BSP_CLINT_HZ);
    if(mode==V3_MODE_CPU) {cpu_fps=fps;cpu_us=avg;cpu_fresh=1;} else {gpu_fps=fps;gpu_us=avg;}
-   bsp_printf("V3_PERF,mode=%d,tick=%d,seq=%d,x=%d,y=%d,visible=%d,fps_x10=%d,scene_us=%d,p95_work_us=%d,under=%d,miss=%d,keys=%x,age=%d\r\n",
+#if V3_PROBE_FRAMES
+    uint64_t log_start=gpu_platform_cycles();
+#endif
+    bsp_printf("V3_PERF,mode=%d,tick=%d,seq=%d,x=%d,y=%d,visible=%d,fps_x10=%d,scene_us=%d,p95_work_us=%d,under=%d,miss=%d,keys=%x,age=%d\r\n",
     mode,runtime->game.tick,raw.sequence,runtime->game.player_x,runtime->game.player_y,scene->visible,fps,avg,p95_us,under_delta,miss_delta,input.held,raw.age_ms);
+#if V3_PROBE_FRAMES
+    previous_log=(uint32_t)(gpu_platform_cycles()-log_start);
+#endif
    window=(perf_window){0};frame=0;
   }
   uint32_t now=now_ms();
@@ -110,6 +143,17 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
    last_report=now;last_drops=drops;last_rejected=control.rejected_packets;under_delta=miss_delta=0;
   }
   e=v3_runtime_frame_done(runtime);if(e) break;
+#if V3_PROBE_FRAMES
+  if(stats.frames==V3_PROBE_FRAMES) {
+   bsp_printf("V3_PROBE,target=%d,frames=%d,fps_x10=%d,work_mean_us=%d,work_max_us=%d,wall_max_us=%d,work_miss=%d,late_present=%d,under=%d,errors=%d,visible_min=%d,visible_max=%d,alpha_min=%d,alpha_max=%d,log_mean_us=%d,log_max_us=%d\r\n",
+    V3_START_COUNT,stats.frames,(uint32_t)((uint64_t)stats.frames*BSP_CLINT_HZ*10u/stats.wall_ticks),
+    us(stats.work_ticks/stats.frames),us(stats.max_work_ticks),us(stats.max_wall_ticks),
+    stats.work_misses,stats.cadence_misses,stats.underflows,stats.errors,
+    stats.min_visible,stats.max_visible,stats.min_alpha,stats.max_alpha,
+    us(stats.log_ticks/stats.frames),us(stats.max_log_ticks));
+   bsp_printf("V3_PROBE_STOP,result=0\r\n");return 0;
+  }
+#endif
   if(mode==V3_MODE_CPU && runtime->mode==V3_MODE_GPU)
    bsp_printf("V3_REPLAY,CPU_DONE,crc=%x,frames=600\r\n",runtime->recording.crc32);
   if(mode==V3_MODE_GPU && runtime->mode==V3_MODE_LIVE) {

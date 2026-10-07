@@ -16,6 +16,9 @@ try {
   @{name='interactive_pixels';modules=@('bullet_demo','interactive_game','replay_input','golden_renderer','rgb565')},
   @{name='v3_runtime';modules=@('v3_runtime','bullet_demo','interactive_game','replay_input','input_state')},
   @{name='v3_hud';modules=@('hud')}
+  @{name='v3_frame_stats';modules=@()},
+  @{name='v3_capacity';modules=@('v3_runtime','bullet_demo','interactive_game','replay_input');extra=@('-DBULLET_OBJECT_CAPACITY=1024')},
+  @{name='submit_validation';modules=@();extra=@('-finstrument-functions','-DGPU_SUBMIT_REVALIDATE=0')}
  )
  if(!$RtlOnly) { foreach($test in $cases) {
   $sources=@("sw/efinix_gpu/tests/test_$($test.name).c")+@($test.modules|ForEach-Object {"sw/efinix_gpu/src/$_.c"})

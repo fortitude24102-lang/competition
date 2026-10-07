@@ -2,10 +2,16 @@ param(
  [ValidateSet('hud','key','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances')][string]$Test='hud',
  [string]$RiscvGcc='D:/efinity/risc_v_gcc/toolchain/bin/riscv-none-elf-gcc.exe',
  [string]$Soc='D:/efinity_builds/competition_day1_20260906/sapphire/soc',
- [switch]$InstanceExpandProbe
+ [switch]$InstanceExpandProbe,
+ [switch]$ValidationCohort,
+ [switch]$ValidateOnce,
+ [switch]$LegacyValidation,
+ [string]$OutDirectory
 )
 $ErrorActionPreference='Stop'
 if($InstanceExpandProbe -and $Test -ne 'instances') { throw 'InstanceExpandProbe requires Test instances' }
+if($ValidateOnce -and $LegacyValidation) {throw 'Choose one submission path'}
+if(($ValidationCohort -or $ValidateOnce -or $LegacyValidation) -and ($Test -ne 'render-phases' -or !$OutDirectory)) {throw 'Validation comparison requires render-phases and fresh OutDirectory'}
 $root=Split-Path $PSScriptRoot -Parent
 Push-Location $root
 try {
@@ -25,6 +31,10 @@ try {
   'instances' {'generated/verification/v3/instances/board'}
  }
  if($InstanceExpandProbe) { $out+='-expand-probe' }
+ if($OutDirectory) {
+  $out=$OutDirectory
+  if(Test-Path -LiteralPath $out) {throw 'Refusing to overwrite diagnostic output'}
+ }
  New-Item -ItemType Directory -Force $out | Out-Null
  if($Test -eq 'render-phases') {
   & wsl gcc -std=c11 -O2 -Wall -Wextra -Werror -fsanitize=undefined -Isw/efinix_gpu/include sw/efinix_gpu/tests/test_submit_probe.c -o "$out/test_submit_probe"
@@ -53,6 +63,9 @@ try {
  }
  [string[]]$probeFlags=@()
  if($InstanceExpandProbe) { $probeFlags=@('-DINSTANCE_EXPAND_PROBE=1') }
+ if($ValidationCohort) {$probeFlags+='-DRENDER_VALIDATION_COHORT=1'}
+ if($ValidateOnce) {$probeFlags+='-DGPU_SUBMIT_REVALIDATE=0'}
+ if($LegacyValidation) {$probeFlags+='-DGPU_SUBMIT_REVALIDATE=1'}
  & $RiscvGcc -std=gnu11 -Os -Wall -Wextra -Werror '-Wstack-usage=2048' -march=rv32im_zicsr -mabi=ilp32 -ffreestanding -ffunction-sections -fdata-sections -DBULLET_DEMO_DEFAULT=1 -DNETWORK_LOCAL_IP=0xc0a80103 -DNETWORK_PEER_IP=0xc0a80102 -Isw/efinix_gpu/include -Isw/efinix_gpu/assets/v2 -Isw/efinix_gpu/assets/bullet -isystem "$bsp/include" -isystem "$Soc/software/standalone/driver" -DUSE_GP -DNO_LIBC_INIT_ARRAY -nostartfiles "-T$bsp/linker/default.ld" '-Tsw/efinix_gpu/linker.ld' '-Wl,--gc-sections' "$Soc/software/standalone/common/start.S" @probeFlags @sources -o "$out/test.elf"
  if($LASTEXITCODE -ne 0) { throw "Board $Test test link failed" }
  $objcopy=Join-Path (Split-Path $RiscvGcc) riscv-none-elf-objcopy.exe
