@@ -5,7 +5,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const file = path.join(__dirname, '../tools/control_gateway/web/dashboard.js');
 assert.ok(fs.existsSync(file), 'browser keyboard controller missing');
-const {ControlPump, KeyboardState, SnapshotBuffer, TelemetryFreshness, formatValue} = require(file);
+const {ControlPump, KeyboardState, SnapshotBuffer, TelemetryFreshness, formatValue, gameView} = require(file);
 
 class Clock {
   constructor() { this.now = 0; this.tasks = []; }
@@ -23,6 +23,17 @@ class Clock {
 }
 
 async function main() {
+  const menuWords=Array(27).fill(0);menuWords[21]=0x0d00;
+  let gv=gameView({stale:false,age_ms:0,telemetry:{words:menuWords},game:null});
+  assert.deepEqual(gv,{supported:true,phase:'menu',level:null,canStart:true,canMenu:true,pending:false});
+  for(const [level,count] of [[1,64],[2,128],[3,256],[4,512]]) {
+    const words=menuWords.slice();words[21]=0x0801;words[3]=count;
+    assert.equal(gameView({stale:false,age_ms:0,telemetry:{words}}).level,level);
+  }
+  assert.equal(gameView({stale:true,telemetry:{words:menuWords}}).canStart,false);
+  assert.equal(gameView({stale:false,telemetry:{words:Array(27).fill(0)}}).supported,false);
+  gv=gameView({stale:false,age_ms:0,telemetry:{words:menuWords},game:{state:'await_snapshot'}});
+  assert.equal(gv.canStart,false);assert.equal(gv.pending,true);
   const freshness=new TelemetryFreshness();
   function view(sequence,flags,age=0) {
     const words=Array(27).fill(0);words[0]=20261007;words[21]=flags;

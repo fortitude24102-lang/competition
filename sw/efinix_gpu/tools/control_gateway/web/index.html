@@ -5,6 +5,14 @@
 <body><main>
 <header><p class="eyebrow">AETHERGX · V3</p><h1>Board control & telemetry</h1><p>Local keyboard bridge. Gameplay and rendering run on Sapphire and the FPGA.</p></header>
 <div id="banner" class="warning" role="status">Connecting to local gateway…</div>
+<section class="panel"><h2>选择游戏难度</h2><p id="game-status" role="status">等待开发板菜单状态…</p>
+<div id="difficulty-options" class="difficulty-grid">
+<button id="level-1" disabled>难度一<span>64 Sprite 请求档位</span></button>
+<button id="level-2" disabled>难度二<span>128 Sprite 请求档位</span></button>
+<button id="level-3" disabled>难度三<span>256 Sprite 请求档位</span></button>
+<button id="level-4" disabled>难度四<span>512 Sprite 请求档位</span></button>
+</div><p id="current-difficulty"></p><button id="reselect" class="secondary" disabled>一键重选难度</button>
+<p class="muted">请求档位不等于每帧可见数量；高档位不承诺60 FPS。重选仅结束本局，不重启开发板。</p></section>
 <section class="panel"><h2>Keyboard control</h2><div class="buttons"><button id="acquire">Acquire control in this tab</button><button id="release" class="secondary">Release & clear keys</button><span id="keys">0x00</span></div>
 <p id="control-status" role="status">Control is released. One tab can own control at a time.</p>
 <p class="key-guide">Arrows / WASD: move · Space / Z: shoot · Shift: slow · R: restart · C: request comparison replay</p>

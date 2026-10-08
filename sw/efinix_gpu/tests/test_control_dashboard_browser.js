@@ -7,7 +7,7 @@ const net = require('node:net');
 const dgram = require('node:dgram');
 const {chromium} = require('playwright');
 const root=path.resolve(__dirname,'../../..');
-const python=process.env.GATEWAY_TEST_PYTHON || 'C:/efinity/efinity/python311/bin/python.exe';
+const python=process.env.GATEWAY_TEST_PYTHON || 'python';
 async function freePort(udp=false) {
   if(udp) {const socket=dgram.createSocket('udp4'); await new Promise(r=>socket.bind(0,'127.0.0.1',r));const port=socket.address().port;await new Promise(r=>socket.close(r));return port;}
   const server=net.createServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));const port=server.address().port;await new Promise(r=>server.close(r));return port;
@@ -30,11 +30,11 @@ async function main() {
         file==='fake_board.py'?'-FakeBoardOnly':'-Simulated'];
     }
     const child=spawn(command,commandArgs,{cwd:root,windowsHide:true,
-      env:{...process.env,PYTHONHOME:process.env.PYTHONHOME || 'C:/efinity/efinity/python311',PYTHONDONTWRITEBYTECODE:'1'},stdio:['ignore','pipe','pipe']});
+      env:{...process.env,PYTHONDONTWRITEBYTECODE:'1'},stdio:['ignore','pipe','pipe']});
     child.stdout.on('data',data=>process.stdout.write(data));child.stderr.on('data',data=>process.stderr.write(data));children.push(child);return child;
   }
   try {
-    launch('fake_board.py',['--port',String(fakePort),'--gateway-port',String(udpPort)]);
+    launch('fake_board.py',['--port',String(fakePort),'--gateway-port',String(udpPort),'--game-menu']);
     launch('gateway.py',['--board','127.0.0.1','--board-port',String(fakePort),'--udp-bind','127.0.0.1',
       '--udp-port',String(udpPort),'--http-port',String(httpPort),'--simulated']);
     const url='http://127.0.0.1:'+httpPort;
@@ -44,12 +44,15 @@ async function main() {
     const page=await browser.newPage({viewport:{width:1280,height:1000}});
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
     await page.goto(url);await page.waitForFunction(()=>document.querySelector('#banner').textContent.includes('SIMULATED'));
-    await page.locator('#acquire').click();
+    // Clicking a level acquires zero-key control itself; no Acquire button required.
+    await page.locator('#level-1').click();
     await until(async()=>(await(await fetch(url+'/api/status')).json()).acknowledged).catch(async error=>{
       console.error('Browser control diagnostic',await page.locator('#control-status').textContent(),
         await page.evaluate(()=>({focus:document.hasFocus(),hidden:document.hidden})),
         await(await fetch(url+'/api/status')).json(),errors);throw error;
     });
+    await until(async()=>(await(await fetch(url+'/api/status')).json()).game?.state==='applied');
+    await page.waitForFunction(()=>document.querySelector('#current-difficulty').textContent.includes('难度 1'));
     await page.keyboard.down('ArrowLeft');await page.keyboard.down('KeyA');await page.keyboard.up('ArrowLeft');
     assert.equal(await page.locator('#keys').textContent(),'0x01');
     // Actual DOM blur listener must zero the visible key state as well as release the gateway.
@@ -64,6 +67,16 @@ async function main() {
         body:JSON.stringify({token,client:'b'.repeat(32),keys:1,action_sequence:0,release:false})})).status;
     });
     assert.equal(conflict,409);
+    for(let level=2;level<=4;level++) {
+      await page.locator('#reselect').click();
+      await page.waitForFunction(()=>!document.querySelector('#difficulty-options').hidden && !document.querySelector('#level-1').disabled);
+      await page.locator('#level-'+level).click();
+      await page.waitForFunction(l=>document.querySelector('#current-difficulty').textContent.includes('难度 '+l),level);
+      await until(async()=>(await(await fetch(url+'/api/status')).json()).game?.state==='applied');
+    }
+    await page.locator('#reselect').click();
+    await page.waitForFunction(()=>!document.querySelector('#difficulty-options').hidden && !document.querySelector('#level-1').disabled);
+    await page.keyboard.press('ArrowLeft');assert.equal(await page.locator('#keys').textContent(),'0x00');
     await until(async()=>(await page.locator('#metric-firmware_build_id').textContent())!=='Unavailable');
     assert.equal(await page.locator('#gpu-fps').textContent(),'Unavailable');
     await until(async()=>(await page.locator('#cpu-age').textContent()).includes('no valid CPU result'));

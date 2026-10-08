@@ -75,6 +75,65 @@ class ProtocolTest(unittest.TestCase):
 
 
 class StateTest(unittest.TestCase):
+    def game_state(self):
+        import protocol as p
+        s=self.state();s.control('a'*32,0,0,now=0)
+        h=p.decode(s.next_packet(0));s.receive(wire(3,h.session,h.sequence,[1,0,0]),.01)
+        words=[0]*27;words[21]=0x0d10
+        s.receive(wire(128,h.session,99,words),.02)
+        return s
+
+    def test_game_ack_then_old_snapshot(self):
+        import protocol as p
+        s=self.game_state();client='a'*32
+        self.assertEqual(s.game(client,'start',4,11,now=.03),202)
+        self.assertEqual(s.game('b'*32,'start',4,12,now=.03),409)
+        self.assertEqual(s.game(client,'start',1,12,now=.03),409)
+        packets=[]
+        for i in range(1,15):
+            now=.03+i*.02;s.control(client,0,0,now=now)
+            data=s.next_packet(now)
+            if data: packets.append(p.decode(data))
+        games=[x for x in packets if x.kind==4]
+        self.assertGreaterEqual(len(games),2)
+        self.assertTrue(all(x.words==(1,4,11) for x in games))
+        self.assertTrue(all(p.newer(b.sequence,a.sequence) for a,b in zip(games,games[1:])))
+        self.assertTrue(any(x.kind==2 and x.words[0]==0 for x in packets))
+        self.assertFalse(s.receive(wire(5,s.session,games[-1].sequence+1,[11,0,105]),.32))
+        self.assertTrue(s.receive(wire(5,s.session,games[-1].sequence,[11,0,105]),.33))
+        self.assertEqual(s.view(.33)['game']['state'],'await_snapshot')
+        words=[0]*27;words[3]=512;words[21]=0x0811
+        self.assertTrue(s.receive(wire(128,s.session,104,words),.34))
+        self.assertEqual(s.view(.34)['game']['state'],'await_snapshot')
+        self.assertTrue(s.receive(wire(128,s.session,106,words),.35))
+        self.assertEqual(s.view(.35)['game']['state'],'applied')
+        self.assertEqual(s.game(client,'start',4,11,now=.35),202)
+        self.assertEqual(s.game(client,'start',3,11,now=.35),409)
+
+    def test_game_timeout_cancel_capability_and_rate(self):
+        import protocol as p
+        s=self.game_state();client='a'*32
+        self.assertEqual(s.game(client,'start',1,11,now=.03),202)
+        sent=[]
+        for i in range(2101):
+            now=.03+i/1000;s.control(client,16,0,now=now)
+            # Keep actual fresh board evidence without fabricating an ACK.
+            if i%100==0:
+                words=[0]*27;words[21]=0x0d10;s.receive(wire(128,s.session,100+i,words),now)
+            data=s.next_packet(now)
+            if data: sent.append((now,p.decode(data)))
+        games=[t for t,packet in sent if packet.kind==4]
+        self.assertLessEqual(len(games),40)
+        self.assertTrue(all(b-a>=.05-1e-9 for a,b in zip(games,games[1:])))
+        self.assertTrue(all(b[0]-a[0]>=1/60-1e-9 for a,b in zip(sent,sent[1:])))
+        self.assertEqual(s.view(2.131)['game']['state'],'unknown')
+        s=self.game_state();s.game(client,'menu',0,12,now=.03);s.control(client,0,0,release=True,now=.04)
+        self.assertEqual(s.view(.04)['game']['state'],'unknown')
+        self.assertIsNone(s.next_packet(.1) if not s.clear_pending else None)
+        s=self.game_state();s.telemetry=p.decode(wire(128,s.session,100,[0]*27))
+        self.assertEqual(s.game(client,'start',1,11,now=.03),503)
+        s=self.game_state();self.assertEqual(s.game(client,'start',1,11,now=.6),409)
+
     def state(self):
         from gateway import GatewayState
         return GatewayState()
@@ -265,6 +324,33 @@ class StateTest(unittest.TestCase):
 
 
 class LoopbackTest(unittest.TestCase):
+    def test_game_http_validation_and_execution(self):
+        client='a'*32
+        def game(**changes):
+            obj=dict(token=self.token,client=client,opcode='start',level=1,request_id=11)
+            obj.update(changes);return self.request('POST','/api/game',obj)[0]
+        self.assertEqual(game(),409)
+        for changes in [dict(level=True),dict(level=5),dict(request_id=0),dict(request_id=True),
+                        dict(opcode='menu',level=1),dict(extra=1)]:
+            self.assertEqual(game(**changes),400)
+        self.assertEqual(self.request('POST','/api/game',raw='x'*1025)[0],413)
+        self.assertEqual(self.request('POST','/api/game',dict(token=self.token),origin=False)[0],403)
+        self.assertEqual(self.post(keys=0)[0],200)
+        import protocol as p
+        h,addr=self.peer.recvfrom(256);h=p.decode(h)
+        self.peer.sendto(wire(3,h.session,h.sequence,[1,0,0]),addr)
+        words=[0]*27;words[21]=0x0d10
+        self.peer.sendto(wire(128,h.session,99,words),addr)
+        end=time.monotonic()+.2
+        while not self.gateway.state.view()['acknowledged'] and time.monotonic()<end: time.sleep(.005)
+        self.assertEqual(game(),202)
+        end=time.monotonic()+.2;command=None
+        while time.monotonic()<end:
+            packet=p.decode(self.peer.recvfrom(256)[0])
+            if packet.kind==4: command=packet;break
+        self.assertIsNotNone(command)
+        self.assertEqual(command.words,(1,1,11))
+
     def setUp(self):
         from gateway import Gateway
         self.peer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

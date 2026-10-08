@@ -103,11 +103,21 @@
     }
   }
 
+  function gameView(view) {
+    const flags=view?.telemetry?.words[21]||0,supported=!!(flags&(1<<11));
+    const phase=supported?(flags&(1<<10)?'menu':'play'):'unknown';
+    const counts=[64,128,256,512],index=counts.indexOf(view?.telemetry?.words[3]);
+    const pending=['pending','await_snapshot'].includes(view?.game?.state);
+    const ready=supported && !view.stale && (view.age_ms==null || view.age_ms<500) && !pending;
+    return {supported,phase,level:phase==='play' && index>=0?index+1:null,
+      canStart:ready && phase==='menu',canMenu:ready,pending};
+  }
+
   async function boot() {
     const $=id=>document.getElementById(id);
     const banner=$('banner'), control=$('control-status'), keys=new KeyboardState(), samples=new SnapshotBuffer();
     const client=Array.from(crypto.getRandomValues(new Uint8Array(16)),v=>v.toString(16).padStart(2,'0')).join('');
-    let token, simulated=false;
+    let token, simulated=false,choice=null,gameSending=false,requestId=0,restartUntil=0;
     try {
       const response=await fetch('/api/bootstrap',{cache:'no-store'});
       if(!response.ok) throw new Error('Gateway unavailable');
@@ -117,6 +127,7 @@
       body:JSON.stringify({token,client,...state}),keepalive:state.release}),
       onError:error=>{keys.clear();control.textContent=error.message; $('acquire').disabled=false;}});
     function clear() {
+      choice=null;
       keys.clear();
       $('keys').textContent='0x00';
       if(pump.active || pump.inflight) pump.clear();
@@ -128,9 +139,25 @@
       control.textContent='Waiting for board ACK…';
     });
     $('release').addEventListener('click',clear);
+    function choose(opcode,level) {
+      if(document.hidden || !document.hasFocus() || gameSending || choice) return;
+      keys.clear();pump.update(0,keys.action);
+      requestId=(requestId+1)>>>0;if(!requestId) requestId=1;
+      choice={opcode,level,request_id:requestId,deadline:performance.now()+2000};
+      if(!pump.active) {pump.acquire();$('acquire').disabled=true;}
+      $('game-status').textContent='正在获取控制并等待开发板确认…';
+    }
+    for(let level=1;level<=4;level++) $('level-'+level).addEventListener('click',()=>choose('start',level));
+    $('reselect').addEventListener('click',()=>choose('menu',0));
     document.addEventListener('keydown',event=>{
       if(!pump.active || event.ctrlKey || event.metaKey || event.altKey || !MAP[event.code]) return;
+      const gv=lastView?gameView(lastView):null;
+      if(gv?.supported && (gv.phase!=='play' || gv.pending || choice || gameSending || performance.now()<restartUntil)) return;
       event.preventDefault(); if(keys.press(event.code)) pump.update(keys.mask,keys.action);
+      if(event.code==='KeyR' && gv?.supported) {
+        keys.clear();restartUntil=performance.now()+100;
+        setTimeout(()=>{if(pump.active)pump.update(0,keys.action);},100);
+      }
       $('keys').textContent='0x'+keys.mask.toString(16).padStart(2,'0');
     });
     document.addEventListener('keyup',event=>{
@@ -153,7 +180,7 @@
       const row=document.createElement('tr'); const label=document.createElement('th');const value=document.createElement('td');
       label.textContent=name; value.id='metric-'+name;value.textContent='Unavailable';row.append(label,value);table.append(row);
     }
-    const history=[];let lastView=null;let streamFailed=false;
+    const history=[];let lastView=null;let streamFailed=false,lastPhase=null,lastGameState=null;
     const freshness=new TelemetryFreshness();
     function draw() {
       const canvas=$('chart'),ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
@@ -171,6 +198,11 @@
     const events=new EventSource('/api/events');
     events.onmessage=event=>{
       const view=JSON.parse(event.data);lastView=view;streamFailed=false;
+      const gv=gameView(view);
+      if(gv.phase!==lastPhase || gv.pending || view.game?.state!==lastGameState) {
+        keys.clear();if(pump.active)pump.update(0,keys.action);
+        lastPhase=gv.phase;lastGameState=view.game?.state;
+      }
       freshness.observe(view,performance.now());
       const t=view.telemetry;
       if(t && samples.add(t,new Date().toISOString())) {
@@ -191,6 +223,26 @@
     setInterval(()=>{
       const ages=freshness.view(performance.now());
       const stale=!lastView || lastView.stale || ages.stale || streamFailed;
+      const gv=gameView(lastView || {stale:true});
+      $('difficulty-options').hidden=gv.phase==='play';
+      $('current-difficulty').textContent=gv.level?'当前难度 '+gv.level+' · '+[64,128,256,512][gv.level-1]+' Sprite 请求档位':'';
+      $('reselect').disabled=!gv.canMenu || stale || !!choice || gameSending;
+      for(let level=1;level<=4;level++) $('level-'+level).disabled=!gv.canStart || stale || !!choice || gameSending;
+      if(choice && performance.now()>=choice.deadline) {choice=null;$('game-status').textContent='请求超时，状态未知；等待真实板端状态。';}
+      if(choice && !gameSending && !stale && lastView.acknowledged && pump.active && gv.supported) {
+        const selected=choice;gameSending=true;
+        fetch('/api/game',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,client,
+          opcode:selected.opcode,level:selected.level,request_id:selected.request_id})})
+          .then(async response=>{if(!response.ok)throw new Error('操作未接受 ('+response.status+')');
+            await response.json();$('game-status').textContent='命令已提交，等待执行确认与新场景快照…';})
+          .catch(error=>{$('game-status').textContent=error.message;})
+          .finally(()=>{if(choice===selected)choice=null;gameSending=false;});
+      } else if(!choice && !gameSending) {
+        const state=lastView?.game?.state;
+        $('game-status').textContent=stale?'开发板状态过期，不能开始新局':!gv.supported?'当前固件不支持难度菜单（原键盘仍可用）':
+          state==='unknown'?'请求结果未知；以下界面以真实板端快照为准':state==='rejected'?'板端拒绝操作，请按当前状态重试':
+          gv.pending?'等待板端执行确认与新快照…':gv.phase==='menu'?'请选择难度，游戏逻辑由 Sapphire 执行':'键盘控制飞机；死亡自动回到难度选择';
+      }
       banner.className=stale?'warning':'healthy';
       banner.textContent=(simulated?'SIMULATED — not board measurements. ':'')+
         (stale?'Telemetry stale / unavailable':'Telemetry current')+
@@ -206,7 +258,7 @@
     },100);
   }
 
-  const api={ControlPump,KeyboardState,SnapshotBuffer,TelemetryFreshness,formatValue};
+  const api={ControlPump,KeyboardState,SnapshotBuffer,TelemetryFreshness,formatValue,gameView};
   if(typeof module!=='undefined' && module.exports) module.exports=api;
   if(typeof document!=='undefined') document.addEventListener('DOMContentLoaded',boot);
   root.AetherGXDashboard=api;

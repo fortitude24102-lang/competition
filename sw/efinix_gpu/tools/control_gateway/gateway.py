@@ -38,12 +38,49 @@ class GatewayState:
         self.telemetry_time = 0.0
         self.drops = 0
         self.simulated = simulated
+        self.game_request = None
+        self.last_keys = float('-inf')
+
+    def _cancel_game(self):
+        g=self.game_request
+        if g and g['state'] in ('pending','await_snapshot'): g['state']='unknown'
+
+    def _game_timeout(self, now):
+        g=self.game_request
+        if g and now-g['created'] >= 2: self._cancel_game()
+
+    def _confirm_game(self):
+        g=self.game_request; t=self.telemetry
+        if (g and g['state']=='await_snapshot' and t and t.session==g['session']
+                and p.newer(t.sequence,g['snapshot_floor'])): g['state']='applied'
+
+    def game(self, client, opcode, level, request_id, now=None):
+        now=time.monotonic() if now is None else now
+        if (opcode not in ('start','menu') or type(level) is not int or
+                type(request_id) is not int or not 1<=request_id<=0xffffffff or
+                not (opcode=='start' and 1<=level<=4 or opcode=='menu' and level==0)): return 400
+        with self.lock:
+            self._expire(now);self._game_timeout(now)
+            if self.owner!=client: return 409
+            t=self.telemetry
+            if not self.acknowledged or t is None or now-self.telemetry_time>=STALE or not t.words[21]&(1<<11): return 503
+            g=self.game_request
+            if g and g['session']==self.session and g['request_id']==request_id:
+                return 202 if (g['opcode'],g['level'])==(opcode,level) else 409
+            if g and g['state'] in ('pending','await_snapshot'): return 409
+            if g and g['session']==self.session and not p.newer(request_id,g['request_id']): return 409
+            self.keys=0
+            self.game_request=dict(request_id=request_id,opcode=opcode,level=level,state='pending',
+                result=None,snapshot_floor=None,session=self.session,created=now,
+                last_attempt=float('-inf'),sequences=[])
+            return 202
 
     def _sequence(self):
         self.sequence = (self.sequence + 1) & 0xffffffff
         return self.sequence
 
     def _begin_session(self):
+        self._cancel_game()
         previous = self.session
         while self.session == previous or self.session == 0:
             self.session = secrets.randbits(32)
@@ -53,6 +90,7 @@ class GatewayState:
         self.telemetry_rebase_session = 0
 
     def _release(self):
+        self._cancel_game()
         if self.owner:
             self.clear_pending = p.encode(p.KEYS, self.session, self._sequence(), [0, self.action, 0])
         self.owner = None
@@ -61,6 +99,7 @@ class GatewayState:
         self.telemetry_rebase_session = 0
 
     def _expire(self, now):
+        self._game_timeout(now)
         if self.owner and now - self.heartbeat >= LEASE:
             self._release()
 
@@ -79,6 +118,7 @@ class GatewayState:
                 self._begin_session()
                 self.hello_ready = now
             self.keys, self.action, self.heartbeat = keys, action_sequence, now
+            if self.game_request and self.game_request['state'] in ('pending','await_snapshot'): self.keys=0
             return 200
 
     def next_packet(self, now=None):
@@ -112,7 +152,15 @@ class GatewayState:
                     self.hello_sent = True
                     packet = p.encode(p.HELLO, self.session, self.hello_sequence, [0, 0, 0])
                 else:
-                    packet = p.encode(p.KEYS, self.session, self._sequence(), [self.keys, self.action, 0])
+                    g=self.game_request
+                    # Reserve a zero KEYS heartbeat at least every 100 ms.
+                    if g and g['state']=='pending' and now-g['last_attempt']>=.05 and now-self.last_keys<.1:
+                        seq=self._sequence();g['last_attempt']=now;g['sequences'].append(seq)
+                        g['sequences']=g['sequences'][-40:]
+                        packet=p.encode(p.GAME,self.session,seq,[p.GAME_START if g['opcode']=='start' else p.GAME_MENU,g['level'],g['request_id']])
+                    else:
+                        packet = p.encode(p.KEYS, self.session, self._sequence(), [self.keys, self.action, 0])
+                        self.last_keys=now
             self.last_send = now
             return packet
 
@@ -136,6 +184,15 @@ class GatewayState:
                     if self.telemetry is not None and now - self.telemetry_time >= STALE:
                         self.telemetry_rebase_session = self.session
                     return True
+            elif packet.kind == p.GAME_ACK:
+                g=self.game_request
+                if (g and g['state']=='pending' and self.owner and self.acknowledged
+                        and packet.session==self.session==g['session']
+                        and packet.sequence in g['sequences'] and packet.words[0]==g['request_id']):
+                    g['result'],g['snapshot_floor']=packet.words[1:]
+                    g['state']='await_snapshot' if g['result']==0 else 'rejected'
+                    self._confirm_game()
+                    return True
             elif packet.kind == p.TELEMETRY:
                 old = self.telemetry
                 if packet.words[0] in self.retired_builds:
@@ -158,6 +215,7 @@ class GatewayState:
                     self.retired_builds.append(old.words[0])
                     self.retired_builds = self.retired_builds[-4:]
                 self.telemetry, self.telemetry_time = packet, now
+                self._confirm_game()
                 if packet.session == self.telemetry_rebase_session:
                     self.telemetry_rebase_session = 0
                 if self.owner and self.acknowledged and (packet.session == 0 or not packet.words[21] & (1 << 4)):
@@ -170,9 +228,12 @@ class GatewayState:
     def view(self, now=None):
         now = time.monotonic() if now is None else now
         with self.lock:
+            self._expire(now)
             t = self.telemetry
             age = None if t is None else max(0, round((now - self.telemetry_time) * 1000))
-            return dict(simulated=self.simulated, owned=self.owner is not None,
+            g=self.game_request
+            return dict(game=None if g is None else {k:g[k] for k in ('request_id','opcode','level','state','result','snapshot_floor')},
+                        simulated=self.simulated, owned=self.owner is not None,
                         acknowledged=self.acknowledged, session=self.session,
                         input_age_ms=None if not self.owner else max(0, round((now - self.heartbeat) * 1000)),
                         stale=t is None or now - self.telemetry_time >= STALE,
@@ -277,7 +338,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.valid_host() or self.headers.get('Origin') != 'http://' + self.app.authority:
             return self.reply(403, {'error': 'same origin required'})
-        if self.path != '/api/control':
+        if self.path not in ('/api/control','/api/game'):
             return self.reply(404, {'error': 'not found'})
         length = self.headers.get('Content-Length', '')
         if self.headers.get('Transfer-Encoding') or not length.isdecimal():
@@ -293,6 +354,12 @@ class Handler(BaseHTTPRequestHandler):
             if (not isinstance(token, str) or not re.fullmatch('[0-9a-f]{64}', token)
                     or not hmac.compare_digest(token, self.app.token)):
                 return self.reply(403, {'error': 'token required'})
+            client=obj.get('client')
+            if not isinstance(client, str) or not re.fullmatch('[0-9a-f]{32}', client): raise ValueError()
+            if self.path=='/api/game':
+                if set(obj)!={'token','client','opcode','level','request_id'}: raise ValueError()
+                status=self.app.state.game(client,obj['opcode'],obj['level'],obj['request_id'])
+                return self.reply(status,dict(accepted=status==202,game=self.app.state.view()['game']))
             if set(obj) != {'token', 'client', 'keys', 'action_sequence', 'release'}: raise ValueError()
             client, keys, action, release = (obj[k] for k in ('client', 'keys', 'action_sequence', 'release'))
             if not isinstance(client, str) or not re.fullmatch('[0-9a-f]{32}', client): raise ValueError()
