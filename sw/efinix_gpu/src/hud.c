@@ -122,12 +122,13 @@ int hud_comparison_text(const hud_comparison *m,char lines[HUD_COMPARISON_LINES]
   } else text(p,"--  RENDER MS --");
  }
  char *p=text(lines[2],m->gpu_active?"MODE GPU  ":"MODE CPU  ");
- if(m->v3_mode) p=text(p,m->v3_mode==1?"LIVE ":"REPLAY ");
+ if(m->v3_mode) p=text(p,m->v3_mode==4?"MENU ":m->v3_mode==1?"LIVE ":"REPLAY ");
  p=text(p,m->bullet_demo?"BULLETS ":"N ");
  p=number(p,m->sprites);
  if(m->bullet_demo && m->gameplay) { p=text(p," ALPHA "); p=number(p,m->alpha_commands); }
  p=text(p,"  NET "); text(p,m->network_ready?"READY":"FAIL FALLBACK");
- if(m->bullet_demo && m->gameplay) {
+ if(m->v3_mode==4) text(lines[3],"SELECT LEVEL ON WEB  GAME FPS UNAVAILABLE");
+ else if(m->bullet_demo && m->gameplay) {
   p=text(lines[3],"HP "); p=number(p,m->hp);
   p=text(p," SCORE "); p=number(p,m->score>999999u?999999u:m->score);
   p=text(p," GRAZE "); p=number(p,m->grazes>9999u?9999u:m->grazes);

@@ -1,6 +1,23 @@
 #ifndef V3_FRAME_STATS_H
 #define V3_FRAME_STATS_H
 #include <stdint.h>
+/* Game-only published results. Incomplete CPU replay never replaces a result. */
+typedef struct {
+ uint32_t cpu_fps,cpu_us,gpu_fps,gpu_us,pending_cpu_fps,pending_cpu_us,generation;
+ uint8_t menu,cpu_fresh;
+} v3_scene_metrics;
+static inline void v3_scene_metrics_transition(v3_scene_metrics *m,uint32_t generation,int menu) {
+ if(m->generation==generation)return;
+ if(m->menu && !menu)m->cpu_fps=m->cpu_us=0;
+ m->pending_cpu_fps=m->pending_cpu_us=m->gpu_fps=m->gpu_us=0;m->cpu_fresh=0;
+ m->generation=generation;m->menu=(uint8_t)(menu!=0);
+}
+static inline void v3_scene_metrics_cpu_done(v3_scene_metrics *m) {
+ if(m->pending_cpu_fps) {
+  m->cpu_fps=m->pending_cpu_fps;m->cpu_us=m->pending_cpu_us;m->cpu_fresh=1;
+ }
+ m->pending_cpu_fps=m->pending_cpu_us=0;
+}
 typedef struct {
  uint32_t frames,work_misses,cadence_misses,underflows,errors;
  uint32_t max_work_ticks,max_wall_ticks,max_log_ticks,min_visible,max_visible;

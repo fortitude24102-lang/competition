@@ -2,6 +2,14 @@
 #include <stdio.h>
 #include "v3_frame_stats.h"
 int main(void) {
+ v3_scene_metrics m={.cpu_fps=100,.gpu_fps=600,.cpu_fresh=1};
+ v3_scene_metrics_transition(&m,1,1);assert(m.cpu_fps==100 && !m.cpu_fresh && !m.gpu_fps);
+ v3_scene_metrics_transition(&m,2,0);assert(!m.cpu_fps);
+ m.pending_cpu_fps=110;m.pending_cpu_us=90000;assert(!m.cpu_fps);
+ v3_scene_metrics_transition(&m,3,1);assert(!m.pending_cpu_fps && !m.cpu_fps);
+ v3_scene_metrics_transition(&m,4,0);m.pending_cpu_fps=120;m.pending_cpu_us=80000;
+ v3_scene_metrics_cpu_done(&m);assert(m.cpu_fps==120 && m.cpu_us==80000 && m.cpu_fresh);
+ v3_scene_metrics_transition(&m,5,0);assert(m.cpu_fps==120 && !m.cpu_fresh); /* R same level */
  v3_frame_stats s={0};
  /* A17ms work frame misses its deadline even though old20ms test accepts it.
     Cadence gets half a period tolerance, never two-refresh30FPS acceptance. */
