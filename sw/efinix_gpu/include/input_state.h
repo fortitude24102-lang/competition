@@ -5,7 +5,7 @@ typedef struct {
     uint16_t held, pressed, released;
     /* Caller-owned bookkeeping. Initialize the whole object to zero. */
     uint32_t session, sequence, action_sequence;
-    uint8_t initialized, action_initialized;
+    uint8_t initialized, action_initialized,neutral;
 } game_input;
 
 /* Opposing directions cancel. Actions appear in pressed once for a new

@@ -121,9 +121,11 @@ static int accept(nc_device *d,const uint8_t *p,uint32_t age,uint32_t now) {
             d->game_pending=1;d->game_done=d->game_ack_pending=0;
         }
         d->input.keys=0; /* Do not interpret level as an R/C action counter. */
+        d->input.keys_snapshot=0;
     } else {
         d->input.action_sequence=be32(p+20);
         d->input.keys=(uint16_t)be32(p+16);
+        d->input.keys_snapshot=1;
     }
     d->input.sequence=sequence;
     d->input.age_ms=age;

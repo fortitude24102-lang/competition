@@ -7,7 +7,7 @@ void input_update(game_input *s,const nc_input *in) {
     if(!s) return;
     s->pressed=0; s->released=0;
     if(!in || !in->connected || !in->session || in->age_ms>V3_INPUT_LEASE_MS) {
-        s->released=s->held; s->held=0; s->initialized=0; s->action_initialized=0;
+        s->released=s->held; s->held=0; s->initialized=0; s->action_initialized=0;s->neutral=0;
         return;
     }
     if(s->initialized && s->session==in->session && !newer(in->sequence,s->sequence)) return;
@@ -27,4 +27,5 @@ void input_update(game_input *s,const nc_input *in) {
         s->action_initialized=1;
     }
     s->held=keys; s->session=in->session; s->sequence=in->sequence; s->initialized=1;
+    s->neutral=(uint8_t)(in->keys_snapshot && in->keys==0);
 }

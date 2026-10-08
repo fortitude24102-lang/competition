@@ -7,7 +7,7 @@
 typedef struct {
     uint32_t session, sequence, action_sequence, age_ms;
     uint16_t keys;
-    uint8_t connected;
+    uint8_t connected,keys_snapshot;
 } nc_input;
 
 /* Wire order is explicit in the serializer; no structure memcpy to packets. */

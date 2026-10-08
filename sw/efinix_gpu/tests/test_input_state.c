@@ -34,6 +34,14 @@ static void newly_pressed_action_does_not_repeat_other_held_action(void) {
 }
 
 int main(void) {
+    /* Only a valid raw zero KEYS snapshot proves neutral; normalization and
+       HELLO/GAME zero data are not a released keyboard. */
+    game_input neutral={0};nc_input zero={.session=7,.sequence=1,.connected=1};
+    input_update(&neutral,&zero);assert(!neutral.neutral);
+    zero.sequence=2;zero.keys_snapshot=1;zero.keys=V3_KEY_LEFT|V3_KEY_RIGHT;
+    input_update(&neutral,&zero);assert(!neutral.held && !neutral.neutral);
+    zero.sequence=3;zero.keys=0;input_update(&neutral,&zero);assert(neutral.neutral);
+    zero.age_ms=251;input_update(&neutral,&zero);assert(!neutral.neutral);
     newly_pressed_action_does_not_repeat_other_held_action();
     game_input a = {0}, b = {0};
     nc_input n = {.session=1, .sequence=UINT32_MAX-1u, .action_sequence=UINT32_MAX,
