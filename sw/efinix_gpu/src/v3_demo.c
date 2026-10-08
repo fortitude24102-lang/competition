@@ -5,6 +5,7 @@
 #include "benchmark.h"
 #include "game_menu.h"
 #include "v3_frame_stats.h"
+#include "render_phase_health.h"
 #include "bsp.h"
 #include "network_assets.h"
 #include "../assets/hud/hud_logo_catalog.h"
@@ -78,6 +79,9 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
 #if V3_PROBE_FRAMES
  v3_frame_stats stats={0};unsigned probe_frame=0;uint32_t previous_log=0;
  uint64_t probe_underflows=0;
+ gpu_perf_snapshot probe_initial;
+ e=gpu_read_perf_snapshot(gpu,&probe_initial);if(e)return 1;
+ probe_underflows=probe_initial.underflows;
  bsp_printf("V3_PROBE_START,warm=30,samples=%d,log_windows=1\r\n",V3_PROBE_FRAMES);
 #endif
  bsp_printf("V3_READY,build=%x,epoch=%x,network=%d,state=%x,mode=%s,count=%d\r\n",V3_BUILD_ID,V3_RESOURCE_EPOCH,network,V3_STATE_ADDRESS,runtime->menu_enabled?"MENU":"LIVE",runtime->menu_enabled?0:V3_START_COUNT);
@@ -148,6 +152,11 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   if(mode!=V3_MODE_LIVE) {e=GPU_DRIVER_ARGUMENT;break;} /* No mixed CPU/GPU sample. */
   gpu_perf_snapshot probe_after;
   e=gpu_read_perf_snapshot(gpu,&probe_after);if(e) break;
+  if(!render_phase_health_ok(probe_underflows,probe_after.underflows,gpu->hardware_error)) {
+   bsp_printf("V3_PROBE_HEALTH_FAIL,frame=%d,warmup=%d,under_before=%d,under_after=%d,hardware=%d\r\n",
+    probe_frame,probe_frame<30u,(uint32_t)probe_underflows,(uint32_t)probe_after.underflows,gpu->hardware_error);
+   e=GPU_DRIVER_HARDWARE;break;
+  }
   if(probe_frame++>=30u)
    v3_frame_stats_add(&stats,BSP_CLINT_HZ,(uint32_t)work_ticks,(uint32_t)wall,
     previous_log,(uint32_t)(probe_after.underflows-probe_underflows),gpu->hardware_error!=0,

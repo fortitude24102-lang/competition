@@ -8,6 +8,7 @@
 #include <limits.h>
 #include "submit_probe.h"
 #include "damage_acceptance.h"
+#include "render_phase_health.h"
 static uint64_t probe_clock(void) { return gpu_platform_cycles(); }
 #define PHASE_SAMPLES 300u
 #define GPU_CLOCK_HZ 100000000u
@@ -33,7 +34,9 @@ static __attribute__((noinline)) int continuous(gpu_device *gpu,framebuffer_pair
  hud_comparison m={.bullet_demo=1,.gameplay=1,.gpu_active=1,.network_ready=1};
  perf_window window={0};
  for(unsigned i=0;i<PHASE_COUNT;i++) totals[i]=0;
- uint64_t previous=gpu_platform_cycles(),previous_under=0,read_bytes=0,write_bytes=0,cache_bytes=0;
+ gpu_perf_snapshot initial;
+ e=gpu_read_perf_snapshot(gpu,&initial); if(e) return e;
+ uint64_t previous=gpu_platform_cycles(),previous_under=initial.underflows,read_bytes=0,write_bytes=0,cache_bytes=0;
  unsigned commands=0,blocked_calls=0,min_visible=UINT_MAX,max_visible=0,missed=0,cadence_missed=0;
  for(unsigned frame=0;frame<30u+PHASE_SAMPLES;frame++) {
   uint64_t v[PHASE_COUNT]={0},t=gpu_platform_cycles();
@@ -69,6 +72,11 @@ static __attribute__((noinline)) int continuous(gpu_device *gpu,framebuffer_pair
   e=framebuffer_present(gpu,buffers,10000000u); if(e) return e;
   uint64_t end=gpu_platform_cycles(); v[PRESENT]=end-t; v[WALL]=end-previous; previous=end;
   e=gpu_read_perf_snapshot(gpu,&done); if(e) return e;
+  if(!render_phase_health_ok(previous_under,done.underflows,gpu->hardware_error)) {
+   bsp_printf("RENDER_HEALTH_FAIL,target=%d,frame=%d,warmup=%d,under_before=%d,under_after=%d,hardware=%d\r\n",
+    target,frame,frame<30,(uint32_t)previous_under,(uint32_t)done.underflows,gpu->hardware_error);
+   return GPU_DRIVER_HARDWARE;
+  }
   m.underflows=(uint32_t)done.underflows;
   if(frame>=30) {
    unsigned n=frame-30;

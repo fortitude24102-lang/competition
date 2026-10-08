@@ -19,6 +19,7 @@ try {
   @{name='game_menu';modules=@('game_menu','gpu');extra=@('-DGPU_TEST_BACKEND')}
   @{name='v3_menu_integration';modules=@('v3_demo','net_control','asset_protocol','v3_runtime','bullet_demo','interactive_game','replay_input');extra=@('-DNC_TEST_BACKEND','-Isw/efinix_gpu/tests/include')}
   @{name='v3_frame_stats';modules=@()},
+  @{name='render_phase_health';modules=@()},
   @{name='v3_capacity';modules=@('v3_runtime','bullet_demo','interactive_game','replay_input');extra=@('-DBULLET_OBJECT_CAPACITY=1024')},
   @{name='submit_validation';modules=@();extra=@('-finstrument-functions','-DGPU_SUBMIT_REVALIDATE=0')}
   @{name='submit_shadow';modules=@('gpu','bullet_demo');extra=@('-DGPU_TEST_BACKEND','-DGPU_SUBMIT_SHADOW=1')}
