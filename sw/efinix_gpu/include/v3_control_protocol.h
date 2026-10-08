@@ -8,6 +8,10 @@
 #define V3_PACKET_HELLO 1u
 #define V3_PACKET_KEYS 2u
 #define V3_PACKET_ACK 3u
+#define V3_PACKET_GAME 4u
+#define V3_PACKET_GAME_ACK 5u
+#define V3_GAME_START 1u
+#define V3_GAME_MENU 2u
 #define V3_PACKET_TELEMETRY 0x80u
 #define V3_CONTROL_BYTES 32u
 #define V3_TELEMETRY_BYTES 128u
@@ -37,6 +41,8 @@
 #define V3_STATUS_INVALID_COUNTS (UINT32_C(1) << 7)
 #define V3_STATUS_PAUSED (UINT32_C(1) << 8)
 #define V3_STATUS_ERROR_RECOVERY (UINT32_C(1) << 9)
+#define V3_STATUS_MENU (UINT32_C(1) << 10)
+#define V3_STATUS_GAME_MENU_CAPABLE (UINT32_C(1) << 11)
 #define V3_VALID_GPU_TIMING (UINT32_C(1) << 16)
 #define V3_VALID_CPU_FPS (UINT32_C(1) << 17)
 #define V3_VALID_PROBES (UINT32_C(1) << 18)
@@ -44,7 +50,7 @@
 #define V3_VALID_ERRORS (UINT32_C(1) << 20)
 #define V3_VALID_INPUT_NETWORK (UINT32_C(1) << 21)
 #define V3_VALID_ALPHA_KEY (UINT32_C(1) << 22)
-#define V3_STATUS_ALLOWED_MASK UINT32_C(0x007f03ff)
+#define V3_STATUS_ALLOWED_MASK UINT32_C(0x007f0fff)
 
 /* Offsets are relative to the existing GPU_APB_BASE, not a new base. */
 #define NC_ID_VALUE UINT32_C(0x4d475431)

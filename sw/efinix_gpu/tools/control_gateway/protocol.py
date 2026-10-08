@@ -3,8 +3,9 @@ from dataclasses import dataclass
 import struct
 import zlib
 
-HELLO, KEYS, ACK, TELEMETRY = 1, 2, 3, 0x80
-STATUS_ALLOWED = 0x007f03ff
+HELLO, KEYS, ACK, GAME, GAME_ACK, TELEMETRY = 1, 2, 3, 4, 5, 0x80
+GAME_START, GAME_MENU = 1, 2
+STATUS_ALLOWED = 0x007f0fff
 FIELDS = (
     'firmware_build_id', 'resource_epoch', 'simulation_tick', 'requested_sprites',
     'visible_sprites', 'gpu_full_frame_fps_x100', 'cpu_full_frame_fps_x100',
@@ -35,7 +36,7 @@ def _validate(kind, session, words):
     if kind == TELEMETRY:
         if len(words) != 27 or words[21] & ~STATUS_ALLOWED:
             raise ValueError('telemetry fields/reserved status flags')
-    elif kind not in (HELLO, KEYS, ACK) or len(words) != 3 or session == 0:
+    elif kind not in (HELLO, KEYS, ACK, GAME, GAME_ACK) or len(words) != 3 or session == 0:
         raise ValueError('control type/length/session')
     elif kind == HELLO and any(words):
         raise ValueError('HELLO reserved words')
@@ -43,6 +44,12 @@ def _validate(kind, session, words):
         raise ValueError('KEYS reserved bits')
     elif kind == ACK and tuple(words) != (1, 0, 0):
         raise ValueError('ACK must accept HELLO')
+    elif kind == GAME and (not words[2] or not (
+            words[0] == GAME_START and 1 <= words[1] <= 4 or
+            words[0] == GAME_MENU and words[1] == 0)):
+        raise ValueError('GAME opcode/level/request')
+    elif kind == GAME_ACK and (not words[0] or words[1] > 2):
+        raise ValueError('GAME_ACK request/result')
 
 
 def encode(kind, session, sequence, words):

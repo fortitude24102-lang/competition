@@ -161,7 +161,33 @@ module tb_net_control;
         repeat(10) @(negedge ge_clk);tx_done=1;@(negedge ge_clk);tx_done=0;
         repeat(30) @(negedge gpu_clk);apb(0,16'h031c,0,0,1,1);apb(0,16'h0304,0,0,4,1);
         apb(1,16'h0318,1,1,0,0);apb(0,16'h0304,0,0,12,1);
-        $display("PASS control router CRC reserved fields depth4 snapshot age async reset TX atomic128");$finish;
+        // GAME goes through the same router, CRC, depth-four FIFO and APB path.
+        old_accepted=accepted;
+        golden=256'h4147433101040020000000070000000900000001000000040000000b236caf84;
+        for(i=0;i<32;i=i+1) bytes[i]=golden[(31-i)*8+:8];send_bytes(32,32,31);
+        if(accepted!=old_accepted+1) $fatal(1,"valid GAME START lost");
+        apb(1,16'h0308,1,0,0,0);apb(0,16'h0330,0,0,32'h01000000,1);
+        apb(0,16'h0334,0,0,32'h04000000,1);apb(0,16'h0338,0,0,32'h0b000000,1);
+        apb(1,16'h030c,1,0,0,0);
+        make_control(4,10);bytes[19]=2;bytes[27]=12;seal_control();send_bytes(32,32,31);
+        if(accepted!=old_accepted+2) $fatal(1,"valid GAME MENU lost");
+        apb(1,16'h0308,1,0,0,0);apb(1,16'h030c,1,0,0,0);
+        old_accepted=accepted;
+        for(k=0;k<7;k=k+1) begin
+            make_control(4,11+k);bytes[19]=1;bytes[23]=1;bytes[27]=1;
+            case(k)
+                0: bytes[23]=0;
+                1: bytes[23]=5;
+                2: bytes[19]=3;
+                3: bytes[27]=0;
+                4: bytes[19]=2; // MENU level must be zero.
+                5: bytes[5]=5; // GAME_ACK is board TX only.
+                6: bytes[16]=1; // Full u32 opcode validation, not low byte.
+            endcase
+            seal_control();send_bytes(32,32,31);
+        end
+        if(accepted!=old_accepted) $fatal(1,"invalid GAME fields admitted");
+        $display("PASS control router CRC reserved fields GAME depth4 snapshot age async reset TX atomic128");$finish;
     end
     initial begin #1000000;$fatal(1,"control timeout");end
 endmodule

@@ -17,9 +17,14 @@ module control_udp_rx (
     wire [31:0] received_crc={buffer[231:224],buffer[239:232],buffer[247:240],rx_byte};
     wire hello=buffer[47:40]==1;
     wire keys=buffer[47:40]==2;
+    wire game=buffer[47:40]==4;
+    wire [31:0] opcode={buffer[135:128],buffer[143:136],buffer[151:144],buffer[159:152]};
+    wire [31:0] level={buffer[167:160],buffer[175:168],buffer[183:176],buffer[191:184]};
+    wire game_ok=buffer[223:192]!=0 &&
+        ((opcode==1 && level>=1 && level<=4) || (opcode==2 && level==0));
     wire fields_ok=buffer[31:0]==32'h31434741 && buffer[39:32]==1 &&
         buffer[63:48]==16'h2000 && ((hello && buffer[223:128]==0) ||
-        (keys && buffer[151:128]==0 && buffer[223:192]==0));
+        (keys && buffer[151:128]==0 && buffer[223:192]==0) || (game && game_ok));
     assign rx_ready=1'b1; // FIFO saturation never holds the shared receive RAM.
     always @(posedge clk or posedge reset) begin
         if(reset) begin buffer<=0;index<=0;draining<=0;bad_length<=0;crc<=32'hffffffff;first_ms<=0;packet<=0;packet_valid<=0;arrival_ms<=0;drop_count<=0;end

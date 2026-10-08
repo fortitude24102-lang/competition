@@ -26,6 +26,25 @@ def wire(kind, session=7, sequence=9, words=None):
 
 
 class ProtocolTest(unittest.TestCase):
+    def test_game_wire_contract(self):
+        import protocol as p
+        # Breaking GAME admission/field validation must fail this test.
+        packet = wire(4, words=[1, 4, 11])
+        self.assertEqual(p.decode(packet).words, (1, 4, 11))
+        self.assertEqual(p.encode(4, 7, 9, (1, 4, 11)), packet)
+        self.assertEqual(len(packet), 32)
+        for kind, words in [(4, [1, 1, 1]), (4, [2, 0, 2]),
+                            (5, [11, 0, 99]), (5, [11, 1, 0]), (5, [11, 2, 0])]:
+            self.assertEqual(p.decode(wire(kind, words=words)).words, tuple(words))
+        for kind, words in [(4, [1, 0, 1]), (4, [1, 5, 1]), (4, [2, 1, 1]),
+                            (4, [3, 0, 1]), (4, [1, 1, 0]), (5, [0, 0, 0]),
+                            (5, [11, 3, 0]), (6, [1, 1, 1])]:
+            with self.assertRaises(ValueError): p.decode(wire(kind, words=words))
+        for bad in [packet[:-1], packet+b'\0', packet[:-1]+bytes([packet[-1]^1])]:
+            with self.assertRaises(ValueError): p.decode(bad)
+        words = [0]*27; words[21] = 0x007f0fff
+        self.assertEqual(p.decode(wire(128, words=words)).words[21], 0x007f0fff)
+
     def test_deliverable_exists(self):
         self.assertIsNotNone(importlib.util.find_spec('protocol'), 'fixed packet codec missing')
 
