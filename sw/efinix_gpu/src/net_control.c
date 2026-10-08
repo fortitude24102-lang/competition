@@ -34,6 +34,7 @@ static int expire(nc_device *d,uint32_t now) {
     d->retired_session=d->input.session;
     d->input=(nc_input){.age_ms=UINT32_MAX};
     d->ack_pending=0;
+    d->game_pending=d->game_done=d->game_ack_pending=0;
     return 1;
 }
 
@@ -77,6 +78,11 @@ static int valid_packet(const uint8_t *p) {
        be32(p+28)!=asst_crc32(p,28)) return 0;
     if(p[5]==V3_PACKET_HELLO) return !(be32(p+16)|be32(p+20)|be32(p+24));
     if(p[5]==V3_PACKET_KEYS) return !(be32(p+16)&~(uint32_t)V3_KEY_MASK) && !be32(p+24);
+    if(p[5]==V3_PACKET_GAME) {
+        uint32_t op=be32(p+16),level=be32(p+20);
+        return be32(p+24) && ((op==V3_GAME_START && level>=1 && level<=4) ||
+                             (op==V3_GAME_MENU && level==0));
+    }
     return 0;
 }
 
@@ -93,6 +99,7 @@ static int accept(nc_device *d,const uint8_t *p,uint32_t age,uint32_t now) {
             d->input=(nc_input){.session=session,.sequence=sequence,.age_ms=age,.connected=1};
             d->received_ms=now-age;
             d->hello_sequence=sequence;
+            d->game_pending=d->game_done=d->game_ack_pending=0;
         }
         d->ack_session=session; d->ack_sequence=sequence; d->ack_pending=1;
         return 1;
@@ -102,9 +109,23 @@ static int accept(nc_device *d,const uint8_t *p,uint32_t age,uint32_t now) {
     /* Sequence freshness alone does not authorize a record captured before
        the current handshake/latest accepted state (e.g. a reset backlog). */
     if(arrival-d->received_ms>=UINT32_C(0x80000000)) return 0;
+    if(p[5]==V3_PACKET_GAME) {
+        uint32_t op=be32(p+16),level=be32(p+20),id=be32(p+24);
+        if((d->game_pending || d->game_done) && id==d->game.request_id) {
+            if(op!=d->game.opcode || level!=d->game.level) return 0;
+            d->game.sequence=sequence;
+            if(d->game_done) d->game_ack_pending=1;
+        } else {
+            if(d->game_pending || (d->game_done && !newer(id,d->game.request_id))) return 0;
+            d->game=(nc_game_command){session,sequence,op,level,id};
+            d->game_pending=1;d->game_done=d->game_ack_pending=0;
+        }
+        d->input.keys=0; /* Do not interpret level as an R/C action counter. */
+    } else {
+        d->input.action_sequence=be32(p+20);
+        d->input.keys=(uint16_t)be32(p+16);
+    }
     d->input.sequence=sequence;
-    d->input.action_sequence=be32(p+20);
-    d->input.keys=(uint16_t)be32(p+16);
     d->input.age_ms=age;
     d->received_ms=arrival;
     return 1;
@@ -129,6 +150,25 @@ int nc_poll(nc_device *d,uint32_t now,nc_input *in) {
     return progress;
 }
 
+int nc_take_game(nc_device *d,nc_game_command *cmd) {
+    if(!d || !cmd) return NC_ERROR_ARGUMENT;
+    if(!d->ready) return NC_ERROR_UNAVAILABLE;
+    if(!d->game_pending) return 0;
+    *cmd=d->game;return 1;
+}
+void nc_discard_pending_telemetry(nc_device *d) {
+    if(d) d->telemetry_pending=0;
+}
+int nc_complete_game(nc_device *d,const nc_game_command *cmd,uint32_t result) {
+    if(!d || !cmd || result>2 || !d->ready || !d->input.connected || !d->game_pending ||
+       cmd->session!=d->input.session || cmd->session!=d->game.session ||
+       cmd->request_id!=d->game.request_id || cmd->opcode!=d->game.opcode || cmd->level!=d->game.level)
+        return NC_ERROR_ARGUMENT;
+    nc_discard_pending_telemetry(d);
+    d->game_result=result;d->game_floor=d->snapshot_id;
+    d->game_pending=0;d->game_done=d->game_ack_pending=1;
+    return 0;
+}
 static void header(uint8_t *p,uint32_t magic,unsigned type,unsigned length,uint32_t session,uint32_t seq) {
     put32(p,magic); p[4]=V3_PROTOCOL_VERSION; p[5]=(uint8_t)type;
     p[6]=(uint8_t)(length>>8); p[7]=(uint8_t)length;
@@ -155,18 +195,23 @@ int nc_try_publish(nc_device *d,const nc_telemetry *t,uint32_t now) {
     if(!d->ready) return NC_ERROR_UNAVAILABLE;
     if(t) { d->pending_telemetry=*t; d->telemetry_pending=1; }
     (void)expire(d,now);
-    if(!d->ack_pending && !d->telemetry_pending) return 0;
+    if(!d->ack_pending && !d->game_ack_pending && !d->telemetry_pending) return 0;
     uint32_t interval=d->publish_interval_ms;
     if(interval<V3_TELEMETRY_MIN_MS) interval=V3_TELEMETRY_MIN_MS;
-    if(!d->ack_pending && d->published && now-d->last_publish_ms<interval) return 0;
+    if(!d->ack_pending && !d->game_ack_pending && d->published && now-d->last_publish_ms<interval) return 0;
     /* Single-owner shadow buffer: a busy transmitter receives no writes. */
     if(!(rd(d,NC_REG_STATUS)&NC_STATUS_TX_READY)) return 0;
     uint8_t packet[128]={0}; unsigned length;
-    int is_ack=d->ack_pending;
+    int is_ack=d->ack_pending,is_game_ack=!is_ack && d->game_ack_pending;
     if(is_ack) {
         length=32;
         header(packet,V3_CONTROL_MAGIC,V3_PACKET_ACK,32,d->ack_session,d->ack_sequence);
         put32(packet+16,1); put32(packet+28,asst_crc32(packet,28));
+    } else if(is_game_ack) {
+        length=32;
+        header(packet,V3_CONTROL_MAGIC,V3_PACKET_GAME_ACK,32,d->game.session,d->game.sequence);
+        put32(packet+16,d->game.request_id);put32(packet+20,d->game_result);
+        put32(packet+24,d->game_floor);put32(packet+28,asst_crc32(packet,28));
     } else {
         length=128;
         telemetry_packet(packet,&d->pending_telemetry,d->input.connected?d->input.session:0,d->snapshot_id+1);
@@ -179,6 +224,7 @@ int nc_try_publish(nc_device *d,const nc_telemetry *t,uint32_t now) {
     nc_io_fence(); wr(d,NC_REG_TX_COMMIT,1); nc_io_fence();
     if(rd(d,NC_REG_STATUS)&NC_STATUS_TX_ERROR) return NC_ERROR_HARDWARE;
     if(is_ack) d->ack_pending=0;
+    else if(is_game_ack) d->game_ack_pending=0;
     else {
         d->telemetry_pending=0; d->published=1;
         d->last_publish_ms=now; ++d->snapshot_id;

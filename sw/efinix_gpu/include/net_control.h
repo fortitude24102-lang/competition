@@ -25,6 +25,9 @@ typedef struct {
 
 enum { NC_ERROR_ARGUMENT = -1, NC_ERROR_UNAVAILABLE = -2,
        NC_ERROR_HARDWARE = -3 };
+typedef struct {
+    uint32_t session,sequence,opcode,level,request_id;
+} nc_game_command;
 
 typedef struct {
     uintptr_t base;
@@ -35,6 +38,9 @@ typedef struct {
     uint32_t last_publish_ms, publish_interval_ms;
     uint32_t rejected_packets;
     uint8_t ready, ack_pending, telemetry_pending, published;
+    nc_game_command game;
+    uint32_t game_result,game_floor;
+    uint8_t game_pending,game_done,game_ack_pending;
 } nc_device;
 
 /* apb_base is the GPU block base. Zero selects GPU_APB_BASE.
@@ -46,4 +52,9 @@ typedef struct {
 int nc_init(nc_device *device, uintptr_t apb_base);
 int nc_poll(nc_device *device, uint32_t now_ms, nc_input *input);
 int nc_try_publish(nc_device *device, const nc_telemetry *telemetry, uint32_t now_ms);
+/* A taken command remains in the bounded slot until complete. Completion is
+ * local/nonblocking; TX retries never cause the runtime operation to repeat. */
+int nc_take_game(nc_device *device,nc_game_command *command);
+int nc_complete_game(nc_device *device,const nc_game_command *command,uint32_t result);
+void nc_discard_pending_telemetry(nc_device *device);
 #endif

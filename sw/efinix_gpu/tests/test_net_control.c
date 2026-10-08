@@ -212,8 +212,64 @@ static void telemetry_latest_atomic_and_rate(void) {
     CHECK(nc_try_publish(&d,NULL,99)>0); /* time wrap */
     CHECK(nc_try_publish(NULL,&t,1)<0);
 }
+static void game_packet(uint32_t seq,uint32_t op,uint32_t level,uint32_t id,uint32_t age) {
+    enqueue(4,7,seq,op,level,age);
+    uint8_t *p=hw.rx[(hw.head+hw.count-1)%16].bytes;
+    be(p+24,id); be(p+28,crc(p,28));
+}
+static void test_game_exactly_once(void) {
+    nc_device d; nc_input in; nc_game_command cmd;
+    reset(); CHECK(!nc_init(&d,0));
+    enqueue(1,7,1,0,0,0); enqueue(2,7,2,16,42,0);
+    CHECK(nc_poll(&d,1,&in)>0);
+    /* Independent shared wire fixture, no driver serializer on the RX side. */
+    from_hex(hw.rx[hw.head].bytes,"4147433101040020000000070000000900000001000000040000000b236caf84");
+    hw.rx[hw.head].age=0; hw.count=1;
+    CHECK(nc_poll(&d,2,&in)>0 && !in.keys && in.action_sequence==42 && in.sequence==9);
+    CHECK(nc_take_game(&d,&cmd)==1 && cmd.session==7 && cmd.sequence==9);
+    CHECK(cmd.opcode==1 && cmd.level==4 && cmd.request_id==11);
+    CHECK(nc_try_publish(&d,NULL,2)>0 && hw.sent[5]==3); /* HELLO first */
+    hw.tx_ready=1; CHECK(!nc_try_publish(&d,NULL,2)); /* not executed yet */
+    d.snapshot_id=99;
+    nc_telemetry old={.requested_sprites=64}; hw.tx_ready=0;
+    CHECK(!nc_try_publish(&d,&old,3));
+    CHECK(nc_complete_game(&d,&cmd,0)==0 && !d.telemetry_pending && d.snapshot_id==99);
+    hw.tx_ready=1; CHECK(nc_try_publish(&d,NULL,3)>0 && hw.sent[5]==5);
+    CHECK(read_be(hw.sent+12)==9 && read_be(hw.sent+16)==11);
+    CHECK(read_be(hw.sent+20)==0 && read_be(hw.sent+24)==99 && read_be(hw.sent+28)==crc(hw.sent,28));
+    game_packet(10,1,4,11,0); CHECK(nc_poll(&d,4,&in)>0);
+    CHECK(nc_take_game(&d,&cmd)==0);
+    hw.tx_ready=1; CHECK(nc_try_publish(&d,NULL,4)>0 && read_be(hw.sent+12)==10);
+    unsigned rejected=d.rejected_packets;
+    game_packet(11,1,3,11,0); game_packet(12,1,4,10,0);
+    CHECK(nc_poll(&d,5,&in)>0 && d.rejected_packets==rejected+2 && in.sequence==10);
+    game_packet(13,2,0,12,0); CHECK(nc_poll(&d,6,&in)>0 && nc_take_game(&d,&cmd)==1);
+    game_packet(14,1,1,13,0); CHECK(nc_poll(&d,7,&in)>0 && nc_take_game(&d,&cmd)==1 && cmd.request_id==12);
+    CHECK(nc_complete_game(&d,&cmd,1)==0);
+    hw.tx_ready=1; nc_telemetry menu={.status_flags=0x0d00};
+    CHECK(nc_try_publish(&d,&menu,8)>0 && hw.sent[5]==5 && read_be(hw.sent+20)==1);
+    hw.tx_ready=1; CHECK(nc_try_publish(&d,NULL,9)>0 && hw.sent[5]==128 && read_be(hw.sent+12)==100);
+}
+static void test_game_session_expiry(void) {
+    nc_device d; nc_input in; nc_game_command cmd;
+    reset(); CHECK(!nc_init(&d,0)); enqueue(1,7,1,0,0,0); nc_poll(&d,0,&in);
+    game_packet(2,1,1,1,251); nc_poll(&d,1,&in); CHECK(!nc_take_game(&d,&cmd));
+    game_packet(2,1,1,1,0); nc_poll(&d,2,&in); CHECK(nc_take_game(&d,&cmd)==1);
+    nc_poll(&d,253,&in); CHECK(!nc_take_game(&d,&cmd));
+    CHECK(nc_complete_game(&d,&cmd,0)<0 && !d.input.connected);
+    enqueue(1,8,1,0,0,0); nc_poll(&d,254,&in);
+    hw.tx_ready=1; CHECK(nc_try_publish(&d,NULL,254)>0 && hw.sent[5]==3 && read_be(hw.sent+8)==8);
+    hw.tx_ready=1; CHECK(!nc_try_publish(&d,NULL,254));
+    reset(); CHECK(!nc_init(&d,0)); enqueue(1,7,UINT32_MAX-2u,0,0,0); nc_poll(&d,0,&in);
+    game_packet(UINT32_MAX-1u,1,1,UINT32_MAX,0); nc_poll(&d,1,&in);
+    CHECK(nc_take_game(&d,&cmd)==1 && nc_complete_game(&d,&cmd,0)==0);
+    game_packet(0,2,0,1,0); nc_poll(&d,2,&in);
+    CHECK(nc_take_game(&d,&cmd)==1 && cmd.request_id==1 && nc_complete_game(&d,&cmd,0)==0);
+    CHECK(nc_take_game(NULL,&cmd)<0 && nc_take_game(&d,NULL)<0);
+}
 int main(void) {
     initialization(); reception_and_lease(); validation_and_budget(); telemetry_latest_atomic_and_rate(); golden_vectors();
+    test_game_exactly_once(); test_game_session_expiry();
     puts("PASS net_control: validation, handshake/session, lease/age, modular seq, max4RX, ACK priority, atomic latest128B, rate/busy");
     return 0;
 }
