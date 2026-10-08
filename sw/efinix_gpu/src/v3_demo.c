@@ -58,6 +58,13 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
 #endif
  if(e) return 1;
  e=gpu_set_qos(gpu,256,1536,1);if(e) return 1;
+ /* Scanout starts only after PRESENT. Establish a complete blank front
+  * during initialization, before the logo fetch and render health baseline.
+  * Keep the pair in sync; no warmup/game frame or counter is discarded. */
+ overlay->commands[0]=(gpu_command){.op=GPU_OP_FILL,.dst_addr=buffers->back,
+  .dst_stride=GPU_FRAME_STRIDE,.width_pixels=GPU_FRAME_WIDTH,.height_pixels=GPU_FRAME_HEIGHT};
+ e=perf_render_gpu(gpu,overlay->commands,1,V3_POLLS);if(e)return 1;
+ e=framebuffer_present(gpu,buffers,V3_POLLS);if(e)return 1;
  /* Optional decoration: a failed/missing mark must not break the game or
   * validate partial DDR. Fetch before sampling; no per-frame resource I/O. */
  hud_set_logo_enabled(0);
@@ -74,7 +81,11 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  perf_window window={0};v3_scene_metrics results={0};game_menu_cache menu_cache={0};
  uint32_t last_report=0,under_delta=0,miss_delta=0,last_drops=0,last_rejected=0;
  uint64_t previous_present=gpu_platform_cycles(),previous_logic=previous_present;
- uint64_t sampled_underflows=0;
+ gpu_perf_snapshot initial;
+ e=gpu_read_perf_snapshot(gpu,&initial);if(e)return 1;
+ uint64_t sampled_underflows=initial.underflows;
+ bsp_printf("V3_COUNTER_BASELINE,under_lo=%d,under_hi=%d\r\n",
+  (uint32_t)initial.underflows,(uint32_t)(initial.underflows>>32));
  uint8_t previous_mode=V3_MODE_LIVE;unsigned frame=0;
 #if V3_PROBE_FRAMES
  v3_frame_stats stats={0};unsigned probe_frame=0;uint32_t previous_log=0;

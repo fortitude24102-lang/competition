@@ -80,9 +80,11 @@ try {
   & D:/efinity/risc_v_gcc/openocd/bin/openocd.exe -f ftdi_ti.cfg -f debug_ti.cfg -c "init; reset halt; load_image {$binPath} 0x1000 bin; resume 0x1000; shutdown"
   if($LASTEXITCODE -ne 0) {throw 'JTAG firmware failed'}
  } finally {Pop-Location}
- Wait { $tail -match 'V3_READY,build=20261008.*mode=MENU' -and !$state.stale -and $state.telemetry.raw.firmware_build_id -eq 0x20261008 -and ($state.telemetry.raw.status_flags -band 3072) -eq 3072 } 90 'new MENU startup'
  $null=Post '/api/control' @{token=$boot.token;client=$client;keys=0;action_sequence=0;release=$false}
  $acquired=$true
+ # Explicit HELLO before waiting for telemetry: a same-build hot reload resets
+ # snapshot_id; only a fresh session ACK permits the gateway to rebase it.
+ Wait { $tail -match 'V3_READY,build=20261008.*mode=MENU' -and !$state.stale -and $state.acknowledged -and $state.telemetry.session -eq $state.session -and $state.telemetry.raw.firmware_build_id -eq 0x20261008 -and ($state.telemetry.raw.status_flags -band 3072) -eq 3072 } 90 'new MENU startup'
  Wait {$state.acknowledged -and !$state.stale -and $state.telemetry.session -eq $state.session} 3 'control ownership ACK'
  foreach($level in 1..4) {
   Game 'start' $level

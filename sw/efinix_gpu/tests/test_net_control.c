@@ -267,9 +267,25 @@ static void test_game_session_expiry(void) {
     CHECK(nc_take_game(&d,&cmd)==1 && cmd.request_id==1 && nc_complete_game(&d,&cmd,0)==0);
     CHECK(nc_take_game(NULL,&cmd)<0 && nc_take_game(&d,NULL)<0);
 }
+static void telemetry_cannot_cross_handshake(void) {
+    nc_device d; nc_input in;
+    reset(); CHECK(!nc_init(&d,0));
+    nc_telemetry observer={.status_flags=V3_STATUS_GAME_MENU_CAPABLE};
+    hw.tx_ready=0; CHECK(!nc_try_publish(&d,&observer,0));
+    enqueue(1,7,1,0,0,0); CHECK(nc_poll(&d,1,&in)>0);
+    hw.tx_ready=1; CHECK(nc_try_publish(&d,NULL,1)>0 && hw.sent[5]==3);
+    hw.tx_ready=1;
+    /* A queued disconnected snapshot must not acquire the newly ACKed session
+       header: the gateway would interpret its flags as a lost board lease. */
+    CHECK(!nc_try_publish(&d,NULL,201) && hw.commits==1);
+    nc_telemetry active={.status_flags=V3_STATUS_CONTROL_CONNECTED|V3_STATUS_GAME_MENU_CAPABLE};
+    CHECK(nc_try_publish(&d,&active,202)>0 && hw.sent[5]==128);
+    CHECK(read_be(hw.sent+8)==7 && (read_be(hw.sent+100)&V3_STATUS_CONTROL_CONNECTED));
+}
 int main(void) {
     initialization(); reception_and_lease(); validation_and_budget(); telemetry_latest_atomic_and_rate(); golden_vectors();
     test_game_exactly_once(); test_game_session_expiry();
+    telemetry_cannot_cross_handshake();
     puts("PASS net_control: validation, handshake/session, lease/age, modular seq, max4RX, ACK priority, atomic latest128B, rate/busy");
     return 0;
 }

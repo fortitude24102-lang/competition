@@ -100,6 +100,9 @@ static int accept(nc_device *d,const uint8_t *p,uint32_t age,uint32_t now) {
             d->received_ms=now-age;
             d->hello_sequence=sequence;
             d->game_pending=d->game_done=d->game_ack_pending=0;
+            /* A pre-handshake observer/retired-session snapshot cannot be
+               relabelled with this new session at serialization time. */
+            d->telemetry_pending=0;
         }
         d->ack_session=session; d->ack_sequence=sequence; d->ack_pending=1;
         return 1;

@@ -1,8 +1,10 @@
-param([string]$Out='generated/verification/v3/board-control-20261005',[switch]$Replay,[switch]$HoldAcrossReplay,
+param([string]$Out='generated/verification/v3/board-control-20261005',[switch]$Replay,[switch]$HoldAcrossReplay,[switch]$CancelReplay,
+ [ValidateRange(0,4)][int]$MenuLevel=0,[switch]$DeathReturn,
  [string]$SerialPort='COM13',[string]$Python='C:/efinity/efinity/python311/bin/python.exe')
 # Uses the already running candidate. No bitstream, firmware or Flash writes.
 $ErrorActionPreference='Stop'
-foreach($evidenceSuffix in @('.serial.log','.status.jsonl','.phases.json','.control-check.json')) {
+if(($CancelReplay -and (!$MenuLevel -or $Replay -or $DeathReturn)) -or ($DeathReturn -and (!$MenuLevel -or $Replay))) {throw 'Choose menu death, menu replay cancel, or replay completion separately'}
+foreach($evidenceSuffix in @('.serial.log','.status.jsonl','.phases.json','.control-check.json','.game.jsonl')) {
  if(Test-Path "$Out$evidenceSuffix") {throw 'Refusing to overwrite board evidence'}
 }
 New-Item -ItemType Directory -Force (Split-Path $Out) | Out-Null
@@ -15,6 +17,7 @@ $script:lastStatus=0
 $timer=[Diagnostics.Stopwatch]::StartNew()
 $script:phases=@()
 $script:phaseStart=0
+$script:lastAction=0
 function Capture {
  $chunk=$serial.ReadExisting()
  if($chunk) {
@@ -25,6 +28,7 @@ function Capture {
  }
  if($timer.ElapsedMilliseconds-$script:lastStatus -ge 200) {
   $status=Invoke-RestMethod "$url/api/status"
+  if(!$status.stale -and $status.telemetry -and ($status.telemetry.raw.scanout_underflow_delta -or $status.telemetry.raw.gpu_error_delta)) {throw 'Actual board health counter nonzero'}
   $entry=@{elapsed_ms=$timer.ElapsedMilliseconds;status=$status}|ConvertTo-Json -Depth 8 -Compress
   [IO.File]::AppendAllText("$Out.status.jsonl",$entry+"`n")
   $script:lastStatus=$timer.ElapsedMilliseconds
@@ -34,6 +38,7 @@ function Keys([int]$held,[int]$action=0,[bool]$release=$false) {
  $body=@{token=$token;client=$client;keys=$held;action_sequence=$action;release=$release}|ConvertTo-Json -Compress
  $reply=Invoke-RestMethod "$url/api/control" -Method Post -ContentType 'application/json' -Headers @{Origin=$url} -Body $body
  if(!$reply.accepted) {throw 'Control ownership rejected'}
+ $script:lastAction=$action
 }
 function Pump([int]$milliseconds,[int]$held=-1,[int]$action=0) {
  $end=$timer.ElapsedMilliseconds+$milliseconds
@@ -65,20 +70,39 @@ function Check-Phases {
   if($LASTEXITCODE -ne 0) {throw 'Per-phase RIGHT/UP/EXPIRE evidence failed'}
  } finally {$env:PYTHONHOME=$boardControlPriorPythonHome}
 }
+function Menu-Command([string]$opcode,[int]$level,[int]$request) {
+ $body=@{token=$token;client=$client;opcode=$opcode;level=$level;request_id=$request}|ConvertTo-Json -Compress
+ $null=Invoke-RestMethod "$url/api/game" -Method Post -ContentType 'application/json' -Headers @{Origin=$url} -Body $body
+ $deadline=$timer.Elapsed.TotalSeconds+3
+ do {
+  Pump 70 0 $script:lastAction
+  $status=Invoke-RestMethod "$url/api/status"
+  [IO.File]::AppendAllText("$Out.game.jsonl",($status|ConvertTo-Json -Depth 8 -Compress)+"`n")
+  if($status.game.request_id -eq $request -and $status.game.state -eq 'applied' -and !$status.stale) {return}
+ } while($timer.Elapsed.TotalSeconds -lt $deadline)
+ throw 'Real board game ACK/new snapshot deadline'
+}
 try {
  $serial.Open()
+ if($MenuLevel) {
+  Pump 700 0
+  $status=Invoke-RestMethod "$url/api/status"
+  if(!$status.acknowledged -or $status.stale -or $status.simulated -or !($status.telemetry.raw.status_flags -band 1024)) {throw 'Requires fresh real MENU and ownership ACK'}
+  Menu-Command 'start' $MenuLevel 1
+  Pump 150 0
+ }
  Pump 1200
  # A live game may already be GAME OVER. Verify movement from a fresh round,
  # not by changing gameplay's intentional death freeze. Action1 is restart.
  Pump 600 64 1
  Pump 100 0 1
  Begin-Phase 'RIGHT'
- Pump 1800 2 1
+ Pump $(if($MenuLevel -eq 4){2400}else{1800}) 2 1
  End-Phase 'RIGHT'
  $status=Invoke-RestMethod "$url/api/status"
  if(!$status.acknowledged -or $status.simulated) {throw 'No real FPGA HELLO ACK'}
  Begin-Phase 'UP'
- Pump 1500 4 1
+ Pump $(if($MenuLevel -eq 4){2400}else{1500}) 4 1
  End-Phase 'UP'
  # Deliberately stop browser heartbeats: latest keys must expire, not stick.
  Begin-Phase 'EXPIRE'
@@ -86,6 +110,36 @@ try {
  End-Phase 'EXPIRE'
  Check-Phases
  Write-Output 'PASS actual HTTP -> UDP -> FPGA -> Sapphire input, telemetry ACK, movement, lease release'
+ if($DeathReturn) {
+  if(!$MenuLevel -or $Replay) {throw 'DeathReturn requires MenuLevel and no replay'}
+  # Restart through the real input protocol, not an HP/state injection. The
+  # preceding movement test left the plane in a safe corner, unsuitable for
+  # checking natural collisions. Keep it at the ordinary spawn for this check.
+  Pump 200 64 2
+  Pump 100 0 2
+  $deadline=$timer.Elapsed.TotalSeconds+120
+  do {
+   Pump 100 0 2
+   $status=Invoke-RestMethod "$url/api/status"
+   if(!$status.stale -and ($status.telemetry.raw.status_flags -band 1024)) {break}
+  } while($timer.Elapsed.TotalSeconds -lt $deadline)
+  if($script:received -notmatch 'V3_SCENE,phase=MENU,level=\d+,count=0,generation=\d+,reason=1' -or !($status.telemetry.raw.status_flags -band 1024)) {throw 'Natural LIVE death/menu deadline; no HP injection'}
+  Write-Output 'PASS actual natural LIVE death returned MENU and synchronized telemetry'
+ }
+ if($CancelReplay) {
+  Pump 1500 128 2
+  $deadline=$timer.Elapsed.TotalSeconds+12
+  do {
+   Pump 100 0 2
+   $status=Invoke-RestMethod "$url/api/status"
+   if(!$status.stale -and ($status.telemetry.raw.status_flags -band 2)) {break}
+  } while($timer.Elapsed.TotalSeconds -lt $deadline)
+  if($status.stale -or !($status.telemetry.raw.status_flags -band 2)) {throw 'Actual board did not enter comparison'}
+  Menu-Command 'menu' 0 2
+  $status=Invoke-RestMethod "$url/api/status"
+  if(!($status.telemetry.raw.status_flags -band 1024) -or $status.telemetry.raw.cpu_full_frame_fps_x100 -ne 0 -or ($script:received -match 'V3_REPLAY,CPU_DONE')) {throw 'Cancel did not return MENU before a completed CPU score'}
+  Write-Output 'PASS actual C comparison cancelled by MENU without publishing partial CPU result'
+ }
  if($Replay) {
   $lastLive=[regex]::Matches($script:received,'V3_PERF,mode=0,tick=(\d+)')
   $liveTick=[uint32]$lastLive[$lastLive.Count-1].Groups[1].Value
@@ -109,6 +163,9 @@ try {
   Write-Output 'PASS CPU/GPU each600 recorded tick replay and LIVE restore; not a high-load qualification'
  }
 } finally {
+ if($MenuLevel) {
+  try {Pump 500 0 3;Menu-Command 'menu' 0 2} catch {Write-Warning 'MENU cleanup not confirmed; preserve capture'}
+ }
  try {Keys 0 3 $true} catch {Write-Warning 'Gateway release failed; 250ms FPGA lease still applies'}
  if($serial.IsOpen) {$serial.Close()};$serial.Dispose()
 }
