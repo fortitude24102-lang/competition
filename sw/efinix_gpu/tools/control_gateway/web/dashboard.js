@@ -141,7 +141,7 @@
     $('release').addEventListener('click',clear);
     function choose(opcode,level) {
       if(document.hidden || !document.hasFocus() || gameSending || choice) return;
-      keys.clear();pump.update(0,keys.action);
+      keys.clear();$('keys').textContent='0x00';pump.update(0,keys.action);
       requestId=(requestId+1)>>>0;if(!requestId) requestId=1;
       choice={opcode,level,request_id:requestId,deadline:performance.now()+2000};
       if(!pump.active) {pump.acquire();$('acquire').disabled=true;}
@@ -150,7 +150,7 @@
     for(let level=1;level<=4;level++) $('level-'+level).addEventListener('click',()=>choose('start',level));
     $('reselect').addEventListener('click',()=>choose('menu',0));
     document.addEventListener('keydown',event=>{
-      if(!pump.active || event.ctrlKey || event.metaKey || event.altKey || !MAP[event.code]) return;
+      if(!pump.active || event.repeat || event.ctrlKey || event.metaKey || event.altKey || !MAP[event.code]) return;
       const gv=lastView?gameView(lastView):null;
       if(gv?.supported && (gv.phase!=='play' || gv.pending || choice || gameSending || performance.now()<restartUntil)) return;
       event.preventDefault(); if(keys.press(event.code)) pump.update(keys.mask,keys.action);
@@ -200,7 +200,7 @@
       const view=JSON.parse(event.data);lastView=view;streamFailed=false;
       const gv=gameView(view);
       if(gv.phase!==lastPhase || gv.pending || view.game?.state!==lastGameState) {
-        keys.clear();if(pump.active)pump.update(0,keys.action);
+        keys.clear();$('keys').textContent='0x00';if(pump.active)pump.update(0,keys.action);
         lastPhase=gv.phase;lastGameState=view.game?.state;
       }
       freshness.observe(view,performance.now());

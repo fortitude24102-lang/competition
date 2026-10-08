@@ -16,10 +16,18 @@ GPU仍为100MHz旧有序后端；CPU绘图保持最基础原路径。菜单复�
 - 网络完整RTL入口 `scripts/test-v3-control-rtl.sh` 及实际APB/MAC glue集成通过。本轮不重复长时全系统仿真。
 - 正常RV32构建：text42464、data0、bss78956，另保留4096B栈，总125516≤126976，余1460B；未出现栈用量警告。构建无ProbeFrames/StartCount/ShadowSubmit，输出`generated/verification/v3/game_menu_20261008/normal/gpu_demo.bin`。基础裸机链接的RWX LOAD警告仍存在，不称已解决。
 - 整机候选`D:/efinity_builds/game_menu_20261008_r1`编译退出0，map/interface/pnr/pgm全PASS。core100MHz setup +1.450ns、hold +0.026ns；最终时钟关系setup/hold均正。LUT25297、FF25611、RAM10 142、DSP48 14＋DSP24 6。正式源清单与display_reset合格工程一致；GPU生成物/board_top/SDC/IP未改，唯网络control_udp_rx增加合法包字段检查，没有新增时钟域或CDC结构；映射警告差异仅日期。
+- 实际布线CDC门禁`test-net-resource-report.ps1 -RequireRouted`通过：1488数据、2请求、2确认路径全部覆盖，最长分别0.916/1.189/0.766ns，低于8ns；工具实际展开约束及全部16个最终setup/hold关系核对通过。整机XLR45130（74.23%），解析器785/1RAM，未以“CDC结构没改”代替布线检查。
 - 预热健康门禁：保留64位完整下溢计数，以已有计数为初始基线，30预热＋300采样每帧（含PRESENT及帧间）检查新增下溢/硬件错误，立即失败并保存帧日志；原诊断丢弃预热的限制已修。仅host验证此门禁，尚未重新实板四档跑分。
 - `scripts/test-game-menu-board-guards.ps1`离线通过，缺BIN/BIT、已有输出目录、非本机HTTP均在串口/JTAG之前拒绝。
+- 独立直接PLAY的四档300帧诊断固件分别链接通过（`probe-64/128/256/512`），text43240＋bss78956＋4096栈=126292，余684B，无栈用量警告，尚未板上执行；不覆盖正常MENU固件。另原A/B生命周期18轮600tick检查、遥测采集7项/输入证据15项及Node面板通过。
 
 一次Windows原生HTTP非法Origin用例出现WinError10053；单项重现与随后完整两次23用例均通过，未证实稳定根因，保留为主机侧间歇异常，不通过跳过用例掩盖，也不宣称修复。
+
+## 独立审查与修正
+
+一次独立只读整分支审查，无Critical。Important：浏览器清键后自动重复keydown可能再次触发R，或把切场景前按住的方向带回；真实Edge用例先复现R重复触发失败，再屏蔽`event.repeat`通过（既有心跳负责保持按键，不依赖keydown重复）。清键后的按键显示也同步为0，真实网络POST证明旧方向不重传，松开再按可恢复操作。正常新按键、四档菜单与原输入回归保持。
+
+两项低优先级留待后续：移动端<480px的卡片仍两列（媒体规则优先级问题）；当前host集成覆盖真实RX→runtime→ACK，但还没有把MENU→PLAY两缓冲绘制/PRESENT串成一项回归。分项命令检查和主循环源码支持背景恢复，不等同于该联合回归或实板无残影证明。
 
 ## 候选与整体回退
 

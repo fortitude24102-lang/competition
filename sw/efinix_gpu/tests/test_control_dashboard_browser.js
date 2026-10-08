@@ -42,6 +42,9 @@ async function main() {
     browser=await chromium.launch({headless:true,executablePath:process.env.GATEWAY_TEST_BROWSER || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
       args:['--disable-background-timer-throttling']});
     const page=await browser.newPage({viewport:{width:1280,height:1000}});
+    const controls=[];page.on('request',request=>{
+      if(request.method()==='POST' && request.url().endsWith('/api/control'))controls.push(request.postDataJSON());
+    });
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
     await page.goto(url);await page.waitForFunction(()=>document.querySelector('#banner').textContent.includes('SIMULATED'));
     // Clicking a level acquires zero-key control itself; no Acquire button required.
@@ -53,6 +56,15 @@ async function main() {
     });
     await until(async()=>(await(await fetch(url+'/api/status')).json()).game?.state==='applied');
     await page.waitForFunction(()=>document.querySelector('#current-difficulty').textContent.includes('难度 1'));
+    const rBegin=controls.length;
+    await page.keyboard.down('KeyR');
+    await until(()=>controls.slice(rBegin).some(c=>c.keys&64));
+    const rAction=controls.findLast(c=>c.keys&64).action_sequence;
+    await new Promise(r=>setTimeout(r,250));
+    await page.keyboard.down('KeyR'); /* Native repeat:true while still held. */
+    await new Promise(r=>setTimeout(r,250));
+    assert.ok(controls.slice(rBegin).every(c=>c.action_sequence===rAction),'held R must trigger only once');
+    await page.keyboard.up('KeyR');
     await page.keyboard.down('ArrowLeft');await page.keyboard.down('KeyA');await page.keyboard.up('ArrowLeft');
     assert.equal(await page.locator('#keys').textContent(),'0x01');
     // Actual DOM blur listener must zero the visible key state as well as release the gateway.
@@ -74,6 +86,20 @@ async function main() {
       await page.waitForFunction(l=>document.querySelector('#current-difficulty').textContent.includes('难度 '+l),level);
       await until(async()=>(await(await fetch(url+'/api/status')).json()).game?.state==='applied');
     }
+    await page.keyboard.down('ArrowRight');
+    assert.equal(await page.locator('#keys').textContent(),'0x02');
+    await page.locator('#reselect').click();
+    await page.waitForFunction(()=>!document.querySelector('#level-1').disabled);
+    await page.locator('#level-1').click();
+    await page.waitForFunction(()=>document.querySelector('#current-difficulty').textContent.includes('难度 1'));
+    await until(async()=>(await(await fetch(url+'/api/status')).json()).game?.state==='applied');
+    await page.keyboard.down('ArrowRight'); /* Repeat of a pre-menu physical press. */
+    await new Promise(r=>setTimeout(r,100));
+    assert.equal(controls.at(-1).keys,0,'old held direction is not retransmitted after START');
+    assert.equal(await page.locator('#keys').textContent(),'0x00','old held direction cannot resume after START');
+    await page.keyboard.up('ArrowRight');await page.keyboard.down('ArrowRight');
+    assert.equal(await page.locator('#keys').textContent(),'0x02','a new physical press still works');
+    await page.keyboard.up('ArrowRight');
     await page.locator('#reselect').click();
     await page.waitForFunction(()=>!document.querySelector('#difficulty-options').hidden && !document.querySelector('#level-1').disabled);
     await page.keyboard.press('ArrowLeft');assert.equal(await page.locator('#keys').textContent(),'0x00');
