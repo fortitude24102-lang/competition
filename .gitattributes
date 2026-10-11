@@ -10,4 +10,5 @@ docs/efinix_2d_gpu/evidence/bullet-demo-r4/* -text whitespace=cr-at-eol
 docs/efinix_2d_gpu/evidence/bullet-demo-r5/* -text whitespace=cr-at-eol
 docs/efinix_2d_gpu/evidence/bullet-demo-r6/* -text whitespace=cr-at-eol
 docs/efinix_2d_gpu/evidence/512_bottleneck_20261011/* -text whitespace=cr-at-eol
-docs/efinix_2d_gpu/evidence/copy_ahead_20261011/* -text whitespace=cr-at-eol
+# Raw native captures include diagnostic trailing/terminal blank lines.
+docs/efinix_2d_gpu/evidence/copy_ahead_20261011/* -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
