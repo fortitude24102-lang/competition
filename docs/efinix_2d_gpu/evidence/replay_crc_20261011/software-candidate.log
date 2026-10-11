@@ -46,7 +46,7 @@ test_snapshot_crc_order_wrap_stale_and_reset (__main__.StateTest) ... ok
 test_stale_then_fresh_ack_allows_one_new_session_reset_baseline (__main__.StateTest) ... ok
 
 ----------------------------------------------------------------------
-Ran 23 tests in 4.913s
+Ran 23 tests in 4.849s
 
 OK
 PASS requested V3 integration checks: SoftwareOnly=True RtlOnly=False. Not board qualification.
