@@ -119,17 +119,19 @@ int gpu_instance_expand(const gpu_instance_template *t,const gpu_instance *i,uin
   .height_pixels=(uint16_t)h,.color_key=(uint16_t)v->key,.alpha=(uint8_t)a,.tag=tag};
  return 0;
 }
-static int append(gpu_instance_stream *s,unsigned cap,unsigned id,uint32_t dst,
+typedef struct { gpu_instance *items;gpu_instance_stats *stats; } instance_output;
+static int append(instance_output *out,unsigned cap,unsigned id,uint32_t dst,
  unsigned offset,unsigned w,unsigned h,unsigned alpha) {
+ gpu_instance_stats *s=out->stats;
  if(s->count==cap) return GPU_DRIVER_FULL;
- s->items[s->count++]=(gpu_instance){{id|(id==1?256u:0)|(alpha<<16),dst,offset,gpu_pack_size((uint16_t)w,(uint16_t)h)}};
+ out->items[s->count++]=(gpu_instance){{id|(id==1?256u:0)|(alpha<<16),dst,offset,gpu_pack_size((uint16_t)w,(uint16_t)h)}};
  s->scene_pixels+=w*h;
  if(id==1) { ++s->alpha_commands; s->alpha_pixels+=w*h; }
  return 0;
 }
 /* R7 clipping/opacity decisions are kept byte-equivalent by600tick tests.
  * No old gpu_command is constructed then converted on this GPU-only path. */
-static int sprite(gpu_instance_stream *s,unsigned cap,uint32_t dst,unsigned id,
+static int sprite(instance_output *s,unsigned cap,uint32_t dst,unsigned id,
  int x,int y,unsigned size,unsigned alpha,int shape,int *visible) {
  *visible=0;
  if(x>=960 || x<=-(int)size || y>=540 || y<=72-(int)size) return 0;
@@ -148,34 +150,46 @@ static int sprite(gpu_instance_stream *s,unsigned cap,uint32_t dst,unsigned id,
  return e;
 }
 static int coordinate(int32_t q8) { int x=q8/256;return q8<0 && q8%256?x-1:x; }
-int gpu_instances_build(const bullet_state *s,uint32_t dst,int network,int glow,
- unsigned hud,unsigned cap,gpu_instance_stream *out) {
+int gpu_instances_build_into(const bullet_state *s,uint32_t dst,int network,int glow,
+ int manual,unsigned hud,unsigned cap,gpu_instance *items,gpu_instance_stats *out) {
  if(!out) return GPU_DRIVER_ARGUMENT;
  out->count=out->visible=out->scene_pixels=out->alpha_commands=out->alpha_pixels=0;
- if(!s || !s->count || s->count>BULLET_MAX_OBJECTS || !cap || cap>BULLET_MAX_COMMANDS ||
-  (network!=0 && network!=1) || (glow!=0 && glow!=1) || hud>=GPU_FRAME_HEIGHT ||
+ if(!s || !items || !s->count || s->count>BULLET_MAX_OBJECTS || !cap || cap>BULLET_MAX_COMMANDS ||
+  (network!=0 && network!=1) || (glow!=0 && glow!=1) || (manual!=0 && manual!=1) || hud>=GPU_FRAME_HEIGHT ||
   (dst!=GPU_FRAMEBUFFER_A && dst!=GPU_FRAMEBUFFER_B)) return GPU_DRIVER_ARGUMENT;
- int e=append(out,cap,0,dst+hud*GPU_FRAME_STRIDE,hud*GPU_FRAME_STRIDE,
+ instance_output target={items,out};
+ int e=append(&target,cap,0,dst+hud*GPU_FRAME_STRIDE,hud*GPU_FRAME_STRIDE,
   GPU_FRAME_WIDTH,GPU_FRAME_HEIGHT-hud,0),v;
  for(unsigned i=0;!e && glow && i<s->count;i+=8u) {
   const bullet_object *b=s->objects+i;
-  e=sprite(out,cap,dst,1,coordinate(b->x)-2,coordinate(b->y)-2,12,64+(s->tick%16u)*4,-1,&v);
+  if(manual && b->kind==3 && b->age==UINT16_MAX) continue;
+  e=sprite(&target,cap,dst,1,coordinate(b->x)-2,coordinate(b->y)-2,12,64+(s->tick%16u)*4,-1,&v);
  }
  for(unsigned i=0;!e && i<s->count;i++) {
   const bullet_object *b=s->objects+i;
-  if(b->kind>2 || b->shape>=BULLET_SHAPE_COUNT) {e=GPU_DRIVER_ARGUMENT;break;}
-  e=sprite(out,cap,dst,2u+b->shape,coordinate(b->x),coordinate(b->y),8,0,b->shape,&v);
+  if(b->kind>(manual?3:2) || b->shape>=BULLET_SHAPE_COUNT) {e=GPU_DRIVER_ARGUMENT;break;}
+  if(b->kind==3 && b->age==UINT16_MAX) continue;
+  e=sprite(&target,cap,dst,2u+b->shape,coordinate(b->x),coordinate(b->y),8,0,b->shape,&v);
   if(!e) out->visible+=(unsigned)v;
  }
- if(!e && glow && s->hp) e=sprite(out,cap,dst,1,s->player_x-6,s->player_y-6,12,s->invulnerable?192:64,-1,&v);
- if(!e && s->hp) e=sprite(out,cap,dst,8,s->player_x-8,s->player_y-8,16,0,-1,&v);
+ if(!e && glow && s->hp) e=sprite(&target,cap,dst,1,s->player_x-6,s->player_y-6,12,s->invulnerable?192:64,-1,&v);
+ if(!e && s->hp) e=sprite(&target,cap,dst,8,s->player_x-8,s->player_y-8,16,0,-1,&v);
  static const int centers[3][2]={{480,280},{240,100},{720,220}};
  unsigned warning=s->round_tick%60u;
  unsigned emitter_alpha=s->hp && warning>=44u?80+(warning-43u)*8:80;
  for(unsigned i=0;!e && i<3;i++) {
-  if(glow) e=sprite(out,cap,dst,1,centers[i][0]-6,centers[i][1]-6,12,emitter_alpha,-1,&v);
-  if(!e) e=sprite(out,cap,dst,9u+i,centers[i][0]-8,centers[i][1]-8,16,0,-1,&v);
+  if(glow) e=sprite(&target,cap,dst,1,centers[i][0]-6,centers[i][1]-6,12,emitter_alpha,-1,&v);
+  if(!e) e=sprite(&target,cap,dst,9u+i,centers[i][0]-8,centers[i][1]-8,16,0,-1,&v);
  }
  if(e) out->count=out->visible=out->scene_pixels=out->alpha_commands=out->alpha_pixels=0;
+ return e;
+}
+int gpu_instances_build(const bullet_state *s,uint32_t dst,int network,int glow,
+ unsigned hud,unsigned cap,gpu_instance_stream *out) {
+ if(!out) return GPU_DRIVER_ARGUMENT;
+ gpu_instance_stats stats;
+ int e=gpu_instances_build_into(s,dst,network,glow,0,hud,cap,out->items,&stats);
+ out->count=stats.count;out->visible=stats.visible;out->alpha_commands=stats.alpha_commands;
+ out->scene_pixels=stats.scene_pixels;out->alpha_pixels=stats.alpha_pixels;
  return e;
 }
