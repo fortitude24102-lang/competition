@@ -2,7 +2,7 @@
 #define EFINIX_REPLAY_INPUT_H
 #include "interactive_game.h"
 #define REPLAY_INPUT_TICKS 600u
-#define REPLAY_INPUT_VERSION 1u
+#define REPLAY_INPUT_VERSION 2u
 typedef struct {
  bullet_state initial;
  uint16_t keys[REPLAY_INPUT_TICKS];
