@@ -1,4 +1,4 @@
-param([string]$IcarusRoot='C:/iverilog',[switch]$SoftwareOnly,[switch]$RtlOnly)
+param([string]$IcarusRoot='C:/iverilog',[switch]$SoftwareOnly,[switch]$RtlOnly,[switch]$ReplayCrcNibble)
 $ErrorActionPreference='Stop'
 Push-Location (Split-Path $PSScriptRoot -Parent)
 try {
@@ -7,12 +7,14 @@ try {
  function Check([string]$name) {if($LASTEXITCODE -ne 0){throw "$name failed ($LASTEXITCODE)"}}
  $flags=@('-std=c11','-O2','-Wall','-Wextra','-Werror','-fsanitize=undefined',
   '-ffunction-sections','-fdata-sections','-Wl,--gc-sections','-Isw/efinix_gpu/include')
+ if($ReplayCrcNibble) {$flags+='-DREPLAY_CRC_NIBBLE=1'}
  $cases=@(
   @{name='net_control';modules=@('net_control','asset_protocol');extra=@('-DNC_TEST_BACKEND')},
   @{name='input_state';modules=@('input_state')},
   @{name='r7_frozen';modules=@('bullet_demo')},
   @{name='interactive_game';modules=@('bullet_demo','interactive_game')},
   @{name='input_replay';modules=@('bullet_demo','interactive_game','replay_input')},
+  @{name='replay_crc';modules=@('bullet_demo','interactive_game');extra=@('-DREPLAY_CRC_NIBBLE=1')},
   @{name='interactive_pixels';modules=@('bullet_demo','interactive_game','replay_input','golden_renderer','rgb565')},
   @{name='v3_runtime';modules=@('v3_runtime','bullet_demo','interactive_game','replay_input','input_state')},
   @{name='v3_hud';modules=@('hud')}

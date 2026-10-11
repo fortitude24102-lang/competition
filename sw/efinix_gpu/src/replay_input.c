@@ -1,12 +1,31 @@
 #include "replay_input.h"
 #include <string.h>
+#ifndef REPLAY_CRC_NIBBLE
+#define REPLAY_CRC_NIBBLE 0
+#endif
+#if REPLAY_CRC_NIBBLE != 0 && REPLAY_CRC_NIBBLE != 1
+#error "REPLAY_CRC_NIBBLE must be 0 or 1"
+#endif
 /* Canonical CRC covers logical fields, not compiler padding or pointer values.
  * Incremental words avoid allocating a serialized bullet_state on the stack. */
 static void crc_word(uint32_t *crc,uint32_t v) {
+#if REPLAY_CRC_NIBBLE
+ /* Reflected 0xedb88320, four zero-bit steps for each table entry.
+  * XOR the little-endian logical word once; eight nibbles consume it.
+  * ponytail: 64B table, not a 1KiB table in the nearly-full CPU RAM. */
+ static const uint32_t lut[16]={
+  0x00000000u,0x1db71064u,0x3b6e20c8u,0x26d930acu,
+  0x76dc4190u,0x6b6b51f4u,0x4db26158u,0x5005713cu,
+  0xedb88320u,0xf00f9344u,0xd6d6a3e8u,0xcb61b38cu,
+  0x9b64c2b0u,0x86d3d2d4u,0xa00ae278u,0xbdbdf21cu};
+ *crc^=v;
+ for(unsigned nibble=0;nibble<8;nibble++) *crc=(*crc>>4)^lut[*crc&15u];
+#else
  for(unsigned byte=0;byte<4;byte++) {
   *crc^=(v>>(byte*8u))&255u;
   for(unsigned bit=0;bit<8;bit++) *crc=(*crc>>1)^((*crc&1u)?0xedb88320u:0u);
  }
+#endif
 }
 static uint32_t checksum(const replay_recording *r) {
  uint32_t crc=UINT32_MAX;
