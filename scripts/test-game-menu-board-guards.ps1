@@ -13,4 +13,5 @@ Reject 'Missing BIN' @('-Bin',"$root/absent-game-menu.bin",'-OutDirectory',"$roo
 Reject 'Missing BIT' @('-Bin',$bin,'-LoadBit','-OutDirectory',"$root/generated/verification/v3/guard-unused")
 Reject 'Refusing to overwrite' @('-Bin',$bin,'-OutDirectory',"$root/generated/verification/v3")
 Reject 'local gateway' @('-Bin',$bin,'-GatewayUrl','http://example.com:8765','-OutDirectory',"$root/generated/verification/v3/guard-unused")
+Reject 'SerialPort.*does not match|Cannot validate argument.*SerialPort' @('-Bin',$bin,'-SerialPort','not-a-port','-OutDirectory',"$root/generated/verification/v3/guard-unused")
 'PASS offline board guards; no serial/JTAG opened'

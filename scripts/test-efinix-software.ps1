@@ -15,6 +15,7 @@ param(
     [switch]$FullSubmit,
     [ValidateRange(0,200000)][int]$ProbeFrames=0,
     [switch]$DetailProbe,
+    [switch]$CopyAhead,
     [ValidatePattern('^0x[0-9a-fA-F]{8}$')][string]$NetworkLocalIp = '0xc0a80002',
     [ValidatePattern('^0x[0-9a-fA-F]{8}$')][string]$NetworkPeerIp = '0xc0a80003',
     [switch]$PublishRelease
@@ -30,6 +31,7 @@ try {
     if ($ShadowSubmit -and $FullSubmit) {throw 'Choose one command-write path'}
     if ($OutDirectory -and $PublishRelease) {throw 'Separate candidate output cannot publish a release'}
     if ($DetailProbe -and (!$Interactive -or !$OutDirectory -or !$ProbeFrames)) {throw 'DetailProbe requires terminal Interactive ProbeFrames and fresh output'}
+    if ($CopyAhead -and (!$Interactive -or !$OutDirectory)) {throw 'CopyAhead requires separate Interactive candidate output'}
     if (($StartCount -or $ProbeFrames -or $ObjectCapacity -ne 512 -or $ValidateOnce -or $LegacyValidation -or $ShadowSubmit -or $FullSubmit) -and (!$Interactive -or !$OutDirectory)) { throw 'Interactive measurement options require a separate OutDirectory.' }
     $out = if($Interactive) {'generated/verification/v3/integration'} else {'generated/verification/efinix-software'}
     if($OutDirectory) {
@@ -102,6 +104,7 @@ try {
     if ($StartCount) { $profileFlag += "-DV3_START_COUNT=$StartCount" }
     if ($ProbeFrames) { $profileFlag += "-DV3_PROBE_FRAMES=$ProbeFrames" }
     if ($DetailProbe) { $profileFlag += '-DV3_DETAIL_PROBE=1' }
+    if ($CopyAhead) { $profileFlag += '-DV3_COPY_AHEAD=1' }
     $profileFlag += "-DBULLET_OBJECT_CAPACITY=$ObjectCapacity"
     if($ValidateOnce) {$profileFlag += '-DGPU_SUBMIT_REVALIDATE=0'}
     if($ShadowSubmit) {$profileFlag += '-DGPU_SUBMIT_SHADOW=1'}

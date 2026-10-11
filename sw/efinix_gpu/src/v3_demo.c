@@ -22,6 +22,10 @@
 #ifndef V3_DETAIL_PROBE
 #define V3_DETAIL_PROBE 0
 #endif
+#ifndef V3_COPY_AHEAD
+#define V3_COPY_AHEAD 0
+#endif
+#define V3_COPY_AHEAD_WORD 0x02d10000u /* Terminal probe only; JTAG selects 0/1. */
 #if V3_DETAIL_PROBE && !V3_PROBE_FRAMES
 #error "Detail timings are terminal diagnostic only"
 #endif
@@ -30,9 +34,37 @@ _Static_assert(V3_START_COUNT>=32 && V3_START_COUNT<=BULLET_MAX_OBJECTS,"start c
  * input and need no per-tick cache flush. This is not CPU rendering tuning. */
 _Static_assert(V3_STATE_ADDRESS>=HUD_GLYPH_ATLAS_ADDR+HUD_GLYPH_ATLAS_BYTES,"state/assets overlap");
 _Static_assert(V3_STATE_ADDRESS+sizeof(v3_runtime)<=GPU_DDR_END_EXCLUSIVE,"state DDR bound");
+_Static_assert(V3_STATE_ADDRESS+sizeof(v3_runtime)<=V3_COPY_AHEAD_WORD,"probe control/state overlap");
 static uint32_t work_samples[PERF_WINDOW_FRAMES];
 static uint32_t us(uint64_t ticks) {return (uint32_t)(ticks/(BSP_CLINT_HZ/1000000u));}
 static uint32_t now_ms(void) {return (uint32_t)(gpu_platform_cycles()/(BSP_CLINT_HZ/1000u));}
+#if V3_COPY_AHEAD
+static int copy_ahead_begin(gpu_device *gpu,uint32_t dst,int network,
+ gpu_command *background,uint16_t *tag,uint32_t polls) {
+ if(!background || (network!=0 && network!=1) ||
+    (dst!=GPU_FRAMEBUFFER_A && dst!=GPU_FRAMEBUFFER_B)) return GPU_DRIVER_ARGUMENT;
+ *background=(gpu_command){.op=GPU_OP_COPY,
+  .src_addr=(network?BULLET_BACKGROUND_ADDR:BULLET_LOCAL_BACKGROUND)+HUD_CACHE_HEIGHT*GPU_FRAME_STRIDE,
+  .dst_addr=dst+HUD_CACHE_HEIGHT*GPU_FRAME_STRIDE,.src_stride=GPU_FRAME_STRIDE,.dst_stride=GPU_FRAME_STRIDE,
+  .width_pixels=GPU_FRAME_WIDTH,.height_pixels=GPU_FRAME_HEIGHT-HUD_CACHE_HEIGHT};
+ /* Assets were fully synced before LIVE. No CPU modifies this source; do not
+  * flush the private game state before its builder merely to queue a Copy. */
+ return gpu_submit(gpu,background,polls,tag);
+}
+static int copy_ahead_finish(gpu_device *gpu,const gpu_command *background,
+ uint16_t tag,const bullet_stream *scene,uint32_t polls) {
+ if(!scene || !background || !scene->count || scene->count>BULLET_MAX_COMMANDS)
+  return GPU_DRIVER_ARGUMENT;
+ const gpu_command *c=scene->commands;
+ /* Compare semantic Copy fields, never compiler padding or ignored tag. A
+  * changed resource/layout must fail closed, not present or replay a partial frame. */
+ if(c->op!=GPU_OP_COPY || c->flags || c->src_addr!=background->src_addr ||
+    c->dst_addr!=background->dst_addr || c->src_stride!=background->src_stride ||
+    c->dst_stride!=background->dst_stride || c->width_pixels!=background->width_pixels ||
+    c->height_pixels!=background->height_pixels) return GPU_DRIVER_ARGUMENT;
+ return scene->count>1?perf_render_gpu(gpu,c+1,scene->count-1,polls):gpu_wait_tag(gpu,tag,polls);
+}
+#endif
 static uint32_t p95(unsigned n) {
  uint32_t sorted[PERF_WINDOW_FRAMES];
  for(unsigned i=0;i<n;i++) {
@@ -63,6 +95,14 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  e=v3_runtime_menu_init(runtime,7,V3_RESOURCE_EPOCH);
 #endif
  if(e) return 1;
+#if V3_COPY_AHEAD
+ #if V3_PROBE_FRAMES
+ int copy_ahead=*(volatile uint32_t *)(uintptr_t)V3_COPY_AHEAD_WORD==1u;
+ #else
+ int copy_ahead=1;
+ #endif
+ bsp_printf("V3_COPY_AHEAD,enabled=%d\r\n",copy_ahead);
+#endif
  e=gpu_set_qos(gpu,256,1536,1);if(e) return 1;
  /* Scanout starts only after PRESENT. Establish a complete blank front
   * during initialization, before the logo fetch and render health baseline.
@@ -135,6 +175,11 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
    bsp_printf("V3_SCENE,phase=%s,level=%d,count=%d,generation=%d,reason=%d\r\n",menu?"MENU":"PLAY",runtime->level,menu?0:runtime->game.count,runtime->scene_generation,runtime->menu_reason);
   }
   if(mode!=previous_mode) {window=(perf_window){0};frame=0;previous_mode=(uint8_t)mode;hud_cache->valid=0;if(mode==V3_MODE_CPU) {results.cpu_fresh=0;results.pending_cpu_fps=results.pending_cpu_us=0;}}
+#if V3_COPY_AHEAD
+  int ahead=copy_ahead && !menu && mode!=V3_MODE_CPU;
+  gpu_command background;uint16_t background_tag=0;
+  if(ahead) {e=copy_ahead_begin(gpu,buffers->back,network,&background,&background_tag,V3_POLLS);if(e)break;}
+#endif
   uint64_t build=gpu_platform_cycles();
   if(menu) {scene->count=scene->visible=scene->alpha_commands=scene->alpha_pixels=0;}
   else {
@@ -145,7 +190,11 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   gpu_platform_sync();uint64_t render_start=gpu_platform_cycles();
   e=menu?game_menu_draw(gpu,&menu_cache,buffers->back==GPU_FRAMEBUFFER_A?0u:1u,
    buffers->back,runtime->scene_generation,raw.connected,overlay,V3_POLLS):
-   mode==V3_MODE_CPU?perf_render_cpu(scene->commands,scene->count):perf_render_gpu(gpu,scene->commands,scene->count,V3_POLLS);
+   mode==V3_MODE_CPU?perf_render_cpu(scene->commands,scene->count):
+#if V3_COPY_AHEAD
+   ahead?copy_ahead_finish(gpu,&background,background_tag,scene,V3_POLLS):
+#endif
+   perf_render_gpu(gpu,scene->commands,scene->count,V3_POLLS);
   gpu_platform_sync();uint32_t render_us=us(gpu_platform_cycles()-render_start);if(e) break;
   metrics=(hud_comparison){.cpu_fps_x10=results.cpu_fps,.gpu_fps_x10=results.gpu_fps,.cpu_render_us=results.cpu_us,.gpu_render_us=results.gpu_us,
    .cpu_valid=(uint8_t)(results.cpu_fps!=0),.gpu_valid=(uint8_t)(!menu && results.gpu_fps!=0),.gpu_active=(uint8_t)(mode!=V3_MODE_CPU),

@@ -1,0 +1,1 @@
+test_copy_ahead: sw/efinix_gpu/tests/test_copy_ahead.c:75: main: Assertion `!copy_ahead_begin(&d,frame_base,net,&bg,&tag,100)' failed.

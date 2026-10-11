@@ -4,6 +4,7 @@ param(
  [string]$StopPattern='GLYPH_BOARD_STOP',
  [int]$Seconds=180,
  [ValidatePattern('^COM[1-9][0-9]*$')][string]$SerialPort='COM13',
+ [ValidateRange(-1,1)][int]$CopyAheadProbe=-1,
  [switch]$LoadBit,
  [ValidateRange(0,15)][int]$JtagSettleSeconds=3
 )
@@ -27,7 +28,10 @@ try {
  }
  Push-Location 'D:/efinity_builds/competition_day1_20260906/sapphire/soc/bsp/efinix/EfxSapphireSoc/openocd'
  try {
-  & D:/efinity/risc_v_gcc/openocd/bin/openocd.exe -f ftdi_ti.cfg -f debug_ti.cfg -c "init; reset halt; load_image $binPath 0x1000 bin; resume 0x1000; shutdown"
+  # Only the -CopyAhead terminal candidate consumes this reserved private-DDR
+  # word. Set it before resume to compare old/new with one identical BIN.
+  $probeSetup=if($CopyAheadProbe -ge 0){"mww 0x02d10000 $CopyAheadProbe; "}else{''}
+  & D:/efinity/risc_v_gcc/openocd/bin/openocd.exe -f ftdi_ti.cfg -f debug_ti.cfg -c "init; reset halt; load_image $binPath 0x1000 bin; $($probeSetup)resume 0x1000; shutdown"
   if($LASTEXITCODE -ne 0) { throw 'JTAG firmware load failed' }
  } finally { Pop-Location }
  $timer=[Diagnostics.Stopwatch]::StartNew()

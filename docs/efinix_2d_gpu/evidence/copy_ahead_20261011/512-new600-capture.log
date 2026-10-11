@@ -1,0 +1,81 @@
+Open On-Chip Debugger 0.11.0+dev-04060-g967f8f6f0-dirty (2026-03-24-19:56)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+Info : auto-selecting first available session transport "jtag". To override use 'transport select <transport>'.
+Info : set servers polling period to 50ms
+Info : clock speed 800 kHz
+Info : JTAG tap: fpga_spinal.bridge tap/device found: 0x10660a79 (mfg: 0x53c (Efinix Inc), part: 0x0660, ver: 0x1)
+[fpga_spinal.cpu0] Target successfully examined.
+Info : starting gdb server for fpga_spinal.cpu0 on 3333
+Info : Listening on port 3333 for gdb connections
+Info : JTAG tap: fpga_spinal.bridge tap/device found: 0x10660a79 (mfg: 0x53c (Efinix Inc), part: 0x0660, ver: 0x1)
+shutdown command invoked
+BULLET_ASSET,id=101,bytes=1036800,retries=0,result=0
+BULLET_ASSET,id=102,bytes=3104,retries=0,result=0
+TEXTURE_CACHE,result=0,base=02a00000,bytes=3104,network=1
+V3_COPY_AHEAD,enabled=1
+
+HUD_LOGO,id=103,bytes=28000,retries=0,result=0,enabled=1
+V3_COUNTER_BASELINE,under_lo=335880,under_hi=0
+V3_PROBE_START,warm=30,samples=600,log_windows=1
+V3_R
+EADY,build=20261008,epoch=00030002,network=1,state=02d00000,mode=LIVE,count=512
+
+V3_PERF,mode=0,tick=57,seq=-1900990419,x=480,y=480,visible=504,fps_x10=300,scene_us=7934,p95_work
+_us=17973,under=0,miss=2,keys=00000000,age=11
+
+V3_PERF,mode=0,tick=117
+,seq=-1900990388,x=480,y=480,visible=501,fps_x10=300,scene_us=7903,p95_work_us=18599,under=0,miss=6,keys=00000000,age=26
+
+V3_PERF,mode=0,tick=165,seq=-1900990363,x=480,y=480,visible=497,fps_x10=383,scene_us=7774,p95_work_us=18237,under=0,miss=0,keys=00000000,age=30
+
+V
+3_PERF,mode=0,tick=196,seq=-1900990346,x=480,y=480,visible=497,fps_x10=581,scene_us=7655,p95_work_us=15716,under=0,miss=0,keys=00000000,age=16
+
+V3_PERF,mode=0,tick=227,seq=-1900990329,x=480,y=480,visible=497,fps_x10=581,scene_us=7640,p95_work_us=15713,under=0,miss=0,keys=00000000,age=0
+
+V3_PERF,mode=0,tick=258,seq=-1900990313,x=480,y=480,visible=497,fps_x10=581,scene_us=7649,p95_work_us=15716,under=0,miss=0,keys=00000000,age=18
+
+V3_PERF,mode=0,tick=308,seq=-1900990286,x=480,y=480,visible=501,fps_x10=353,scene_us=7860,
+p95_work_us=18012,under=0,miss=6,keys=00000000,age=8
+
+V3_PERF,mode=0,tick=368,seq=-1900990254,x=480,y=480,visible=499,fps_x10=300,scene_us=7896,p95_work_us=17908,under=0,miss=4,keys=00000000,age=7
+
+V3_PERF,mode=0,tick=425,seq=-1900990225,x=480,y=480,visible=497,fps_x10=321,scene_us=7847,p95_work_us=18515,under=0,miss=4,keys=00000000,age=43
+
+V3_PERF,mode=0,tick=456,seq=-1900990208,x=480,y=480,visible=497,fps_x10=581,scene_us=7635,p95_work_us=15729,under=0,miss=0,keys=00000000,age=11
+
+V3_PERF,mode=0,tick=487,seq=-1900990193,x=480,y=480,visible=497,fps_x10=581,scene_us=7646,p95_work_us=15701,under=0,miss=0,keys=00000000,age=25
+
+V3_PERF,mode=0,tick=518,seq=-1900990176,x=480,y=480,visible=497,fps_x10=581,scene_us=7651,p95_work_us=15996,under=0,miss=0,keys=00000000,age=11
+
+V3_PERF,mode=0,tick=555,seq=-1900990157,x=480,y=480,visible=502,fps_x10=474,scene_us=7758,p95_work_us=17527,under
+=0,miss=1,keys=00000000,age=20
+
+V3_PERF,mode=0,tick=600,seq=-1900990133,x=480,y=480,visible=500,fps_x10=383,scene_us=7947,p95_work_us=20397,under=0,miss=7,keys=0000000
+0,age=22
+
+V3_PERF,mode=0,tick=650,seq=-1900990106,x=480,y=480,visible=503,fps_x10=367,scene_us=7914,p95_work_us=18055,under=0,miss=6,keys=00000000,age=11
+
+
+V3_PERF,mode=0,tick=701,seq=-1900990079,x=480,y=480,visible=496,fps_x10=360,scene_us=7790,p95_work_us=18228,under=0,miss=1,keys=00000000,age=17
+
+
+V3_PERF,mode=0,tick=732,seq=-1900990062,x=480,y=480,visible=496,fps_x10=581,scene_us=7644,p95_work
+_us=15598,under=0,miss=0,keys=00000000,age=3
+
+V3_PERF,mode=0,tick=763,seq=-1900990046,x=480,y=480,visible=496,fps_x10=581,scene_us=7628,p95_work_us=15729,under=0,miss=0,keys=00000000,age=16
+
+V3_PERF,mo
+de=0,tick=794,seq=-1900990029,x=480,y=480,visible=496,fps_x10=581,scene_us=7654,p95_work_us=15970,under=0,miss=0,keys=00000000,age=2
+
+V3_PERF,mode=0,tick=840,seq=-190
+0990005,x=480,y=480,visible=503,fps_x10=383,scene_us=7811,p95_work_us=18038,under=0,miss=7,keys=00000000,age=21
+
+V3_PERF,mode=0,tick=900,seq=-1900989973,x=480,y=480,visible=501,fps_x10=300,scene_us=7918,p95_work_us=17929,under=0,miss=2,keys=00000000,age=24
+V3_PROBE,target=512,frames=600,fps_x10=427,work_mean_us=15991,work_max_us=39118,wall_max_us=49916,work_miss=240,late_present=243,under=0,errors=0,visible_min=496,visible_max=504,alpha
+_min=66,alpha_max=67,log_mean_us=48,log_max_us=1479
+V3_PROBE_STOP,result=0
+
+CAPTURE_COMPLETE: D:\ZYNQ\smallproject\.worktrees\pango-riscv-cpu\generated\verification\v3\copy_ahead_20261011\512-new600-board.log

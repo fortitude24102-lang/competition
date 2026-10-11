@@ -2,6 +2,7 @@ param(
  [Parameter(Mandatory=$true)][string]$Bin,
  [string]$Bit,
  [string]$GatewayUrl='http://127.0.0.1:8765',
+ [ValidatePattern('^COM[1-9][0-9]*$')][string]$SerialPort='COM13',
  [Parameter(Mandatory=$true)][string]$OutDirectory,
  [switch]$LoadBit
 )
@@ -21,7 +22,7 @@ $outPath=[IO.Path]::GetFullPath($OutDirectory)
 $boot=Invoke-RestMethod "$GatewayUrl/api/bootstrap" -TimeoutSec 2
 if($boot.simulated) {throw 'Refusing simulated peer for board qualification'}
 New-Item -ItemType Directory $outPath | Out-Null
-$serial=New-Object IO.Ports.SerialPort 'COM13',115200,'None',8,'One'
+$serial=New-Object IO.Ports.SerialPort $SerialPort,115200,'None',8,'One'
 $serial.ReadTimeout=100
 $client=[guid]::NewGuid().ToString('N');$held=0;$action=0;$request=0;$acquired=$false
 $timer=[Diagnostics.Stopwatch]::StartNew();$lastKey=-1000.0;$lastStatus=-1000.0;$state=$null;$tail=''
@@ -60,6 +61,8 @@ function Wait($condition,$seconds,$label) {
 function Game($opcode,$level) {
  $script:held=0;$script:request++
  $null=Post '/api/game' @{token=$boot.token;client=$client;opcode=$opcode;level=$level;request_id=$script:request}
+ # Do not let Wait accept an applied request cached before this POST/session.
+ $script:state=$null;$script:lastStatus=-1000.0
  Wait { $state.game -and $state.game.request_id -eq $request -and $state.game.state -eq 'applied' -and !$state.stale } 2.5 "$opcode level $level ACK plus snapshot"
  $flags=$state.telemetry.raw.status_flags
  if($opcode -eq 'start') {

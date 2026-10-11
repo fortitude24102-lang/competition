@@ -1,0 +1,7 @@
+Applied START state disagrees with board
+At line:7 char:96
++ ...  -shl ($level-1))) {throw 'Applied START state disagrees with board'}
++                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Applied START state disagrees with board:String) [], RuntimeException
+    + FullyQualifiedErrorId : Applied START state disagrees with board
+ 

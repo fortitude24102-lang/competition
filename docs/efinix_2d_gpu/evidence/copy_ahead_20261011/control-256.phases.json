@@ -1,0 +1,17 @@
+[
+  {
+    "start": 677,
+    "end": 1249,
+    "name": "RIGHT"
+  },
+  {
+    "start": 1249,
+    "end": 1681,
+    "name": "UP"
+  },
+  {
+    "start": 1681,
+    "end": 2093,
+    "name": "EXPIRE"
+  }
+]
