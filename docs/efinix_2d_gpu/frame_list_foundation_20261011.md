@@ -42,7 +42,7 @@ int gpu_instances_build_into(const bullet_state *state, uint32_t dst,
 
 ## 验证与证据
 
-完整GPU回归16个套件、81项全部通过（0失败/中止/忽略）；独立审查待完成。以下均为本阶段离线检查，不是板测。
+完整GPU回归16个套件、81项全部通过（0失败/中止/忽略）。一次全阶段只读独立审查无Critical/Important；不是作者自审或板测。以下均为本阶段离线检查。
 
 - 新软件检查：9,600帧（四档×600tick×本地/网口×glow开关），与真实`game_build`+HUD裁剪逐字段、顺序、统计相同，源状态不变；3个完整RGB565像素样本与真实golden renderer一致。
 - 原12,000帧R7与真实驱动检查仍通过；新API包含失活友军glow、字面负坐标裁剪、容量canary、参数拒绝。
@@ -70,8 +70,11 @@ GPU脚本还会先执行8个C damage套件、18,000帧golden检查；GPU过滤�
 | reader-red.log / reader-green.log | 缺Reader类的RED、1项真实AXI定向GREEN |
 | reader-green.log.software.log | 定向检查前8个damage套件18,000帧 |
 | gpu-task2-final.log / gpu-task2-final.log.software.log | 最终16套件81项及damage完整输出 |
+| final-review.md / progress.md / task-3-validation.log | 独立审查、全部决策/任务记录、文档证据收尾检查 |
 
 本阶段Git差异检查确认正式Top/生成器、板级源清单、`generated/efinix_gpu`、release以及CPU绘图/互动游戏/生产入口未变；没有生成位流或加载固件，不重新测当前板卡状态，也不把此前MENU恢复的遥测当作本阶段新证据。
+
+审查的唯一次要项：接口文档未把done脉冲、error保持、busy覆盖消费阶段的持续时间集中列为信号契约。实现和测试正确，此阶段不扩展适配器；下一阶段编写轮询寄存器/门铃时补充明确契约，不能把Reader的done直接当成软件可轮询的sticky状态。[完整审查与全部未判定边界](evidence/frame_list_foundation_20261011/final-review.md)。
 
 ## 下一阶段验收门槛
 
