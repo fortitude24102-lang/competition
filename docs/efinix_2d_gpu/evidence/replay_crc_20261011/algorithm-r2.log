@@ -1,0 +1,9 @@
+REPLAY_CRC_BOARD_BEGIN,algorithm=nibble64,scratch=02e00000
+REPLAY_CRC_BOARD,count=256,repeat=0,crc=dbbca4bc,reference_us=12082,seal_us=3547,begin_us=3724
+REPLAY_CRC_BOARD,count=256,repeat=1,crc=dbbca4bc,reference_us=12100,seal_us=3549,begin_us=3722
+REPLAY_CRC_BOARD,count=256,repeat=2,crc=dbbca4bc,reference_us=12100,seal_us=3547,begin_us=3723
+REPLAY_CRC_BOARD,count=512,repeat=0,crc=c5ed87ad,reference_us=21386,seal_us=6258,begin_us=6456
+REPLAY_CRC_BOARD,count=512,repeat=1,crc=c5ed87ad,reference_us=21385,seal_us=6260,begin_us=6454
+REPLAY_CRC_BOARD,count=512,repeat=2,crc=c5ed87ad,reference_us=21386,seal_us=6259,begin_us=6453
+REPLAY_CRC_BOARD_WORDS,n=10000,reference_us=44699,nibble_us=12400
+REPLAY_CRC_BOARD_STOP,result=PASS,not_game_fps=1

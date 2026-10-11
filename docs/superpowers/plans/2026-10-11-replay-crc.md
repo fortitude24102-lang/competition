@@ -31,11 +31,11 @@
 
 **Interfaces:** 公开replay_*函数及结构保持；REPLAY_CRC_NIBBLE=0/1；构建-ReplayCrcNibble只接受独立Interactive输出。
 
-- [ ] 写test_replay_crc：包含真实replay_input.c，独立逐位参考word更新；完全一致。显式REPLAY_CRC_COST_CHECK基准检查小表字循环成本小于参考的一半，不把主机调度时间作为普通回归门槛。
-- [ ] WSL gcc -O2 -Wall -Wextra -Werror运行该测试，先观察未优化成本断言失败。
-- [ ] 最小实现64B表和编译选择；完善规范字段/篡改等价。观察GREEN。
-- [ ] 默认路径与候选分别运行既有test-v3-integration.ps1 -SoftwareOnly，记录全部结果。
-- [ ] 构建独立正常候选，检查ELF内存和候选选项防误覆盖，记录结果并提交相关文件。
+- [x] 写test_replay_crc：包含真实replay_input.c，独立逐位参考word更新；完全一致。显式REPLAY_CRC_COST_CHECK基准检查小表字循环成本小于参考的一半，不把主机调度时间作为普通回归门槛。
+- [x] WSL gcc -O2 -Wall -Wextra -Werror运行该测试，先观察未优化成本断言失败。
+- [x] 最小实现64B表和编译选择；完善规范字段/篡改等价。观察GREEN。
+- [x] 默认路径与候选分别运行既有test-v3-integration.ps1 -SoftwareOnly，记录全部结果。
+- [x] 构建独立正常候选，检查ELF内存和候选选项防误覆盖，记录结果并提交相关文件。
 
 ### Task 2: 软核实测和收尾
 
@@ -43,8 +43,8 @@
 
 **Interfaces:** 同BIN参考逐位word与实际小表word、相同初始状态/按键；UART报告CRC与CLINT耗时；探针通过后恢复正常菜单候选。
 
-- [ ] 创建独立RV32算法探针；先在主机运行相同输入等价检查。
-- [ ] 用现有官方BSP构建、查内存；探针不修改RTL。
-- [ ] 检查串口/服务所有者；确认无并行烧录再仅JTAG测量。板卡不可用则记录，不冒称完成。
-- [ ] 正常候选运行跨600tick；若无法安全测量则保留离线结果，清楚标出缺项。
+- [x] 创建独立RV32算法探针；先在主机运行相同输入等价检查。
+- [x] 用现有官方BSP构建、查内存；探针不修改RTL。
+- [x] 检查串口/服务所有者；确认无并行烧录再仅JTAG测量。板卡不可用则记录，不冒称完成。
+- [x] 正常候选运行跨600tick；若无法安全测量则保留离线结果，清楚标出缺项。
 - [ ] 最终独立审查、保存记录、提交本地分支。没有用户推送请求不更新远端main。

@@ -1,0 +1,37 @@
+[
+  {
+    "path": "D:\\efinity_builds\\game_menu_20261008_r1\\outflow\\efinix_2d_gpu.bit",
+    "bytes": 2499330,
+    "sha256": "202d2b40ba1b919394a2cc920055a810e56c07fbd725fdb4185385124f894cf3"
+  },
+  {
+    "path": "D:\\ZYNQ\\smallproject\\.worktrees\\pango-riscv-cpu\\generated\\verification\\v3\\replay_crc_20261011\\algorithm-r2\\test.bin",
+    "bytes": 7050,
+    "sha256": "32a688d2457558c1598d716f749d186270a6c286d812343aab899817e6b2e4c1"
+  },
+  {
+    "path": "D:\\ZYNQ\\smallproject\\.worktrees\\pango-riscv-cpu\\generated\\verification\\v3\\replay_crc_20261011\\normal-r1\\gpu_demo.bin",
+    "bytes": 43152,
+    "sha256": "6f19a9a447d217ffee2bef12e99baabfdd2eae4c48dab34fc6db1b7c9d332655"
+  },
+  {
+    "path": "D:\\ZYNQ\\smallproject\\.worktrees\\pango-riscv-cpu\\generated\\verification\\v3\\replay_crc_20261011\\probe512-600-r1\\gpu_demo.bin",
+    "bytes": 43912,
+    "sha256": "a7950317566bf89eb2c5cea40b87acee297b33ba0bdbcda75e42c877de422c78"
+  },
+  {
+    "path": "D:\\ZYNQ\\smallproject\\.worktrees\\pango-riscv-cpu\\generated\\verification\\v3\\replay_crc_20261011\\default-off-r1\\gpu_demo.bin",
+    "bytes": 43112,
+    "sha256": "a03d805ad7236f0ab1da4b0c5732776067840b325a52203f9f8d94fec93e883c"
+  },
+  {
+    "path": "D:\\ZYNQ\\smallproject\\.worktrees\\pango-riscv-cpu\\generated\\verification\\v3\\copy_ahead_20261011\\probe512-600-r1\\gpu_demo.bin",
+    "bytes": 43872,
+    "sha256": "6c218c99346f59a6b8b33184041eb16597268c49449431d3d242c3dcbbfaaf70"
+  },
+  {
+    "path": "D:\\ZYNQ\\smallproject\\.worktrees\\pango-riscv-cpu\\generated\\verification\\v3\\copy_ahead_20261011\\normal-ahead-r1\\gpu_demo.bin",
+    "bytes": 43112,
+    "sha256": "a03d805ad7236f0ab1da4b0c5732776067840b325a52203f9f8d94fec93e883c"
+  }
+]

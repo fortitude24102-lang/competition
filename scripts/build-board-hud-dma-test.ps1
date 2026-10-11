@@ -1,5 +1,5 @@
 param(
- [ValidateSet('hud','key','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','qos-sweep','live-phases','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances')][string]$Test='hud',
+ [ValidateSet('hud','key','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','qos-sweep','live-phases','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances','replay-crc')][string]$Test='hud',
  [string]$RiscvGcc='D:/efinity/risc_v_gcc/toolchain/bin/riscv-none-elf-gcc.exe',
  [string]$Soc='D:/efinity_builds/competition_day1_20260906/sapphire/soc',
  [switch]$InstanceExpandProbe,
@@ -42,6 +42,7 @@ try {
   'damage-plan' {'generated/verification/board-damage-plan'}
   'damage-lower' {'generated/verification/board-damage-lower'}
   'instances' {'generated/verification/v3/instances/board'}
+  'replay-crc' {'generated/verification/v3/replay-crc/board'}
  }
  if($InstanceExpandProbe) { $out+='-expand-probe' }
  if($OutDirectory) {
@@ -60,6 +61,7 @@ try {
  $sources=@(($sourceLine -replace '^SOURCES = ','') -split '\s+' |
   Where-Object { $_ -ne 'src/main.c' -and !($Test -in @('render-phases','qos-sweep') -and $_ -eq 'src/gpu.c') } | ForEach-Object { "sw/efinix_gpu/$_" })
  if($Test -eq 'live-phases') {$sources=@($sources | Where-Object {$_ -ne 'sw/efinix_gpu/src/v3_demo.c'})}
+ if($Test -eq 'replay-crc') {$sources=@($sources | Where-Object {$_ -ne 'sw/efinix_gpu/src/replay_input.c'})}
  $sources+=switch($Test) {
   'hud' {'sw/efinix_gpu/tests/test_board_hud_dma.c'}
   'key' {'sw/efinix_gpu/tests/test_board_key_burst.c'}
@@ -76,6 +78,7 @@ try {
   'damage-plan' {'sw/efinix_gpu/tests/test_board_damage_plan.c'}
   'damage-lower' {'sw/efinix_gpu/tests/test_board_damage_lower.c'}
   'instances' {'sw/efinix_gpu/tests/test_board_instances.c';'sw/efinix_gpu/src/gpu_instances.c'}
+  'replay-crc' {'sw/efinix_gpu/tests/test_board_replay_crc.c'}
  }
  [string[]]$probeFlags=@()
  if($InstanceExpandProbe) { $probeFlags=@('-DINSTANCE_EXPAND_PROBE=1') }

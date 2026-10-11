@@ -1,0 +1,8 @@
+start,level=1,request=1,session=3461884517,snapshot=2,floor=1,result=0
+menu,level=0,request=2,session=3461884517,snapshot=7,floor=6,result=0
+start,level=2,request=3,session=3461884517,snapshot=8,floor=7,result=0
+menu,level=0,request=4,session=3461884517,snapshot=13,floor=12,result=0
+start,level=3,request=5,session=3461884517,snapshot=14,floor=13,result=0
+menu,level=0,request=6,session=3461884517,snapshot=19,floor=18,result=0
+start,level=4,request=7,session=3461884517,snapshot=20,floor=19,result=0
+menu,level=0,request=8,session=3461884517,snapshot=25,floor=24,result=0
