@@ -1,5 +1,5 @@
 param(
- [ValidateSet('hud','key','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','qos-sweep','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances')][string]$Test='hud',
+ [ValidateSet('hud','key','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','qos-sweep','live-phases','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances')][string]$Test='hud',
  [string]$RiscvGcc='D:/efinity/risc_v_gcc/toolchain/bin/riscv-none-elf-gcc.exe',
  [string]$Soc='D:/efinity_builds/competition_day1_20260906/sapphire/soc',
  [switch]$InstanceExpandProbe,
@@ -8,9 +8,15 @@ param(
  [switch]$LegacyValidation,
  [switch]$ShadowSubmit,
  [switch]$FullSubmit,
+ [ValidateSet(256,512)][int]$LiveTarget=512,
+ [switch]$LiveControl,
+ [switch]$LiveSplit,
  [string]$OutDirectory
 )
 $ErrorActionPreference='Stop'
+if($Test -eq 'live-phases' -and !$OutDirectory) {throw 'Live phase diagnostic requires fresh OutDirectory'}
+if(($LiveControl -or $LiveSplit) -and $Test -ne 'live-phases') {throw 'Live options require live-phases'}
+if($LiveControl -and $LiveSplit) {throw 'Split requires timing instrumentation'}
 if($InstanceExpandProbe -and $Test -ne 'instances') { throw 'InstanceExpandProbe requires Test instances' }
 if($ValidateOnce -and $LegacyValidation) {throw 'Choose one submission path'}
 if(($ValidationCohort -or $ValidateOnce -or $LegacyValidation) -and ($Test -ne 'render-phases' -or !$OutDirectory)) {throw 'Validation comparison requires render-phases and fresh OutDirectory'}
@@ -29,6 +35,7 @@ try {
   'hud-glyph-sweep' {'generated/verification/board-hud-glyph-sweep'}
   'render-phases' {'generated/verification/board-render-phases'}
   'qos-sweep' {'generated/verification/v3/qos-sweep/board'}
+  'live-phases' {'generated/verification/v3/live-phases/board'}
   'copy-stream' {'generated/verification/board-copy-stream'}
   'damage-cost' {'generated/verification/board-damage-cost'}
   'damage-sweep' {'generated/verification/board-damage-sweep'}
@@ -52,6 +59,7 @@ try {
  $sourceLine=Get-Content sw/efinix_gpu/Makefile | Where-Object { $_ -match '^SOURCES = ' }
  $sources=@(($sourceLine -replace '^SOURCES = ','') -split '\s+' |
   Where-Object { $_ -ne 'src/main.c' -and !($Test -in @('render-phases','qos-sweep') -and $_ -eq 'src/gpu.c') } | ForEach-Object { "sw/efinix_gpu/$_" })
+ if($Test -eq 'live-phases') {$sources=@($sources | Where-Object {$_ -ne 'sw/efinix_gpu/src/v3_demo.c'})}
  $sources+=switch($Test) {
   'hud' {'sw/efinix_gpu/tests/test_board_hud_dma.c'}
   'key' {'sw/efinix_gpu/tests/test_board_key_burst.c'}
@@ -61,6 +69,7 @@ try {
   'hud-glyph-sweep' {'sw/efinix_gpu/tests/test_board_hud_glyph_sweep.c'}
   'render-phases' {'sw/efinix_gpu/tests/test_board_render_phases.c'}
   'qos-sweep' {'sw/efinix_gpu/tests/test_board_render_phases.c'}
+  'live-phases' {'sw/efinix_gpu/tests/test_board_live_phases.c'}
   'copy-stream' {'sw/efinix_gpu/tests/test_board_copy_stream.c'}
   'damage-cost' {'sw/efinix_gpu/tests/test_board_damage_cost.c'}
   'damage-sweep' {'sw/efinix_gpu/tests/test_board_damage_sweep.c'}
@@ -76,6 +85,11 @@ try {
  if($LegacyValidation) {$probeFlags+='-DGPU_SUBMIT_REVALIDATE=1'}
  if($ShadowSubmit) {$probeFlags+='-DGPU_SUBMIT_SHADOW=1'}
  if($FullSubmit) {$probeFlags+='-DGPU_SUBMIT_SHADOW=0'}
+ if($Test -eq 'live-phases') {
+  $probeFlags+="-DV3_START_COUNT=$LiveTarget"
+  $probeFlags+=('-DLIVE_PHASE_TIMING='+[int](!$LiveControl))
+  $probeFlags+=('-DLIVE_PHASE_SPLIT='+[int]($LiveSplit.IsPresent))
+ }
  & $RiscvGcc -std=gnu11 -Os -Wall -Wextra -Werror '-Wstack-usage=2048' -march=rv32im_zicsr -mabi=ilp32 -ffreestanding -ffunction-sections -fdata-sections -DBULLET_DEMO_DEFAULT=1 -DNETWORK_LOCAL_IP=0xc0a80103 -DNETWORK_PEER_IP=0xc0a80102 -Isw/efinix_gpu/include -Isw/efinix_gpu/assets/v2 -Isw/efinix_gpu/assets/bullet -isystem "$bsp/include" -isystem "$Soc/software/standalone/driver" -DUSE_GP -DNO_LIBC_INIT_ARRAY -nostartfiles "-T$bsp/linker/default.ld" '-Tsw/efinix_gpu/linker.ld' '-Wl,--gc-sections' "$Soc/software/standalone/common/start.S" @probeFlags @sources -o "$out/test.elf"
  if($LASTEXITCODE -ne 0) { throw "Board $Test test link failed" }
  $objcopy=Join-Path (Split-Path $RiscvGcc) riscv-none-elf-objcopy.exe

@@ -1,0 +1,7 @@
+BULLET_ASSET,id=101,bytes=1036800,retries=0,result=0
+BULLET_ASSET,id=102,bytes=3104,retries=0,result=0
+TEXTURE_CACHE,result=0,base=02a00000,bytes=3104,network=1
+HUD_LOGO,id=103,bytes=28000,retries=0,result=0,enabled=1
+V3_COUNTER_BASELINE,under_lo=331560,under_hi=0
+V3_READY,build=20261008,epoch=00030002,network=1,state=02d00000,mode=MENU,count=0
+V3_SCENE,phase=MENU,level=0,count=0,generation=1,reason=0

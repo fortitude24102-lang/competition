@@ -19,6 +19,12 @@
 #ifndef V3_PROBE_FRAMES
 #define V3_PROBE_FRAMES 0u
 #endif
+#ifndef V3_DETAIL_PROBE
+#define V3_DETAIL_PROBE 0
+#endif
+#if V3_DETAIL_PROBE && !V3_PROBE_FRAMES
+#error "Detail timings are terminal diagnostic only"
+#endif
 _Static_assert(V3_START_COUNT>=32 && V3_START_COUNT<=BULLET_MAX_OBJECTS,"start count capacity");
 /* Runtime + record are private CPU data in disjoint DDR. They are never GPU
  * input and need no per-tick cache flush. This is not CPU rendering tuning. */
@@ -107,12 +113,18 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   if(e) {e=v3_apply_game_command(runtime,&control,&command);if(e<0) {(void)nc_try_publish(&control,0,now_ms());break;}}
   (void)nc_try_publish(&control,0,now_ms()); /* ACK before render, never wait. */
   uint64_t logic=gpu_platform_cycles();
+#if V3_DETAIL_PROBE
+  uint8_t detail_sealed=runtime->recording.sealed;
+#endif
   uint8_t old_mode=runtime->mode;
   e=v3_runtime_advance(runtime,&input,us(logic-previous_logic));previous_logic=logic;
   if(e<0) break;
   if(old_mode==V3_MODE_LIVE && runtime->mode==V3_MODE_CPU) {
    e=v3_runtime_advance(runtime,&input,0);if(e<0) break;
   }
+#if V3_DETAIL_PROBE
+  uint32_t detail_logic_us=us(gpu_platform_cycles()-logic);
+#endif
   unsigned mode=runtime->mode;
   int menu=runtime->menu_enabled && runtime->phase==V3_PHASE_MENU;
   if(results.generation!=runtime->scene_generation) {
@@ -142,11 +154,17 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
    .grazes=runtime->game.grazes,.invulnerable=(uint8_t)(runtime->game.invulnerable!=0),.game_over=(uint8_t)(runtime->game.hp==0),
    .underflows=(uint32_t)before.underflows,.v3_mode=(uint8_t)(menu?4:mode==V3_MODE_LIVE?1:mode==V3_MODE_CPU?2:3),
    .cpu_stale=(uint8_t)((v3_runtime_status(runtime,network,raw.connected,results.gpu_fps!=0,results.cpu_fps!=0,results.cpu_fresh)&V3_STATUS_CPU_STALE)!=0),.logic_slow=runtime->clock.slow};
+#if V3_DETAIL_PROBE
+  uint64_t detail_hud_start=gpu_platform_cycles();
+#endif
   e=mode==V3_MODE_CPU?hud_update_cache(&metrics,hud_cache,overlay):hud_update_gpu_cache(gpu,&metrics,hud_cache,overlay,V3_POLLS);
   if(e) break;
   gpu_platform_sync();e=hud_cached_command(buffers->back,hud_cache,&overlay->commands[0]);if(e) break;
   e=mode==V3_MODE_CPU?perf_render_cpu(overlay->commands,1):perf_render_gpu(gpu,overlay->commands,1,V3_POLLS);if(e) break;
   gpu_platform_sync();uint64_t present_start=gpu_platform_cycles();
+#if V3_DETAIL_PROBE
+  uint32_t detail_hud_us=us(present_start-detail_hud_start);
+#endif
   e=gpu_read_perf_snapshot(gpu,&after);if(e) break;
   uint64_t work_ticks=gpu_platform_cycles()-start;
   uint32_t work_us=us(work_ticks);
@@ -175,6 +193,9 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   probe_underflows=probe_after.underflows; /* Includes PRESENT/inter-frame events. */
   previous_log=0;
 #endif
+#if V3_DETAIL_PROBE
+  if(work_us>30000u) bsp_printf("V3_SPIKE,tick=%d,logic_us=%d,work_us=%d,seal_event=%d\r\n",runtime->game.tick,detail_logic_us,work_us,!detail_sealed && runtime->recording.sealed);
+#endif
   uint32_t p95_us=p95(frame);
   if(frame==PERF_WINDOW_FRAMES) {
    uint32_t fps=perf_fps_x10(&window,BSP_CLINT_HZ),avg=perf_render_us(&window,BSP_CLINT_HZ);
@@ -182,8 +203,14 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
 #if V3_PROBE_FRAMES
     uint64_t log_start=gpu_platform_cycles();
 #endif
+#if V3_DETAIL_PROBE
+    bsp_printf("V3_DETAIL,tick=%d,build_us=%d,logic_us=%d,scene_us=%d,hud_us=%d,work_us=%d,busy_us=%d,visible=%d,alpha=%d\r\n",
+     runtime->game.tick,build_us,detail_logic_us,render_us,detail_hud_us,work_us,
+     (uint32_t)((after.cycles-before.cycles)/100u),scene->visible,scene->alpha_commands);
+#else
     bsp_printf("V3_PERF,mode=%d,tick=%d,seq=%d,x=%d,y=%d,visible=%d,fps_x10=%d,scene_us=%d,p95_work_us=%d,under=%d,miss=%d,keys=%x,age=%d\r\n",
     mode,runtime->game.tick,raw.sequence,runtime->game.player_x,runtime->game.player_y,scene->visible,fps,avg,p95_us,under_delta,miss_delta,input.held,raw.age_ms);
+#endif
 #if V3_PROBE_FRAMES
     previous_log=(uint32_t)(gpu_platform_cycles()-log_start);
 #endif

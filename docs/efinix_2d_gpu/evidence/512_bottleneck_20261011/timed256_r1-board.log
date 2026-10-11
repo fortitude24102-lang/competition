@@ -1,0 +1,14 @@
+BULLET_ASSET,id=101,bytes=1036800,retries=0,result=0
+BULLET_ASSET,id=102,bytes=3104,retries=0,result=0
+LIVE_PHASE,target=256,timing=1,split=0,frames=300,fps_x10=587,work_us=15988,p95_us=16371,max_us=16885,miss=5,late=7,logic_steps=307,worst_tick=215,worst_steps=1
+LIVE_STAGE,name=CONTROL,mean_us=39,max_us=195,worst_us=25
+LIVE_STAGE,name=LOGIC,mean_us=582,max_us=1442,worst_us=658
+LIVE_STAGE,name=BUILD,mean_us=3947,max_us=4020,worst_us=3962
+LIVE_STAGE,name=SYNC,mean_us=21,max_us=51,worst_us=14
+LIVE_STAGE,name=SCENE,mean_us=9647,max_us=9712,worst_us=9659
+LIVE_STAGE,name=HUD_UPDATE,mean_us=258,max_us=1335,worst_us=1335
+LIVE_STAGE,name=HUD_COPY,mean_us=1206,max_us=1243,worst_us=996
+LIVE_STAGE,name=SNAPSHOT,mean_us=28,max_us=46,worst_us=23
+LIVE_STAGE,name=OTHER,mean_us=256,max_us=459,worst_us=208
+LIVE_HW,busy_us=10743,rd=1048024,wr=1063816,cache=43372,background_us=0,sprites_us=0
+LIVE_PHASE_STOP,result=0

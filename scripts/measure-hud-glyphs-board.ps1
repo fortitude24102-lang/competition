@@ -3,6 +3,7 @@ param(
  [Parameter(Mandatory=$true)][string]$Log,
  [string]$StopPattern='GLYPH_BOARD_STOP',
  [int]$Seconds=180,
+ [ValidatePattern('^COM[1-9][0-9]*$')][string]$SerialPort='COM13',
  [switch]$LoadBit,
  [ValidateRange(0,15)][int]$JtagSettleSeconds=3
 )
@@ -11,7 +12,7 @@ $binPath=(Resolve-Path -LiteralPath $Bin).Path.Replace('\','/')
 $logPath=[IO.Path]::GetFullPath($Log)
 New-Item -ItemType Directory -Force (Split-Path $logPath) | Out-Null
 if(Test-Path -LiteralPath $logPath) { throw "Refusing to overwrite measurement: $logPath" }
-$serial=New-Object IO.Ports.SerialPort 'COM13',115200,'None',8,'One'
+$serial=New-Object IO.Ports.SerialPort $SerialPort,115200,'None',8,'One'
 $serial.ReadTimeout=100
 try {
  $serial.Open()
