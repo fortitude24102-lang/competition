@@ -71,10 +71,13 @@ GPU脚本还会先执行8个C damage套件、18,000帧golden检查；GPU过滤�
 | reader-green.log.software.log | 定向检查前8个damage套件18,000帧 |
 | gpu-task2-final.log / gpu-task2-final.log.software.log | 最终16套件81项及damage完整输出 |
 | final-review.md / progress.md / task-3-validation.log | 独立审查、全部决策/任务记录、文档证据收尾检查 |
+| task-3-environment-first-failure.log | Git Bash启动PS5继承PS7模块路径导致Get-FileHash缺失；不是C/RTL失败 |
 
 本阶段Git差异检查确认正式Top/生成器、板级源清单、`generated/efinix_gpu`、release以及CPU绘图/互动游戏/生产入口未变；没有生成位流或加载固件，不重新测当前板卡状态，也不把此前MENU恢复的遥测当作本阶段新证据。
 
 审查的唯一次要项：接口文档未把done脉冲、error保持、busy覆盖消费阶段的持续时间集中列为信号契约。实现和测试正确，此阶段不扩展适配器；下一阶段编写轮询寄存器/门铃时补充明确契约，不能把Reader的done直接当成软件可轮询的sticky状态。[完整审查与全部未判定边界](evidence/frame_list_foundation_20261011/final-review.md)。
+
+收尾环境首失败已单独留证：直接PS5能找到Get-FileHash，Git Bash启动PS5继承了PS7模块目录而无法找到该函数。显式加载PS5自身Utility模块后命令恢复；未改测试预期或产品代码，也没有重跑不变的22分钟RTL长回归。
 
 ## 下一阶段验收门槛
 
