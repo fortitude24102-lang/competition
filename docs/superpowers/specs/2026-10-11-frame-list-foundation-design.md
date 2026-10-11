@@ -14,7 +14,7 @@
 
 ## 软件接口和语义
 
-保留gpu_instance四个uint32_t字、12个模板、gpu_instances_build的R7语义。新增gpu_instance_stats五字段：unsigned count/visible/alpha_commands，uint32_t scene_pixels/alpha_pixels。新增gpu_instances_build_into(state,dst,network,glow,manual,hud_height,capacity,items,stats)，int返回既有GPU_DRIVER_*；调用者提供至少capacity项可写缓冲（未来可以直接是DDR），不分配全帧临时数组、不先构建旧命令。manual0保留R7拒绝kind3，manual1允许友军kind3并跳过age=UINT16_MAX的失活项及其glow。错误stats全部清零，部分数组不可提交；容量越界不得写到缓冲外。
+保留gpu_instance四个uint32_t字、12个模板、gpu_instances_build的R7语义。新增gpu_instance_stats五字段：unsigned count/visible/alpha_commands，uint32_t scene_pixels/alpha_pixels。新增gpu_instances_build_into(state,dst,network,glow,manual,hud_height,capacity,items,stats)，int返回既有GPU_DRIVER_*；调用者提供至少capacity项可写缓冲（未来可以直接是DDR），state/items/stats必须不重叠，这是可信内部C调用的前置条件，不是对任意裸指针做运行时安全校验。不分配全帧临时数组、不先构建旧命令。manual0保留R7拒绝kind3，manual1允许友军kind3并跳过age=UINT16_MAX的失活项及其glow。错误stats全部清零，部分数组不可提交；容量越界不得写到缓冲外。
 
 背景第0项先裁掉指定HUD；弹幕全部glow先于全部core，玩家glow/core、三个发射器glow/core顺序不变。负Q8坐标向下取整，边缘透明裁剪、可见/Alpha/像素统计与真实原构建器一致。旧API薄包装同一直接构建流程，保持公开stream布局/API不变。未来调用者在CPU存储发布栅栏后才交GPU读取，读取/执行期间列表和模板不可修改；本阶段没有发布驱动，因此不冒称所有权/epoch锁已实现。
 
@@ -26,7 +26,7 @@
 
 先把整批四字逐项写SyncReadMem，再在读事务完整成功后输出有序、稳定的16B描述符。请求非法不发AXI，完成带AddressRange；响应ID/RESP/RLAST错误经原引擎报告AxiResponse，整批不输出任何描述符。忙时不接新请求；输出背压稳定，最后descriptor握手才done并释放busy。复位丢弃未发布列表，不重放旧RAM内容。AXI无响应不能安全自行猜测完成，交后续软件有界超时/GPU显式复位处理，不添加凭空计时器。
 
-maxDescriptors默认1024，只足够当前512 Sprite的585上界；未来1024Sprite可超过此描述符数，需重新配置/综合和软件容量协商，不能把host1024检查当作本默认硬件支持1024游戏。
+maxDescriptors允许1..1024，默认1024，只足够当前512 Sprite的585上界；未来1024Sprite可超过此描述符数，需要修改硬件容量上限/bank契约、重新综合并与软件协商容量，不能仅改变当前参数或把host1024检查当作本默认硬件支持1024游戏。
 
 ## 验证
 
