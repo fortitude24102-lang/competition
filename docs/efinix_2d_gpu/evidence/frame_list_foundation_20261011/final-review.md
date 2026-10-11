@@ -2,6 +2,8 @@
 
 Reviewer: gpt-6-astra, high, fresh context; range e9b55c4..6e80818. Read-only; no edits, test reruns, board/service access or subagents. Scope: current-game direct 16B list builder and standalone full-list AXI prefetch foundation.
 
+Executor's archive summary of the review, retaining every declined-to-judge boundary; not a verbatim transcript.
+
 Verdict: ready for this foundation stage. Critical0, Important0, Minor1.
 
 ## Strengths
