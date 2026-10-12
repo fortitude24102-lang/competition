@@ -24,12 +24,12 @@ class FrameListBatchSpec extends AnyFunSpec with StableChiselSim with Matchers {
       val memory=collection.mutable.Map[BigInt,BigInt](src->0x07e0,(src+4)->0xf81f,(src+8)->0xf800,dst->BigInt("55441111",16))
       var ra=BigInt(0);var rid=BigInt(0);var rn=0
       var wa=BigInt(0);var wid=BigInt(0);var wn=0;var bdelay=0
-      var cycles=0;var writes=0;var fetchWords=0;var faultFetch=false
+      var cycles=0;var writes=0;var fetchWords=0;var faultFetch=false;var holdR=false
       def tick():Unit = {
         d.io.axi.ar.ready.poke(rn==0 && cycles%3!=0)
         d.io.axi.aw.ready.poke(wn==0 && bdelay==0 && cycles%5!=0)
         d.io.axi.w.ready.poke(wn>0 && cycles%4!=0)
-        d.io.axi.r.valid.poke(rn>0 && cycles%5!=0)
+        d.io.axi.r.valid.poke(rn>0 && cycles%5!=0 && !holdR)
         d.io.axi.r.bits.id.poke(rid);d.io.axi.r.bits.data.poke(memory.getOrElse(ra,BigInt(0)))
         d.io.axi.r.bits.last.poke(rn==1)
         d.io.axi.r.bits.resp.poke(if(faultFetch && rid==6 && fetchWords==11) 2 else 0)
@@ -88,7 +88,10 @@ class FrameListBatchSpec extends AnyFunSpec with StableChiselSim with Matchers {
       for((op,i)<-Seq(2,3,4).zipWithIndex) {
         access(0x40c,i);Seq[BigInt](op,src+i*4,2,2,1,1,0xf81f).zipWithIndex.foreach{case(v,f)=>access(0x410+f*4,v)}
       }
-      fillList();start(7)
+      fillList();holdR=true;start(7)
+      access(GpuRegisterMap.PerfControl,1)
+      access(GpuRegisterMap.PerfCyclesLo,wr=false) should be > BigInt(0) // Include transport waiting in GPU cycles.
+      holdR=false
       access(0x518,99,bad=true) // Cannot mutate accepted epoch.
       access(GpuRegisterMap.Control,1,bad=true) // Legacy submit is locked.
       finish() shouldBe BigInt(2)
@@ -96,6 +99,8 @@ class FrameListBatchSpec extends AnyFunSpec with StableChiselSim with Matchers {
       access(0x51c,wr=false) shouldBe 7;access(0x520,wr=false) shouldBe 1
       access(0x524,wr=false) shouldBe 3;access(GpuRegisterMap.LastDone,wr=false) shouldBe 1
       access(0x528,wr=false) shouldBe 48
+      access(GpuRegisterMap.PerfControl,1)
+      access(GpuRegisterMap.PerfReadBytesLo,wr=false) shouldBe 64 // 48 descriptor + 16 Copy/Key/Alpha read bytes.
       // A late transport error outputs NO command, even though eleven words succeeded.
       val oldWrites=writes;faultFetch=true;fetchWords=0;start(8)
       ((finish()>>8)&255) shouldBe GpuError.AxiResponse;writes shouldBe oldWrites

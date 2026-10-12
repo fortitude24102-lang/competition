@@ -25,6 +25,13 @@
 #ifndef V3_COPY_AHEAD
 #define V3_COPY_AHEAD 0
 #endif
+#ifndef V3_FRAME_LIST
+#define V3_FRAME_LIST 0
+#endif
+#if V3_FRAME_LIST
+#include "gpu_frame_list.h"
+#define V3_FRAME_LIST_WORD 0x02d10004u
+#endif
 #define V3_COPY_AHEAD_WORD 0x02d10000u /* Terminal probe only; JTAG selects 0/1. */
 #if V3_DETAIL_PROBE && !V3_PROBE_FRAMES
 #error "Detail timings are terminal diagnostic only"
@@ -89,6 +96,16 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  nc_device control;nc_input raw={0};game_input input={0};
  int e=nc_init(&control,GPU_APB_BASE);
  if(e) {bsp_printf("V3_CONTROL,unavailable=%d; use frozen R7 firmware\r\n",e);return 1;}
+#if V3_FRAME_LIST
+ gpu_frame_list list_device;
+ e=gpu_frame_list_init(&list_device,gpu,network);if(e)return 1;
+ #if V3_PROBE_FRAMES
+ int list_enabled=list_device.present && *(volatile uint32_t *)(uintptr_t)V3_FRAME_LIST_WORD==1u;
+ #else
+ int list_enabled=list_device.present;
+ #endif
+ bsp_printf("V3_FRAME_LIST,present=%d,enabled=%d\r\n",list_device.present,list_enabled);
+#endif
 #if V3_PROBE_FRAMES
  e=v3_runtime_init(runtime,V3_START_COUNT,7,V3_RESOURCE_EPOCH);
 #else
@@ -181,13 +198,35 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   if(ahead) {e=copy_ahead_begin(gpu,buffers->back,network,&background,&background_tag,V3_POLLS);if(e)break;}
 #endif
   uint64_t build=gpu_platform_cycles();
+#if V3_FRAME_LIST
+  int list_frame=list_enabled && !menu && mode!=V3_MODE_CPU;
+  uint32_t list_address=buffers->back==GPU_FRAMEBUFFER_A?GPU_FRAME_LIST_BANK_A:GPU_FRAME_LIST_BANK_B;
+#endif
   if(menu) {scene->count=scene->visible=scene->alpha_commands=scene->alpha_pixels=0;}
+#if V3_FRAME_LIST
+  else if(list_frame) {
+   gpu_instance_stats s;
+   e=gpu_instances_build_into(&runtime->game,buffers->back,network,1,1,HUD_CACHE_HEIGHT,
+    BULLET_MAX_COMMANDS,(gpu_instance *)(uintptr_t)list_address,&s);if(e)break;
+   scene->count=s.count;scene->visible=s.visible;scene->alpha_commands=s.alpha_commands;
+   scene->scene_pixels=s.scene_pixels;scene->alpha_pixels=s.alpha_pixels;
+  }
+#endif
   else {
    e=game_build(&runtime->game,buffers->back,network,1,BULLET_MAX_COMMANDS,scene);if(e) break;
    if(mode!=V3_MODE_CPU) {e=bullet_clip_background_for_hud(scene,HUD_CACHE_HEIGHT);if(e) break;}
   }
   uint32_t build_us=us(gpu_platform_cycles()-build);
   gpu_platform_sync();uint64_t render_start=gpu_platform_cycles();
+#if V3_FRAME_LIST
+  if(list_frame) {
+   unsigned skip=0;
+   #if V3_COPY_AHEAD
+   if(ahead) {e=gpu_wait_tag(gpu,background_tag,V3_POLLS);if(e)break;skip=1;}
+   #endif
+   e=gpu_frame_list_render(&list_device,list_address+16u*skip,scene->count-skip,runtime->scene_generation,V3_POLLS);
+  } else
+#endif
   e=menu?game_menu_draw(gpu,&menu_cache,buffers->back==GPU_FRAMEBUFFER_A?0u:1u,
    buffers->back,runtime->scene_generation,raw.connected,overlay,V3_POLLS):
    mode==V3_MODE_CPU?perf_render_cpu(scene->commands,scene->count):
@@ -268,7 +307,12 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   uint32_t now=now_ms();
   if(now-last_report>=V3_TELEMETRY_DEFAULT_MS) {
    uint32_t drops=*(volatile uint32_t *)(uintptr_t)(GPU_APB_BASE+NC_REG_RX_DROP_COUNT);
-   unsigned key_commands=0;for(unsigned i=0;i<scene->count;i++) if(scene->commands[i].op==GPU_OP_COLOR_KEY) ++key_commands;
+   unsigned key_commands=0;
+   #if V3_FRAME_LIST
+   if(list_frame) key_commands=scene->count-scene->alpha_commands-1u; // Only one background Copy; remaining non-Alpha are Key.
+   else
+   #endif
+   for(unsigned i=0;i<scene->count;i++) if(scene->commands[i].op==GPU_OP_COLOR_KEY) ++key_commands;
    telemetry.simulation_tick=runtime->game.tick;telemetry.requested_sprites=menu?0:runtime->game.count;
    telemetry.visible_sprites=scene->visible;telemetry.gpu_full_frame_fps_x100=results.gpu_fps*10u;telemetry.cpu_full_frame_fps_x100=results.cpu_fps*10u;
    telemetry.pre_present_us=menu?0:work_us;telemetry.gpu_busy_us=menu?0:(uint32_t)((after.cycles-before.cycles)/100u);

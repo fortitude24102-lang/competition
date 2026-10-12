@@ -4,7 +4,13 @@ import chisel3._
 import chisel3.util._
 
 /** Queues and validates software commands, then runs dense, sparse, or present engines. */
-class RenderEngine(enableCopyStream: Boolean = true) extends Module {
+class FrontendPerfEvents extends Bundle {
+  val busy = Input(Bool())
+  val readBeat = Input(Bool())
+  val stalled = Input(Bool())
+}
+
+class RenderEngine(enableCopyStream: Boolean = true, countFrontend: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val command = Flipped(Decoupled(new GpuCommand))
     val vblank = Input(Bool())
@@ -36,6 +42,7 @@ class RenderEngine(enableCopyStream: Boolean = true) extends Module {
     val textureCacheValid = Output(Bool())
     val textureCacheBusy = Output(Bool())
     val textureCacheError = Output(Bool())
+    val frontend = if(countFrontend) Some(new FrontendPerfEvents) else None
   })
 
   private val queue = Module(new CommandQueue)
@@ -153,12 +160,12 @@ class RenderEngine(enableCopyStream: Boolean = true) extends Module {
     (blit.io.pixelRequest.valid && !blit.io.pixelRequest.ready) ||
       (blit.io.pixelResult.valid && !blit.io.pixelResult.ready)
   perf.io.clear := io.perfClear
-  perf.io.active := io.busy
+  perf.io.active := io.busy || io.frontend.map(_.busy).getOrElse(false.B)
   perf.io.pixelCount := Mux(blit.io.copyWordDone, blit.io.wordPixelsDone,
     (blit.io.pixelResult.fire || sparse.io.pixelDone).asUInt)
-  perf.io.readBeat := io.axi.r.fire
+  perf.io.readBeat := io.axi.r.fire || io.frontend.map(_.readBeat).getOrElse(false.B)
   perf.io.writeStrobe := Mux(io.axi.w.fire, io.axi.w.bits.strb, 0.U)
-  perf.io.stalled := io.busy && (axiStalled || pixelStalled)
+  perf.io.stalled := (io.busy && (axiStalled || pixelStalled)) || io.frontend.map(_.stalled).getOrElse(false.B)
   perf.io.underflow := io.underflowPulse
   perf.io.renderGrant := io.renderGrant
   perf.io.scanoutGrant := io.scanoutGrant

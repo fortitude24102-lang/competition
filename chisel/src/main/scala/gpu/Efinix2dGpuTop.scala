@@ -43,7 +43,7 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   private val batch = if(enableFrameLists) Some(Module(new FrameListBatch)) else None
   private val assetRegs = Module(new AssetDmaRegs)
   private val assetWriter = Module(new AssetDmaWriter)
-  private val render = Module(new RenderEngine(enableCopyStream))
+  private val render = Module(new RenderEngine(enableCopyStream,enableFrameLists))
   private val scanout = Module(new ScanoutDma)
   private val ddr = Module(new DdrQosArbiter)
   private val lastDoneTag = RegInit(0.U(16.W))
@@ -96,6 +96,11 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
     b.io.frontendActive := frontend.io.active;b.io.frontendEmpty := list.empty
     b.io.frontendError := list.error;b.io.hardwareError := lastError
     b.io.issued := frontend.io.command.fire
+    render.io.frontend.get.busy := b.io.active
+    render.io.frontend.get.readBeat := b.io.axiR.fire
+    render.io.frontend.get.stalled := b.io.active && (
+      (b.io.axiAr.valid && !b.io.axiAr.ready) || (b.io.axiR.ready && !b.io.axiR.valid) ||
+      (b.io.descriptor.valid && !b.io.descriptor.ready))
     list.begin := b.io.begin;list.end := b.io.end;list.owned := b.io.active
     list.descriptor <> b.io.descriptor
     when(batchSelect) { responseData := b.io.apb.prdata;responseReady := b.io.apb.pready;responseError := b.io.apb.pslverror }

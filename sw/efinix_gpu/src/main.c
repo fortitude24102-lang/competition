@@ -10,6 +10,9 @@
 #ifndef V3_INTERACTIVE
 #define V3_INTERACTIVE 0
 #endif
+#ifndef V3_FRAME_LIST
+#define V3_FRAME_LIST 0
+#endif
 #if V3_INTERACTIVE
 #include "v3_demo.h"
 #include "net_control.h"
@@ -144,7 +147,12 @@ int main(void) {
 #if V3_INTERACTIVE
  if(*(volatile uint32_t *)(uintptr_t)(GPU_APB_BASE+NC_REG_ID)==NC_ID_VALUE)
   return v3_demo_run(&gpu,&buffers,network,&scene,&overlay,&hud_cache);
+ #if V3_FRAME_LIST
+ bsp_printf("V3_CONTROL absent: FrameList candidate stopped\r\n");
+ return 1; // Candidate is interactive only; keep its CPU comparison, not unused AUTO fallback.
+ #else
  bsp_printf("V3_CONTROL absent: frozen R7 fallback\r\n");
+ #endif
 #endif
  perf_window samples[2]={{0},{0}};
  hud_comparison metrics={.network_ready=(uint8_t)network};

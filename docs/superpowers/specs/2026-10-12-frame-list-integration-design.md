@@ -10,7 +10,7 @@ Efinix2dGpuTop新增enableFrameLists=false；启用时复用InstanceStream(enabl
 
 0500 ID=0x464c5431；0504 STATUS：bit0active、bit1sticky done、bit2error、bit3fetching、[15:8]错误码；0508 CONTROL写1START/4CLEAR(done/error，仅inactive)；050c地址、0510count、0514首tag(16bit)、0518epoch仅inactive可写；051c完成epoch、0520末issued tag、0524issued、0528预取字节只读。START只在后端/缓存/模板前端全idle且无硬件错误时接受；地址/count由Reader有界校验。忙态0500写失败不改变当前批。
 
-START原子锁定模板及旧SUBMIT/缓存管理；完整预取成功才输出描述符。原Reader ID6临时复用DDR render AR/R，只在后端确实空闲时取得通路，最后R已被消费后归还；AW/W/B不变，Scanout/Asset及原QoS/FIFO不变。Reader.done为单周期运输事件，Batch.done为软件可轮询sticky状态，只有Reader结束、模板暂存全空、真实render/cache idle时完成并释放锁。
+START原子锁定模板及旧SUBMIT/缓存管理；完整预取成功才输出描述符。原Reader ID6临时复用DDR render AR/R，只在后端确实空闲时取得通路，最后R已被消费后归还；AW/W/B不变，Scanout/Asset及原QoS/FIFO不变。Reader.done为单周期运输事件，Batch.done为软件可轮询sticky状态，只有Reader结束、模板暂存全空、真实render/cache idle时完成并释放锁。RenderEngine仅候选启用可选frontend busy/read/stalled事件，原GPU counters计入预取及前端等待/读取字节，不把新增阶段漏计为零成本。
 
 自动展开仍检查header、完整模板、尺寸/跨度/溢出、DDR边界、步长/对齐与统一CommandValidator；tag按成功验证的命令递增16bit回绕。记录真实queue握手issued。错误后剩余已预取描述符丢弃、已接受队列排空，完成带错误，禁止PRESENT及从头重放。失败/无响应不强行局部复位；需全SoC/响应端一起安全恢复。中途局部AXI复位不支持，正常候选不自动尝试。
 
