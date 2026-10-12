@@ -7,13 +7,23 @@ import chisel3.util._
   * ponytail: one staging command, reuse the existing16-entry render queue;
   * a deeper frontend FIFO is justified only by measured producer starvation.
   */
-class InstanceStream extends Module {
+class InstanceListPort extends Bundle {
+  val begin = Flipped(Valid(UInt(16.W)))
+  val end = Input(Bool())
+  val owned = Input(Bool())
+  val descriptor = Flipped(Decoupled(Vec(4, UInt(32.W))))
+  val empty = Output(Bool())
+  val error = Output(UInt(8.W))
+}
+
+class InstanceStream(enableFrameList: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val apb = new ApbSlavePort
     val idle = Input(Bool()) // Actual render/cache idle, excluding this batch lock.
     val hardwareError = Input(UInt(8.W))
     val active = Output(Bool())
     val command = Decoupled(new GpuCommand)
+    val list = if(enableFrameList) Some(new InstanceListPort) else None
   })
   private val templates = Mem(16, Vec(7, UInt(32.W)))
   private val validTemplates = RegInit(0.U(16.W))
@@ -69,7 +79,8 @@ class InstanceStream extends Module {
   private val mutable = idle && !active
   private val commit = address === 0x440.U
   private val control = address === 0x408.U
-  private val badWrite =
+  private val listOwned = io.list.map(_.owned).getOrElse(false.B)
+  private val badWrite = listOwned ||
     (address === 0x40c.U && (!mutable || data > 15.U)) ||
     (templateWrite && !mutable) ||
     (address === 0x444.U && (!mutable || data > 65535.U)) ||
@@ -93,6 +104,22 @@ class InstanceStream extends Module {
   io.command.valid := held
   io.command.bits := command
   when(io.command.fire) { held := false.B }
+  io.list.foreach { list =>
+    list.empty := !held && !wordMask.orR
+    list.error := error
+    list.descriptor.ready := active && !held && !wordMask.orR && !error.orR && !io.hardwareError.orR
+    when(list.begin.valid) {
+      active := true.B;nextTag := list.begin.bits;wordMask := 0.U;error := 0.U
+    }
+    when(list.end) { active := false.B;wordMask := 0.U }
+    when(list.descriptor.fire) { words := list.descriptor.bits;wordMask := 15.U }
+    when(listOwned && wordMask.andR && !held) {
+      wordMask := 0.U
+      when(descriptorLegal && !error.orR && !io.hardwareError.orR) {
+        command := expanded;held := true.B;lastTag := nextTag;nextTag := nextTag + 1.U
+      }.otherwise { error := Mux(io.hardwareError.orR, io.hardwareError, GpuError.AddressRange.U) }
+    }
+  }
   // Template writes and instance commits are disjoint APB addresses. Do not
   // gate RAM WE with descriptor validation: it feeds RAM→multiply→RAM timing.
   when(transfer && write && legal && templateWrite && mutable) {

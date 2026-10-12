@@ -14,7 +14,8 @@ class ApbSlavePort extends Bundle {
   val pslverror = Output(Bool())
 }
 
-class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean = false) extends Module {
+class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean = false,
+  enableFrameLists: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val apb = new ApbSlavePort
     val axi = new Axi4MasterPort
@@ -36,8 +37,10 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
     val irq = Output(Bool())
   })
 
-  private val regs = Module(new GpuApbRegs(enableInstances))
-  private val instances = if (enableInstances) Some(Module(new InstanceStream)) else None
+  private val hasFrontend = enableInstances || enableFrameLists
+  private val regs = Module(new GpuApbRegs(hasFrontend,enableFrameLists))
+  private val instances = if (hasFrontend) Some(Module(new InstanceStream(enableFrameLists))) else None
+  private val batch = if(enableFrameLists) Some(Module(new FrameListBatch)) else None
   private val assetRegs = Module(new AssetDmaRegs)
   private val assetWriter = Module(new AssetDmaWriter)
   private val render = Module(new RenderEngine(enableCopyStream))
@@ -50,17 +53,18 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   private val scanoutEverEnabled = RegInit(false.B)
 
   private val assetSelect = io.apb.paddr(15, 8) === 1.U
-  private val instanceSelect = if (enableInstances) io.apb.paddr(15, 8) === 4.U else false.B
-  private val instanceActive = instances.map(_.io.active).getOrElse(false.B)
+  private val instanceSelect = if (hasFrontend) io.apb.paddr(15, 8) === 4.U else false.B
+  private val batchSelect = if(enableFrameLists) io.apb.paddr(15,8)===5.U else false.B
+  private val instanceActive = instances.map(_.io.active).getOrElse(false.B) || batch.map(_.io.active).getOrElse(false.B)
   // Candidate-only response stage: break the decoded read mux -> Sapphire
   // path without changing the default legacy APB timing or register ABI.
-  private val responseValid = if (enableInstances) RegInit(false.B) else false.B
+  private val responseValid = if (hasFrontend) RegInit(false.B) else false.B
   private val localSelect = io.apb.psel && !responseValid
   private val responseData = WireDefault(Mux(assetSelect, assetRegs.io.prdata, regs.io.prdata))
   private val responseReady = WireDefault(Mux(assetSelect, assetRegs.io.pready, regs.io.pready))
   private val responseError = WireDefault(Mux(assetSelect, assetRegs.io.pslverror, regs.io.pslverror))
   regs.io.paddr := io.apb.paddr
-  regs.io.psel := localSelect && !assetSelect && !instanceSelect
+  regs.io.psel := localSelect && !assetSelect && !instanceSelect && !batchSelect
   regs.io.penable := io.apb.penable
   regs.io.pwrite := io.apb.pwrite
   regs.io.pwdata := io.apb.pwdata
@@ -83,7 +87,20 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
       responseError := frontend.io.apb.pslverror
     }
   }
-  if (enableInstances) {
+  batch.foreach { b =>
+    val frontend = instances.get
+    val list = frontend.io.list.get
+    b.io.apb.paddr := io.apb.paddr;b.io.apb.psel := localSelect && batchSelect
+    b.io.apb.penable := io.apb.penable;b.io.apb.pwrite := io.apb.pwrite;b.io.apb.pwdata := io.apb.pwdata
+    b.io.idle := !render.io.busy && !render.io.textureCacheBusy
+    b.io.frontendActive := frontend.io.active;b.io.frontendEmpty := list.empty
+    b.io.frontendError := list.error;b.io.hardwareError := lastError
+    b.io.issued := frontend.io.command.fire
+    list.begin := b.io.begin;list.end := b.io.end;list.owned := b.io.active
+    list.descriptor <> b.io.descriptor
+    when(batchSelect) { responseData := b.io.apb.prdata;responseReady := b.io.apb.pready;responseError := b.io.apb.pslverror }
+  }
+  if (hasFrontend) {
     val data = Reg(UInt(32.W))
     val error = RegInit(false.B)
     when(localSelect && io.apb.penable && responseReady) {
@@ -172,7 +189,18 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
     irq := true.B
   }
 
-  ddr.io.render <> render.io.axi
+  if(enableFrameLists) {
+    val b = batch.get
+    ddr.io.render.aw <> render.io.axi.aw;ddr.io.render.w <> render.io.axi.w
+    render.io.axi.b <> ddr.io.render.b
+    ddr.io.render.ar.valid := Mux(b.io.fetching,b.io.axiAr.valid,render.io.axi.ar.valid)
+    ddr.io.render.ar.bits := Mux(b.io.fetching,b.io.axiAr.bits,render.io.axi.ar.bits)
+    b.io.axiAr.ready := ddr.io.render.ar.ready && b.io.fetching
+    render.io.axi.ar.ready := ddr.io.render.ar.ready && !b.io.fetching
+    b.io.axiR.valid := ddr.io.render.r.valid && b.io.fetching;b.io.axiR.bits := ddr.io.render.r.bits
+    render.io.axi.r.valid := ddr.io.render.r.valid && !b.io.fetching;render.io.axi.r.bits := ddr.io.render.r.bits
+    ddr.io.render.r.ready := Mux(b.io.fetching,b.io.axiR.ready,render.io.axi.r.ready)
+  } else { ddr.io.render <> render.io.axi }
   ddr.io.scanout <> scanout.io.axi
   ddr.io.asset <> assetWriter.io.axi
   ddr.io.scanoutLevel := io.scanoutLevel
