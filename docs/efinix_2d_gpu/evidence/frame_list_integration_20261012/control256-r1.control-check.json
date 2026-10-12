@@ -1,0 +1,106 @@
+{
+  "RIGHT": {
+    "samples": 4,
+    "first": {
+      "mode": 0,
+      "tick": 59,
+      "seq": 1131171746,
+      "x": 540,
+      "y": 480,
+      "visible": 246,
+      "fps_x10": 601,
+      "scene_us": 7805,
+      "p95_work_us": 12022,
+      "under": 0,
+      "miss": 0,
+      "keys": 2,
+      "age": 31
+    },
+    "last": {
+      "mode": 0,
+      "tick": 149,
+      "seq": 1131171795,
+      "x": 900,
+      "y": 480,
+      "visible": 245,
+      "fps_x10": 601,
+      "scene_us": 7679,
+      "p95_work_us": 12803,
+      "under": 0,
+      "miss": 0,
+      "keys": 2,
+      "age": 4
+    },
+    "dx": 360,
+    "dy": 0
+  },
+  "UP": {
+    "samples": 3,
+    "first": {
+      "mode": 0,
+      "tick": 179,
+      "seq": 1131171810,
+      "x": 932,
+      "y": 392,
+      "visible": 247,
+      "fps_x10": 601,
+      "scene_us": 7690,
+      "p95_work_us": 12125,
+      "under": 0,
+      "miss": 0,
+      "keys": 4,
+      "age": 22
+    },
+    "last": {
+      "mode": 0,
+      "tick": 239,
+      "seq": 1131171842,
+      "x": 932,
+      "y": 152,
+      "visible": 247,
+      "fps_x10": 601,
+      "scene_us": 7669,
+      "p95_work_us": 12223,
+      "under": 0,
+      "miss": 0,
+      "keys": 4,
+      "age": 6
+    },
+    "dx": 0,
+    "dy": -240
+  },
+  "EXPIRE": {
+    "samples": 2,
+    "total_samples": 3,
+    "first": {
+      "mode": 0,
+      "tick": 299,
+      "seq": 0,
+      "x": 932,
+      "y": 80,
+      "visible": 245,
+      "fps_x10": 601,
+      "scene_us": 7598,
+      "p95_work_us": 12081,
+      "under": 0,
+      "miss": 0,
+      "keys": 0,
+      "age": -1
+    },
+    "last": {
+      "mode": 0,
+      "tick": 329,
+      "seq": 0,
+      "x": 932,
+      "y": 80,
+      "visible": 247,
+      "fps_x10": 601,
+      "scene_us": 7689,
+      "p95_work_us": 12052,
+      "under": 0,
+      "miss": 0,
+      "keys": 0,
+      "age": -1
+    }
+  }
+}

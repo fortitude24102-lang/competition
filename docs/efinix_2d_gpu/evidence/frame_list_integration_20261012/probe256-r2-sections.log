@@ -1,0 +1,35 @@
+
+generated/verification/v3/frame-list-integration/probe256-r2/gpu_demo.elf:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .init         0000006c  00001000  00001000  00001000  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .text         0000a810  0000106c  0000106c  0000106c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  2 .data         00000a6c  0000b87c  0000b87c  0000b87c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  3 .bss          0000f2e4  0000c2e8  0000c2e8  0000c2e8  2**2
+                  ALLOC
+  4 .stack        00001000  0001b5d0  0001b5d0  0000c2e8  2**4
+                  ALLOC
+  5 .riscv.attributes 00000033  00000000  00000000  0000c2e8  2**0
+                  CONTENTS, READONLY
+  6 .comment      00000033  00000000  00000000  0000c31b  2**0
+                  CONTENTS, READONLY
+  7 .debug_info   0000100e  00000000  00000000  0000c34e  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  8 .debug_abbrev 000003d4  00000000  00000000  0000d35c  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .debug_loclists 00001327  00000000  00000000  0000d730  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 10 .debug_aranges 00000058  00000000  00000000  0000ea57  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 11 .debug_rnglists 000001fe  00000000  00000000  0000eaaf  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 12 .debug_line   0000149b  00000000  00000000  0000ecad  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 13 .debug_str    000002e9  00000000  00000000  00010148  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 14 .debug_line_str 00000228  00000000  00000000  00010431  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS

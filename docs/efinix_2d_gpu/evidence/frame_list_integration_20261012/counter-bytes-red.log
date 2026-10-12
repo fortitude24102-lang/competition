@@ -1,0 +1,28 @@
+[info] welcome to sbt 1.12.4 (Ubuntu Java 17.0.20)
+[info] loading project definition from /mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/project
+[info] loading settings for project root from build.sbt...
+[info] set current project to smallproject-chisel (in build file:/mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/)
+[info] Defining Compile / unmanagedSources
+[info] The new value will be used by Compile / bspBuildTargetSourcesItem, Compile / sources
+[info] Reapplying settings...
+[info] set current project to smallproject-chisel (in build file:/mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/)
+[info] Defining Test / unmanagedSources
+[info] The new value will be used by Test / bspBuildTargetSourcesItem, Test / sources
+[info] Reapplying settings...
+[info] set current project to smallproject-chisel (in build file:/mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/)
+[info] compiling 2 Scala sources to /mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/target/scala-2.13/classes ...
+[info] done compiling
+[info] compiling 6 Scala sources to /mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/target/scala-2.13/test-classes ...
+[info] done compiling
+[info] FrameListBatchSpec:
+[info] - executes whole DDR lists through the real Top and waits for pixel retirement *** FAILED ***
+[info]   16 was not equal to 64 (FrameListBatchSpec.scala:103)
+[info] Run completed in 37 seconds, 977 milliseconds.
+[info] Total number of tests run: 1
+[info] Suites: completed 1, aborted 0
+[info] Tests: succeeded 0, failed 1, canceled 0, ignored 0, pending 0
+[info] *** 1 TEST FAILED ***
+[error] Failed tests:
+[error] 	gpu.FrameListBatchSpec
+[error] (Test / testOnly) sbt.TestsFailedException: Tests unsuccessful
+[error] Total time: 55 s, completed Oct 12, 2026, 6:11:29 PM

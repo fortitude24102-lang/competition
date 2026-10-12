@@ -14,3 +14,4 @@ docs/efinix_2d_gpu/evidence/512_bottleneck_20261011/* -text whitespace=cr-at-eol
 docs/efinix_2d_gpu/evidence/copy_ahead_20261011/* -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
 docs/efinix_2d_gpu/evidence/replay_crc_20261011/* -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
 docs/efinix_2d_gpu/evidence/frame_list_foundation_20261011/* -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
+docs/efinix_2d_gpu/evidence/frame_list_integration_20261012/* -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof

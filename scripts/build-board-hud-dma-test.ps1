@@ -1,5 +1,5 @@
 param(
- [ValidateSet('hud','key','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','qos-sweep','live-phases','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances','replay-crc')][string]$Test='hud',
+ [ValidateSet('hud','key','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','qos-sweep','live-phases','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances','replay-crc','frame-list')][string]$Test='hud',
  [string]$RiscvGcc='D:/efinity/risc_v_gcc/toolchain/bin/riscv-none-elf-gcc.exe',
  [string]$Soc='D:/efinity_builds/competition_day1_20260906/sapphire/soc',
  [switch]$InstanceExpandProbe,
@@ -43,6 +43,7 @@ try {
   'damage-lower' {'generated/verification/board-damage-lower'}
   'instances' {'generated/verification/v3/instances/board'}
   'replay-crc' {'generated/verification/v3/replay-crc/board'}
+  'frame-list' {'generated/verification/v3/frame-list/board'}
  }
  if($InstanceExpandProbe) { $out+='-expand-probe' }
  if($OutDirectory) {
@@ -77,8 +78,9 @@ try {
   'damage-sweep' {'sw/efinix_gpu/tests/test_board_damage_sweep.c'}
   'damage-plan' {'sw/efinix_gpu/tests/test_board_damage_plan.c'}
   'damage-lower' {'sw/efinix_gpu/tests/test_board_damage_lower.c'}
-  'instances' {'sw/efinix_gpu/tests/test_board_instances.c';'sw/efinix_gpu/src/gpu_instances.c'}
+  'instances' {'sw/efinix_gpu/tests/test_board_instances.c'}
   'replay-crc' {'sw/efinix_gpu/tests/test_board_replay_crc.c'}
+  'frame-list' {'sw/efinix_gpu/tests/test_board_frame_list.c'}
  }
  [string[]]$probeFlags=@()
  if($InstanceExpandProbe) { $probeFlags=@('-DINSTANCE_EXPAND_PROBE=1') }

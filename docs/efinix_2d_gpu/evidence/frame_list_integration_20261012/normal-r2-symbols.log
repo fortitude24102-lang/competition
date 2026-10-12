@@ -1,0 +1,10 @@
+
+00000002 a regnum_sp
+00000002 a regnum_sp
+00000002 a regnum_sp
+00000002 a regnum_sp
+00001000 A __stack_size
+0001b2f8 B _end
+0001c300 B __freertos_irq_stack_top
+0001c300 B _sp
+

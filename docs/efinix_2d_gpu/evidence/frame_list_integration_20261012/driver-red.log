@@ -1,0 +1,4 @@
+sw/efinix_gpu/tests/test_gpu_frame_list_driver.c:3:10: fatal error: gpu_frame_list.h: No such file or directory
+    3 | #include "gpu_frame_list.h"
+      |          ^~~~~~~~~~~~~~~~~~
+compilation terminated.

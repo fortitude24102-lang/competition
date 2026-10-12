@@ -1,0 +1,16 @@
+D:/efinity/risc_v_gcc/toolchain/bin/../lib/gcc/riscv-none-elf/13.4.0/../../../../riscv-none-elf/bin/ld.exe: C:\Users\FORTIU~1\AppData\Local\Temp\ccGiERQ4.o: in function `gpu_instances_init':
+gpu_instances.c:(.text.gpu_instances_init+0x0): multiple definition of `gpu_instances_init'; C:\Users\FORTIU~1\AppData\Local\Temp\ccsw0URB.o:gpu_instances.c:(.text.gpu_instances_init+0x0): first defined here
+D:/efinity/risc_v_gcc/toolchain/bin/../lib/gcc/riscv-none-elf/13.4.0/../../../../riscv-none-elf/bin/ld.exe: C:\Users\FORTIU~1\AppData\Local\Temp\ccGiERQ4.o: in function `gpu_instances_templates':
+gpu_instances.c:(.text.gpu_instances_templates+0x0): multiple definition of `gpu_instances_templates'; C:\Users\FORTIU~1\AppData\Local\Temp\ccsw0URB.o:gpu_instances.c:(.text.gpu_instances_templates+0x0): first defined here
+D:/efinity/risc_v_gcc/toolchain/bin/../lib/gcc/riscv-none-elf/13.4.0/../../../../riscv-none-elf/bin/ld.exe: C:\Users\FORTIU~1\AppData\Local\Temp\ccGiERQ4.o: in function `gpu_instance_expand':
+gpu_instances.c:(.text.gpu_instance_expand+0x0): multiple definition of `gpu_instance_expand'; C:\Users\FORTIU~1\AppData\Local\Temp\ccsw0URB.o:gpu_instances.c:(.text.gpu_instance_expand+0x0): first defined here
+D:/efinity/risc_v_gcc/toolchain/bin/../lib/gcc/riscv-none-elf/13.4.0/../../../../riscv-none-elf/bin/ld.exe: C:\Users\FORTIU~1\AppData\Local\Temp\ccGiERQ4.o: in function `gpu_instances_program':
+gpu_instances.c:(.text.gpu_instances_program+0x0): multiple definition of `gpu_instances_program'; C:\Users\FORTIU~1\AppData\Local\Temp\ccsw0URB.o:gpu_instances.c:(.text.gpu_instances_program+0x0): first defined here
+D:/efinity/risc_v_gcc/toolchain/bin/../lib/gcc/riscv-none-elf/13.4.0/../../../../riscv-none-elf/bin/ld.exe: C:\Users\FORTIU~1\AppData\Local\Temp\ccGiERQ4.o: in function `gpu_instances_render':
+gpu_instances.c:(.text.gpu_instances_render+0x0): multiple definition of `gpu_instances_render'; C:\Users\FORTIU~1\AppData\Local\Temp\ccsw0URB.o:gpu_instances.c:(.text.gpu_instances_render+0x0): first defined here
+D:/efinity/risc_v_gcc/toolchain/bin/../lib/gcc/riscv-none-elf/13.4.0/../../../../riscv-none-elf/bin/ld.exe: C:\Users\FORTIU~1\AppData\Local\Temp\ccGiERQ4.o: in function `gpu_instances_build_into':
+gpu_instances.c:(.text.gpu_instances_build_into+0x0): multiple definition of `gpu_instances_build_into'; C:\Users\FORTIU~1\AppData\Local\Temp\ccsw0URB.o:gpu_instances.c:(.text.gpu_instances_build_into+0x0): first defined here
+D:/efinity/risc_v_gcc/toolchain/bin/../lib/gcc/riscv-none-elf/13.4.0/../../../../riscv-none-elf/bin/ld.exe: C:\Users\FORTIU~1\AppData\Local\Temp\ccGiERQ4.o: in function `gpu_instances_build':
+gpu_instances.c:(.text.gpu_instances_build+0x0): multiple definition of `gpu_instances_build'; C:\Users\FORTIU~1\AppData\Local\Temp\ccsw0URB.o:gpu_instances.c:(.text.gpu_instances_build+0x0): first defined here
+D:/efinity/risc_v_gcc/toolchain/bin/../lib/gcc/riscv-none-elf/13.4.0/../../../../riscv-none-elf/bin/ld.exe: warning: generated/verification/v3/frame-list-integration/instances-build-red/test.elf has a LOAD segment with RWX permissions
+collect2.exe: error: ld returned 1 exit status
