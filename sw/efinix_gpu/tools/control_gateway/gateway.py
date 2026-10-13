@@ -42,6 +42,8 @@ class GatewayState:
         self.last_keys = float('-inf')
         self.performance = None
         self.performance_time = 0.0
+        self.snapshot_sequence = None
+        self.performance_restart = None
 
     def _cancel_game(self):
         g=self.game_request
@@ -85,6 +87,7 @@ class GatewayState:
     def _begin_session(self):
         self._cancel_game()
         self.performance = None
+        self.performance_restart = None
         previous = self.session
         while self.session == previous or self.session == 0:
             self.session = secrets.randbits(32)
@@ -96,6 +99,7 @@ class GatewayState:
     def _release(self):
         self._cancel_game()
         self.performance = None
+        self.performance_restart = None
         if self.owner:
             self.clear_pending = p.encode(p.KEYS, self.session, self._sequence(), [0, self.action, 0])
         self.owner = None
@@ -122,6 +126,12 @@ class GatewayState:
                 self.owner = client
                 self._begin_session()
                 self.hello_ready = now
+            t=self.telemetry
+            if (keys&64 and action_sequence!=self.action and self.acknowledged and t
+                    and t.session==self.session and t.words[21]&0x3000==0x3000):
+                # A queued pre-R result is not evidence that the reset executed.
+                self.performance=None
+                self.performance_restart=(t.words[3],t.words[2])
             self.keys, self.action, self.heartbeat = keys, action_sequence, now
             if self.game_request and self.game_request['state'] in ('pending','await_snapshot'): self.keys=0
             return 200
@@ -203,9 +213,12 @@ class GatewayState:
                 t=self.telemetry;old=self.performance
                 if (self.owner and self.acknowledged and packet.session==self.session and t
                         and t.session==self.session and now-self.telemetry_time<STALE
-                        and t.words[21]&0x3000==0x3000 and p.newer(packet.sequence,t.sequence)
+                        and t.words[21]&0x3000==0x3000 and not self.performance_restart
+                        and packet.words[0]==t.words[3]
+                        and p.newer(packet.sequence,self.snapshot_sequence)
                         and (old is None or p.newer(packet.sequence,old.sequence))):
                     self.performance,self.performance_time=packet,now
+                    self.snapshot_sequence=packet.sequence
                     return True
             elif packet.kind == p.TELEMETRY:
                 old = self.telemetry
@@ -222,15 +235,21 @@ class GatewayState:
                 reset_baseline = (old is not None and self.acknowledged
                                   and packet.session == self.telemetry_rebase_session != 0
                                   and packet.session != old.session and packet.words[21] & (1 << 4))
-                if same_build and not reset_baseline and not p.newer(packet.sequence, old.sequence):
+                if same_build and not reset_baseline and not p.newer(packet.sequence, self.snapshot_sequence):
                     self.drops += 1
                     return False
                 if old is not None and packet.words[0] != old.words[0]:
                     self.retired_builds.append(old.words[0])
                     self.retired_builds = self.retired_builds[-4:]
-                if (not packet.words[21]&0x2000 or reset_baseline or
-                        old and packet.words[:2]!=old.words[:2]): self.performance=None
+                if (packet.words[21]&0x3000!=0x3000 or reset_baseline or
+                        old and (packet.words[:2]!=old.words[:2] or packet.words[3]!=old.words[3]
+                            or p.newer(old.words[2],packet.words[2]))): self.performance=None
+                if self.performance_restart:
+                    target,tick=self.performance_restart
+                    if (packet.words[21]&0x3000!=0x3000 or packet.words[3]!=target or
+                            p.newer(tick,packet.words[2])): self.performance_restart=None
                 self.telemetry, self.telemetry_time = packet, now
+                self.snapshot_sequence=packet.sequence
                 self._confirm_game()
                 if packet.session == self.telemetry_rebase_session:
                     self.telemetry_rebase_session = 0

@@ -103,6 +103,23 @@ try {
  if($PerformanceChallenge) {
   if(!($state.telemetry.raw.status_flags -band 0x1000)) {throw 'Board does not advertise performance capability'}
   Game 'performance' 0
+  # A retired owner cannot pass a qualification to the next HELLO session.
+  $retiredSession=$state.session
+  $null=Post '/api/control' @{token=$boot.token;client=$client;keys=0;action_sequence=$action;release=$true}
+  $acquired=$false
+  Wait { !$state.stale -and ($state.telemetry.raw.status_flags -band 1024) -and !$state.performance } 3 'lease loss returns challenge to MENU'
+  $null=Post '/api/control' @{token=$boot.token;client=$client;keys=0;action_sequence=$action;release=$false}
+  $acquired=$true;$lastKey=$timer.Elapsed.TotalMilliseconds
+  Wait { !$state.stale -and $state.acknowledged -and $state.session -ne $retiredSession -and $state.telemetry.session -eq $state.session } 3 'new owner ACK'
+  Game 'performance' 0
+  Wait { !$state.stale -and $state.telemetry.raw.simulation_tick -ge 30 } 3 'first cohort advances before reset'
+  $resetTick=$state.telemetry.raw.simulation_tick
+  $action++;$held=64
+  $until=$timer.Elapsed.TotalSeconds+.12;while($timer.Elapsed.TotalSeconds -lt $until) {Tick}
+  $held=0
+  Wait { !$state.stale -and $state.telemetry.raw.simulation_tick -lt $resetTick -and
+   $state.performance -and !$state.performance.best -and $state.performance.target -eq 64 } 3 'R clears run and score'
+  [IO.File]::AppendAllText("$outPath/transitions.log","PASS challenge lease retirement/new session/R reset`n")
   Wait { !$state.stale -and $state.performance -and !$state.performance.stale -and $state.performance.stage -ge 4 } 900 'automatic search and full3600 verification'
   if($state.performance.stage -eq 6 -or !$state.performance.best -or $state.performance.frames -ne 3600) {throw 'Challenge did not produce a qualified full3600 result'}
   $verifiedBest=$state.performance.best

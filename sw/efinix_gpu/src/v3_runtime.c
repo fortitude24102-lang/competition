@@ -44,14 +44,23 @@ static int restart_game(v3_runtime *r,uint32_t session,uint32_t sequence) {
 int v3_runtime_game_command(v3_runtime *r,unsigned op,unsigned level,uint32_t session,uint32_t sequence) {
  if(!r || !r->menu_enabled || !session ||
     !((op==V3_GAME_START && v3_level_count(level)) || (op==V3_GAME_MENU && !level) ||
-      (op==V3_GAME_PERFORMANCE && !level && r->perf_enabled))) return GPU_DRIVER_ARGUMENT;
+      (op==V3_GAME_PERFORMANCE && !level))) return GPU_DRIVER_ARGUMENT;
+ if(op==V3_GAME_PERFORMANCE && !r->perf_enabled)return 1; /* Nonfatal unsupported command. */
  if(op==V3_GAME_MENU) {enter_menu(r,V3_MENU_REQUEST);return 0;}
  if(r->phase!=V3_PHASE_MENU) return 1;
  if(op==V3_GAME_PERFORMANCE) {
   r->phase=V3_PHASE_PERFORMANCE;r->mode=V3_MODE_LIVE;r->compare_pending=0;
+  r->neutral_session=session;
   r->clock=(game_clock){0};++r->scene_generation;return 0;
  }
  r->level=(uint8_t)level;return restart_game(r,session,sequence);
+}
+int v3_runtime_control(v3_runtime *r,const nc_input *in) {
+ if(!r || !in)return GPU_DRIVER_ARGUMENT;
+ if(r->phase==V3_PHASE_PERFORMANCE && (!in->connected || in->session!=r->neutral_session)) {
+  enter_menu(r,V3_MENU_REQUEST);return 1;
+ }
+ return 0;
 }
 int v3_runtime_set_epoch(v3_runtime *r,uint32_t epoch) {
  if(!r || !epoch || r->mode!=V3_MODE_LIVE) return GPU_DRIVER_ARGUMENT;

@@ -259,6 +259,9 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   e=gpu_read_perf_snapshot(gpu,&before);if(e) break;
   e=nc_poll(&control,now_ms(),&raw);if(e<0) break;
   input_update(&input,&raw);
+  #if V3_PERFORMANCE_CHALLENGE
+  e=v3_runtime_control(runtime,&raw);if(e<0)break;
+  #endif
   nc_game_command command;
   e=nc_take_game(&control,&command);if(e<0)break;
   if(e) {e=v3_apply_game_command(runtime,&control,&command);if(e<0) {(void)nc_try_publish(&control,0,now_ms());break;}}
