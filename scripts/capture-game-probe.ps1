@@ -4,6 +4,14 @@ param([Parameter(Mandatory=$true)][string]$Bin,[Parameter(Mandatory=$true)][stri
 # Terminal candidate only: identical BIN, old/new scheduling selected before
 # resume; original CopyAhead/list flags fixed on. JTAG RAM only, never Flash.
 $ErrorActionPreference='Stop'
+function Assert-ProbeIdentity([string]$Raw,[int]$LogicCopy,[int]$SealWords) {
+ $logic=[regex]::Matches($Raw,'(?m)^V3_LOGIC_COPY,enabled=(\d+)\r?$')
+ $list=[regex]::Matches($Raw,'(?m)^V3_FRAME_LIST,present=1,enabled=1\r?$')
+ $seal=[regex]::Matches($Raw,'(?m)^V3_SEAL_BUDGET,words=(\d+)\r?$')
+ if($logic.Count -ne 1 -or $list.Count -ne 1 -or [int]$logic[0].Groups[1].Value -ne $LogicCopy) {throw 'Candidate path identity mismatch'}
+ if($seal.Count -gt 1 -or (!$seal.Count -and $SealWords) -or
+    ($seal.Count -eq 1 -and [int]$seal[0].Groups[1].Value -ne $SealWords)) {throw 'Seal candidate identity mismatch'}
+}
 $binPath=(Resolve-Path -LiteralPath $Bin).Path.Replace('\','/')
 if($binPath -match '[{};\r\n]'){throw 'Unsafe OpenOCD path'}
 $logPath=[IO.Path]::GetFullPath($Log)
@@ -23,8 +31,7 @@ try {
    [IO.File]::AppendAllText($logPath,$chunk);Write-Output $chunk;$tail+=$chunk
    if($tail -match 'V3_FAIL|V3_PROBE_HEALTH_FAIL|V2 comparison stopped'){throw 'Board health failed'}
    if($tail -match 'V3_PROBE_STOP,result=0') {
-    if($tail -notmatch "V3_LOGIC_COPY,enabled=$LogicCopy" -or $tail -notmatch 'V3_FRAME_LIST,present=1,enabled=1') {throw 'Candidate path identity mismatch'}
-    if($SealWords -and $tail -notmatch "V3_SEAL_BUDGET,words=$SealWords") {throw 'Seal candidate identity mismatch'}
+    Assert-ProbeIdentity $tail $LogicCopy $SealWords
     return
    }
   }
