@@ -14,14 +14,15 @@ static uint32_t canonical_reference(const replay_recording *r) {
  const uint32_t header[]={REPLAY_INPUT_VERSION,r->seed,r->resource_epoch,r->count};
  const bullet_state *s=&r->initial;
  const uint32_t state[]={s->count,s->seed,s->tick,s->round_tick,s->score,s->grazes,
-  (uint32_t)s->player_x,(uint32_t)s->player_y,s->invulnerable,s->game_over_ticks,s->hp};
+  (uint32_t)s->player_x,(uint32_t)s->player_y,s->invulnerable,s->game_over_ticks,s->hp,
+  s->interactive,s->won,s->enemy_hp[0],s->enemy_hp[1],s->enemy_hp[2]};
  for(unsigned i=0;i<4;i++) crc=reference_word(crc,header[i]);
- for(unsigned i=0;i<11;i++) crc=reference_word(crc,state[i]);
+ for(unsigned i=0;i<sizeof state/sizeof state[0];i++) crc=reference_word(crc,state[i]);
  for(unsigned i=0;i<s->count;i++) {
   const bullet_object *b=&s->objects[i];
   const uint32_t object[]={(uint32_t)b->x,(uint32_t)b->y,(uint32_t)b->vx,(uint32_t)b->vy,
-   b->age,b->kind,b->shape,b->grazed};
-  for(unsigned j=0;j<8;j++) crc=reference_word(crc,object[j]);
+   b->age,b->kind,b->shape,b->grazed,b->path};
+  for(unsigned j=0;j<sizeof object/sizeof object[0];j++) crc=reference_word(crc,object[j]);
  }
  for(unsigned i=0;i<r->count;i++) crc=reference_word(crc,r->keys[i]);
  return crc^UINT32_MAX;

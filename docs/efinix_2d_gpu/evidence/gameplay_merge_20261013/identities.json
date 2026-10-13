@@ -1,0 +1,17 @@
+[
+  {
+    "path": "D:/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/generated/verification/v3/gameplay-merge-20261013/normal-r1/gpu_demo.bin",
+    "bytes": 47848,
+    "sha256": "acea088f29dd953ee17ba3740b3fcb32beb97b54bb39c7cb03db69eb6abd16d8"
+  },
+  {
+    "path": "D:/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/generated/verification/v3/gameplay-merge-20261013/probe512-r1/gpu_demo.bin",
+    "bytes": 48608,
+    "sha256": "05fe66f062f58ebfdf935e78f6eef1ba804dcd950b706fe8b5d51153f7b2f2b8"
+  },
+  {
+    "path": "D:/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/generated/verification/v3/gameplay-merge-20261013/legacy-r1/gpu_demo.bin",
+    "bytes": 45592,
+    "sha256": "4322a1436ab320182dbb43fb06d56c513af1417463d7e0d44e57a909916cfc64"
+  }
+]

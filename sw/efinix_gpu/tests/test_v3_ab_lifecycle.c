@@ -72,10 +72,12 @@ static void equal_state(const bullet_state *a,const bullet_state *b) {
  CHECK(a->player_x==b->player_x && a->player_y==b->player_y);
  CHECK(a->round_tick==b->round_tick && a->score==b->score && a->grazes==b->grazes);
  CHECK(a->invulnerable==b->invulnerable && a->game_over_ticks==b->game_over_ticks && a->hp==b->hp);
+ CHECK(a->interactive==b->interactive && a->won==b->won);
+ for(unsigned i=0;i<BULLET_ENEMY_COUNT;i++) CHECK(a->enemy_hp[i]==b->enemy_hp[i]);
  for(unsigned i=0;i<a->count;i++) {
   const bullet_object *x=&a->objects[i],*y=&b->objects[i];
   CHECK(x->x==y->x && x->y==y->y && x->vx==y->vx && x->vy==y->vy);
-  CHECK(x->age==y->age && x->kind==y->kind && x->shape==y->shape && x->grazed==y->grazed);
+  CHECK(x->age==y->age && x->kind==y->kind && x->shape==y->shape && x->grazed==y->grazed && x->path==y->path);
  }
 }
 static void equal_commands(void) {

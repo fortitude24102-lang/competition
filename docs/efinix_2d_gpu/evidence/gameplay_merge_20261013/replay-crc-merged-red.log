@@ -1,0 +1,1 @@
+replay-crc-red: sw/efinix_gpu/tests/test_replay_crc.c:37: main: Assertion `!replay_seal(&recording) && recording.crc32==expected' failed.

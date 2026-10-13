@@ -11,6 +11,12 @@ static bullet_state initial,state,final_cpu;
 static bullet_stream stream;
 static replay_recording recording;
 static replay_cursor cursor;
+static const char *output_directory="generated/verification/v3/game";
+static FILE *output_file(const char *name,const char *mode) {
+ char path[1024];int length=snprintf(path,sizeof path,"%s/%s",output_directory,name);
+ assert(length>0 && (unsigned)length<sizeof path);
+ FILE *f=fopen(path,mode);assert(f);return f;
+}
 static uint16_t load16(const uint8_t *p) { return (uint16_t)(p[0]|((uint16_t)p[1]<<8)); }
 static const uint8_t *source(uint32_t address,uint32_t *available) {
  if(address>=BULLET_LOCAL_BACKGROUND && address<BULLET_LOCAL_BACKGROUND+GPU_FRAME_BYTES) {
@@ -24,12 +30,13 @@ static void read_file(const char *path,uint8_t *bytes,unsigned size) {
  assert(fread(bytes,1,size,f)==size && fgetc(f)==EOF && !fclose(f));
 }
 static void cpu_render(const gpu_command *c) {
- uint32_t available;
- const uint8_t *p=source(c->src_addr,&available);
+ uint32_t available=0;
+ const uint8_t *p=c->op==GPU_OP_FILL?NULL:source(c->src_addr,&available);
  golden_surface src={(uint8_t *)p,available,c->width_pixels,c->height_pixels,c->src_stride};
  golden_surface dst={cpu_frame,sizeof cpu_frame,960,540,1920};
  unsigned pixel=(c->dst_addr-GPU_FRAMEBUFFER_A)/2u;
- enum gpu_error error=c->op==GPU_OP_COPY?golden_copy(&dst,pixel%960u,pixel/960u,&src,0,0,c->width_pixels,c->height_pixels):
+ enum gpu_error error=c->op==GPU_OP_FILL?golden_fill(&dst,pixel%960u,pixel/960u,c->width_pixels,c->height_pixels,c->color):
+  c->op==GPU_OP_COPY?golden_copy(&dst,pixel%960u,pixel/960u,&src,0,0,c->width_pixels,c->height_pixels):
   c->op==GPU_OP_COLOR_KEY?golden_color_key(&dst,pixel%960u,pixel/960u,&src,0,0,c->width_pixels,c->height_pixels,c->color_key):
   golden_alpha_blend(&dst,pixel%960u,pixel/960u,&src,0,0,c->width_pixels,c->height_pixels,c->alpha);
  assert(error==GPU_ERROR_NONE);
@@ -37,13 +44,13 @@ static void cpu_render(const gpu_command *c) {
 /* Independent scalar GPU oracle, with actual Key skips and previous Alpha
  * destination reads. Emit full-frame operands to the unchanged pixel RTL. */
 static void reference_render(const gpu_command *c,FILE *vectors) {
- uint32_t available;
- const uint8_t *p=source(c->src_addr,&available);
+ uint32_t available=0;
+ const uint8_t *p=c->op==GPU_OP_FILL?NULL:source(c->src_addr,&available);
  unsigned first=(c->dst_addr-GPU_FRAMEBUFFER_A)/2u;
- assert((c->height_pixels-1u)*c->src_stride+c->width_pixels*2u<=available);
+ assert(c->op==GPU_OP_FILL || (c->height_pixels-1u)*c->src_stride+c->width_pixels*2u<=available);
  for(unsigned y=0;y<c->height_pixels;y++) for(unsigned x=0;x<c->width_pixels;x++) {
   unsigned offset=first+y*960+x; assert(offset<960*540);
-  uint16_t fg=load16(p+y*c->src_stride+x*2u),bg=reference_frame[offset],value=fg;
+  uint16_t fg=c->op==GPU_OP_FILL?c->color:load16(p+y*c->src_stride+x*2u),bg=reference_frame[offset],value=fg;
   unsigned write=c->op!=GPU_OP_COLOR_KEY || fg!=c->color_key;
   if(c->op==GPU_OP_ALPHA) {
    unsigned a=c->alpha,b=255u-a;
@@ -57,7 +64,8 @@ static void reference_render(const gpu_command *c,FILE *vectors) {
   if(write) reference_frame[offset]=value;
  }
 }
-int main(void) {
+int main(int argc,char **argv) {
+ if(argc>1) output_directory=argv[1];
  read_file("sw/efinix_gpu/assets/interactive/background.rgb565",background,sizeof background);
  read_file("sw/efinix_gpu/assets/interactive/atlas.rgb565",atlas,sizeof atlas);
  assert(!game_reset(&initial,512,7)); state=initial;
@@ -77,7 +85,7 @@ int main(void) {
    if(tick%60u==59u) {
     assert(!game_build(&state,GPU_FRAMEBUFFER_A,0,1,BULLET_MAX_COMMANDS,&stream));
     FILE *f=NULL;
-    if(backend && tick==59) { f=fopen("generated/verification/v3/game/pixels.txt","w"); assert(f); }
+    if(backend && tick==59) f=output_file("pixels.txt","w");
     for(unsigned n=0;n<stream.count;n++) {
      if(!backend) cpu_render(&stream.commands[n]);
      else reference_render(&stream.commands[n],f);
@@ -90,7 +98,7 @@ int main(void) {
      unsigned shots=0;
      for(unsigned i=0;i<state.count;i++) shots+=state.objects[i].kind==3 && state.objects[i].age!=UINT16_MAX;
      assert(shots && state.hp);
-     f=fopen("generated/verification/v3/game/interactive_live.rgb565","wb"); assert(f);
+     f=output_file("interactive_live.rgb565","wb");
      assert(fwrite(reference_frame,1,sizeof reference_frame,f)==sizeof reference_frame && !fclose(f));
      printf("PASS interactive live frame: tick=60 visible=%u shots=%u commands=%u alpha=%u\n",
       stream.visible,shots,stream.count,stream.alpha_commands);
@@ -101,11 +109,26 @@ int main(void) {
   else assert(!memcmp(&final_cpu,&state,sizeof state));
  }
  for(unsigned i=0;i<960*540;i++) assert(load16(cpu_frame+2*i)==reference_frame[i]);
- FILE *f=fopen("generated/verification/v3/game/interactive.rgb565","wb"); assert(f);
+ FILE *f=output_file("interactive.rgb565","wb");
  assert(fwrite(cpu_frame,1,sizeof cpu_frame,f)==sizeof cpu_frame && !fclose(f));
  printf("PASS interactive pixels: replay_ticks=600 samples=10 visible=%u commands=%u alpha=%u CRC=%08x\n",
   stream.visible,stream.count,stream.alpha_commands,golden_crc32(cpu_frame,sizeof cpu_frame));
  printf("V3_GAME_MEMORY,state=%u,stream=%u,record=%u,clock=%u bytes\n",
   (unsigned)sizeof state,(unsigned)sizeof stream,(unsigned)sizeof recording,(unsigned)sizeof(game_clock));
+ /* Explicit legal won state tests a second full frame through actual Fill,
+    Key and Alpha, not just recognition of a 'won' boolean. */
+ state.hp=3;state.won=1;state.enemy_hp[0]=state.enemy_hp[1]=state.enemy_hp[2]=0;
+ assert(!game_build(&state,GPU_FRAMEBUFFER_A,0,1,BULLET_MAX_COMMANDS,&stream));
+ f=output_file("pixels.txt","a");
+ for(unsigned n=0;n<stream.count;n++) {cpu_render(&stream.commands[n]);reference_render(&stream.commands[n],f);}
+ assert(!fclose(f));
+ for(unsigned pixel=0;pixel<960u*540u;pixel++) assert(load16(cpu_frame+pixel*2u)==reference_frame[pixel]);
+ assert(reference_frame[208u*960u+404u]==0x07e0); /* W */
+ assert(reference_frame[208u*960u+460u]==0x07e0); /* I */
+ assert(reference_frame[208u*960u+516u]==0x07e0); /* N */
+ assert(reference_frame[282u*960u+472u]==0xffe0); /* restart R */
+ f=output_file("victory.rgb565","wb");
+ assert(fwrite(cpu_frame,1,sizeof cpu_frame,f)==sizeof cpu_frame && !fclose(f));
+ printf("PASS victory pixels: full CPU/oracle equality, WIN/R lit, commands=%u CRC=%08x\n",stream.count,golden_crc32(cpu_frame,sizeof cpu_frame));
  return 0;
 }

@@ -155,6 +155,7 @@ int gpu_instances_build_into(const bullet_state *s,uint32_t dst,int network,int 
  if(!out) return GPU_DRIVER_ARGUMENT;
  out->count=out->visible=out->scene_pixels=out->alpha_commands=out->alpha_pixels=0;
  if(!s || !items || !s->count || s->count>BULLET_MAX_OBJECTS || !cap || cap>BULLET_MAX_COMMANDS ||
+  !bullet_campaign_valid(s) || (manual && s->won) ||
   (network!=0 && network!=1) || (glow!=0 && glow!=1) || (manual!=0 && manual!=1) || hud>=GPU_FRAME_HEIGHT ||
   (dst!=GPU_FRAMEBUFFER_A && dst!=GPU_FRAMEBUFFER_B)) return GPU_DRIVER_ARGUMENT;
  instance_output target={items,out};
@@ -162,13 +163,13 @@ int gpu_instances_build_into(const bullet_state *s,uint32_t dst,int network,int 
   GPU_FRAME_WIDTH,GPU_FRAME_HEIGHT-hud,0),v;
  for(unsigned i=0;!e && glow && i<s->count;i+=8u) {
   const bullet_object *b=s->objects+i;
-  if(manual && b->kind==3 && b->age==UINT16_MAX) continue;
+  if(manual && (b->kind==3 || s->interactive) && b->age==UINT16_MAX) continue;
   e=sprite(&target,cap,dst,1,coordinate(b->x)-2,coordinate(b->y)-2,12,64+(s->tick%16u)*4,-1,&v);
  }
  for(unsigned i=0;!e && i<s->count;i++) {
   const bullet_object *b=s->objects+i;
   if(b->kind>(manual?3:2) || b->shape>=BULLET_SHAPE_COUNT) {e=GPU_DRIVER_ARGUMENT;break;}
-  if(b->kind==3 && b->age==UINT16_MAX) continue;
+  if((b->kind==3 || (manual && s->interactive)) && b->age==UINT16_MAX) continue;
   e=sprite(&target,cap,dst,2u+b->shape,coordinate(b->x),coordinate(b->y),8,0,b->shape,&v);
   if(!e) out->visible+=(unsigned)v;
  }
@@ -178,8 +179,11 @@ int gpu_instances_build_into(const bullet_state *s,uint32_t dst,int network,int 
  unsigned warning=s->round_tick%60u;
  unsigned emitter_alpha=s->hp && warning>=44u?80+(warning-43u)*8:80;
  for(unsigned i=0;!e && i<3;i++) {
-  if(glow) e=sprite(&target,cap,dst,1,centers[i][0]-6,centers[i][1]-6,12,emitter_alpha,-1,&v);
-  if(!e) e=sprite(&target,cap,dst,9u+i,centers[i][0]-8,centers[i][1]-8,16,0,-1,&v);
+  if(manual && s->interactive && !s->enemy_hp[i])continue;
+  int cx=centers[i][0],cy=centers[i][1];
+  if(manual)(void)bullet_enemy_position(s,i,&cx,&cy);
+  if(glow) e=sprite(&target,cap,dst,1,cx-6,cy-6,12,emitter_alpha,-1,&v);
+  if(!e) e=sprite(&target,cap,dst,9u+i,cx-8,cy-8,16,0,-1,&v);
  }
  if(e) out->count=out->visible=out->scene_pixels=out->alpha_commands=out->alpha_pixels=0;
  return e;

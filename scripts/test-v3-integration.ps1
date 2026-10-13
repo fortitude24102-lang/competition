@@ -13,10 +13,12 @@ try {
   @{name='input_state';modules=@('input_state')},
   @{name='r7_frozen';modules=@('bullet_demo')},
   @{name='interactive_game';modules=@('bullet_demo','interactive_game')},
+  @{name='enemy_campaign';modules=@('bullet_demo','interactive_game','replay_input')},
   @{name='input_replay';modules=@('bullet_demo','interactive_game','replay_input')},
   @{name='replay_crc';modules=@('bullet_demo','interactive_game');extra=@('-DREPLAY_CRC_NIBBLE=1')},
   @{name='interactive_pixels';modules=@('bullet_demo','interactive_game','replay_input','golden_renderer','rgb565')},
   @{name='v3_runtime';modules=@('v3_runtime','bullet_demo','interactive_game','replay_input','input_state')},
+  @{name='v3_ab_lifecycle';modules=@('net_control','asset_protocol','input_state','v3_runtime','bullet_demo','interactive_game','replay_input');extra=@('-DNC_TEST_BACKEND')},
   @{name='v3_hud';modules=@('hud')}
   @{name='game_menu';modules=@('game_menu','gpu');extra=@('-DGPU_TEST_BACKEND')}
   @{name='v3_menu_integration';modules=@('v3_demo','net_control','asset_protocol','v3_runtime','bullet_demo','interactive_game','replay_input');extra=@('-DNC_TEST_BACKEND','-Isw/efinix_gpu/tests/include')}

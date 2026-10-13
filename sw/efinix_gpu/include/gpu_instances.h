@@ -25,7 +25,8 @@ int gpu_instances_build(const bullet_state *state,uint32_t dst,int network,int g
 /* items has capacity writable slots; state/items/stats must be disjoint.
  * Writes directly to the caller's buffer (which may be private DDR).
  * On any failure stats is zero: do not publish a partially written list.
- * manual=0 retains R7 rejection of kind3; manual=1 handles friendly slots. */
+ * manual=0 retains R7 rejection of kind3; manual=1 handles campaign visibility.
+ * Manual WIN includes Fill and is rejected; V3 routes it through legacy GPU. */
 int gpu_instances_build_into(const bullet_state *state,uint32_t dst,int network,int glow,
  int manual,unsigned hud_height,unsigned capacity,gpu_instance *items,gpu_instance_stats *stats);
 int gpu_instances_init(gpu_instances *instances,gpu_device *gpu);

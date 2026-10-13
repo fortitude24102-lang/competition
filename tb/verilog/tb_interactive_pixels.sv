@@ -8,17 +8,20 @@ module tb_interactive_pixels;
  wire in_ready,out_valid,write_enable;
  wire [15:0] result_pixel;
  gpu_pixel_pipe dut(.*);
- integer f,fields,n=0,keys=0,alphas=0,copies=0;
+ integer f,fields,n=0,keys=0,alphas=0,copies=0,fills=0;
+ reg [8191:0] vector_file;
  reg [15:0] expected;
  reg expected_write;
  initial begin
   repeat(2) @(negedge clock);
   reset=0;
-  f=$fopen("generated/verification/v3/game/pixels.txt","r");
+  if(!$value$plusargs("PIXELS=%s",vector_file)) vector_file="generated/verification/v3/game/pixels.txt";
+  f=$fopen(vector_file,"r");
   if(!f) $fatal(1,"missing interactive pixel vectors");
   while(!$feof(f)) begin
    fields=$fscanf(f,"%h %h %h %h %h %h %h\n",op,foreground,background,color_key,alpha,expected,expected_write);
    if(fields==7) begin
+    fill_color=foreground;
     in_valid=1; out_ready=0; #1;
     if(!in_ready) $fatal(1,"fresh pixel blocked n=%0d",n);
     @(negedge clock);
@@ -29,6 +32,7 @@ module tb_interactive_pixels;
      if(!out_valid || result_pixel!==expected || write_enable!==expected_write) $fatal(1,"backpressure changed pixel");
     end
     case(op)
+     1:fills=fills+1;
      2:copies=copies+1;
      3:keys=keys+1;
      4:alphas=alphas+1;
@@ -41,9 +45,9 @@ module tb_interactive_pixels;
    end else if(fields!=-1) $fatal(1,"malformed vector");
   end
   $fclose(f);
-  if(copies!=518400 || !keys || !alphas) $fatal(1,"incomplete interactive frame");
-  $display("PASS interactive RTL: pixels=%0d COPY=%0d KEY=%0d ALPHA=%0d",n,copies,keys,alphas);
+  if(copies!=1036800 || !keys || !alphas || !fills) $fatal(1,"incomplete live/victory frames");
+  $display("PASS interactive RTL: live+victory pixels=%0d COPY=%0d KEY=%0d ALPHA=%0d FILL=%0d",n,copies,keys,alphas,fills);
   $finish;
  end
- initial begin #30000000; $fatal(1,"interactive pixel watchdog"); end
+ initial begin #60000000; $fatal(1,"interactive pixel watchdog"); end
 endmodule

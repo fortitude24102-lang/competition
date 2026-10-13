@@ -3,6 +3,7 @@
 #include "gpu_instances.h"
 #include "interactive_game.h"
 #include "golden_renderer.h"
+#include "v3_demo.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -12,11 +13,18 @@ static gpu_instance items[BULLET_MAX_COMMANDS+1];
 static gpu_instance_template templates[16];
 static uint8_t background[GPU_FRAME_BYTES],atlas[BULLET_ATLAS_BYTES];
 static uint8_t old_pixels[GPU_FRAME_BYTES],list_pixels[GPU_FRAME_BYTES];
+/* Exercise actual V3 dispatch, never a source-text check of the WIN branch. */
 static void read_asset(const char *path,uint8_t *p,unsigned bytes) {
  FILE *f=fopen(path,"rb");assert(f);
  assert(fread(p,1,bytes,f)==bytes && fgetc(f)==EOF && !fclose(f));
 }
 static void render(const gpu_command *c,uint8_t *pixels,uint32_t base) {
+ if(c->op==GPU_OP_FILL) {
+  golden_surface dst={pixels,GPU_FRAME_BYTES,960,540,1920};
+  unsigned pixel=(c->dst_addr-base)/2u;
+  assert(golden_fill(&dst,pixel%960,pixel/960,c->width_pixels,c->height_pixels,c->color)==GPU_ERROR_NONE);
+  return;
+ }
  unsigned available;const uint8_t *p;
  if(c->src_addr>=BULLET_LOCAL_BACKGROUND && c->src_addr<BULLET_LOCAL_BACKGROUND+GPU_FRAME_BYTES) {
   unsigned offset=c->src_addr-BULLET_LOCAL_BACKGROUND;p=background+offset;available=GPU_FRAME_BYTES-offset;
@@ -56,9 +64,39 @@ static void compare(uint32_t dst,int network,int glow,int pixels) {
  }
  if(pixels) assert(!memcmp(old_pixels,list_pixels,sizeof old_pixels));
 }
+static void campaign_visibility(void) {
+ assert(!game_reset(&state,64,7));state.round_tick=180;
+ compare(GPU_FRAMEBUFFER_A,0,1,0); /* Moving enemy must not stay at old center. */
+ state.enemy_hp[0]=0;state.objects[0].age=UINT16_MAX;
+ compare(GPU_FRAMEBUFFER_B,1,1,0); /* No dead enemy or inactive hostile halo. */
+}
+static void victory_uses_real_gpu_commands(void) {
+ assert(!game_reset(&state,64,7));state.won=1;
+ memset(state.enemy_hp,0,sizeof state.enemy_hp);
+ gpu_instance_stats stats={.count=99};
+ assert(gpu_instances_build_into(&state,GPU_FRAMEBUFFER_A,0,1,1,72,BULLET_MAX_COMMANDS,items,&stats)==GPU_DRIVER_ARGUMENT);
+ assert(!stats.count && !stats.visible && !stats.scene_pixels && !stats.alpha_commands && !stats.alpha_pixels);
+ memset(items,0xa5,sizeof items);before=state;
+ int used_list=-1;
+ assert(!v3_build_gpu_scene(&state,GPU_FRAMEBUFFER_A,0,1,items,&reference,&used_list));
+ assert(!used_list && reference.count==33 && reference.visible==0 && reference.alpha_commands==1);
+ assert(!memcmp(&state,&before,sizeof state));
+ for(unsigned i=0;i<=BULLET_MAX_COMMANDS;i++) for(unsigned w=0;w<4;w++)assert(items[i].words[w]==0xa5a5a5a5);
+ memset(list_pixels,0x42,sizeof list_pixels);unsigned fills=0;
+ for(unsigned i=0;i<reference.count;i++) {fills+=reference.commands[i].op==GPU_OP_FILL;render(reference.commands+i,list_pixels,GPU_FRAMEBUFFER_A);}
+ assert(fills==30);
+ unsigned win=(208u*960u+404u)*2u,r=(282u*960u+472u)*2u;
+ assert(list_pixels[win]==0xe0 && list_pixels[win+1]==0x07);
+ assert(list_pixels[r]==0xe0 && list_pixels[r+1]==0xff);
+ assert(!game_reset(&state,64,7));used_list=-1;
+ assert(!v3_build_gpu_scene(&state,GPU_FRAMEBUFFER_A,0,1,items,&reference,&used_list) && used_list);
+ used_list=-1;
+ assert(!v3_build_gpu_scene(&state,GPU_FRAMEBUFFER_A,0,0,NULL,&reference,&used_list) && !used_list);
+}
 int main(void) {
  read_asset("sw/efinix_gpu/assets/interactive/background.rgb565",background,sizeof background);
  read_asset("sw/efinix_gpu/assets/interactive/atlas.rgb565",atlas,sizeof atlas);
+ campaign_visibility();victory_uses_real_gpu_commands();
  unsigned frames=0,pixels=0;
  const unsigned tiers[]={64,128,256,512};
  for(unsigned n=0;n<2;n++) for(unsigned g=0;g<2;g++) for(unsigned t=0;t<4;t++) {
@@ -89,6 +127,6 @@ int main(void) {
  for(unsigned i=1;i<=BULLET_MAX_COMMANDS;i++) for(unsigned w=0;w<4;w++) assert(items[i].words[w]==0xa5a5a5a5);
  assert(gpu_instances_build_into(&state,GPU_FRAMEBUFFER_A,1,1,2,72,BULLET_MAX_COMMANDS,items,&stats)==GPU_DRIVER_ARGUMENT && !stats.count);
  assert(gpu_instances_build_into(&state,GPU_FRAMEBUFFER_A,1,1,1,72,BULLET_MAX_COMMANDS,NULL,&stats)==GPU_DRIVER_ARGUMENT && !stats.count);
- printf("FRAME_LIST_BUILD,PASS,frames=%u,pixels=%u,friendly_inactive,clip,order,capacity,state_immutable\n",frames,pixels);
+ printf("FRAME_LIST_BUILD,PASS,frames=%u,pixels=%u,moving_enemies,dead_enemy,inactive_hostile,WIN_Fill_pixels,real_V3_route,friendly_inactive,clip,order,capacity,state_immutable\n",frames,pixels);
  return 0;
 }

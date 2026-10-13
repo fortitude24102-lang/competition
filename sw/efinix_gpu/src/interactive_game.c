@@ -9,7 +9,7 @@ static void reserve_shots(bullet_state *s) {
   s->objects[i]=(bullet_object){.kind=3,.shape=2,.age=UINT16_MAX};
 }
 int game_reset(bullet_state *s,unsigned count,uint32_t seed) {
- int e=bullet_reset(s,count,seed);
+ int e=bullet_reset_player(s,count,seed);
  if(!e) reserve_shots(s);
  return e;
 }
@@ -26,7 +26,7 @@ int game_update(bullet_state *s,const game_input *in) {
  int e=bullet_step_player(s,x,y);
  if(e) return e;
  reserve_shots(s); /* Also restore reserved slots after automatic restart. */
- if(s->hp && (in->held&V3_KEY_FIRE) && s->round_tick%6u==1u)
+ if(s->hp && !s->won && (in->held&V3_KEY_FIRE) && s->round_tick%6u==1u)
   for(unsigned i=shot_start(s);i<s->count;i++) if(s->objects[i].age==UINT16_MAX) {
    s->objects[i]=(bullet_object){.x=(s->player_x-4)*256,.y=(s->player_y-16)*256,
     .vy=-2048,.kind=3,.shape=2};

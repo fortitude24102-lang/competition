@@ -36,21 +36,25 @@ static uint32_t checksum(const replay_recording *r) {
  crc_word(&crc,s->round_tick); crc_word(&crc,s->score); crc_word(&crc,s->grazes);
  crc_word(&crc,(uint32_t)s->player_x); crc_word(&crc,(uint32_t)s->player_y);
  crc_word(&crc,s->invulnerable); crc_word(&crc,s->game_over_ticks); crc_word(&crc,s->hp);
+ crc_word(&crc,s->interactive);crc_word(&crc,s->won);
+ for(unsigned i=0;i<BULLET_ENEMY_COUNT;i++) crc_word(&crc,s->enemy_hp[i]);
  for(unsigned i=0;i<s->count;i++) {
   const bullet_object *b=&s->objects[i];
   crc_word(&crc,(uint32_t)b->x); crc_word(&crc,(uint32_t)b->y);
   crc_word(&crc,(uint32_t)b->vx); crc_word(&crc,(uint32_t)b->vy);
   crc_word(&crc,b->age); crc_word(&crc,b->kind); crc_word(&crc,b->shape); crc_word(&crc,b->grazed);
+  crc_word(&crc,b->path);
  }
  for(unsigned i=0;i<r->count;i++) crc_word(&crc,r->keys[i]);
  return crc^UINT32_MAX;
 }
 static int initial_valid(const bullet_state *s) {
- if(!s || !s->count || s->count>BULLET_MAX_OBJECTS || s->hp>BULLET_START_HP ||
+ if(!s || !s->count || s->count>BULLET_MAX_OBJECTS || s->hp>BULLET_START_HP || !bullet_campaign_valid(s) ||
     s->player_x<8 || s->player_x>952 || s->player_y<80 || s->player_y>532 ||
     s->invulnerable>BULLET_PROTECTION_TICKS ||
     (!s->hp && (!s->game_over_ticks || s->game_over_ticks>BULLET_RESTART_TICKS))) return 0;
- for(unsigned i=0;i<s->count;i++) if(s->objects[i].kind>3 || s->objects[i].shape>=BULLET_SHAPE_COUNT) return 0;
+ for(unsigned i=0;i<s->count;i++) if(s->objects[i].kind>3 || s->objects[i].shape>=BULLET_SHAPE_COUNT ||
+  (s->interactive && s->objects[i].path>=BULLET_PATH_COUNT)) return 0;
  return 1;
 }
 int replay_init(replay_recording *r,const bullet_state *initial,uint32_t epoch) {

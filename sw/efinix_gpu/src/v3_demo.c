@@ -45,6 +45,24 @@ _Static_assert(V3_STATE_ADDRESS+sizeof(v3_runtime)<=V3_COPY_AHEAD_WORD,"probe co
 static uint32_t work_samples[PERF_WINDOW_FRAMES];
 static uint32_t us(uint64_t ticks) {return (uint32_t)(ticks/(BSP_CLINT_HZ/1000000u));}
 static uint32_t now_ms(void) {return (uint32_t)(gpu_platform_cycles()/(BSP_CLINT_HZ/1000u));}
+int v3_build_gpu_scene(const bullet_state *state,uint32_t dst,int network,int list_available,
+ gpu_instance *items,bullet_stream *scene,int *using_list) {
+ if(!state || !scene || !using_list || (list_available!=0 && list_available!=1))return GPU_DRIVER_ARGUMENT;
+ *using_list=0;
+ if(list_available && !state->won) {
+  gpu_instance_stats s;
+  int e=gpu_instances_build_into(state,dst,network,1,1,HUD_CACHE_HEIGHT,BULLET_MAX_COMMANDS,items,&s);
+  scene->count=s.count;scene->visible=s.visible;scene->scene_pixels=s.scene_pixels;
+  scene->alpha_commands=s.alpha_commands;scene->alpha_pixels=s.alpha_pixels;
+  if(!e)*using_list=1;
+  return e;
+ }
+ /* ponytail: WIN is 33 commands, so reuse legacy hardware Fill instead of
+  * enlarging the list ABI/RTL for this infrequent, low-load screen. */
+ int e=game_build(state,dst,network,1,BULLET_MAX_COMMANDS,scene);
+ if(!e)e=bullet_clip_background_for_hud(scene,HUD_CACHE_HEIGHT);
+ return e;
+}
 #if V3_COPY_AHEAD
 static int copy_ahead_begin(gpu_device *gpu,uint32_t dst,int network,
  gpu_command *background,uint16_t *tag,uint32_t polls) {
@@ -199,17 +217,14 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
 #endif
   uint64_t build=gpu_platform_cycles();
 #if V3_FRAME_LIST
-  int list_frame=list_enabled && !menu && mode!=V3_MODE_CPU;
+  int list_frame=0;
   uint32_t list_address=buffers->back==GPU_FRAMEBUFFER_A?GPU_FRAME_LIST_BANK_A:GPU_FRAME_LIST_BANK_B;
 #endif
   if(menu) {scene->count=scene->visible=scene->alpha_commands=scene->alpha_pixels=0;}
 #if V3_FRAME_LIST
-  else if(list_frame) {
-   gpu_instance_stats s;
-   e=gpu_instances_build_into(&runtime->game,buffers->back,network,1,1,HUD_CACHE_HEIGHT,
-    BULLET_MAX_COMMANDS,(gpu_instance *)(uintptr_t)list_address,&s);if(e)break;
-   scene->count=s.count;scene->visible=s.visible;scene->alpha_commands=s.alpha_commands;
-   scene->scene_pixels=s.scene_pixels;scene->alpha_pixels=s.alpha_pixels;
+  else if(list_enabled && mode!=V3_MODE_CPU) {
+   e=v3_build_gpu_scene(&runtime->game,buffers->back,network,1,
+    (gpu_instance *)(uintptr_t)list_address,scene,&list_frame);if(e)break;
   }
 #endif
   else {
