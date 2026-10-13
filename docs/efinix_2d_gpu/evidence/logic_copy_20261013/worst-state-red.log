@@ -1,0 +1,25 @@
+sw/efinix_gpu/tests/test_v3_frame_stats.c: In function ‘main’:
+sw/efinix_gpu/tests/test_v3_frame_stats.c:8:4: error: ‘v3_worst_frame’ has no member named ‘hp_before’
+    8 |   .hp_before=0,.death_wait_before=1,.round_tick=0};
+      |    ^~~~~~~~~
+sw/efinix_gpu/tests/test_v3_frame_stats.c:8:17: error: ‘v3_worst_frame’ has no member named ‘death_wait_before’
+    8 |   .hp_before=0,.death_wait_before=1,.round_tick=0};
+      |                 ^~~~~~~~~~~~~~~~~
+sw/efinix_gpu/tests/test_v3_frame_stats.c:8:38: error: ‘v3_worst_frame’ has no member named ‘round_tick’
+    8 |   .hp_before=0,.death_wait_before=1,.round_tick=0};
+      |                                      ^~~~~~~~~~
+sw/efinix_gpu/tests/test_v3_frame_stats.c:8:49: error: excess elements in struct initializer [-Werror]
+    8 |   .hp_before=0,.death_wait_before=1,.round_tick=0};
+      |                                                 ^
+sw/efinix_gpu/tests/test_v3_frame_stats.c:8:49: note: (near initialization for ‘candidate’)
+In file included from sw/efinix_gpu/tests/test_v3_frame_stats.c:1:
+sw/efinix_gpu/tests/test_v3_frame_stats.c:11:15: error: ‘v3_worst_frame’ has no member named ‘hp_before’
+   11 |  assert(!worst.hp_before && worst.death_wait_before==1 && !worst.round_tick);
+      |               ^
+sw/efinix_gpu/tests/test_v3_frame_stats.c:11:34: error: ‘v3_worst_frame’ has no member named ‘death_wait_before’
+   11 |  assert(!worst.hp_before && worst.death_wait_before==1 && !worst.round_tick);
+      |                                  ^
+sw/efinix_gpu/tests/test_v3_frame_stats.c:11:65: error: ‘v3_worst_frame’ has no member named ‘round_tick’
+   11 |  assert(!worst.hp_before && worst.death_wait_before==1 && !worst.round_tick);
+      |                                                                 ^
+cc1: all warnings being treated as errors

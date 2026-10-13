@@ -26,26 +26,27 @@
 **Files:** v3_frame_stats.h, test_v3_frame_stats.c, v3_demo.c.
 **Interfaces:** `v3_worst_frame_record(v3_worst_frame *,const v3_worst_frame *)` retains largest valid work frame, derives exclusive other_us; DetailProbe prints retained data at STOP.
 
-- [ ] RED: test larger/smaller frames, derived residual and invalid phase/wall accounting with literal expected values; WSL GCC existing test.
-- [ ] GREEN: bounded struct/helper and terminal-only capture; no normal diagnostic code; integration software tests.
-- [ ] Build -DetailProbe current 512; capture original schedule and inspect worst-frame logic/build/scene/HUD/other before choosing Task2. Commit diagnostic evidence/code locally.
+- [x] RED→GREEN worst-frame retention/residual/invalid accounting and raw before/after-state tests; terminal-only capture, full V3 software suite.
+- [x] Original detail512 30+600: tick600 seal1 logic9339/work21874us; diagnostic source committed bcf446b. No unchanged RTL rerun.
 
 ### Task 2: Early Copy candidate and measurement
 
 **Files:** v3_demo.c, test_copy_ahead.c/new scheduling integration test, test-efinix-software.ps1, candidate capture script, README/evidence/report.
 **Interfaces:** `V3_LOGIC_COPY`, build `-LogicCopy` requires -CopyAhead/-Interactive/separate OutDirectory; terminal02d10008 selector; reuse copy_ahead_begin/finish and gpu_wait_tag.
 
-- [ ] RED: actual scheduling consumer must issue before advance, exactly once, wait before CPU/MENU; preserve argument/error/timeout and local/net A/B ordered pixel results. Test WIN original Copy/Fill.
-- [ ] GREEN: minimal early issue / drain / reuse logic with default-off flag; relevant tests plus full V3 software suite, instance/frame-list driver tests; independent normal/probe/detail builds preserve4KiB stack.
-- [ ] Same-BIT/BIN original→early→original 512, repeated early and 256 sanity. If benefit absent, restore old default; if present, retain opt-in qualified candidate. Do not claim stable60 without zero late.
-- [ ] Restore normal candidate MENU; four tier ACK/state and 256 keyboard/lease test; release control, end programming. Evidence hashes, documentation, one fresh final review and local commits.
+- [x] Actual issue-before-logic, exactly-once ordered/full-pixel local/net A/B, MENU/death/CPU drain, timeout/error and WIN tests RED→GREEN.
+- [x] Default-off early issue/drain/reuse, software/builder/driver suites and independent normal/probe/detail links pass;4KiB stack preserved.
+- [x] Same-BIN original532/522 vs early597/597, late77/90 vs4/4;256early601 zero late. Net benefit retained opt-in, not stable51260.
+- [x] Early normalMENU four-tier/control/lease checked, then combined candidate restored and rechecked. Raw hashes/report, one fresh review, local commits; no push.
 
 ### Task 3: Budget full seal scan outside one-frame peak
 
 **Files:** replay_input.h/c,test_replay_crc.c,v3_runtime.h/c,test_v3_runtime.c,v3_demo.c,test-efinix-software.ps1,capture-game-probe.ps1,report.
 **Interfaces:** `replay_seal_cursor {uint32_t crc,offset;}`, `replay_seal_step(replay_recording *,replay_seal_cursor *,unsigned words)` (1..256;0 pending,1 sealed,negative error); runtime seal_words/cursor default0; `-ReplaySealBudget`, terminal02d1000c0/256.
 
-- [ ] RED: full independent canonical CRC equality for32..512 and budgets1/7/256, exact word bounds, no premature seal, invalid budgets/incomplete record, post-prefix tamper rejected by unchanged replay_begin; runtime no key overflow, live physics unchanged, compare waits, restart/epoch clear cursor. Existing legacy behavior tests stay unchanged.
-- [ ] GREEN: bounded canonical word walker with original synchronous CRC path unmodified; one budget chunk per LIVE advance, no record beyond600, compare only sealed, reset cursor at every recording reset. Build flag default off and private selector for probe only.
-- [ ] Full software/instance/driver tests, link independent normal/probe/detail; same-BIN seal-off→budget-on→off and repeated-on with early Copy enabled,256 sanity. Include seal completion in diagnostic / board capture; no skipped peak or health exemption.
-- [ ] Restore tested combined candidate MENU only if measured benefit; four-tier/control evidence, hashes, fresh review and local documentation commit, no push/Flash.
+- [x] Independent canonical CRC budgets1/7/256 RED→GREEN, exact bounds/incomplete/invalid/tamper;620states equal, no601st key, Compare waits, reset/epoch cursor clear, legacy tests remain.
+- [x] Full-scan256word budget and default-off build/terminal selector; full original replay_begin CRC verification retained.
+- [x] Same-BIN off597/597 late4/4 vs budget598/599 late3/2;256601 zero late, completeCRC/offset equals independent reference.14healthy30+600cohorts, including diagnostic max restart hp0wait1→hp3round0 work16878us. No strict51260 guarantee.
+- [x] Combined normalMENU8freshtransitions/control/lease verified, exit healthy/released/no programmer. Normal-r2 byte-equals restoredr1, default legacy link passes1776B extraRAM margin; hashes/archive/report and local commits. No Flash/push.
+
+Completion: [full evidence, review dispositions and remaining qualification](../../efinix_2d_gpu/logic_copy_20261013.md). Independent review found C0/I0; one off-cohort guard finding was upgraded/fixed RED→GREEN and final20C/23network/guard suite green. New fields are terminal diagnostics only. HUD list batching and30minute/active-only512 qualification remain future work, not completed items.

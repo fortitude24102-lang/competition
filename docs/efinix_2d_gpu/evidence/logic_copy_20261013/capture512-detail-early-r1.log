@@ -1,0 +1,76 @@
+Open On-Chip Debugger 0.11.0+dev-04060-g967f8f6f0-dirty (2026-03-24-19:56)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+Info : auto-selecting first available session transport "jtag". To override use 'transport select <transport>'.
+Info : set servers polling period to 50ms
+Info : clock speed 800 kHz
+Info : JTAG tap: fpga_spinal.bridge tap/device found: 0x10660a79 (mfg: 0x53c (Efinix Inc), part: 0x0660, ver: 0x1)
+[fpga_spinal.cpu0] Target successfully examined.
+Info : starting gdb server for fpga_spinal.cpu0 on 3333
+Info : Listening on port 3333 for gdb connections
+Info : JTAG tap: fpga_spinal.bridge tap/device found: 0x10660a79 (mfg: 0x53c (Efinix Inc), part: 0x0660, ver: 0x1)
+shutdown command invoked
+BULLET_ASSET,id=101,bytes=1036800,retries=0,result=0
+BULLET_ASSET,id=102,bytes=3104,retries=0,result=0
+TEXTURE_CACHE,result=0,base=02a0
+0000,bytes=3104,network=1
+V3_FRAME_LIST,present=1,enabled=1
+V3_COPY_AHEAD,enabled=1
+V3_LOGIC_COPY,enabled=1
+
+HUD_LOGO,id=103,bytes=28000,retries=0,result=0,enabled=1
+V3_COUNTER_BASELINE,under_lo=358560,under_hi=0
+V3_P
+ROBE_START,warm=30,samples=600,log_windows=1
+V3_READY,build=20261008,epoch=00030002,network=1,state=02d00000,mode=LIVE,count=512
+
+V3_DETAIL,tick=29,build_us=4164,logic_us=2501,scene_us=4405,hud_us=1387,work_us=12679,busy_us=12208,visible=504,alpha=67
+
+V3_DETAIL,tick=59,build_us=4289,logic_us=2619,scene_us=4187,hud_us=1553,work_us=12888,busy_us=12337,visible=503,alpha=67
+
+V3_DETAIL,tick=89,build_us=4044,logic_us=2476,scene_us=4550,hud_us=1496,work_us=12822,busy_us=12231,visible=504,alpha=67
+
+V3_DETAIL,tick=119,build_us=4147,logic_us=2821,scene_us=4088,hud_us=1547,work_us=12832,busy_us=12265,visible=502,alpha=67
+
+V3_DETAIL,tick=149,build_us=4282,logic_us=574,scene_us=6108,hud_us=1383,work_us=12588,busy_us=12086,visible=501,alpha=66
+
+V3_DETAIL,tick=179,build_us=4184,logic_us=580,scene_us=6179,hud_us=1406,work_us=12566,busy_us=12147,visible=501,alpha=66
+
+V3_DETAIL,tick=209,build_us=4243,logic_us=577,scene_us=6138,hud_us=1383,work_us=12588,busy_us=12116,visible=501,alpha=66
+
+V3_DETAIL,tick=239,build_us=4249,logic_us=575,scene_us=6133,hud_us=1397,work_us=12588,busy_us=12110,visible=501,alpha=66
+
+V3_DETAIL,tick=270,build_us=4053,logic_us=2374,scene_us=4657,hud_us=1382,work_us=12719,busy_us=12240,visible=504,alpha=67
+
+V3_DETAIL,tick=300,build_us=4191,logic_us=2441,scene_us=4437,hud_us=1399,work_us=12719,busy_us=12194,visible=504,alpha=67
+
+V3_DETAIL,tick=330,build_us=4053,logic_us=2568,scene_us=4439,hud_us=1373,work_us=12679,busy_us=12183,visible=504,alpha=67
+
+V3_DETAIL,tick=360,build_us=4169,logic_us=2410,scene_us=4523,hud_us=1418,work_us=12739,busy_us=12299,visible=504,alpha=67
+
+V3_DETAIL,tick=390,build_us=4165,logic_us=2787,scene_us=4116,hud_us=1395,work_us=12721,busy_us=12220,visible=503,alpha=67
+
+V3_DETAIL,tick=420,build_us=4231,logic_us=584,scene_us=6138,hud_us=1388,work_us=12591,busy_us=12081,visible=501,alpha=66
+
+V3_DETAIL,tick=450,build_us=4181,logic_us=578,scene_us=6196,hud_us=1388,work_us=12601,busy_us=12117
+,visible=501,alpha=66
+
+V3_DETAIL,tick=480,build_us=4127,logic_us=580,scene_us=6250,hud_us=1382,work_us=12560,busy_us=12109,visible=501,alpha=66
+
+V3_DETAIL,tick=510,build_u
+s=4252,logic_us=565,scene_us=6121,hud_us=1393,work_us=12560,busy_us=12105,visible=501,alpha=66
+
+V3_DETAIL,tick=541,build_us=4109,logic_us=2409,scene_us=4565,hud_us=1384,work_us=12685,busy_us=12232,visible=504,alpha=67
+
+V3_DETAIL,tick=571,build_us=4149,logic_us=2522,scene_us=4385,hud_us=1517,work_us=12831,busy_us=12267,visible=503,alpha=67
+
+V3_DETAIL,tick=600,build_us=2517,logic_us=11470,scene_us=3401,hud_us=1380,work_us=191
+92,busy_us=11879,visible=504,alpha=67
+
+V3_DETAIL,tick=631,build_us=4162,logic_us=2468,s
+cene_us=4433,hud_us=1402,work_us=12721,busy_us=12181,visible=502,alpha=67
+V3_WORST,tick=600,steps=1,logic_us=11470,build_us=2517,scene_us=3401,hud_us=1380,other_us=424,busy_us=11879,work_us=19192,wall_us=33277,hp=2,seal_event=1
+V3_PROBE,target=512,frames=600,fps_x10=598,work_mean_us=12766,work_max_us=19192,wall_max_us=33277,work_miss=3,late_present=3,under=0,errors=0,visible_min=499,visible_max=504,alpha_min=66,alpha_max=67,log_mean_us=3,log_max_us=108
+V3_PROBE_STOP,result=0
+
