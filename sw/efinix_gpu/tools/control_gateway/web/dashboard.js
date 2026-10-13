@@ -105,12 +105,12 @@
 
   function gameView(view) {
     const flags=view?.telemetry?.words[21]||0,supported=!!(flags&(1<<11));
-    const phase=supported?(flags&(1<<10)?'menu':'play'):'unknown';
+    const phase=supported?(flags&(1<<10)?'menu':flags&(1<<13)?'performance':'play'):'unknown';
     const counts=[64,128,256,512],index=counts.indexOf(view?.telemetry?.words[3]);
     const pending=['pending','await_snapshot'].includes(view?.game?.state);
     const ready=supported && !view.stale && (view.age_ms==null || view.age_ms<500) && !pending;
     return {supported,phase,level:phase==='play' && index>=0?index+1:null,
-      canStart:ready && phase==='menu',canMenu:ready,pending};
+      canStart:ready && phase==='menu',canMenu:ready,pending,canPerformance:ready && phase==='menu' && !!(flags&(1<<12))};
   }
 
   async function boot() {
@@ -149,10 +149,12 @@
     }
     for(let level=1;level<=4;level++) $('level-'+level).addEventListener('click',()=>choose('start',level));
     $('reselect').addEventListener('click',()=>choose('menu',0));
+    $('performance-start').addEventListener('click',()=>choose('performance',0));
     document.addEventListener('keydown',event=>{
       if(!pump.active || event.repeat || event.ctrlKey || event.metaKey || event.altKey || !MAP[event.code]) return;
       const gv=lastView?gameView(lastView):null;
-      if(gv?.supported && (gv.phase!=='play' || gv.pending || choice || gameSending || performance.now()<restartUntil)) return;
+      if(gv?.supported && (!['play','performance'].includes(gv.phase) ||
+          gv.phase==='performance' && event.code==='KeyC' || gv.pending || choice || gameSending || performance.now()<restartUntil)) return;
       event.preventDefault(); if(keys.press(event.code)) pump.update(keys.mask,keys.action);
       if(event.code==='KeyR' && gv?.supported) {
         keys.clear();restartUntil=performance.now()+100;
@@ -224,7 +226,13 @@
       const ages=freshness.view(performance.now());
       const stale=!lastView || lastView.stale || ages.stale || streamFailed;
       const gv=gameView(lastView || {stale:true});
-      $('difficulty-options').hidden=gv.phase==='play';
+      $('difficulty-options').hidden=['play','performance'].includes(gv.phase);
+      $('performance-start').disabled=!gv.canPerformance || stale || !!choice || gameSending;
+      const perf=lastView?.performance;
+      $('performance-result').textContent=gv.phase!=='performance'?'独立全活动负载；普通游戏和CPU渲染不改变。':
+        stale || !perf || perf.stale?'等待新鲜板端挑战数据，旧成绩不作当前结论':
+        ['','预热','搜索','60秒复核','60秒复核通过','达到当前909列表容量（非硬件极限）','失败／成绩失效'][perf.stage]+
+        ' · 活动 '+perf.target+' · 窗口 '+perf.frames+' 帧 · 已复核最佳 '+perf.best;
       $('current-difficulty').textContent=gv.level?'当前难度 '+gv.level+' · '+[64,128,256,512][gv.level-1]+' Sprite 请求档位':'';
       $('reselect').disabled=!gv.canMenu || stale || !!choice || gameSending;
       for(let level=1;level<=4;level++) $('level-'+level).disabled=!gv.canStart || stale || !!choice || gameSending;
@@ -241,7 +249,8 @@
         const state=lastView?.game?.state;
         $('game-status').textContent=stale?'开发板状态过期，不能开始新局':!gv.supported?'当前固件不支持难度菜单（原键盘仍可用）':
           state==='unknown'?'请求结果未知；以下界面以真实板端快照为准':state==='rejected'?'板端拒绝操作，请按当前状态重试':
-          gv.pending?'等待板端执行确认与新快照…':gv.phase==='menu'?'请选择难度，游戏逻辑由 Sapphire 执行':'键盘控制飞机；死亡自动回到难度选择';
+          gv.pending?'等待板端执行确认与新快照…':gv.phase==='menu'?'请选择难度，游戏逻辑由 Sapphire 执行':
+          gv.phase==='performance'?'软核自动加压；方向键控制第一架飞机，R重新挑战，重选退出':'键盘控制飞机；死亡自动回到难度选择';
       }
       banner.className=stale?'warning':'healthy';
       banner.textContent=(simulated?'SIMULATED — not board measurements. ':'')+

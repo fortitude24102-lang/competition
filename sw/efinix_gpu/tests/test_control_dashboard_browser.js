@@ -34,7 +34,7 @@ async function main() {
     child.stdout.on('data',data=>process.stdout.write(data));child.stderr.on('data',data=>process.stderr.write(data));children.push(child);return child;
   }
   try {
-    launch('fake_board.py',['--port',String(fakePort),'--gateway-port',String(udpPort),'--game-menu']);
+    launch('fake_board.py',['--port',String(fakePort),'--gateway-port',String(udpPort),'--game-menu','--performance']);
     launch('gateway.py',['--board','127.0.0.1','--board-port',String(fakePort),'--udp-bind','127.0.0.1',
       '--udp-port',String(udpPort),'--http-port',String(httpPort),'--simulated']);
     const url='http://127.0.0.1:'+httpPort;
@@ -103,6 +103,16 @@ async function main() {
     await page.locator('#reselect').click();
     await page.waitForFunction(()=>!document.querySelector('#difficulty-options').hidden && !document.querySelector('#level-1').disabled);
     await page.keyboard.press('ArrowLeft');assert.equal(await page.locator('#keys').textContent(),'0x00');
+    await page.locator('#performance-start').click();
+    await until(async()=>(await(await fetch(url+'/api/status')).json()).game?.opcode==='performance' &&
+      (await(await fetch(url+'/api/status')).json()).game?.state==='applied');
+    await page.waitForFunction(()=>document.querySelector('#performance-result').textContent.includes('活动 64'));
+    await page.keyboard.down('ArrowRight');assert.equal(await page.locator('#keys').textContent(),'0x02');
+    await page.keyboard.up('ArrowRight');await page.keyboard.press('KeyC');
+    assert.equal(await page.locator('#keys').textContent(),'0x00');
+    await page.locator('#reselect').click();
+    await page.waitForFunction(()=>!document.querySelector('#performance-start').disabled);
+    assert.equal((await(await fetch(url+'/api/status')).json()).performance,null,'MENU discards challenge score');
     await until(async()=>(await page.locator('#metric-firmware_build_id').textContent())!=='Unavailable');
     assert.equal(await page.locator('#gpu-fps').textContent(),'Unavailable');
     await until(async()=>(await page.locator('#cpu-age').textContent()).includes('no valid CPU result'));

@@ -5,6 +5,8 @@ uint32_t v3_runtime_status(const v3_runtime *r,int network,int connected,
  int menu=r->menu_enabled && r->phase==V3_PHASE_MENU;
  return (r->mode==V3_MODE_LIVE?V3_STATUS_GPU_REALTIME:V3_STATUS_COMPARE_REPLAY)
   |(r->menu_enabled?V3_STATUS_GAME_MENU_CAPABLE:0)
+  |(r->perf_enabled?V3_STATUS_PERFORMANCE_CAPABLE:0)
+  |(r->phase==V3_PHASE_PERFORMANCE?V3_STATUS_PERFORMANCE_ACTIVE:0)
   |(menu?V3_STATUS_MENU|V3_STATUS_PAUSED:0)
   |(!network?V3_STATUS_LOCAL_FALLBACK:0)|(connected?V3_STATUS_CONTROL_CONNECTED:0)
   |(r->mode!=V3_MODE_CPU || !cpu_fresh?V3_STATUS_CPU_STALE:0)
@@ -41,9 +43,14 @@ static int restart_game(v3_runtime *r,uint32_t session,uint32_t sequence) {
 }
 int v3_runtime_game_command(v3_runtime *r,unsigned op,unsigned level,uint32_t session,uint32_t sequence) {
  if(!r || !r->menu_enabled || !session ||
-    !((op==V3_GAME_START && v3_level_count(level)) || (op==V3_GAME_MENU && !level))) return GPU_DRIVER_ARGUMENT;
+    !((op==V3_GAME_START && v3_level_count(level)) || (op==V3_GAME_MENU && !level) ||
+      (op==V3_GAME_PERFORMANCE && !level && r->perf_enabled))) return GPU_DRIVER_ARGUMENT;
  if(op==V3_GAME_MENU) {enter_menu(r,V3_MENU_REQUEST);return 0;}
  if(r->phase!=V3_PHASE_MENU) return 1;
+ if(op==V3_GAME_PERFORMANCE) {
+  r->phase=V3_PHASE_PERFORMANCE;r->mode=V3_MODE_LIVE;r->compare_pending=0;
+  r->clock=(game_clock){0};++r->scene_generation;return 0;
+ }
  r->level=(uint8_t)level;return restart_game(r,session,sequence);
 }
 int v3_runtime_set_epoch(v3_runtime *r,uint32_t epoch) {
@@ -61,6 +68,10 @@ static int begin_compare(v3_runtime *r) {
 int v3_runtime_advance(v3_runtime *r,const game_input *in,uint32_t us) {
  if(!r || !in || r->seal_words>256) return GPU_DRIVER_ARGUMENT;
  if(r->menu_enabled && r->phase==V3_PHASE_MENU) return 0;
+ if(r->phase==V3_PHASE_PERFORMANCE) {
+  if(in->pressed&V3_KEY_RESTART) ++r->scene_generation;
+  return 0;
+ }
  if(r->mode!=V3_MODE_LIVE) {
   game_input tick;
   int e=replay_next(&r->recording,&r->cursor,&tick);if(e!=1) return GPU_DRIVER_ARGUMENT;

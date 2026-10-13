@@ -4,7 +4,9 @@ param(
  [string]$GatewayUrl='http://127.0.0.1:8765',
  [ValidatePattern('^COM[1-9][0-9]*$')][string]$SerialPort='COM13',
  [Parameter(Mandatory=$true)][string]$OutDirectory,
- [switch]$LoadBit
+ [switch]$LoadBit,
+ [uint32]$ExpectedBuild=0x20261008,
+ [switch]$PerformanceChallenge
 )
 # JTAG only. Real HTTP/UDP acknowledgements, not simulated game state.
 # Plane movement, death, replay completion and visual checks remain manual.
@@ -67,6 +69,8 @@ function Game($opcode,$level) {
  $flags=$state.telemetry.raw.status_flags
  if($opcode -eq 'start') {
   if(($flags -band 1024) -or $state.telemetry.raw.requested_sprites -ne (64 -shl ($level-1))) {throw 'Applied START state disagrees with board'}
+ } elseif($opcode -eq 'performance') {
+  if(($flags -band 0x3000) -ne 0x3000 -or ($flags -band 1024)) {throw 'Performance entry capability/phase invalid'}
  } elseif(!($flags -band 1024) -or $state.telemetry.raw.requested_sprites -ne 0 -or ($flags -band 65536)) {throw 'MENU workload/timing invalid'}
  [IO.File]::AppendAllText("$outPath/transitions.log","$opcode,level=$level,request=$request,session=$($state.session),snapshot=$($state.telemetry.sequence),floor=$($state.game.snapshot_floor),result=$($state.game.result)`n")
 }
@@ -87,13 +91,32 @@ try {
  $acquired=$true
  # Explicit HELLO before waiting for telemetry: a same-build hot reload resets
  # snapshot_id; only a fresh session ACK permits the gateway to rebase it.
- Wait { $tail -match 'V3_READY,build=20261008.*mode=MENU' -and !$state.stale -and $state.acknowledged -and $state.telemetry.session -eq $state.session -and $state.telemetry.raw.firmware_build_id -eq 0x20261008 -and ($state.telemetry.raw.status_flags -band 3072) -eq 3072 } 90 'new MENU startup'
+ $readyPattern='V3_READY,build='+$ExpectedBuild.ToString('x')+'.*mode=MENU'
+ Wait { $tail -match $readyPattern -and !$state.stale -and $state.acknowledged -and $state.telemetry.session -eq $state.session -and $state.telemetry.raw.firmware_build_id -eq $ExpectedBuild -and ($state.telemetry.raw.status_flags -band 3072) -eq 3072 } 90 'new MENU startup'
  Wait {$state.acknowledged -and !$state.stale -and $state.telemetry.session -eq $state.session} 3 'control ownership ACK'
  foreach($level in 1..4) {
   Game 'start' $level
   $until=$timer.Elapsed.TotalSeconds+.8
   while($timer.Elapsed.TotalSeconds -lt $until) {Tick}
   Game 'menu' 0
+ }
+ if($PerformanceChallenge) {
+  if(!($state.telemetry.raw.status_flags -band 0x1000)) {throw 'Board does not advertise performance capability'}
+  Game 'performance' 0
+  Wait { !$state.stale -and $state.performance -and !$state.performance.stale -and $state.performance.stage -ge 4 } 900 'automatic search and full3600 verification'
+  if($state.performance.stage -eq 6 -or !$state.performance.best -or $state.performance.frames -ne 3600) {throw 'Challenge did not produce a qualified full3600 result'}
+  $verifiedBest=$state.performance.best
+  $stableUntil=$timer.Elapsed.TotalSeconds+5
+  while($timer.Elapsed.TotalSeconds -lt $stableUntil) {
+   Tick
+   if(!$state.stale -and $state.performance -and !$state.performance.stale -and
+       ($state.performance.stage -notin 4,5 -or $state.performance.best -ne $verifiedBest)) {throw 'Qualification invalidated after completion'}
+  }
+  $state|ConvertTo-Json -Depth 8 | Out-File "$outPath/performance-final.json" -Encoding utf8
+  "PASS real performance: best=$($state.performance.best),stage=$($state.performance.stage),frames=$($state.performance.frames)"
+  Game 'menu' 0
+  Wait { !$state.performance } 2 'old challenge result cleared on MENU'
+  Wait { $tail -match 'PERF_RESULT,.*frames=3600' } 2 'final counters emitted outside timed workload'
  }
  'PASS real four-tier START/MENU ACK+snapshot. Movement/death/visual/replay still need separate evidence.'
 } finally {

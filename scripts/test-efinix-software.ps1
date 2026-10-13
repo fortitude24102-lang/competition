@@ -20,6 +20,7 @@ param(
     [switch]$ReplayCrcNibble,
     [switch]$ReplaySealBudget,
     [switch]$FrameList,
+    [switch]$PerformanceChallenge,
     [ValidatePattern('^0x[0-9a-fA-F]{8}$')][string]$NetworkLocalIp = '0xc0a80002',
     [ValidatePattern('^0x[0-9a-fA-F]{8}$')][string]$NetworkPeerIp = '0xc0a80003',
     [switch]$PublishRelease
@@ -40,6 +41,8 @@ try {
     if ($ReplayCrcNibble -and (!$Interactive -or !$OutDirectory -or $PublishRelease)) {throw 'ReplayCrcNibble requires separate Interactive candidate output; no release overwrite'}
     if ($ReplaySealBudget -and (!$ReplayCrcNibble -or !$Interactive -or !$OutDirectory -or $PublishRelease)) {throw 'ReplaySealBudget requires separate nibble-CRC Interactive candidate; no release overwrite'}
     if ($FrameList -and (!$Interactive -or !$OutDirectory -or $PublishRelease -or $ObjectCapacity -ne 512)) {throw 'FrameList requires separate 512-capacity Interactive candidate; no release overwrite'}
+    if ($PerformanceChallenge -and (!$FrameList -or !$Interactive -or !$OutDirectory -or $PublishRelease -or $ProbeFrames)) {throw 'PerformanceChallenge requires separate normal FrameList Interactive candidate'}
+    if ($PerformanceChallenge -and (!$PSBoundParameters.ContainsKey('NetworkLocalIp') -or !$PSBoundParameters.ContainsKey('NetworkPeerIp'))) {throw 'PerformanceChallenge requires explicit network addresses; legacy defaults may not match this board'}
     if (($StartCount -or $ProbeFrames -or $ObjectCapacity -ne 512 -or $ValidateOnce -or $LegacyValidation -or $ShadowSubmit -or $FullSubmit) -and (!$Interactive -or !$OutDirectory)) { throw 'Interactive measurement options require a separate OutDirectory.' }
     $out = if($Interactive) {'generated/verification/v3/integration'} else {'generated/verification/efinix-software'}
     if($OutDirectory) {
@@ -117,6 +120,7 @@ try {
     if ($ReplayCrcNibble) { $profileFlag += '-DREPLAY_CRC_NIBBLE=1' }
     if ($ReplaySealBudget) { $profileFlag += '-DV3_REPLAY_SEAL_BUDGET=1' }
     if ($FrameList) { $profileFlag += '-DV3_FRAME_LIST=1' }
+    if ($PerformanceChallenge) { $profileFlag += '-DV3_PERFORMANCE_CHALLENGE=1' }
     $profileFlag += "-DBULLET_OBJECT_CAPACITY=$ObjectCapacity"
     if($ValidateOnce) {$profileFlag += '-DGPU_SUBMIT_REVALIDATE=0'}
     if($ShadowSubmit) {$profileFlag += '-DGPU_SUBMIT_SHADOW=1'}

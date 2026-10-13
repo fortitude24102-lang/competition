@@ -4,6 +4,21 @@
 #include "v3_runtime.h"
 static v3_runtime runtime;
 static bullet_state expected;
+static void test_performance_phase(void) {
+ assert(!v3_runtime_menu_init(&runtime,7,3));
+ assert(v3_runtime_game_command(&runtime,3,0,7,9)<0);
+ runtime.perf_enabled=1;expected=runtime.game;
+ assert(!v3_runtime_game_command(&runtime,3,0,7,9));
+ assert(runtime.phase==2 && runtime.mode==V3_MODE_LIVE);
+ game_input in={.pressed=V3_KEY_COMPARE};
+ assert(!v3_runtime_advance(&runtime,&in,250000));
+ assert(!runtime.compare_pending && !memcmp(&expected,&runtime.game,sizeof expected));
+ uint32_t g=runtime.scene_generation;in.pressed=V3_KEY_RESTART;
+ assert(!v3_runtime_advance(&runtime,&in,16667) && runtime.scene_generation==g+1);
+ assert((v3_runtime_status(&runtime,1,1,1,0,0)&0x3000)==0x3000);
+ assert(!v3_runtime_game_command(&runtime,2,0,7,10));
+ assert(runtime.phase==0 && !(v3_runtime_status(&runtime,1,1,0,0,0)&0x2000));
+}
 static void test_seal_budget(void) {
  assert(!v3_runtime_init(&runtime,512,7,3));runtime.seal_words=256;
  expected=runtime.game;game_input in={0};
@@ -159,6 +174,7 @@ int main(void) {
  assert(runtime.game.tick==tick+1 && !runtime.compare_pending);
  test_menu_levels();test_start_requires_new_neutral();test_menu_death_stops_catchup();test_menu_aborts_replay();
  test_seal_budget();
+ test_performance_phase();
  puts("PASS V3 runtime menu/levels/neutral/death/abort and per-tick recording, 600-tick two-backend replay");
  return 0;
 }

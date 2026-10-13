@@ -7,7 +7,7 @@ import protocol as p
 
 
 class FakeBoard:
-    def __init__(self, bind=('127.0.0.1', 8091), gateway=('127.0.0.1', 8090), game_menu=False):
+    def __init__(self, bind=('127.0.0.1', 8091), gateway=('127.0.0.1', 8090), game_menu=False, performance=False):
         self.gateway = (socket.gethostbyname(gateway[0]), gateway[1])
         self.udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp.bind(bind); self.udp.settimeout(.01)
@@ -19,6 +19,7 @@ class FakeBoard:
         self.retired = []
         self.drops = self.snapshot = 0
         self.game_menu=game_menu;self.menu=True;self.count=0;self.last_game=None
+        self.performance_capable=performance;self.performance=False
 
     def _expire(self, now):
         if self.session and now - self.last_input >= .25:
@@ -36,6 +37,8 @@ class FakeBoard:
             if self.game_menu:
                 words[3]=self.count if not self.menu else 0
                 words[21]|=(1<<11)|((1<<10)|(1<<8) if self.menu else 1)
+                if self.performance_capable: words[21]|=1<<12
+                if self.performance: words[21]|=1<<13
             return tuple(words)
 
     def start(self):
@@ -76,10 +79,13 @@ class FakeBoard:
                         else:
                             self.sequence=packet.sequence;self.keys=0;self.last_input=now
                             if not previous or request!=previous[0]:
-                                result=1 if op==p.GAME_START and not self.menu else 0
+                                result=2 if op==p.GAME_PERFORMANCE and not self.performance_capable else (
+                                    1 if op in (p.GAME_START,p.GAME_PERFORMANCE) and not self.menu else 0)
                                 if not result:
                                     self.menu=op==p.GAME_MENU
                                     self.count=64<<(level-1) if op==p.GAME_START else 0
+                                    self.performance=op==p.GAME_PERFORMANCE
+                                    if self.performance:self.count=64
                                 self.last_game=(request,op,level,result,self.snapshot)
                             ack=p.encode(p.GAME_ACK,self.session,packet.sequence,
                                 [request,self.last_game[3],self.last_game[4]])
@@ -97,6 +103,11 @@ class FakeBoard:
                     snapshot, session = self.snapshot, self.session
                 try: self.udp.sendto(p.encode(p.TELEMETRY, session, snapshot, words), self.gateway)
                 except OSError: pass
+                if session and self.performance:
+                    # Protocol-only fixture: never invent a measured FPS or a verified best.
+                    with self.lock:self.snapshot=(self.snapshot+1)&0xffffffff;snapshot=self.snapshot
+                    try:self.udp.sendto(p.encode(p.PERFORMANCE,session,snapshot,[64,0,1]),self.gateway)
+                    except OSError:pass
                 next_snapshot = now + .2
 
     def close(self):
@@ -112,8 +123,9 @@ def main():
     parser.add_argument('--gateway', default='127.0.0.1')
     parser.add_argument('--gateway-port', type=int, default=8090)
     parser.add_argument('--game-menu',action='store_true',help='simulate only menu protocol, never gameplay or FPS')
+    parser.add_argument('--performance',action='store_true',help='protocol-only WARM status; zero FPS and zero best')
     args = parser.parse_args()
-    board = FakeBoard((args.bind, args.port), (args.gateway, args.gateway_port),args.game_menu)
+    board = FakeBoard((args.bind, args.port), (args.gateway, args.gateway_port),args.game_menu,args.performance)
     print('SIMULATED ACK/ECHO PEER — NO BOARD PERFORMANCE / NO GAME LOGIC', flush=True)
     print('Listening %s:%s; fixed gateway %s:%s' % (*board.udp.getsockname(), *board.gateway), flush=True)
     board.start()

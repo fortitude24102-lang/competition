@@ -41,6 +41,8 @@ typedef struct {
     nc_game_command game;
     uint32_t game_result,game_floor;
     uint8_t game_pending,game_done,game_ack_pending;
+    uint32_t performance[3],last_perf_ms;
+    uint8_t perf_capable,perf_pending,perf_published;
 } nc_device;
 
 /* apb_base is the GPU block base. Zero selects GPU_APB_BASE.
@@ -52,6 +54,7 @@ typedef struct {
 int nc_init(nc_device *device, uintptr_t apb_base);
 int nc_poll(nc_device *device, uint32_t now_ms, nc_input *input);
 int nc_try_publish(nc_device *device, const nc_telemetry *telemetry, uint32_t now_ms);
+int nc_queue_performance(nc_device *,unsigned target,unsigned best,uint32_t stage_frames);
 /* A taken command remains in the bounded slot until complete. Completion is
  * local/nonblocking; TX retries never cause the runtime operation to repeat. */
 int nc_take_game(nc_device *device,nc_game_command *command);

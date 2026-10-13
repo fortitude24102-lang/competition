@@ -59,7 +59,7 @@ module net_control_bridge #(
         prdata=0;pslverror=0;
         case(paddr)
             16'h0300: prdata=32'h4d475431;
-            16'h0304: prdata={28'b0,error,(!busy && tx_fifo_ready),snapshot_valid,rx_head_valid};
+            16'h0304: prdata={26'b0,1'b1,1'b0,error,(!busy && tx_fifo_ready),snapshot_valid,rx_head_valid};
             16'h0308,16'h030c,16'h0318: prdata=0;
             16'h0310: begin prdata=snapshot_age;if(!snapshot_valid) pslverror=1;end
             16'h0314: prdata=gray_binary(drop_sync2);

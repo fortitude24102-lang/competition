@@ -9,7 +9,7 @@ typedef struct { uint8_t bytes[32]; uint32_t age; } rx_record;
 static struct {
     rx_record rx[16], snapshot;
     unsigned head, count, valid, releases, writes, reads, commits, tx_ready;
-    uint32_t id, tx_length, tx_mask, tx_error;
+    uint32_t id, tx_length, tx_mask, tx_error,cap;
     uint8_t shadow[128], sent[128];
     unsigned sent_length, inject;
 } hw;
@@ -42,7 +42,7 @@ uint32_t nc_io_read(uintptr_t address) {
     CHECK(address>=GPU_APB_BASE && address<GPU_APB_BASE+0x400u && !(address&3u));
     unsigned r=(unsigned)(address-GPU_APB_BASE); ++hw.reads;
     if(r==0x300u) return hw.id;
-    if(r==0x304u) return (hw.count?1u:0u)|(hw.valid?2u:0u)|(hw.tx_ready?4u:0u)|(hw.tx_error?8u:0u);
+    if(r==0x304u) return hw.cap|(hw.count?1u:0u)|(hw.valid?2u:0u)|(hw.tx_ready?4u:0u)|(hw.tx_error?8u:0u);
     if(r==0x310u) { CHECK(hw.valid); return hw.snapshot.age; }
     if(r==0x314u || r==0x31cu) return 0;
     CHECK(r>=0x320u && r<=0x33cu && hw.valid);
@@ -282,10 +282,39 @@ static void telemetry_cannot_cross_handshake(void) {
     CHECK(nc_try_publish(&d,&active,202)>0 && hw.sent[5]==128);
     CHECK(read_be(hw.sent+8)==7 && (read_be(hw.sent+100)&V3_STATUS_CONTROL_CONNECTED));
 }
+static void performance_packet(void) {
+ nc_device d;nc_input in;nc_game_command cmd;
+ reset();CHECK(!nc_init(&d,0));CHECK(!d.perf_capable);
+ CHECK(nc_queue_performance(&d,64,0,1)<0);
+ reset();hw.cap=32;CHECK(!nc_init(&d,0) && d.perf_capable);
+ enqueue(1,7,1,0,0,0);nc_poll(&d,0,&in);
+ game_packet(2,3,0,1,0);nc_poll(&d,1,&in);
+ CHECK(nc_take_game(&d,&cmd)==1 && cmd.opcode==3 && !cmd.level);
+ CHECK(!nc_complete_game(&d,&cmd,0));
+ CHECK(!nc_queue_performance(&d,909,909,5|(3600u<<8)));
+ CHECK(nc_queue_performance(&d,910,0,1)<0);
+ CHECK(nc_queue_performance(&d,64,65,1)<0);
+ CHECK(nc_queue_performance(&d,64,0,0x11)<0);
+ CHECK(nc_queue_performance(&d,64,0,1|(3601u<<8))<0);
+ nc_telemetry t={.status_flags=0x3000};
+ CHECK(nc_try_publish(&d,&t,1)>0 && hw.sent[5]==3);
+ hw.tx_ready=1;CHECK(nc_try_publish(&d,&t,2)>0 && hw.sent[5]==5);
+ hw.tx_ready=1;CHECK(nc_try_publish(&d,&t,3)>0 && hw.sent[5]==128);
+ hw.tx_ready=1;CHECK(nc_try_publish(&d,&t,4)>0 && hw.sent[5]==6);
+ CHECK(hw.sent_length==32 && read_be(hw.sent+12)==2 && read_be(hw.sent+16)==909);
+ CHECK(read_be(hw.sent+20)==909 && read_be(hw.sent+24)==(5|(3600u<<8)));
+ CHECK(read_be(hw.sent+28)==crc(hw.sent,28));
+ CHECK(!nc_queue_performance(&d,64,0,1));
+ hw.tx_ready=1;CHECK(nc_try_publish(&d,&t,203)>0 && hw.sent[5]==128);
+ hw.tx_ready=1;CHECK(nc_try_publish(&d,&t,204)>0 && hw.sent[5]==6);
+ nc_discard_pending_telemetry(&d);CHECK(!d.perf_pending);
+ CHECK(!nc_queue_performance(&d,64,0,1));nc_poll(&d,252,&in);CHECK(!d.perf_pending);
+}
 int main(void) {
     initialization(); reception_and_lease(); validation_and_budget(); telemetry_latest_atomic_and_rate(); golden_vectors();
     test_game_exactly_once(); test_game_session_expiry();
     telemetry_cannot_cross_handshake();
+    performance_packet();
     puts("PASS net_control: validation, handshake/session, lease/age, modular seq, max4RX, ACK priority, atomic latest128B, rate/busy");
     return 0;
 }

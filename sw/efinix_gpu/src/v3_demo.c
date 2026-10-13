@@ -9,7 +9,19 @@
 #include "bsp.h"
 #include "network_assets.h"
 #include "../assets/hud/hud_logo_catalog.h"
+#ifndef V3_PERFORMANCE_CHALLENGE
+#define V3_PERFORMANCE_CHALLENGE 0
+#endif
+#if V3_PERFORMANCE_CHALLENGE
+#include "performance_challenge.h"
+#if !V3_FRAME_LIST
+/* V3_FRAME_LIST is supplied by the candidate build, never enabled implicitly. */
+#error "Performance challenge requires FrameList"
+#endif
+#define V3_BUILD_ID 0x20261013u
+#else
 #define V3_BUILD_ID 0x20261008u
+#endif
 #define V3_RESOURCE_EPOCH 0x00030002u
 #define V3_STATE_ADDRESS 0x02d00000u
 #define V3_POLLS 10000000u
@@ -167,6 +179,11 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  e=v3_runtime_menu_init(runtime,7,V3_RESOURCE_EPOCH);
 #endif
  if(e) return 1;
+#if V3_PERFORMANCE_CHALLENGE
+ pc_state *challenge=(pc_state *)(uintptr_t)PC_STATE_ADDRESS;
+ uint32_t challenge_scene=UINT32_MAX,challenge_generation=0;
+ runtime->perf_enabled=(uint8_t)(list_enabled && control.perf_capable);
+#endif
 #if V3_REPLAY_SEAL_BUDGET
  #if V3_PROBE_FRAMES
  uint32_t seal_words=*(volatile uint32_t *)(uintptr_t)V3_SEAL_BUDGET_WORD;
@@ -215,6 +232,7 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  hud_comparison metrics={.bullet_demo=1,.gameplay=1,.network_ready=(uint8_t)network};
  nc_telemetry telemetry={.firmware_build_id=V3_BUILD_ID,.resource_epoch=V3_RESOURCE_EPOCH};
  perf_window window={0};v3_scene_metrics results={0};game_menu_cache menu_cache={0};
+ menu_cache.performance=runtime->perf_enabled;
  uint32_t last_report=0,under_delta=0,miss_delta=0,last_drops=0,last_rejected=0;
  uint64_t previous_present=gpu_platform_cycles(),previous_logic=previous_present;
  gpu_perf_snapshot initial;
@@ -266,6 +284,33 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
     e=v3_runtime_advance(runtime,&input,0);
   }
   previous_logic=logic;if(e<0)break;
+#if V3_PERFORMANCE_CHALLENGE
+  int performance=runtime->phase==V3_PHASE_PERFORMANCE;
+  if(!performance && challenge_scene!=UINT32_MAX) {
+   /* Console output can block for multiple video periods. Export the full
+    * final counters only after leaving the workload, never inside sampling
+    * or after qualifying while the challenge is still rendering. Network
+    * status remains bounded/nonblocking and is included in every frame. */
+   const v3_frame_stats *s=&challenge->stats;
+   bsp_printf("PERF_RESULT,target=%d,stage=%d,best=%d,frames=%d,fps_x100=%d,work_max_us=%d,wall_max_us=%d,work_miss=%d,late=%d,under=%d,error=%d,visible_min=%d,visible_max=%d,alpha_min=%d,alpha_max=%d\r\n",
+    challenge->target,challenge->stage,challenge->best,s->frames,
+    s->wall_ticks?(uint32_t)((uint64_t)s->frames*BSP_CLINT_HZ*100u/s->wall_ticks):0,
+    us(s->max_work_ticks),us(s->max_wall_ticks),s->work_misses,s->cadence_misses,
+    s->underflows,s->errors,s->min_visible,s->max_visible,s->min_alpha,s->max_alpha);
+   challenge_scene=UINT32_MAX;
+  }
+  if(performance) {
+   if(challenge_scene!=runtime->scene_generation) {
+    e=pc_init(challenge,PC_MAX_SPRITES,7);if(e)break;
+    challenge_scene=runtime->scene_generation;challenge_generation=0;
+   }
+   e=pc_advance(challenge,&input);if(e)break;
+   if(challenge_generation!=challenge->generation) {
+    challenge_generation=challenge->generation;window=(perf_window){0};frame=0;
+    results.gpu_fps=results.gpu_us=0;nc_discard_pending_telemetry(&control);
+   }
+  }
+#endif
 #if V3_DETAIL_PROBE
   unsigned detail_steps=(unsigned)e;
 #endif
@@ -293,6 +338,14 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
 #endif
   if(menu) {scene->count=scene->visible=scene->alpha_commands=scene->alpha_pixels=0;}
 #if V3_FRAME_LIST
+  #if V3_PERFORMANCE_CHALLENGE
+  else if(performance) {
+   gpu_instance_stats s;
+   e=pc_build(challenge,buffers->back,network,(gpu_instance *)(uintptr_t)list_address,&s);if(e)break;
+   scene->count=s.count;scene->visible=s.visible;scene->scene_pixels=s.scene_pixels;
+   scene->alpha_commands=s.alpha_commands;scene->alpha_pixels=s.alpha_pixels;list_frame=1;
+  }
+  #endif
   else if(list_enabled && mode!=V3_MODE_CPU) {
    e=v3_build_gpu_scene(&runtime->game,buffers->back,network,1,
     (gpu_instance *)(uintptr_t)list_address,scene,&list_frame);if(e)break;
@@ -328,6 +381,12 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
    .grazes=runtime->game.grazes,.invulnerable=(uint8_t)(runtime->game.invulnerable!=0),.game_over=(uint8_t)(runtime->game.hp==0),
    .underflows=(uint32_t)before.underflows,.v3_mode=(uint8_t)(menu?4:mode==V3_MODE_LIVE?1:mode==V3_MODE_CPU?2:3),
    .cpu_stale=(uint8_t)((v3_runtime_status(runtime,network,raw.connected,results.gpu_fps!=0,results.cpu_fps!=0,results.cpu_fresh)&V3_STATUS_CPU_STALE)!=0),.logic_slow=runtime->clock.slow};
+#if V3_PERFORMANCE_CHALLENGE
+  if(performance) {
+   metrics.v3_mode=5;metrics.perf_stage=(uint8_t)challenge->stage;
+   metrics.perf_best=(uint16_t)challenge->best;metrics.perf_frames=(uint16_t)challenge->stats.frames;
+  }
+#endif
 #if V3_DETAIL_PROBE
   uint64_t detail_hud_start=gpu_platform_cycles();
 #endif
@@ -344,6 +403,17 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   uint32_t work_us=us(work_ticks);
   e=framebuffer_present(gpu,buffers,V3_POLLS);if(e) break;
   previous_present=gpu_platform_cycles();uint64_t wall=previous_present-start;
+#if V3_PERFORMANCE_CHALLENGE
+  if(performance) {
+   gpu_perf_snapshot health;e=gpu_read_perf_snapshot(gpu,&health);if(e)break;
+   uint32_t under=(uint32_t)(health.underflows-sampled_underflows);
+   e=pc_record(challenge,BSP_CLINT_HZ,(uint32_t)work_ticks,(uint32_t)wall,under,
+    gpu->hardware_error!=0,scene->visible,scene->alpha_commands);if(e<0)break;
+   e=nc_queue_performance(&control,challenge->target,challenge->best,
+    challenge->stage|(challenge->stats.frames<<8));if(e)break;
+   after.underflows=health.underflows;
+  }
+#endif
   if(!menu) {
    e=perf_window_add(&window,wall,(uint64_t)render_us*(BSP_CLINT_HZ/1000000u));if(e) break;
    work_samples[frame++]=work_us;
@@ -388,6 +458,9 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
      runtime->game.tick,build_us,detail_logic_us,render_us,detail_hud_us,work_us,
      (uint32_t)((after.cycles-before.cycles)/100u),scene->visible,scene->alpha_commands);
 #else
+    #if V3_PERFORMANCE_CHALLENGE
+    if(!performance) /* Ordinary game/CPU diagnostics unchanged. */
+    #endif
     bsp_printf("V3_PERF,mode=%d,tick=%d,seq=%d,x=%d,y=%d,visible=%d,fps_x10=%d,scene_us=%d,p95_work_us=%d,under=%d,miss=%d,keys=%x,age=%d\r\n",
     mode,runtime->game.tick,raw.sequence,runtime->game.player_x,runtime->game.player_y,scene->visible,fps,avg,p95_us,under_delta,miss_delta,input.held,raw.age_ms);
 #endif
@@ -406,6 +479,9 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
    #endif
    for(unsigned i=0;i<scene->count;i++) if(scene->commands[i].op==GPU_OP_COLOR_KEY) ++key_commands;
    telemetry.simulation_tick=runtime->game.tick;telemetry.requested_sprites=menu?0:runtime->game.count;
+   #if V3_PERFORMANCE_CHALLENGE
+   if(performance) {telemetry.simulation_tick=challenge->tick;telemetry.requested_sprites=scene->visible;}
+   #endif
    telemetry.visible_sprites=scene->visible;telemetry.gpu_full_frame_fps_x100=results.gpu_fps*10u;telemetry.cpu_full_frame_fps_x100=results.cpu_fps*10u;
    telemetry.pre_present_us=menu?0:work_us;telemetry.gpu_busy_us=menu?0:(uint32_t)((after.cycles-before.cycles)/100u);
    telemetry.command_build_us=menu?0:build_us;telemetry.p95_work_us=menu?0:p95_us;telemetry.present_wait_us=menu?0:us(previous_present-present_start);

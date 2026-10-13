@@ -26,6 +26,14 @@ def wire(kind, session=7, sequence=9, words=None):
 
 
 class ProtocolTest(unittest.TestCase):
+    def test_performance_wire(self):
+        import protocol as p
+        for kind, words in [(4,[3,0,17]),(6,[909,909,5|(3600<<8)]),(6,[64,0,1])]:
+            packet=wire(kind,words=words)
+            self.assertEqual(p.decode(packet).words,tuple(words))
+            self.assertEqual(p.encode(kind,7,9,words),packet)
+        for words in [[910,0,1],[64,65,1],[64,0,7],[64,0,0x10],[64,0,1|(3601<<8)]]:
+            with self.assertRaises(ValueError):p.decode(wire(6,words=words))
     def test_game_wire_contract(self):
         import protocol as p
         # Breaking GAME admission/field validation must fail this test.
@@ -37,7 +45,7 @@ class ProtocolTest(unittest.TestCase):
                             (5, [11, 0, 99]), (5, [11, 1, 0]), (5, [11, 2, 0])]:
             self.assertEqual(p.decode(wire(kind, words=words)).words, tuple(words))
         for kind, words in [(4, [1, 0, 1]), (4, [1, 5, 1]), (4, [2, 1, 1]),
-                            (4, [3, 0, 1]), (4, [1, 1, 0]), (5, [0, 0, 0]),
+                            (4, [3, 1, 1]), (4, [1, 1, 0]), (5, [0, 0, 0]),
                             (5, [11, 3, 0]), (6, [1, 1, 1])]:
             with self.assertRaises(ValueError): p.decode(wire(kind, words=words))
         for bad in [packet[:-1], packet+b'\0', packet[:-1]+bytes([packet[-1]^1])]:
@@ -75,6 +83,25 @@ class ProtocolTest(unittest.TestCase):
 
 
 class StateTest(unittest.TestCase):
+    def test_performance_capability_order_and_exit(self):
+        s=self.game_state();c='a'*32
+        self.assertEqual(s.game(c,'performance',0,1,now=.03),503)
+        w=[0]*27;w[21]=0x1d10
+        self.assertTrue(s.receive(wire(128,s.session,100,w),.03))
+        self.assertEqual(s.game(c,'performance',0,1,now=.04),202)
+        s.game_request=None
+        w[21]=0x3811
+        self.assertTrue(s.receive(wire(128,s.session,101,w),.05))
+        self.assertTrue(s.receive(wire(6,s.session,102,[64,0,2|(123<<8)]),.06))
+        self.assertEqual(s.view(.07)['performance']['frames'],123)
+        self.assertFalse(s.receive(wire(6,s.session,102,[64,0,2]),.08))
+        self.assertFalse(s.receive(wire(6,s.session+1,103,[64,0,2]),.08))
+        self.assertFalse(s.receive(wire(6,s.session,100,[64,0,2]),.08))
+        w[21]=0x1d10
+        self.assertTrue(s.receive(wire(128,s.session,103,w),.09))
+        self.assertIsNone(s.view(.1)['performance'])
+        self.assertFalse(s.receive(wire(6,s.session,104,[64,64,4|(3600<<8)]),.11))
+
     def game_state(self):
         import protocol as p
         s=self.state();s.control('a'*32,0,0,now=0)

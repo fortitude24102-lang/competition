@@ -35,6 +35,7 @@ static int expire(nc_device *d,uint32_t now) {
     d->input=(nc_input){.age_ms=UINT32_MAX};
     d->ack_pending=0;
     d->game_pending=d->game_done=d->game_ack_pending=0;
+    d->perf_pending=0;
     return 1;
 }
 
@@ -60,6 +61,7 @@ int nc_init(nc_device *d,uintptr_t base) {
     *d=(nc_device){.base=base?base:GPU_APB_BASE,
                    .input={.age_ms=UINT32_MAX}, .publish_interval_ms=V3_TELEMETRY_DEFAULT_MS};
     if(rd(d,NC_REG_ID)!=NC_ID_VALUE) return NC_ERROR_UNAVAILABLE;
+    d->perf_capable=(rd(d,NC_REG_STATUS)&NC_STATUS_PERFORMANCE_CAPABLE)!=0;
     /* On firmware restart, pre-existing HELLO/KEYS must not resume movement.
        The documented hardware FIFO holds four records. */
     for(unsigned i=0;i<V3_POLL_MAX_PACKETS;i++) {
@@ -81,7 +83,7 @@ static int valid_packet(const uint8_t *p) {
     if(p[5]==V3_PACKET_GAME) {
         uint32_t op=be32(p+16),level=be32(p+20);
         return be32(p+24) && ((op==V3_GAME_START && level>=1 && level<=4) ||
-                             (op==V3_GAME_MENU && level==0));
+                             ((op==V3_GAME_MENU || op==V3_GAME_PERFORMANCE) && level==0));
     }
     return 0;
 }
@@ -103,6 +105,7 @@ static int accept(nc_device *d,const uint8_t *p,uint32_t age,uint32_t now) {
             /* A pre-handshake observer/retired-session snapshot cannot be
                relabelled with this new session at serialization time. */
             d->telemetry_pending=0;
+            d->perf_pending=d->perf_published=0;
         }
         d->ack_session=session; d->ack_sequence=sequence; d->ack_pending=1;
         return 1;
@@ -162,7 +165,15 @@ int nc_take_game(nc_device *d,nc_game_command *cmd) {
     *cmd=d->game;return 1;
 }
 void nc_discard_pending_telemetry(nc_device *d) {
-    if(d) d->telemetry_pending=0;
+    if(d) d->telemetry_pending=d->perf_pending=0;
+}
+int nc_queue_performance(nc_device *d,unsigned target,unsigned best,uint32_t sf) {
+    unsigned stage=sf&15u;
+    if(!d || !d->ready || !d->perf_capable || target<32 || target>909 || best>target ||
+       stage<1 || stage>6 || (sf&UINT32_C(0xff0000f0)) || (sf>>8)>3600)
+        return NC_ERROR_ARGUMENT;
+    d->performance[0]=target;d->performance[1]=best;d->performance[2]=sf;
+    d->perf_pending=1;return 0;
 }
 int nc_complete_game(nc_device *d,const nc_game_command *cmd,uint32_t result) {
     if(!d || !cmd || result>2 || !d->ready || !d->input.connected || !d->game_pending ||
@@ -200,14 +211,17 @@ int nc_try_publish(nc_device *d,const nc_telemetry *t,uint32_t now) {
     if(!d->ready) return NC_ERROR_UNAVAILABLE;
     if(t) { d->pending_telemetry=*t; d->telemetry_pending=1; }
     (void)expire(d,now);
-    if(!d->ack_pending && !d->game_ack_pending && !d->telemetry_pending) return 0;
     uint32_t interval=d->publish_interval_ms;
     if(interval<V3_TELEMETRY_MIN_MS) interval=V3_TELEMETRY_MIN_MS;
-    if(!d->ack_pending && !d->game_ack_pending && d->published && now-d->last_publish_ms<interval) return 0;
+    int normal=d->telemetry_pending && (!d->published || now-d->last_publish_ms>=interval);
+    int perf=d->perf_pending && d->input.connected &&
+        (!d->perf_published || now-d->last_perf_ms>=V3_TELEMETRY_DEFAULT_MS);
+    if(!d->ack_pending && !d->game_ack_pending && !normal && !perf) return 0;
     /* Single-owner shadow buffer: a busy transmitter receives no writes. */
     if(!(rd(d,NC_REG_STATUS)&NC_STATUS_TX_READY)) return 0;
     uint8_t packet[128]={0}; unsigned length;
     int is_ack=d->ack_pending,is_game_ack=!is_ack && d->game_ack_pending;
+    int is_perf=!is_ack && !is_game_ack && !normal && perf;
     if(is_ack) {
         length=32;
         header(packet,V3_CONTROL_MAGIC,V3_PACKET_ACK,32,d->ack_session,d->ack_sequence);
@@ -217,6 +231,11 @@ int nc_try_publish(nc_device *d,const nc_telemetry *t,uint32_t now) {
         header(packet,V3_CONTROL_MAGIC,V3_PACKET_GAME_ACK,32,d->game.session,d->game.sequence);
         put32(packet+16,d->game.request_id);put32(packet+20,d->game_result);
         put32(packet+24,d->game_floor);put32(packet+28,asst_crc32(packet,28));
+    } else if(is_perf) {
+        length=32;
+        header(packet,V3_CONTROL_MAGIC,V3_PACKET_PERFORMANCE,32,d->input.session,d->snapshot_id+1);
+        for(unsigned i=0;i<3;i++) put32(packet+16+i*4,d->performance[i]);
+        put32(packet+28,asst_crc32(packet,28));
     } else {
         length=128;
         telemetry_packet(packet,&d->pending_telemetry,d->input.connected?d->input.session:0,d->snapshot_id+1);
@@ -230,6 +249,9 @@ int nc_try_publish(nc_device *d,const nc_telemetry *t,uint32_t now) {
     if(rd(d,NC_REG_STATUS)&NC_STATUS_TX_ERROR) return NC_ERROR_HARDWARE;
     if(is_ack) d->ack_pending=0;
     else if(is_game_ack) d->game_ack_pending=0;
+    else if(is_perf) {
+        d->perf_pending=0;d->perf_published=1;d->last_perf_ms=now;++d->snapshot_id;
+    }
     else {
         d->telemetry_pending=0; d->published=1;
         d->last_publish_ms=now; ++d->snapshot_id;

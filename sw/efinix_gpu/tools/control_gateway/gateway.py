@@ -40,6 +40,8 @@ class GatewayState:
         self.simulated = simulated
         self.game_request = None
         self.last_keys = float('-inf')
+        self.performance = None
+        self.performance_time = 0.0
 
     def _cancel_game(self):
         g=self.game_request
@@ -56,9 +58,9 @@ class GatewayState:
 
     def game(self, client, opcode, level, request_id, now=None):
         now=time.monotonic() if now is None else now
-        if (opcode not in ('start','menu') or type(level) is not int or
+        if (opcode not in ('start','menu','performance') or type(level) is not int or
                 type(request_id) is not int or not 1<=request_id<=0xffffffff or
-                not (opcode=='start' and 1<=level<=4 or opcode=='menu' and level==0)): return 400
+                not (opcode=='start' and 1<=level<=4 or opcode in ('menu','performance') and level==0)): return 400
         with self.lock:
             self._expire(now);self._game_timeout(now)
             if self.owner!=client: return 409
@@ -67,6 +69,7 @@ class GatewayState:
             g=self.game_request
             if g and g['session']==self.session and g['request_id']==request_id:
                 return 202 if (g['opcode'],g['level'])==(opcode,level) else 409
+            if opcode=='performance' and (t.words[21]&0x1400)!=0x1400: return 503
             if g and g['state'] in ('pending','await_snapshot'): return 409
             if g and g['session']==self.session and not p.newer(request_id,g['request_id']): return 409
             self.keys=0
@@ -81,6 +84,7 @@ class GatewayState:
 
     def _begin_session(self):
         self._cancel_game()
+        self.performance = None
         previous = self.session
         while self.session == previous or self.session == 0:
             self.session = secrets.randbits(32)
@@ -91,6 +95,7 @@ class GatewayState:
 
     def _release(self):
         self._cancel_game()
+        self.performance = None
         if self.owner:
             self.clear_pending = p.encode(p.KEYS, self.session, self._sequence(), [0, self.action, 0])
         self.owner = None
@@ -157,7 +162,8 @@ class GatewayState:
                     if g and g['state']=='pending' and now-g['last_attempt']>=.05 and now-self.last_keys<.1:
                         seq=self._sequence();g['last_attempt']=now;g['sequences'].append(seq)
                         g['sequences']=g['sequences'][-40:]
-                        packet=p.encode(p.GAME,self.session,seq,[p.GAME_START if g['opcode']=='start' else p.GAME_MENU,g['level'],g['request_id']])
+                        op={'start':p.GAME_START,'menu':p.GAME_MENU,'performance':p.GAME_PERFORMANCE}[g['opcode']]
+                        packet=p.encode(p.GAME,self.session,seq,[op,g['level'],g['request_id']])
                     else:
                         packet = p.encode(p.KEYS, self.session, self._sequence(), [self.keys, self.action, 0])
                         self.last_keys=now
@@ -193,6 +199,14 @@ class GatewayState:
                     g['state']='await_snapshot' if g['result']==0 else 'rejected'
                     self._confirm_game()
                     return True
+            elif packet.kind == p.PERFORMANCE:
+                t=self.telemetry;old=self.performance
+                if (self.owner and self.acknowledged and packet.session==self.session and t
+                        and t.session==self.session and now-self.telemetry_time<STALE
+                        and t.words[21]&0x3000==0x3000 and p.newer(packet.sequence,t.sequence)
+                        and (old is None or p.newer(packet.sequence,old.sequence))):
+                    self.performance,self.performance_time=packet,now
+                    return True
             elif packet.kind == p.TELEMETRY:
                 old = self.telemetry
                 if packet.words[0] in self.retired_builds:
@@ -214,6 +228,8 @@ class GatewayState:
                 if old is not None and packet.words[0] != old.words[0]:
                     self.retired_builds.append(old.words[0])
                     self.retired_builds = self.retired_builds[-4:]
+                if (not packet.words[21]&0x2000 or reset_baseline or
+                        old and packet.words[:2]!=old.words[:2]): self.performance=None
                 self.telemetry, self.telemetry_time = packet, now
                 self._confirm_game()
                 if packet.session == self.telemetry_rebase_session:
@@ -232,7 +248,11 @@ class GatewayState:
             t = self.telemetry
             age = None if t is None else max(0, round((now - self.telemetry_time) * 1000))
             g=self.game_request
+            perf=self.performance
             return dict(game=None if g is None else {k:g[k] for k in ('request_id','opcode','level','state','result','snapshot_floor')},
+                        performance=None if perf is None else dict(target=perf.words[0],best=perf.words[1],
+                            stage=perf.words[2]&15,frames=perf.words[2]>>8,session=perf.session,sequence=perf.sequence,
+                            age_ms=max(0,round((now-self.performance_time)*1000)),stale=now-self.performance_time>=STALE),
                         simulated=self.simulated, owned=self.owner is not None,
                         acknowledged=self.acknowledged, session=self.session,
                         input_age_ms=None if not self.owner else max(0, round((now - self.heartbeat) * 1000)),

@@ -121,6 +121,15 @@ int hud_comparison_text(const hud_comparison *m,char lines[HUD_COMPARISON_LINES]
    if(!i && m->v3_mode && m->cpu_stale) text(p," STALE");
   } else text(p,"--  RENDER MS --");
  }
+ if(m->v3_mode==5) {
+  char *q=text(lines[2],"MODE PERF ACTIVE ");q=number(q,m->sprites);
+  q=text(q," ALPHA ");q=number(q,m->alpha_commands);q=text(q," KEY ");number(q,m->sprites);
+  const char *states[]={"UNKNOWN","WARM","SEARCH","VERIFY","VERIFIED 60S","CAPACITY 60S","FAILED"};
+  q=text(lines[3],states[m->perf_stage<=6?m->perf_stage:0]);
+  if(m->perf_stage<=3) {q=text(q," ");q=number(q,m->perf_frames);}
+  q=text(q," BEST ");q=number(q,m->perf_best);text(q,"  R RESET WEB EXIT");
+  return 0;
+ }
  char *p=text(lines[2],m->gpu_active?"MODE GPU  ":"MODE CPU  ");
  if(m->v3_mode) p=text(p,m->v3_mode==4?"MENU ":m->v3_mode==1?"LIVE ":"REPLAY ");
  p=text(p,m->bullet_demo?"BULLETS ":"N ");

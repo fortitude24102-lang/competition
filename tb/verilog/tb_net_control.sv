@@ -128,7 +128,7 @@ module tb_net_control;
         repeat(30) @(negedge gpu_clk);apb(0,16'h031c,0,0,1,1);
         apb(1,16'h0318,1,1,0,0);
         ge_reset=1;#31;ge_reset=0;repeat(40) @(negedge gpu_clk);
-        apb(0,16'h0304,0,0,4,1);apb(0,16'h0320,0,1,0,0);
+        apb(0,16'h0304,0,0,36,1);apb(0,16'h0320,0,1,0,0);
         apb(1,16'h03c0,32,0,0,0);
         for(i=0;i<8;i=i+1) apb(1,16'(16'h0340+4*i),32'hdead0000+i,0,0,0);
         apb(1,16'h0318,1,0,0,0);wait(tx_packet_valid);
@@ -152,15 +152,15 @@ module tb_net_control;
         apb(0,16'h0314,0,0,4,1);apb(1,16'h0300,1,1,0,0);
         // Eight words are sufficient for ACK, and every commit consumes its mask.
         apb(1,16'h0318,1,1,0,0);
-        apb(0,16'h0304,0,0,12,1);
+        apb(0,16'h0304,0,0,44,1);
         for(i=0;i<8;i=i+1) apb(1,16'(16'h0340+4*i),32'hca000000+i,0,0,0);
         apb(1,16'h0318,1,0,0,0);wait(tx_packet_valid);
         apb(1,16'h03c0,128,1,0,0);
         if(tx_length!=32 || tx_packet[255:224]!=32'hca000007) $fatal(1,"32 TX wrong descriptor");
         @(negedge ge_clk);tx_packet_ready=1;@(negedge ge_clk);tx_packet_ready=0;
         repeat(10) @(negedge ge_clk);tx_done=1;@(negedge ge_clk);tx_done=0;
-        repeat(30) @(negedge gpu_clk);apb(0,16'h031c,0,0,1,1);apb(0,16'h0304,0,0,4,1);
-        apb(1,16'h0318,1,1,0,0);apb(0,16'h0304,0,0,12,1);
+        repeat(30) @(negedge gpu_clk);apb(0,16'h031c,0,0,1,1);apb(0,16'h0304,0,0,36,1);
+        apb(1,16'h0318,1,1,0,0);apb(0,16'h0304,0,0,44,1);
         // GAME goes through the same router, CRC, depth-four FIFO and APB path.
         old_accepted=accepted;
         golden=256'h4147433101040020000000070000000900000001000000040000000b236caf84;
@@ -187,7 +187,10 @@ module tb_net_control;
             seal_control();send_bytes(32,32,31);
         end
         if(accepted!=old_accepted) $fatal(1,"invalid GAME fields admitted");
-        $display("PASS control router CRC reserved fields GAME depth4 snapshot age async reset TX atomic128");$finish;
+        make_control(4,50);bytes[19]=3;bytes[27]=50;seal_control();send_bytes(32,32,31);
+        if(accepted!=old_accepted+1) $fatal(1,"valid PERFORMANCE lost");
+        apb(1,16'h0308,1,0,0,0);apb(1,16'h030c,1,0,0,0);
+        $display("PASS control router CRC reserved fields GAME PERFORMANCE depth4 snapshot age async reset TX atomic128");$finish;
     end
     initial begin #1000000;$fatal(1,"control timeout");end
 endmodule

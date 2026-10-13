@@ -13,6 +13,8 @@
 <button id="level-4" disabled>难度四<span>512 Sprite 请求档位</span></button>
 </div><p id="current-difficulty"></p><button id="reselect" class="secondary" disabled>一键重选难度</button>
 <p class="muted">请求档位不等于每帧可见数量；高档位不承诺60 FPS。重选仅结束本局，不重启开发板。</p></section>
+<section class="panel"><h2>60 FPS 性能挑战</h2><button id="performance-start" disabled>开始性能挑战</button><p id="performance-result" role="status">等待开发板能力状态…</p>
+<p class="muted">Sapphire 搜索最多全活动 Sprite：全部使用硬件 Color Key，每8个另绘制1个硬件 Alpha 光晕（光晕不重复计数）。每档预热60帧、采样600帧，最高候选复核3600帧；逐帧预算、原始平均FPS、下溢和错误共同判定。固定16×16飞机、8×8元素、12×12光晕，960×540；不是所有画面通用极限。</p></section>
 <section class="panel"><h2>Keyboard control</h2><div class="buttons"><button id="acquire">Acquire control in this tab</button><button id="release" class="secondary">Release & clear keys</button><span id="keys">0x00</span></div>
 <p id="control-status" role="status">Control is released. One tab can own control at a time.</p>
 <p class="key-guide">Arrows / WASD: move · Space / Z: shoot · Shift: slow · R: restart · C: request comparison replay</p>

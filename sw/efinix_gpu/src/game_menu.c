@@ -36,7 +36,11 @@ int game_menu_draw(gpu_device *gpu,game_menu_cache *c,unsigned index,uint32_t ds
    text(s,dst,xs[i]+16,ys[i]+20,labels[i],0);
    text(s,dst,xs[i]+16,ys[i]+56,"SELECT ON WEB",1);
   }
-  text(s,dst,96,436,"SELECT A LEVEL ON THE WEB PAGE",0);
+  if(c->performance) {
+   fill(s,dst,96,412,768,48,0x07e0);
+   fill(s,dst,98,414,764,44,0);
+   text(s,dst,108,426,"PERFORMANCE - 60 FPS SPRITE LIMIT",1);
+  } else text(s,dst,96,436,"SELECT A LEVEL ON THE WEB PAGE",0);
  }
  fill(s,dst,96,480,600,18,0);
  text(s,dst,96,480,ready?"WEB CONTROL READY":"WAITING FOR WEB CONTROL",ready);

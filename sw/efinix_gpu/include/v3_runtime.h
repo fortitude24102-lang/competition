@@ -2,7 +2,7 @@
 #define V3_RUNTIME_H
 #include "replay_input.h"
 enum v3_mode { V3_MODE_LIVE, V3_MODE_CPU, V3_MODE_GPU };
-enum { V3_PHASE_MENU=0,V3_PHASE_PLAY=1 };
+enum { V3_PHASE_MENU=0,V3_PHASE_PLAY=1,V3_PHASE_PERFORMANCE=2 };
 enum { V3_MENU_BOOT=0,V3_MENU_DEATH=1,V3_MENU_REQUEST=2 };
 /* Large objects are caller-owned DDR/BSS, never the Sapphire 4 KiB stack. */
 typedef struct {
@@ -16,6 +16,7 @@ typedef struct {
  uint16_t replay_frames;
  uint8_t mode,compare_pending;
  uint8_t phase,level,menu_reason,menu_enabled,await_neutral;
+ uint8_t perf_enabled;
  uint32_t scene_generation,neutral_session,neutral_sequence;
 } v3_runtime;
 int v3_runtime_init(v3_runtime *,unsigned count,uint32_t seed,uint32_t epoch);

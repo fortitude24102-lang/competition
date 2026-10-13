@@ -25,7 +25,12 @@ class Clock {
 async function main() {
   const menuWords=Array(27).fill(0);menuWords[21]=0x0d00;
   let gv=gameView({stale:false,age_ms:0,telemetry:{words:menuWords},game:null});
-  assert.deepEqual(gv,{supported:true,phase:'menu',level:null,canStart:true,canMenu:true,pending:false});
+  assert.deepEqual(gv,{supported:true,phase:'menu',level:null,canStart:true,canMenu:true,pending:false,canPerformance:false});
+  menuWords[21]=0x1d00;
+  assert.equal(gameView({stale:false,age_ms:0,telemetry:{words:menuWords}}).canPerformance,true);
+  menuWords[21]=0x3801;
+  assert.equal(gameView({stale:false,age_ms:0,telemetry:{words:menuWords}}).phase,'performance');
+  menuWords[21]=0x0d00;
   for(const [level,count] of [[1,64],[2,128],[3,256],[4,512]]) {
     const words=menuWords.slice();words[21]=0x0801;words[3]=count;
     assert.equal(gameView({stale:false,age_ms:0,telemetry:{words}}).level,level);

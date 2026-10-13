@@ -21,6 +21,8 @@ typedef struct {
  uint16_t alpha_commands;
  uint8_t gameplay,hp,invulnerable,game_over;
  uint8_t v3_mode,cpu_stale,logic_slow; /* zero preserves frozen R7 text */
+ uint16_t perf_best,perf_frames;
+ uint8_t perf_stage;
 } hud_comparison;
 #define HUD_COMPARISON_LINES 4u
 #define HUD_COMPARISON_COLUMNS 64u

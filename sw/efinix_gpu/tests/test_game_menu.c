@@ -67,5 +67,12 @@ int main(void) {
  count=0;fail_at=1;game_menu_invalidate(&c);
  assert(game_menu_draw(&d,&c,0,GPU_FRAMEBUFFER_A,2,1,&scratch,1000)<0 && !(c.valid_mask&1));
  assert(game_menu_draw(&d,&c,2,GPU_FRAMEBUFFER_A,2,1,&scratch,1000)<0);
+ fail_at=0;count=0;c.performance=1;game_menu_invalidate(&c);
+ assert(!game_menu_draw(&d,&c,0,GPU_FRAMEBUFFER_A,3,1,&scratch,1000));
+ unsigned strips=0;
+ for(unsigned i=0;i<count;i++) if(commands[i].width_pixels==768 && commands[i].height_pixels==48) {
+  assert(commands[i].dst_addr==GPU_FRAMEBUFFER_A+412u*GPU_FRAME_STRIDE+192);++strips;
+ }
+ assert(strips==1);check_frame(GPU_FRAMEBUFFER_A);
  puts("PASS real GPU menu MMIO geometry/glyph labels, two buffers, static zero-submit, dirty hint and failure invalidation");
 }
