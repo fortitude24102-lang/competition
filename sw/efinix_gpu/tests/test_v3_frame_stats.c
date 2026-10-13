@@ -4,9 +4,11 @@
 int main(void) {
  /* Missing/incorrect worst-frame retention hides the actual slow frame. */
  v3_worst_frame worst={0},candidate={.tick=17,.steps=2,.logic_us=4000,
-  .build_us=4200,.scene_us=7400,.hud_us=1400,.work_us=17200,.wall_us=33277};
+  .build_us=4200,.scene_us=7400,.hud_us=1400,.work_us=17200,.wall_us=33277,
+  .hp_before=0,.death_wait_before=1,.round_tick=0};
  assert(!v3_worst_frame_record(&worst,&candidate));
  assert(worst.tick==17 && worst.steps==2 && worst.other_us==200 && worst.work_us==17200);
+ assert(!worst.hp_before && worst.death_wait_before==1 && !worst.round_tick);
  candidate.tick=18;candidate.work_us=17100;
  assert(!v3_worst_frame_record(&worst,&candidate) && worst.tick==17);
  candidate.work_us=20000;candidate.wall_us=19000;

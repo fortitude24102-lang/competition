@@ -251,6 +251,7 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
 #endif
 #if V3_DETAIL_PROBE
   uint8_t detail_sealed=runtime->recording.sealed;
+  uint32_t detail_hp_before=runtime->game.hp,detail_death_wait=runtime->game.game_over_ticks;
 #endif
 #if V3_LOGIC_COPY
   if(logic_copy) {
@@ -367,7 +368,8 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
    v3_worst_frame detail_frame={.tick=runtime->game.tick,.steps=detail_steps,
     .logic_us=detail_logic_us,.build_us=build_us,.scene_us=render_us,.hud_us=detail_hud_us,
     .busy_us=(uint32_t)((after.cycles-before.cycles)/100u),.work_us=work_us,.wall_us=us(wall),
-    .hp=runtime->game.hp,.seal_event=!detail_sealed && runtime->recording.sealed};
+    .hp=runtime->game.hp,.seal_event=!detail_sealed && runtime->recording.sealed,
+    .hp_before=detail_hp_before,.death_wait_before=detail_death_wait,.round_tick=runtime->game.round_tick};
    if(v3_worst_frame_record(&detail_worst,&detail_frame)) {e=GPU_DRIVER_ARGUMENT;break;}
    #endif
   }
@@ -428,10 +430,11 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
     runtime->seal_cursor.offset,runtime->recording.crc32);
    #endif
    #if V3_DETAIL_PROBE
-   bsp_printf("V3_WORST,tick=%d,steps=%d,logic_us=%d,build_us=%d,scene_us=%d,hud_us=%d,other_us=%d,busy_us=%d,work_us=%d,wall_us=%d,hp=%d,seal_event=%d\r\n",
+   bsp_printf("V3_WORST,tick=%d,steps=%d,logic_us=%d,build_us=%d,scene_us=%d,hud_us=%d,other_us=%d,busy_us=%d,work_us=%d,wall_us=%d,hp=%d,seal_event=%d,hp_before=%d,death_wait_before=%d,round_tick=%d\r\n",
     detail_worst.tick,detail_worst.steps,detail_worst.logic_us,detail_worst.build_us,
     detail_worst.scene_us,detail_worst.hud_us,detail_worst.other_us,detail_worst.busy_us,
-    detail_worst.work_us,detail_worst.wall_us,detail_worst.hp,detail_worst.seal_event);
+    detail_worst.work_us,detail_worst.wall_us,detail_worst.hp,detail_worst.seal_event,
+    detail_worst.hp_before,detail_worst.death_wait_before,detail_worst.round_tick);
    #endif
    bsp_printf("V3_PROBE,target=%d,frames=%d,fps_x10=%d,work_mean_us=%d,work_max_us=%d,wall_max_us=%d,work_miss=%d,late_present=%d,under=%d,errors=%d,visible_min=%d,visible_max=%d,alpha_min=%d,alpha_max=%d,log_mean_us=%d,log_max_us=%d\r\n",
     V3_START_COUNT,stats.frames,(uint32_t)((uint64_t)stats.frames*BSP_CLINT_HZ*10u/stats.wall_ticks),

@@ -5,6 +5,7 @@
 typedef struct {
  uint32_t tick,steps,logic_us,build_us,scene_us,hud_us,other_us;
  uint32_t busy_us,work_us,wall_us,hp,seal_event;
+ uint32_t hp_before,death_wait_before,round_tick;
 } v3_worst_frame;
 static inline int v3_worst_frame_record(v3_worst_frame *worst,const v3_worst_frame *frame) {
  if(!worst || !frame)return -1;
