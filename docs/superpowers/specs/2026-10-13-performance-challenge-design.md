@@ -1,0 +1,22 @@
+# Stable60 active-Sprite challenge
+
+User requests a performance mode matching the contest: hardware Alpha+ColorKey enabled, maximum simultaneously active Sprites while maintaining60FPS. Prior direct/continuous execution and no interim-approval instructions remain in effect. Separate renderer stress profile from ordinary gameplay; no CPU drawing/config or game rules optimization, no PC simulation/search, no Flash/push.
+
+## Profile / qualification
+
+- Sapphire owns seeded movement/animation, first-plane keyboard input, workload search, GPU commands and qualification. PC sends start/menu/keys and displays board data. All N distinct logical Sprites fully visible and continuously updated, no death, reset, inactive shots, offscreen clipping, duplicate-counting halos, hidden loads or static-result replay.
+- Key: first plane16×16, others8×8 cycling original6 shapes; Alpha:12×12 halo for every8 logical Sprites, global alpha64..124 (never0/255); full background below72-pixel HUD, unchanged native960×540/RGB565/GPU100MHz. Halos are separately reported, not added to N. Ordinary gameplay unchanged.
+- Dedicated private DDR state02d28000..02d40000, beyond descriptor banks02d20000/02d24000; no extra large CPU BSS and no moving original CPU command buffers. Existing12 templates and original list/pixel backend. N32..909: 1+909+ceil(909/8)=1024 descriptors fits16KiB bank; no alias with runtime/probe/assets.
+- Trial:60 warmup frames (health still checked),600 measured full frames, target constant; full work<=hz/60, cadence<=hz/40, precise aggregate frames*hz>=60*wallticks, visible=N, alpha=ceil(N/8), zero new under/error. All phases retain control/HUD/PRESENT costs. Warm timing excluded and explicitly labeled, not health. Search64,128,256,512,capacity then bracket to1Sprite resolution; monotonic assumption/profile fixed, report highest verified count, not all conceivable layouts.
+- Best candidate rechecked3600 full frames (about60s), only then final score. Failed confirmation restarts lower bracket, never awards a10s-only result. After final, a new late/error/visibility loss invalidates displayed qualification. Reaching909 reports software/list capacity reached, not physical GPU ceiling. No claim of universal/endless60FPS.
+
+## Control / reporting
+
+- Extend existing GAME command with opcode3,level0 for performance entry from MENU only; original start1 levels1..4 and menu2 level0 intact. RX validator accepts3; net_control_bridge STATUS bit5 advertises compatibility. Firmware capability requires this bit plus real FrameList and opt-in `-PerformanceChallenge`. OldBIT or disabled build hides/disables mode, no unsupported opcode sent.
+- Standard27-word/128B telemetry fields retain meanings; add status bits12 capable,13 active, allowedmask007f3fff. Separate32B AGC1 packet type6 performance status: words(target,best,stage|(completed_frames<<8)), stage1WARM/2SAMPLE/3VERIFY/4DONE/5CAPACITY/6FAILED, no reserved bits, completed<=3600. Shared snapshot_id increments on both types, same CRC/owner/peer rules. Original ACK/GAME_ACK priority and standard telemetry not starved; performance is independently rate-limited200ms and sent when transmitter free. Scores expire on session/normal-mode/reset/stale and never relabelled from old packets.
+- Menu fifth performance strip, web start button/result panel and stop-to-menu. Web uses actual board status, distinguishes testing/verification/final/capacity/failed; no host scoring. Keyboard controls first plane; R restarts challenge, C compare disabled only here. Normal four difficulties/keyboard/CPU comparison unchanged.
+- Firmware feature defaultoff, separate outputs, normal MENU start. New firmware buildID20261013. Any terminal automatic entry is independent diagnostic only, not normal firmware. Qualified newBIT mandatory before board entry; no Flash writes. End at normalMENU/control released.
+
+## Verification boundaries
+
+Fail tests first: motion/visibility/Alpha+Key descriptors, strict work/precise FPS/health/warmup/600vs3600, binary bracket/final failure/capacity, main runtime entry/exit/restart, unsupported oldBIT, real C/RTL/Python codec, duplicate/stale/session/lease scores, page keyboard/game behavior. Full C/network/JS and relevant RTL, complete link4KiB stack, candidate Efinity resource/setup/hold/CDC gate before JTAG; independent final source review. Preserve actual raw trial summaries and UI/control evidence. If board unavailable, do not claim a measured limit.
