@@ -1,0 +1,6 @@
+Connecting to JTAG_TAP: efx_ti
+jtag programming started!
+JTAG Programming on ftdi://0x0403:0x6011:0:2/1
+Programming 'D:/efinity_builds/frame_list_20261012_r1/outflow/efinix_2d_gpu.bit' via JTAG at freq 6.0 MHz
+Device ID read from JTAG: 0x10660A79
+... finished with JTAG programming

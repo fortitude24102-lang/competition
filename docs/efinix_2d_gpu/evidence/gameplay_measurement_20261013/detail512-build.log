@@ -1,0 +1,2 @@
+D:/efinity/risc_v_gcc/toolchain/bin/../lib/gcc/riscv-none-elf/13.4.0/../../../../riscv-none-elf/bin/ld.exe: warning: generated/verification/v3/gameplay-board-20261013/detail512-r1/gpu_demo.elf has a LOAD segment with RWX permissions
+PASS: Sapphire ELF/BIN/Intel HEX; scene=bullet profile=False local=0xc0a80103 peer=0xc0a80102 (not board executed)
