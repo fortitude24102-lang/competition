@@ -1,0 +1,5 @@
+SIMULATED ACK/ECHO PEER �� NO BOARD PERFORMANCE / NO GAME LOGIC
+Listening 127.0.0.1:61866; fixed gateway 127.0.0.1:61865
+SIMULATED / NOT BOARD MEASUREMENT �� http://127.0.0.1:63064
+Fixed UDP peer 127.0.0.1:61866; Ctrl+C stops and clears control.
+PASS browser: simulated label, ACK, aliases, blur zero/release, ownership conflict, invalid FPS, raw CSV, page close

@@ -1,0 +1,43 @@
+usage: fake_board.py [-h] [--bind BIND] [--port PORT] [--gateway GATEWAY]
+                     [--gateway-port GATEWAY_PORT] [--game-menu]
+fake_board.py: error: unrecognized arguments: --performance
+SIMULATED / NOT BOARD MEASUREMENT �� http://127.0.0.1:52075
+Fixed UDP peer 127.0.0.1:54165; Ctrl+C stops and clears control.
+locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('#level-1')
+    - locator resolved to <button disabled id="level-1">…</button>
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is not enabled
+    - retrying click action
+    - waiting 20ms
+    2 × waiting for element to be visible, enabled and stable
+      - element is not enabled
+    - retrying click action
+      - waiting 100ms
+    57 × waiting for element to be visible, enabled and stable
+       - element is not enabled
+     - retrying click action
+       - waiting 500ms
+
+    at main (D:\ZYNQ\smallproject\.worktrees\pango-riscv-cpu\sw\efinix_gpu\tests\test_control_dashboard_browser.js:51:36) {
+  log: [
+    "  - waiting for locator('#level-1')",
+    '    - locator resolved to <button disabled id="level-1">…</button>',
+    '  - attempting click action',
+    '    2 × waiting for element to be visible, enabled and stable',
+    '      - element is not enabled',
+    '    - retrying click action',
+    '    - waiting 20ms',
+    '    2 × waiting for element to be visible, enabled and stable',
+    '      - element is not enabled',
+    '    - retrying click action',
+    '      - waiting 100ms',
+    '    57 × waiting for element to be visible, enabled and stable',
+    '       - element is not enabled',
+    '     - retrying click action',
+    '       - waiting 500ms'
+  ],
+  name: 'TimeoutError'
+}

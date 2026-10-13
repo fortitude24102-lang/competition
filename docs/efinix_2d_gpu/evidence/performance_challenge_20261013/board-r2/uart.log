@@ -1,0 +1,10 @@
+BULLET_ASSET,id=101,bytes=0,retries=5,result=-23
+TEXTURE_CACHE,result=0,base=02c00000,bytes=3104,network=0
+V3_FRAME_LIST,present=1,enabled=1
+V3_SEAL_BUDGET,words=256
+V3_COPY_AHEAD,enabled=1
+V3_LOGIC_COPY,enabled=1
+HUD_LOGO,id=103,bytes=0,retries=0,result=-21,enabled=0
+V3_COUNTER_BASELINE,under_lo=274320,under_hi=0
+V3_READY,build=20261013,epoch=00030002,network=0,state=02d00000,mode=MENU,count=0
+V3_SCENE,phase=MENU,level=0,count=0,generation=1,reason=0

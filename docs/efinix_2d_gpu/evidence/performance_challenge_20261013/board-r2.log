@@ -1,0 +1,20 @@
+Open On-Chip Debugger 0.11.0+dev-04060-g967f8f6f0-dirty (2026-03-24-19:56)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+Info : auto-selecting first available session transport "jtag". To override use 'transport select <transport>'.
+Info : set servers polling period to 50ms
+Info : clock speed 800 kHz
+Info : JTAG tap: fpga_spinal.bridge tap/device found: 0x10660a79 (mfg: 0x53c (Efinix Inc), part: 0x0660, ver: 0x1)
+[fpga_spinal.cpu0] Target successfully examined.
+Info : starting gdb server for fpga_spinal.cpu0 on 3333
+Info : Listening on port 3333 for gdb connections
+Info : JTAG tap: fpga_spinal.bridge tap/device found: 0x10660a79 (mfg: 0x53c (Efinix Inc), part: 0x0660, ver: 0x1)
+shutdown command invoked
+Deadline: new MENU startup; raw capture retained
+At D:\ZYNQ\smallproject\.worktrees\pango-riscv-cpu\scripts\test-game-menu-board.ps1:61 char:2
++  throw "Deadline: $label; raw capture retained"
++  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Deadline: new M...apture retained:String) [], RuntimeException
+    + FullyQualifiedErrorId : Deadline: new MENU startup; raw capture retained
+ 

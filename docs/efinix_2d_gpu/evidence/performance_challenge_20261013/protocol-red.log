@@ -1,0 +1,18 @@
+test_performance_wire (__main__.ProtocolTest) ... ERROR
+
+======================================================================
+ERROR: test_performance_wire (__main__.ProtocolTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\ZYNQ\smallproject\.worktrees\pango-riscv-cpu\sw\efinix_gpu\tests\test_control_gateway.py", line 33, in test_performance_wire
+    self.assertEqual(p.decode(packet).words,tuple(words))
+  File "D:\ZYNQ\smallproject\.worktrees\pango-riscv-cpu\sw\efinix_gpu\tools\control_gateway\protocol.py", line 77, in decode
+    _validate(kind, session, words)
+  File "D:\ZYNQ\smallproject\.worktrees\pango-riscv-cpu\sw\efinix_gpu\tools\control_gateway\protocol.py", line 50, in _validate
+    raise ValueError('GAME opcode/level/request')
+ValueError: GAME opcode/level/request
+
+----------------------------------------------------------------------
+Ran 1 test in 0.035s
+
+FAILED (errors=1)

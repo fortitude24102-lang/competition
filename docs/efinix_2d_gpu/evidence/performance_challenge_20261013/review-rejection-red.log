@@ -1,0 +1,1 @@
+FAIL sw/efinix_gpu/tests/test_v3_menu_integration.c:26: !v3_apply_game_command(&runtime,&d,&cmd) && runtime.phase==V3_PHASE_MENU

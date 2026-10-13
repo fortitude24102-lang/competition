@@ -1,0 +1,23 @@
+test_verified_score_restart_cohort_and_global_order (__main__.StateTest) ... FAIL
+test_new_cohort_cannot_keep_verified_best (__main__.StateTest) ... FAIL
+
+======================================================================
+FAIL: test_verified_score_restart_cohort_and_global_order (__main__.StateTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\ZYNQ\smallproject\.worktrees\pango-riscv-cpu\sw\efinix_gpu\tests\test_control_gateway.py", line 92, in test_verified_score_restart_cohort_and_global_order
+    self.assertIsNone(s.view(.05)['performance'])
+AssertionError: {'target': 855, 'best': 855, 'stage': 4, 'frames': 3600, 'session': 3127186577, 'sequence': 101, 'age_ms': 10, 'stale': False} is not None
+
+======================================================================
+FAIL: test_new_cohort_cannot_keep_verified_best (__main__.StateTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\ZYNQ\smallproject\.worktrees\pango-riscv-cpu\sw\efinix_gpu\tests\test_control_gateway.py", line 109, in test_new_cohort_cannot_keep_verified_best
+    self.assertIsNone(s.view(.05)['performance'])
+AssertionError: {'target': 855, 'best': 855, 'stage': 4, 'frames': 3600, 'session': 2350616655, 'sequence': 101, 'age_ms': 10, 'stale': False} is not None
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.065s
+
+FAILED (failures=2)

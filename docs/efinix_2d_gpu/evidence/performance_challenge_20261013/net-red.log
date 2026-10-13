@@ -1,0 +1,32 @@
+sw/efinix_gpu/tests/test_net_control.c: In function ‘performance_packet’:
+sw/efinix_gpu/tests/test_net_control.c:287:40: error: ‘nc_device’ has no member named ‘perf_capable’
+  287 |  reset();CHECK(!nc_init(&d,0));CHECK(!d.perf_capable);
+      |                                        ^
+sw/efinix_gpu/tests/test_net_control.c:7:29: note: in definition of macro ‘CHECK’
+    7 | #define CHECK(x) do { if (!(x)) { fprintf(stderr,"FAIL %s:%d: %s\n",__FILE__,__LINE__,#x); exit(1); } } while (0)
+      |                             ^
+sw/efinix_gpu/tests/test_net_control.c:288:8: error: implicit declaration of function ‘nc_queue_performance’ [-Werror=implicit-function-declaration]
+  288 |  CHECK(nc_queue_performance(&d,64,0,1)<0);
+      |        ^~~~~~~~~~~~~~~~~~~~
+sw/efinix_gpu/tests/test_net_control.c:7:29: note: in definition of macro ‘CHECK’
+    7 | #define CHECK(x) do { if (!(x)) { fprintf(stderr,"FAIL %s:%d: %s\n",__FILE__,__LINE__,#x); exit(1); } } while (0)
+      |                             ^
+sw/efinix_gpu/tests/test_net_control.c:289:45: error: ‘nc_device’ has no member named ‘perf_capable’
+  289 |  reset();hw.cap=32;CHECK(!nc_init(&d,0) && d.perf_capable);
+      |                                             ^
+sw/efinix_gpu/tests/test_net_control.c:7:29: note: in definition of macro ‘CHECK’
+    7 | #define CHECK(x) do { if (!(x)) { fprintf(stderr,"FAIL %s:%d: %s\n",__FILE__,__LINE__,#x); exit(1); } } while (0)
+      |                             ^
+sw/efinix_gpu/tests/test_net_control.c:310:44: error: ‘nc_device’ has no member named ‘perf_pending’; did you mean ‘ack_pending’?
+  310 |  nc_discard_pending_telemetry(&d);CHECK(!d.perf_pending);
+      |                                            ^~~~~~~~~~~~
+sw/efinix_gpu/tests/test_net_control.c:7:29: note: in definition of macro ‘CHECK’
+    7 | #define CHECK(x) do { if (!(x)) { fprintf(stderr,"FAIL %s:%d: %s\n",__FILE__,__LINE__,#x); exit(1); } } while (0)
+      |                             ^
+sw/efinix_gpu/tests/test_net_control.c:311:71: error: ‘nc_device’ has no member named ‘perf_pending’; did you mean ‘ack_pending’?
+  311 |  CHECK(!nc_queue_performance(&d,64,0,1));nc_poll(&d,252,&in);CHECK(!d.perf_pending);
+      |                                                                       ^~~~~~~~~~~~
+sw/efinix_gpu/tests/test_net_control.c:7:29: note: in definition of macro ‘CHECK’
+    7 | #define CHECK(x) do { if (!(x)) { fprintf(stderr,"FAIL %s:%d: %s\n",__FILE__,__LINE__,#x); exit(1); } } while (0)
+      |                             ^
+cc1: all warnings being treated as errors

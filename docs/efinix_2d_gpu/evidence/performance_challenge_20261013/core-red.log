@@ -1,0 +1,4 @@
+sw/efinix_gpu/tests/test_performance_challenge.c:1:10: fatal error: performance_challenge.h: No such file or directory
+    1 | #include "performance_challenge.h"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.

@@ -1,0 +1,2 @@
+PASS owner subsystem actual APB/resource IDs, default/configured IP MAC128/32, HELLO CDC/session, GE reset
+PASS requested V3 integration checks: SoftwareOnly=False RtlOnly=True. Not board qualification.
