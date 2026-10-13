@@ -1,8 +1,34 @@
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 #include "v3_runtime.h"
 static v3_runtime runtime;
 static bullet_state expected;
+static void test_seal_budget(void) {
+ assert(!v3_runtime_init(&runtime,512,7,3));runtime.seal_words=256;
+ expected=runtime.game;game_input in={0};
+ for(unsigned i=0;i<620;i++) {
+  assert(v3_runtime_advance(&runtime,&in,16667)==1);
+  assert(!game_update(&expected,&in));assert(!memcmp(&expected,&runtime.game,sizeof expected));
+  if(i<599)assert(!runtime.recording.sealed);
+  if(i==599)assert(runtime.recording.count==600 && runtime.seal_cursor.offset==256 && !runtime.recording.sealed);
+ }
+ assert(runtime.recording.sealed && runtime.recording.count==600); /* 21 chunks. */
+ assert(!v3_runtime_init(&runtime,32,7,3));runtime.seal_words=256;in.pressed=V3_KEY_COMPARE;
+ for(unsigned i=0;i<600;i++)assert(v3_runtime_advance(&runtime,&in,16667)==1);
+ assert(!runtime.recording.sealed && runtime.mode==V3_MODE_LIVE);
+ in.pressed=0;
+ for(unsigned i=0;i<3;i++)assert(v3_runtime_advance(&runtime,&in,16667)==1);
+ assert(runtime.recording.sealed && runtime.mode==V3_MODE_CPU && runtime.recording.count==600);
+ assert(!v3_runtime_menu_init(&runtime,7,3));runtime.seal_words=256;
+ assert(!v3_runtime_game_command(&runtime,V3_GAME_START,1,7,9));
+ runtime.seal_cursor=(replay_seal_cursor){.offset=256,.crc=123};runtime.await_neutral=0;
+ in.pressed=V3_KEY_RESTART;assert(!v3_runtime_advance(&runtime,&in,0));
+ assert(!runtime.seal_cursor.offset && !runtime.seal_cursor.crc && runtime.seal_words==256);
+ runtime.seal_cursor.offset=256;assert(!v3_runtime_set_epoch(&runtime,4));
+ assert(!runtime.seal_cursor.offset && !runtime.seal_cursor.crc);
+ puts("PASS seal budget: same620 live states, no overflow, complete600 keys, delayed safe compare, restart/epoch reset");
+}
 static void test_menu_levels(void) {
  const unsigned counts[]={64,128,256,512};game_input in={.pressed=V3_KEY_RESTART|V3_KEY_COMPARE};
  for(unsigned level=1;level<=4;level++) {
@@ -132,6 +158,7 @@ int main(void) {
  assert(v3_runtime_advance(&runtime,&held,16667)==1);
  assert(runtime.game.tick==tick+1 && !runtime.compare_pending);
  test_menu_levels();test_start_requires_new_neutral();test_menu_death_stops_catchup();test_menu_aborts_replay();
+ test_seal_budget();
  puts("PASS V3 runtime menu/levels/neutral/death/abort and per-tick recording, 600-tick two-backend replay");
  return 0;
 }

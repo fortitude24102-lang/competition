@@ -8,3 +8,9 @@ User requests continuous inline execution without intermediate approval. Goal: r
 4. Reuse existing probe / menu / control tests. Compare 30 warmup + 600 samples with old→new→old and repeated new at 512; report visible/Alpha range, health, late frames and work maxima, including death waits. Restore tested normal MENU and release control. Retain only measured net improvement; stable60 requires zero late and longer qualification, not a rounded average.
 
 Review focus: LIVE→CPU during advance; PLAY→death MENU; command MENU before advance; tag timeout/error after early issue; WIN original Fill fallback and local/network A/B background identity. CPU/menus must never race an early GPU write.
+
+## Evidence-driven bounded continuation: seal maintenance budget
+
+Early Copy measured597 FPSx10 twice,4/600 late, with worst still seal_event1 at tick600. Add optional `-ReplaySealBudget`, default off, terminal selector02d1000c (0=original,256=256 canonical words per LIVE display iteration). Frozen initial/600 keys are fully scanned exactly once in <=21 iterations for512; no further keys recorded at full capacity, live physics continues unchanged. New cursor is private runtime state, reset on restart/epoch/menu/replay restoration. No whole-frame per-call serialization buffers or new dependencies.
+
+Keep original synchronous replay_seal and replay_begin full checksum unchanged for baseline/CPU comparison. Incremental seal returns0 pending,1 completed,negative invalid; it uses exact version2 little-endian logical fields, excludes padding. Full validation before first/last chunk; no compare allowed before completion. Compare initiation may wait up to21 LIVE iterations (~350ms at60Hz) after recording fills, never fabricates CPU/GPU scores or truncates600 input ticks. Source inspiration only: zlib running CRC update (https://zlib.net/manual.html); existing reflected nibble implementation reused, no zlib library or checksum downgrade.

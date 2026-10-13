@@ -73,6 +73,46 @@ int replay_seal(replay_recording *r) {
     !r->resource_epoch || r->seed!=r->initial.seed) return GPU_DRIVER_ARGUMENT;
  r->crc32=checksum(r); r->sealed=1; return 0;
 }
+/* Same canonical version2 serialization as checksum(), without a whole-state
+ * buffer or a large table. Single-writer runtime freezes initial/keys at600. */
+static uint32_t seal_word(const replay_recording *r,unsigned index) {
+ const bullet_state *s=&r->initial;
+ switch(index) {
+  case 0:return REPLAY_INPUT_VERSION;case 1:return r->seed;
+  case 2:return r->resource_epoch;case 3:return r->count;
+  case 4:return s->count;case 5:return s->seed;case 6:return s->tick;
+  case 7:return s->round_tick;case 8:return s->score;case 9:return s->grazes;
+  case 10:return (uint32_t)s->player_x;case 11:return (uint32_t)s->player_y;
+  case 12:return s->invulnerable;case 13:return s->game_over_ticks;case 14:return s->hp;
+  case 15:return s->interactive;case 16:return s->won;
+  case 17:return s->enemy_hp[0];case 18:return s->enemy_hp[1];case 19:return s->enemy_hp[2];
+ }
+ index-=20u;
+ if(index>=s->count*9u)return r->keys[index-s->count*9u];
+ const bullet_object *b=s->objects+index/9u;
+ switch(index%9u) {
+  case 0:return (uint32_t)b->x;case 1:return (uint32_t)b->y;
+  case 2:return (uint32_t)b->vx;case 3:return (uint32_t)b->vy;
+  case 4:return b->age;case 5:return b->kind;case 6:return b->shape;
+  case 7:return b->grazed;default:return b->path;
+ }
+}
+int replay_seal_step(replay_recording *r,replay_seal_cursor *c,unsigned words) {
+ if(!r || !c || !words || words>256 || r->sealed || r->count!=REPLAY_INPUT_TICKS ||
+    !r->initial.count || r->initial.count>BULLET_MAX_OBJECTS ||
+    !r->resource_epoch || r->seed!=r->initial.seed)return GPU_DRIVER_ARGUMENT;
+ unsigned total=20u+9u*r->initial.count+r->count;
+ if(c->offset>=total)return GPU_DRIVER_ARGUMENT;
+ if(!c->offset) {
+  if(!initial_valid(&r->initial))return GPU_DRIVER_ARGUMENT;
+  c->crc=UINT32_MAX;
+ }
+ unsigned end=total-c->offset<words?total:c->offset+words;
+ while(c->offset<end)crc_word(&c->crc,seal_word(r,c->offset++));
+ if(c->offset<total)return 0;
+ if(!initial_valid(&r->initial))return GPU_DRIVER_ARGUMENT;
+ r->crc32=c->crc^UINT32_MAX;r->sealed=1;return 1;
+}
 int replay_begin(const replay_recording *r,uint32_t epoch,bullet_state *s,replay_cursor *c) {
  if(!r || !s || !c || !r->sealed || r->count!=REPLAY_INPUT_TICKS ||
     r->resource_epoch!=epoch || !epoch || !initial_valid(&r->initial) ||

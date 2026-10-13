@@ -9,6 +9,8 @@ typedef struct {
  bullet_state game, live_saved;
  replay_recording recording;
  replay_cursor cursor;
+ replay_seal_cursor seal_cursor;
+ uint16_t seal_words; /* 0 original; otherwise <=256, LIVE maintenance only. */
  game_clock clock;
  uint32_t epoch;
  uint16_t replay_frames;

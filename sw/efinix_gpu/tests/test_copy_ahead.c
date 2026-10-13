@@ -2,6 +2,7 @@
  * unsafe mismatch/partial-frame retries, and a lost final tag. Real driver
  * and builders; only external MMIO/DDR are replaced by the host fixture. */
 #define V3_COPY_AHEAD 1
+#define V3_LOGIC_COPY 1
 #include "../src/v3_demo.c"
 #include <assert.h>
 #include <stdio.h>
@@ -14,7 +15,14 @@ static uint8_t pixels[GPU_FRAME_BYTES],reference[GPU_FRAME_BYTES];
 static bullet_state state;
 static bullet_stream stream;
 static uint32_t frame_base;
+static v3_runtime runtime;
+static int observe_tick,defer_done;
 static void execute(const gpu_command *c) {
+ if(c->op==GPU_OP_FILL) {
+  golden_surface dst={pixels,sizeof pixels,960,540,1920};
+  unsigned pixel=(c->dst_addr-frame_base)/2u;
+  assert(!golden_fill(&dst,pixel%960,pixel/960,c->width_pixels,c->height_pixels,c->color));return;
+ }
  unsigned offset;
  uint8_t *data;unsigned available;
  if(c->src_addr>=BULLET_LOCAL_BACKGROUND && c->src_addr<BULLET_LOCAL_BACKGROUND+GPU_FRAME_BYTES)
@@ -40,6 +48,7 @@ uint32_t gpu_io_read(uintptr_t a) {
 void gpu_io_write(uintptr_t a,uint32_t v) {
  unsigned r=(unsigned)(a-GPU_APB_BASE);regs[r/4]=v;
  if(r==GPU_REG_CONTROL && v==GPU_CONTROL_SUBMIT) {
+  if(observe_tick)assert(runtime.game.tick==0); /* Actual issue must precede advance. */
   assert(commits<BULLET_MAX_COMMANDS);gpu_command *c=&emitted[commits++];
   memset(c,0,sizeof *c);
   c->op=(uint8_t)regs[GPU_REG_OP/4];c->src_addr=regs[GPU_REG_SRC_ADDR/4];c->dst_addr=regs[GPU_REG_DST_ADDR/4];
@@ -47,7 +56,7 @@ void gpu_io_write(uintptr_t a,uint32_t v) {
   c->width_pixels=(uint16_t)regs[GPU_REG_SIZE/4];c->height_pixels=(uint16_t)(regs[GPU_REG_SIZE/4]>>16);
   c->color=(uint16_t)regs[GPU_REG_COLOR_KEY/4];c->color_key=(uint16_t)(regs[GPU_REG_COLOR_KEY/4]>>16);
   c->alpha=(uint8_t)regs[GPU_REG_ALPHA_FLAGS/4];c->flags=(uint16_t)(regs[GPU_REG_ALPHA_FLAGS/4]>>16);
-  execute(c);regs[GPU_REG_LAST_DONE/4]=regs[GPU_REG_TAG/4];
+  execute(c);if(!defer_done)regs[GPU_REG_LAST_DONE/4]=regs[GPU_REG_TAG/4];
  }
 }
 void gpu_io_fence(void) {}
@@ -97,4 +106,54 @@ int main(void) {
  reset(&d);regs[GPU_REG_STATUS/4]=GPU_STATUS_FULL;tag=0xbeef;
  assert(copy_ahead_begin(&d,frame_base,1,&bg,&tag,0)==GPU_DRIVER_TIMEOUT && !commits && tag==0xbeef);
  printf("PASS Copy ahead: 600 game ticks, %u full-pixel/ordered-MMIO samples, A/B local/net, no early wait/double Copy, mismatch/error/timeout\n",samples);
+ /* Real game/runtime/driver, only external MMIO/DDR substituted. An early
+  * Copy overlapping CPU/MENU, or a duplicate launch, breaks these checks. */
+ for(unsigned net=0;net<2;net++)for(unsigned bank=0;bank<2;bank++) {
+  frame_base=bank?GPU_FRAMEBUFFER_B:GPU_FRAMEBUFFER_A;
+  reset(&d);assert(!v3_runtime_init(&runtime,512,7,1));
+  game_input in={0};assert(v3_runtime_advance(&runtime,&in,16667)==1);
+  assert(!game_build(&runtime.game,frame_base,net,1,BULLET_MAX_COMMANDS,&stream));
+  assert(!bullet_clip_background_for_hud(&stream,72));
+  assert(!perf_render_gpu(&d,stream.commands,stream.count,100));
+  memcpy(reference,pixels,sizeof pixels);unsigned count=commits;
+  reset(&d);assert(!v3_runtime_init(&runtime,512,7,1));int issued=-1;
+  observe_tick=1;
+  assert(copy_ahead_advance(&d,&runtime,&in,16667,frame_base,net,&bg,&tag,&issued,100)==1);
+  observe_tick=0;
+  assert(runtime.game.tick==1 && issued && commits==1 && !done_reads && d.outstanding==1);
+  assert(!game_build(&runtime.game,frame_base,net,1,BULLET_MAX_COMMANDS,&stream));
+  assert(!bullet_clip_background_for_hud(&stream,72));
+  assert(!copy_ahead_finish(&d,&bg,tag,&stream,100));
+  assert(commits==count && !d.outstanding && !memcmp(reference,pixels,sizeof pixels));
+ }
+ frame_base=GPU_FRAMEBUFFER_A;game_input in={0};int issued;
+ reset(&d);assert(!v3_runtime_menu_init(&runtime,7,1));
+ assert(!copy_ahead_advance(&d,&runtime,&in,16667,frame_base,1,&bg,&tag,&issued,100));
+ assert(!issued && !commits); /* Explicit MENU is not a background workload. */
+ assert(!v3_runtime_game_command(&runtime,V3_GAME_START,4,1,1));
+ runtime.game.hp=0;runtime.game.game_over_ticks=1;
+ assert(!copy_ahead_advance(&d,&runtime,&in,16667,frame_base,1,&bg,&tag,&issued,100));
+ assert(runtime.phase==V3_PHASE_MENU && !issued && commits==1 && !d.outstanding && done_reads);
+ reset(&d);assert(!v3_runtime_init(&runtime,512,7,1));
+ for(unsigned i=0;i<600;i++)assert(!replay_record(&runtime.recording,&in));
+ assert(!replay_seal(&runtime.recording));in.pressed=V3_KEY_COMPARE;
+ assert(copy_ahead_advance(&d,&runtime,&in,16667,frame_base,1,&bg,&tag,&issued,100)==1);
+ assert(runtime.mode==V3_MODE_CPU && !issued && commits==1 && !d.outstanding && done_reads);
+ /* Delayed background must fail before any CPU writer can run. */
+ reset(&d);runtime.mode=V3_MODE_LIVE;defer_done=1;
+ assert(copy_ahead_advance(&d,&runtime,&in,16667,frame_base,1,&bg,&tag,&issued,2)==GPU_DRIVER_TIMEOUT);
+ assert(runtime.mode==V3_MODE_CPU && commits==1 && d.outstanding);defer_done=0;
+ reset(&d);assert(!v3_runtime_init(&runtime,512,7,1));in=(game_input){.held=UINT16_MAX};
+ assert(copy_ahead_advance(&d,&runtime,&in,16667,frame_base,1,&bg,&tag,&issued,100)<0);
+ assert(commits==1 && runtime.game.tick==0); /* Error cannot reach render/PRESENT. */
+ reset(&d);in=(game_input){0};regs[GPU_REG_STATUS/4]=GPU_STATUS_FULL;
+ assert(copy_ahead_advance(&d,&runtime,&in,16667,frame_base,1,&bg,&tag,&issued,0)==GPU_DRIVER_TIMEOUT);
+ assert(!commits && runtime.game.tick==0);
+ reset(&d);assert(!game_reset(&state,64,7));state.won=1;memset(state.enemy_hp,0,sizeof state.enemy_hp);
+ assert(!game_build(&state,frame_base,1,1,BULLET_MAX_COMMANDS,&stream));
+ assert(!bullet_clip_background_for_hud(&stream,72));
+ assert(!perf_render_gpu(&d,stream.commands,stream.count,100));memcpy(reference,pixels,sizeof pixels);
+ reset(&d);assert(!copy_ahead_begin(&d,frame_base,1,&bg,&tag,100));
+ assert(!copy_ahead_finish(&d,&bg,tag,&stream,100) && commits==33 && !memcmp(reference,pixels,sizeof pixels));
+ puts("PASS early Copy actual issue-before-logic, A/B local/net pixels, MENU/death/CPU drains, timeout/error no alternate writer, WIN Fill");
 }

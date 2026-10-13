@@ -42,6 +42,32 @@ int main(void) {
   assert(replay_begin(&bad,3,&restored,&cursor)==GPU_DRIVER_ARGUMENT);
   bad=recording;bad.keys[599]^=V3_KEY_UP;
   assert(replay_begin(&bad,3,&restored,&cursor)==GPU_DRIVER_ARGUMENT);
+  /* A skipped field, wrong canonical order or unbounded chunk breaks this
+   * independent CRC oracle. No rolling CRC computed by the tested helper. */
+  const unsigned budgets[]={1,7,256};
+  for(unsigned b=0;b<3;b++) {
+   replay_seal_cursor step={0};recording.sealed=0;recording.crc32=0;
+   unsigned total=20u+9u*count+600u,calls=0;
+   int done;
+   do {
+    unsigned before=step.offset;
+    done=replay_seal_step(&recording,&step,budgets[b]);assert(done>=0);
+    assert(step.offset>before && step.offset-before<=budgets[b]);++calls;
+    assert(recording.sealed==(done==1));
+   } while(!done);
+   assert(step.offset==total && calls==(total+budgets[b]-1)/budgets[b]);
+   assert(recording.crc32==expected && !replay_begin(&recording,3,&restored,&cursor));
+  }
+  replay_seal_cursor step={0};recording.sealed=0;
+  assert(replay_seal_step(&recording,&step,0)<0 && !step.offset);
+  assert(replay_seal_step(&recording,&step,257)<0 && !step.offset);
+  recording.count=599;assert(replay_seal_step(&recording,&step,256)<0);recording.count=600;
+  assert(!replay_seal_step(&recording,&step,256));
+  bad=recording;bad.initial.player_x++;
+  replay_seal_cursor bad_step=step;
+  int bad_done;
+  do {bad_done=replay_seal_step(&bad,&bad_step,256);assert(bad_done>=0);} while(!bad_done);
+  assert(replay_begin(&bad,3,&restored,&cursor)==GPU_DRIVER_ARGUMENT);
  }
 #ifdef REPLAY_CRC_COST_CHECK
  /* Opt-in benchmark, not a scheduler-sensitive ordinary regression gate.

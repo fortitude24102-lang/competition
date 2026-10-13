@@ -39,3 +39,13 @@
 - [ ] GREEN: minimal early issue / drain / reuse logic with default-off flag; relevant tests plus full V3 software suite, instance/frame-list driver tests; independent normal/probe/detail builds preserve4KiB stack.
 - [ ] Same-BIT/BIN original→early→original 512, repeated early and 256 sanity. If benefit absent, restore old default; if present, retain opt-in qualified candidate. Do not claim stable60 without zero late.
 - [ ] Restore normal candidate MENU; four tier ACK/state and 256 keyboard/lease test; release control, end programming. Evidence hashes, documentation, one fresh final review and local commits.
+
+### Task 3: Budget full seal scan outside one-frame peak
+
+**Files:** replay_input.h/c,test_replay_crc.c,v3_runtime.h/c,test_v3_runtime.c,v3_demo.c,test-efinix-software.ps1,capture-game-probe.ps1,report.
+**Interfaces:** `replay_seal_cursor {uint32_t crc,offset;}`, `replay_seal_step(replay_recording *,replay_seal_cursor *,unsigned words)` (1..256;0 pending,1 sealed,negative error); runtime seal_words/cursor default0; `-ReplaySealBudget`, terminal02d1000c0/256.
+
+- [ ] RED: full independent canonical CRC equality for32..512 and budgets1/7/256, exact word bounds, no premature seal, invalid budgets/incomplete record, post-prefix tamper rejected by unchanged replay_begin; runtime no key overflow, live physics unchanged, compare waits, restart/epoch clear cursor. Existing legacy behavior tests stay unchanged.
+- [ ] GREEN: bounded canonical word walker with original synchronous CRC path unmodified; one budget chunk per LIVE advance, no record beyond600, compare only sealed, reset cursor at every recording reset. Build flag default off and private selector for probe only.
+- [ ] Full software/instance/driver tests, link independent normal/probe/detail; same-BIN seal-off→budget-on→off and repeated-on with early Copy enabled,256 sanity. Include seal completion in diagnostic / board capture; no skipped peak or health exemption.
+- [ ] Restore tested combined candidate MENU only if measured benefit; four-tier/control evidence, hashes, fresh review and local documentation commit, no push/Flash.

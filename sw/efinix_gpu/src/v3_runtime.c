@@ -24,6 +24,7 @@ static void enter_menu(v3_runtime *r,unsigned reason) {
  r->phase=V3_PHASE_MENU;r->menu_reason=(uint8_t)reason;r->mode=V3_MODE_LIVE;
  r->compare_pending=0;r->replay_frames=0;r->cursor=(replay_cursor){0};
  r->clock=(game_clock){0};r->await_neutral=1;++r->scene_generation;
+ r->seal_cursor=(replay_seal_cursor){0};
 }
 int v3_runtime_menu_init(v3_runtime *r,uint32_t seed,uint32_t epoch) {
  int e=v3_runtime_init(r,64,seed,epoch);if(e) return e;
@@ -32,6 +33,7 @@ int v3_runtime_menu_init(v3_runtime *r,uint32_t seed,uint32_t epoch) {
 static int restart_game(v3_runtime *r,uint32_t session,uint32_t sequence) {
  int e=game_reset(&r->game,v3_level_count(r->level),7);if(e) return e;
  e=replay_init(&r->recording,&r->game,r->epoch);if(e) return e;
+ r->seal_cursor=(replay_seal_cursor){0};
  r->clock=(game_clock){0};r->cursor=(replay_cursor){0};r->replay_frames=0;
  r->mode=V3_MODE_LIVE;r->compare_pending=0;r->phase=V3_PHASE_PLAY;
  r->await_neutral=1;r->neutral_session=session;r->neutral_sequence=sequence;
@@ -47,6 +49,7 @@ int v3_runtime_game_command(v3_runtime *r,unsigned op,unsigned level,uint32_t se
 int v3_runtime_set_epoch(v3_runtime *r,uint32_t epoch) {
  if(!r || !epoch || r->mode!=V3_MODE_LIVE) return GPU_DRIVER_ARGUMENT;
  r->epoch=epoch;r->compare_pending=0;r->clock=(game_clock){0};
+ r->seal_cursor=(replay_seal_cursor){0};
  return replay_init(&r->recording,&r->game,epoch);
 }
 static int begin_compare(v3_runtime *r) {
@@ -56,7 +59,7 @@ static int begin_compare(v3_runtime *r) {
  return 0;
 }
 int v3_runtime_advance(v3_runtime *r,const game_input *in,uint32_t us) {
- if(!r || !in) return GPU_DRIVER_ARGUMENT;
+ if(!r || !in || r->seal_words>256) return GPU_DRIVER_ARGUMENT;
  if(r->menu_enabled && r->phase==V3_PHASE_MENU) return 0;
  if(r->mode!=V3_MODE_LIVE) {
   game_input tick;
@@ -82,15 +85,23 @@ int v3_runtime_advance(v3_runtime *r,const game_input *in,uint32_t us) {
  unsigned n=0;
  while(c->accumulator_x60>=1000000u && n<GAME_MAX_CATCHUP) {
   int e=0;
-  if(!r->recording.sealed) {e=replay_record(&r->recording,&tick);if(e) return e;}
+  if(!r->recording.sealed && r->recording.count<REPLAY_INPUT_TICKS) {
+   e=replay_record(&r->recording,&tick);if(e) return e;
+  }
   e=game_update(&r->game,&tick);if(e<0) return e;
   c->accumulator_x60-=1000000u;++c->total_steps;++n;
   c->pending_pressed=c->pending_released=0;tick.pressed=tick.released=0;
   if(r->menu_enabled && !r->game.hp) {enter_menu(r,V3_MENU_DEATH);return (int)n;}
-  if(!r->recording.sealed && r->recording.count==REPLAY_INPUT_TICKS) {
+  if(!r->seal_words && !r->recording.sealed && r->recording.count==REPLAY_INPUT_TICKS) {
    e=replay_seal(&r->recording);if(e) return e;
   }
   if(r->compare_pending && r->recording.sealed) {e=begin_compare(r);if(e) return e;break;}
+ }
+ /* One bounded full-scan chunk per LIVE display iteration, not per catchup
+  * tick. Once full, the600 input keys stay immutable while physics continues. */
+ if(r->seal_words && !r->recording.sealed && r->recording.count==REPLAY_INPUT_TICKS) {
+  int e=replay_seal_step(&r->recording,&r->seal_cursor,r->seal_words);if(e<0)return e;
+  if(e && r->compare_pending) {e=begin_compare(r);if(e)return e;}
  }
  if(c->accumulator_x60>=1000000u) c->slow=1;
  if(c->accumulator_x60>4000000u) {
@@ -110,5 +121,6 @@ int v3_runtime_frame_done(v3_runtime *r) {
  }
  r->game=r->live_saved;r->mode=V3_MODE_LIVE;r->compare_pending=0;
  r->clock=(game_clock){0};r->replay_frames=0;
+ r->seal_cursor=(replay_seal_cursor){0};
  return replay_init(&r->recording,&r->game,r->epoch);
 }

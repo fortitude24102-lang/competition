@@ -28,6 +28,17 @@
 #ifndef V3_FRAME_LIST
 #define V3_FRAME_LIST 0
 #endif
+#ifndef V3_LOGIC_COPY
+#define V3_LOGIC_COPY 0
+#endif
+#if V3_LOGIC_COPY && !V3_COPY_AHEAD
+#error "Logic Copy requires CopyAhead"
+#endif
+#define V3_LOGIC_COPY_WORD 0x02d10008u /* Terminal same-BIN scheduling selection. */
+#ifndef V3_REPLAY_SEAL_BUDGET
+#define V3_REPLAY_SEAL_BUDGET 0
+#endif
+#define V3_SEAL_BUDGET_WORD 0x02d1000cu
 #if V3_FRAME_LIST
 #include "gpu_frame_list.h"
 #define V3_FRAME_LIST_WORD 0x02d10004u
@@ -89,6 +100,32 @@ static int copy_ahead_finish(gpu_device *gpu,const gpu_command *background,
     c->height_pixels!=background->height_pixels) return GPU_DRIVER_ARGUMENT;
  return scene->count>1?perf_render_gpu(gpu,c+1,scene->count-1,polls):gpu_wait_tag(gpu,tag,polls);
 }
+#if V3_LOGIC_COPY
+static int copy_ahead_advance(gpu_device *gpu,v3_runtime *runtime,const game_input *input,
+ uint32_t elapsed,uint32_t dst,int network,gpu_command *background,uint16_t *tag,
+ int *issued,uint32_t polls) {
+ if(!runtime || !input || !issued)return GPU_DRIVER_ARGUMENT;
+ *issued=0;
+ if(runtime->mode!=V3_MODE_CPU && !(runtime->menu_enabled && runtime->phase==V3_PHASE_MENU)) {
+  int e=copy_ahead_begin(gpu,dst,network,background,tag,polls);if(e)return e;
+  *issued=1;
+ }
+ uint8_t old_mode=runtime->mode;
+ int e=v3_runtime_advance(runtime,input,elapsed);if(e<0)return e;
+ if(old_mode==V3_MODE_LIVE && runtime->mode==V3_MODE_CPU) {
+  e=v3_runtime_advance(runtime,input,0);if(e<0)return e;
+ }
+ /* Immutable Copy may have started while LIVE, but advance can enter a
+  * death menu or CPU comparison. Drain before either alternative writer;
+  * failed advance/tag exits cannot render, PRESENT or replay partial work. */
+ if(*issued && (runtime->mode==V3_MODE_CPU ||
+    (runtime->menu_enabled && runtime->phase==V3_PHASE_MENU))) {
+  int wait=gpu_wait_tag(gpu,*tag,polls);if(wait)return wait;
+  *issued=0;
+ }
+ return e;
+}
+#endif
 #endif
 static uint32_t p95(unsigned n) {
  uint32_t sorted[PERF_WINDOW_FRAMES];
@@ -130,6 +167,16 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  e=v3_runtime_menu_init(runtime,7,V3_RESOURCE_EPOCH);
 #endif
  if(e) return 1;
+#if V3_REPLAY_SEAL_BUDGET
+ #if V3_PROBE_FRAMES
+ uint32_t seal_words=*(volatile uint32_t *)(uintptr_t)V3_SEAL_BUDGET_WORD;
+ if(seal_words!=0 && seal_words!=256)return 1;
+ runtime->seal_words=(uint16_t)seal_words;
+ #else
+ runtime->seal_words=256;
+ #endif
+ bsp_printf("V3_SEAL_BUDGET,words=%d\r\n",runtime->seal_words);
+#endif
 #if V3_COPY_AHEAD
  #if V3_PROBE_FRAMES
  int copy_ahead=*(volatile uint32_t *)(uintptr_t)V3_COPY_AHEAD_WORD==1u;
@@ -137,6 +184,14 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  int copy_ahead=1;
  #endif
  bsp_printf("V3_COPY_AHEAD,enabled=%d\r\n",copy_ahead);
+ #if V3_LOGIC_COPY
+  #if V3_PROBE_FRAMES
+ int logic_copy=copy_ahead && *(volatile uint32_t *)(uintptr_t)V3_LOGIC_COPY_WORD==1u;
+  #else
+ int logic_copy=copy_ahead;
+  #endif
+ bsp_printf("V3_LOGIC_COPY,enabled=%d\r\n",logic_copy);
+ #endif
 #endif
  e=gpu_set_qos(gpu,256,1536,1);if(e) return 1;
  /* Scanout starts only after PRESENT. Establish a complete blank front
@@ -191,18 +246,28 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   if(e) {e=v3_apply_game_command(runtime,&control,&command);if(e<0) {(void)nc_try_publish(&control,0,now_ms());break;}}
   (void)nc_try_publish(&control,0,now_ms()); /* ACK before render, never wait. */
   uint64_t logic=gpu_platform_cycles();
+#if V3_COPY_AHEAD
+  gpu_command background;uint16_t background_tag=0;int background_issued=0;
+#endif
 #if V3_DETAIL_PROBE
   uint8_t detail_sealed=runtime->recording.sealed;
 #endif
-  uint8_t old_mode=runtime->mode;
-  e=v3_runtime_advance(runtime,&input,us(logic-previous_logic));previous_logic=logic;
-  if(e<0) break;
+#if V3_LOGIC_COPY
+  if(logic_copy) {
+   e=copy_ahead_advance(gpu,runtime,&input,us(logic-previous_logic),buffers->back,network,
+    &background,&background_tag,&background_issued,V3_POLLS);
+  } else
+#endif
+  {
+   uint8_t old_mode=runtime->mode;
+   e=v3_runtime_advance(runtime,&input,us(logic-previous_logic));
+   if(e>=0 && old_mode==V3_MODE_LIVE && runtime->mode==V3_MODE_CPU)
+    e=v3_runtime_advance(runtime,&input,0);
+  }
+  previous_logic=logic;if(e<0)break;
 #if V3_DETAIL_PROBE
   unsigned detail_steps=(unsigned)e;
 #endif
-  if(old_mode==V3_MODE_LIVE && runtime->mode==V3_MODE_CPU) {
-   e=v3_runtime_advance(runtime,&input,0);if(e<0) break;
-  }
 #if V3_DETAIL_PROBE
   uint32_t detail_logic_us=us(gpu_platform_cycles()-logic);
 #endif
@@ -218,8 +283,7 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   if(mode!=previous_mode) {window=(perf_window){0};frame=0;previous_mode=(uint8_t)mode;hud_cache->valid=0;if(mode==V3_MODE_CPU) {results.cpu_fresh=0;results.pending_cpu_fps=results.pending_cpu_us=0;}}
 #if V3_COPY_AHEAD
   int ahead=copy_ahead && !menu && mode!=V3_MODE_CPU;
-  gpu_command background;uint16_t background_tag=0;
-  if(ahead) {e=copy_ahead_begin(gpu,buffers->back,network,&background,&background_tag,V3_POLLS);if(e)break;}
+  if(ahead && !background_issued) {e=copy_ahead_begin(gpu,buffers->back,network,&background,&background_tag,V3_POLLS);if(e)break;}
 #endif
   uint64_t build=gpu_platform_cycles();
 #if V3_FRAME_LIST
@@ -355,6 +419,14 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   e=v3_runtime_frame_done(runtime);if(e) break;
 #if V3_PROBE_FRAMES
   if(stats.frames==V3_PROBE_FRAMES) {
+   #if V3_REPLAY_SEAL_BUDGET
+   if(!runtime->recording.sealed || runtime->recording.count!=REPLAY_INPUT_TICKS) {
+    e=GPU_DRIVER_ARGUMENT;break;
+   }
+   bsp_printf("V3_SEAL_STATE,count=%d,sealed=%d,words=%d,offset=%d,crc=%x\r\n",
+    runtime->recording.count,runtime->recording.sealed,runtime->seal_words,
+    runtime->seal_cursor.offset,runtime->recording.crc32);
+   #endif
    #if V3_DETAIL_PROBE
    bsp_printf("V3_WORST,tick=%d,steps=%d,logic_us=%d,build_us=%d,scene_us=%d,hud_us=%d,other_us=%d,busy_us=%d,work_us=%d,wall_us=%d,hp=%d,seal_event=%d\r\n",
     detail_worst.tick,detail_worst.steps,detail_worst.logic_us,detail_worst.build_us,
