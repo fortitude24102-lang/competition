@@ -170,6 +170,9 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  uint8_t previous_mode=V3_MODE_LIVE;unsigned frame=0;
 #if V3_PROBE_FRAMES
  v3_frame_stats stats={0};unsigned probe_frame=0;uint32_t previous_log=0;
+ #if V3_DETAIL_PROBE
+ v3_worst_frame detail_worst={0};
+ #endif
  uint64_t probe_underflows=0;
  gpu_perf_snapshot probe_initial;
  e=gpu_read_perf_snapshot(gpu,&probe_initial);if(e)return 1;
@@ -194,6 +197,9 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   uint8_t old_mode=runtime->mode;
   e=v3_runtime_advance(runtime,&input,us(logic-previous_logic));previous_logic=logic;
   if(e<0) break;
+#if V3_DETAIL_PROBE
+  unsigned detail_steps=(unsigned)e;
+#endif
   if(old_mode==V3_MODE_LIVE && runtime->mode==V3_MODE_CPU) {
    e=v3_runtime_advance(runtime,&input,0);if(e<0) break;
   }
@@ -289,15 +295,20 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
     probe_frame,probe_frame<30u,(uint32_t)probe_underflows,(uint32_t)probe_after.underflows,gpu->hardware_error);
    e=GPU_DRIVER_HARDWARE;break;
   }
-  if(probe_frame++>=30u)
+  if(probe_frame++>=30u) {
    v3_frame_stats_add(&stats,BSP_CLINT_HZ,(uint32_t)work_ticks,(uint32_t)wall,
     previous_log,(uint32_t)(probe_after.underflows-probe_underflows),gpu->hardware_error!=0,
     scene->visible,scene->alpha_commands);
+   #if V3_DETAIL_PROBE
+   v3_worst_frame detail_frame={.tick=runtime->game.tick,.steps=detail_steps,
+    .logic_us=detail_logic_us,.build_us=build_us,.scene_us=render_us,.hud_us=detail_hud_us,
+    .busy_us=(uint32_t)((after.cycles-before.cycles)/100u),.work_us=work_us,.wall_us=us(wall),
+    .hp=runtime->game.hp,.seal_event=!detail_sealed && runtime->recording.sealed};
+   if(v3_worst_frame_record(&detail_worst,&detail_frame)) {e=GPU_DRIVER_ARGUMENT;break;}
+   #endif
+  }
   probe_underflows=probe_after.underflows; /* Includes PRESENT/inter-frame events. */
   previous_log=0;
-#endif
-#if V3_DETAIL_PROBE
-  if(work_us>30000u) bsp_printf("V3_SPIKE,tick=%d,logic_us=%d,work_us=%d,seal_event=%d\r\n",runtime->game.tick,detail_logic_us,work_us,!detail_sealed && runtime->recording.sealed);
 #endif
   uint32_t p95_us=p95(frame);
   if(frame==PERF_WINDOW_FRAMES) {
@@ -344,6 +355,12 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   e=v3_runtime_frame_done(runtime);if(e) break;
 #if V3_PROBE_FRAMES
   if(stats.frames==V3_PROBE_FRAMES) {
+   #if V3_DETAIL_PROBE
+   bsp_printf("V3_WORST,tick=%d,steps=%d,logic_us=%d,build_us=%d,scene_us=%d,hud_us=%d,other_us=%d,busy_us=%d,work_us=%d,wall_us=%d,hp=%d,seal_event=%d\r\n",
+    detail_worst.tick,detail_worst.steps,detail_worst.logic_us,detail_worst.build_us,
+    detail_worst.scene_us,detail_worst.hud_us,detail_worst.other_us,detail_worst.busy_us,
+    detail_worst.work_us,detail_worst.wall_us,detail_worst.hp,detail_worst.seal_event);
+   #endif
    bsp_printf("V3_PROBE,target=%d,frames=%d,fps_x10=%d,work_mean_us=%d,work_max_us=%d,wall_max_us=%d,work_miss=%d,late_present=%d,under=%d,errors=%d,visible_min=%d,visible_max=%d,alpha_min=%d,alpha_max=%d,log_mean_us=%d,log_max_us=%d\r\n",
     V3_START_COUNT,stats.frames,(uint32_t)((uint64_t)stats.frames*BSP_CLINT_HZ*10u/stats.wall_ticks),
     us(stats.work_ticks/stats.frames),us(stats.max_work_ticks),us(stats.max_wall_ticks),

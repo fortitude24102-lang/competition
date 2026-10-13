@@ -1,6 +1,20 @@
 #ifndef V3_FRAME_STATS_H
 #define V3_FRAME_STATS_H
 #include <stdint.h>
+/* Terminal diagnostics only: exclusive CPU intervals, overlapping GPU busy. */
+typedef struct {
+ uint32_t tick,steps,logic_us,build_us,scene_us,hud_us,other_us;
+ uint32_t busy_us,work_us,wall_us,hp,seal_event;
+} v3_worst_frame;
+static inline int v3_worst_frame_record(v3_worst_frame *worst,const v3_worst_frame *frame) {
+ if(!worst || !frame)return -1;
+ uint64_t phases=(uint64_t)frame->logic_us+frame->build_us+frame->scene_us+frame->hud_us;
+ if(phases>frame->work_us || frame->wall_us<frame->work_us)return -1;
+ if(frame->work_us>worst->work_us) {
+  *worst=*frame;worst->other_us=frame->work_us-(uint32_t)phases;
+ }
+ return 0;
+}
 /* Game-only published results. Incomplete CPU replay never replaces a result. */
 typedef struct {
  uint32_t cpu_fps,cpu_us,gpu_fps,gpu_us,pending_cpu_fps,pending_cpu_us,generation;

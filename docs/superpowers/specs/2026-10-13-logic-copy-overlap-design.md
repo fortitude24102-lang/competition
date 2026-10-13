@@ -1,0 +1,10 @@
+# Logic / Copy overlap, bounded GPU scheduling change
+
+User requests continuous inline execution without intermediate approval. Goal: reduce new-game 512 frame tail latency without changing CPU drawing, gameplay, assets, Ethernet, 100 MHz GPU or 960×540 output.
+
+1. Extend existing terminal DetailProbe to retain the measured worst sampled frame and print its actual logic step count, HP/seal event, exclusive phase times, residual time and overlapping hardware busy only after sampling. Keep diagnostic results separate from ordinary scores. No per-frame UART perturbation or exemption of warmup health.
+2. If evidence supports exposed background time, add optional `V3_LOGIC_COPY` scheduling within existing CopyAhead. Issue only immutable background Copy to the back buffer after control handling and before game advancement. After advancement, drain a pending Copy before MENU/CPU rendering. Normal GPU rendering reuses its tag and never duplicates the background. Error exits never PRESENT or replay partially executed work. CPU drawing algorithm/config and gameplay timing rules unchanged.
+3. Compile candidate independently, preserve same-BIN terminal switch `02d10008` (0=original after-logic launch, 1=early launch). Default feature off; opt-in normal firmware may enable only after equivalence tests and same-scene measurements. No new RTL/bitstream, Flash, release overwrite or push.
+4. Reuse existing probe / menu / control tests. Compare 30 warmup + 600 samples with old→new→old and repeated new at 512; report visible/Alpha range, health, late frames and work maxima, including death waits. Restore tested normal MENU and release control. Retain only measured net improvement; stable60 requires zero late and longer qualification, not a rounded average.
+
+Review focus: LIVE→CPU during advance; PLAY→death MENU; command MENU before advance; tag timeout/error after early issue; WIN original Fill fallback and local/network A/B background identity. CPU/menus must never race an early GPU write.

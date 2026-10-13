@@ -2,6 +2,19 @@
 #include <stdio.h>
 #include "v3_frame_stats.h"
 int main(void) {
+ /* Missing/incorrect worst-frame retention hides the actual slow frame. */
+ v3_worst_frame worst={0},candidate={.tick=17,.steps=2,.logic_us=4000,
+  .build_us=4200,.scene_us=7400,.hud_us=1400,.work_us=17200,.wall_us=33277};
+ assert(!v3_worst_frame_record(&worst,&candidate));
+ assert(worst.tick==17 && worst.steps==2 && worst.other_us==200 && worst.work_us==17200);
+ candidate.tick=18;candidate.work_us=17100;
+ assert(!v3_worst_frame_record(&worst,&candidate) && worst.tick==17);
+ candidate.work_us=20000;candidate.wall_us=19000;
+ assert(v3_worst_frame_record(&worst,&candidate)<0 && worst.tick==17);
+ candidate.wall_us=33277;candidate.logic_us=9000;
+ assert(v3_worst_frame_record(&worst,&candidate)<0 && worst.tick==17);
+ candidate.logic_us=5000;
+ assert(!v3_worst_frame_record(&worst,&candidate) && worst.tick==18 && worst.other_us==2000);
  v3_scene_metrics m={.cpu_fps=100,.gpu_fps=600,.cpu_fresh=1};
  v3_scene_metrics_transition(&m,1,1);assert(m.cpu_fps==100 && !m.cpu_fresh && !m.gpu_fps);
  v3_scene_metrics_transition(&m,2,0);assert(!m.cpu_fps);
