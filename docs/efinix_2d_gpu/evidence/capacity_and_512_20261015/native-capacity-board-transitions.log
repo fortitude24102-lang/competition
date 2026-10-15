@@ -1,0 +1,12 @@
+start,level=1,request=1,session=3362634652,snapshot=3,floor=2,result=0
+menu,level=0,request=2,session=3362634652,snapshot=8,floor=7,result=0
+start,level=2,request=3,session=3362634652,snapshot=9,floor=8,result=0
+menu,level=0,request=4,session=3362634652,snapshot=14,floor=13,result=0
+start,level=3,request=5,session=3362634652,snapshot=15,floor=14,result=0
+menu,level=0,request=6,session=3362634652,snapshot=20,floor=19,result=0
+start,level=4,request=7,session=3362634652,snapshot=21,floor=20,result=0
+menu,level=0,request=8,session=3362634652,snapshot=26,floor=25,result=0
+performance,level=0,request=9,session=3362634652,snapshot=28,floor=26,result=0
+performance,level=0,request=10,session=1179428073,snapshot=35,floor=33,result=0
+PASS challenge lease retirement/new session/R reset
+menu,level=0,request=11,session=1179428073,snapshot=4165,floor=4164,result=0

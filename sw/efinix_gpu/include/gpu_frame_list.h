@@ -5,6 +5,8 @@
 #define GPU_FRAME_LIST_CAPABILITY (1u<<15)
 #define GPU_FRAME_LIST_BANK_A 0x02d20000u
 #define GPU_FRAME_LIST_BANK_B 0x02d24000u
+#define GPU_FRAME_LIST_BANK_ITEMS 1024u
+#define GPU_FRAME_LIST_ARENA_ITEMS (2u*GPU_FRAME_LIST_BANK_ITEMS)
 typedef struct { gpu_device *gpu;uint8_t present,active;
 #if defined(V3_HUD_LIST) && V3_HUD_LIST
  uint8_t hud_ready; /* Compile every translation unit with the same setting. */
@@ -15,5 +17,9 @@ int gpu_frame_list_init(gpu_frame_list *list,gpu_device *gpu,int network);
  * official cache sync before START. Failure poisons this owner: no replay or
  * reuse until coordinated GPU/system reset, never a local AXI-client reset. */
 int gpu_frame_list_render(gpu_frame_list *list,uint32_t address,unsigned count,
+ uint32_t epoch,uint32_t polls);
+/* Own BOTH banks through retirement. Validate the whole range before any
+ * START; preserve order across bank boundaries. Never replay after failure. */
+int gpu_frame_list_render_span(gpu_frame_list *list,uint32_t address,unsigned count,
  uint32_t epoch,uint32_t polls);
 #endif

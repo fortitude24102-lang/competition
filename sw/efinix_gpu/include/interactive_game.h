@@ -13,6 +13,7 @@ int game_reset(bullet_state *state,unsigned count,uint32_t seed);
 /* One 1/60-second tick. 1 requests comparison; 0 ordinary update; <0 error.
  * Only pressed action bits trigger restart/comparison. */
 int game_update(bullet_state *state,const game_input *input);
+int game_update_cached(bullet_state *state,const game_input *input,const bullet_state *initial);
 int game_build(const bullet_state *state,uint32_t dst,int network,int glow,
                unsigned capacity,bullet_stream *stream);
 /* Bounded catch-up: never skips logical ticks; excess wall time is reported.

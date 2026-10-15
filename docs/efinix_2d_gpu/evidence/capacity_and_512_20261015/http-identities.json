@@ -1,0 +1,14 @@
+[
+    {
+        "sha256":  "546d76a02e68413a793774befe43fb2537b6d219c92c358db868499939ec109f",
+        "entry":  "http.jsonl",
+        "file":  "native-capacity-board-http.zip",
+        "bytes":  7262110
+    },
+    {
+        "sha256":  "eb402ae817d9e098d6ec76691a2c2fd0c713f2ffa92d19edbd8e66d0aa5df669",
+        "entry":  "http.jsonl",
+        "file":  "native-final-board-http.zip",
+        "bytes":  3620173
+    }
+]

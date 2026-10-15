@@ -28,11 +28,12 @@ def wire(kind, session=7, sequence=9, words=None):
 class ProtocolTest(unittest.TestCase):
     def test_performance_wire(self):
         import protocol as p
-        for kind, words in [(4,[3,0,17]),(6,[909,909,5|(3600<<8)]),(6,[64,0,1])]:
+        for kind, words in [(4,[3,0,17]),(6,[909,909,5|(3600<<8)]),
+                            (6,[1819,1819,5|(3600<<8)]),(6,[64,0,1])]:
             packet=wire(kind,words=words)
             self.assertEqual(p.decode(packet).words,tuple(words))
             self.assertEqual(p.encode(kind,7,9,words),packet)
-        for words in [[910,0,1],[64,65,1],[64,0,7],[64,0,0x10],[64,0,1|(3601<<8)]]:
+        for words in [[1820,0,1],[64,65,1],[64,0,7],[64,0,0x10],[64,0,1|(3601<<8)]]:
             with self.assertRaises(ValueError):p.decode(wire(6,words=words))
     def test_game_wire_contract(self):
         import protocol as p

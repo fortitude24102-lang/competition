@@ -291,8 +291,9 @@ static void performance_packet(void) {
  game_packet(2,3,0,1,0);nc_poll(&d,1,&in);
  CHECK(nc_take_game(&d,&cmd)==1 && cmd.opcode==3 && !cmd.level);
  CHECK(!nc_complete_game(&d,&cmd,0));
- CHECK(!nc_queue_performance(&d,909,909,5|(3600u<<8)));
- CHECK(nc_queue_performance(&d,910,0,1)<0);
+ CHECK(!nc_queue_performance(&d,909,909,5|(3600u<<8))); /* old peers still valid */
+ CHECK(!nc_queue_performance(&d,1819,1819,5|(3600u<<8)));
+ CHECK(nc_queue_performance(&d,1820,0,1)<0);
  CHECK(nc_queue_performance(&d,64,65,1)<0);
  CHECK(nc_queue_performance(&d,64,0,0x11)<0);
  CHECK(nc_queue_performance(&d,64,0,1|(3601u<<8))<0);
@@ -301,8 +302,8 @@ static void performance_packet(void) {
  hw.tx_ready=1;CHECK(nc_try_publish(&d,&t,2)>0 && hw.sent[5]==5);
  hw.tx_ready=1;CHECK(nc_try_publish(&d,&t,3)>0 && hw.sent[5]==128);
  hw.tx_ready=1;CHECK(nc_try_publish(&d,&t,4)>0 && hw.sent[5]==6);
- CHECK(hw.sent_length==32 && read_be(hw.sent+12)==2 && read_be(hw.sent+16)==909);
- CHECK(read_be(hw.sent+20)==909 && read_be(hw.sent+24)==(5|(3600u<<8)));
+ CHECK(hw.sent_length==32 && read_be(hw.sent+12)==2 && read_be(hw.sent+16)==1819);
+ CHECK(read_be(hw.sent+20)==1819 && read_be(hw.sent+24)==(5|(3600u<<8)));
  CHECK(read_be(hw.sent+28)==crc(hw.sent,28));
  CHECK(!nc_queue_performance(&d,64,0,1));
  hw.tx_ready=1;CHECK(nc_try_publish(&d,&t,203)>0 && hw.sent[5]==128);

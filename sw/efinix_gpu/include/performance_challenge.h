@@ -1,9 +1,10 @@
 #ifndef PERFORMANCE_CHALLENGE_H
 #define PERFORMANCE_CHALLENGE_H
 #include "gpu_instances.h"
+#include "gpu_frame_list.h"
 #include "interactive_game.h"
 #include "v3_frame_stats.h"
-#define PC_MAX_SPRITES 909u
+#define PC_MAX_SPRITES V3_PERFORMANCE_MAX_SPRITES
 #define PC_STATE_ADDRESS 0x02d28000u
 #define PC_WARM_FRAMES 60u
 #define PC_SEARCH_FRAMES 600u
@@ -18,10 +19,11 @@ typedef struct {
  uint8_t growing,confirming;
 } pc_state;
 _Static_assert(PC_STATE_ADDRESS+sizeof(pc_state)<=0x02d40000u,"performance DDR bound");
-_Static_assert(1u+PC_MAX_SPRITES+(PC_MAX_SPRITES+7u)/8u==1024u,"single descriptor bank capacity");
+_Static_assert(1u+PC_MAX_SPRITES+(PC_MAX_SPRITES+7u)/8u==GPU_FRAME_LIST_ARENA_ITEMS,"dual descriptor bank capacity");
 int pc_init(pc_state *,unsigned maximum,uint32_t seed);
 int pc_advance(pc_state *,const game_input *);
-int pc_build(const pc_state *,uint32_t dst,int network,gpu_instance *,gpu_instance_stats *);
+/* Reject insufficient capacity before writing any descriptor. */
+int pc_build(const pc_state *,uint32_t dst,int network,gpu_instance *,unsigned capacity,gpu_instance_stats *);
 int pc_record(pc_state *,uint32_t hz,uint32_t work,uint32_t wall,
  uint32_t under,uint32_t errors,unsigned visible,unsigned alpha);
 #endif

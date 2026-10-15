@@ -231,7 +231,7 @@
       const perf=lastView?.performance;
       $('performance-result').textContent=gv.phase!=='performance'?'独立全活动负载；普通游戏和CPU渲染不改变。':
         stale || !perf || perf.stale?'等待新鲜板端挑战数据，旧成绩不作当前结论':
-        ['','预热','搜索','60秒复核','60秒复核通过','达到当前909列表容量（非硬件极限）','失败／成绩失效'][perf.stage]+
+        ['','预热','搜索','60秒复核','60秒复核通过','达到本次配置容量（非硬件极限）','失败／成绩失效'][perf.stage]+
         ' · 活动 '+perf.target+' · 窗口 '+perf.frames+' 帧 · 已复核最佳 '+perf.best;
       $('current-difficulty').textContent=gv.level?'当前难度 '+gv.level+' · '+[64,128,256,512][gv.level-1]+' Sprite 请求档位':'';
       $('reselect').disabled=!gv.canMenu || stale || !!choice || gameSending;

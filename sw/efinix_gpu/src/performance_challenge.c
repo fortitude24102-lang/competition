@@ -4,7 +4,7 @@ static void begin(pc_state *s,unsigned target,int confirm) {
  s->target=target;s->confirming=(uint8_t)confirm;s->warm=PC_WARM_FRAMES;
  s->stage=PC_WARM;s->stats=(v3_frame_stats){0};s->tick=0;++s->generation;
  for(unsigned i=0;i<target;i++)s->sprites[i]=(pc_sprite){
-  .x=(int16_t)(16+(i%56u)*16u),.y=(int16_t)(80+(i/56u)*24u),
+  .x=(int16_t)(16+(i%56u)*16u),.y=(int16_t)(80+((i/56u)%19u)*24u),
   .dx=(int8_t)((i&1u?-1:1)*(int)(1u+(i+s->seed)%3u)),
   .dy=(int8_t)((i&2u?-1:1)*(int)(1u+(2u*i+s->seed)%3u)),
   .shape=(uint8_t)((i+s->seed)%6u)};
@@ -39,11 +39,12 @@ int pc_advance(pc_state *s,const game_input *in) {
  }
  return 0;
 }
-int pc_build(const pc_state *s,uint32_t dst,int network,gpu_instance *items,gpu_instance_stats *out) {
+int pc_build(const pc_state *s,uint32_t dst,int network,gpu_instance *items,unsigned capacity,gpu_instance_stats *out) {
  if(!out)return GPU_DRIVER_ARGUMENT;
  *out=(gpu_instance_stats){0};
  if(!s || !items || s->target<32 || s->target>s->maximum || s->maximum>PC_MAX_SPRITES ||
    (network!=0 && network!=1) || (dst!=GPU_FRAMEBUFFER_A && dst!=GPU_FRAMEBUFFER_B))return GPU_DRIVER_ARGUMENT;
+ if(capacity<1u+s->target+(s->target+7u)/8u)return GPU_DRIVER_ARGUMENT;
  for(unsigned i=0;i<s->target;i++)if(s->sprites[i].x<8 || s->sprites[i].x>936 ||
   s->sprites[i].y<80 || s->sprites[i].y>516 || s->sprites[i].shape>=6)return GPU_DRIVER_ARGUMENT;
  items[0]=(gpu_instance){{0,dst+72u*GPU_FRAME_STRIDE,72u*GPU_FRAME_STRIDE,gpu_pack_size(960,468)}};

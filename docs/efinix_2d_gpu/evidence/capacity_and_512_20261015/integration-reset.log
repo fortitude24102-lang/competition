@@ -1,0 +1,72 @@
+PASS net_control: validation, handshake/session, lease/age, modular seq, max4RX, ACK priority, atomic latest128B, rate/busy
+PASS input_state: action cross-hold edges, same-key counter recovery, opposing keys, modular events, sessions, stale/disconnect, independent state
+R7_FROZEN,tier=32,ticks=600,digest=0cec877a
+R7_FROZEN,tier=128,ticks=600,digest=225e4a68
+R7_FROZEN,tier=512,ticks=600,digest=598a29df
+PASS R7 frozen 79a0b7f state and command semantics
+PASS interactive game: manual/slow/diagonal/bounds/fire/hit/restart/compare/budget/bounded clock
+PASS enemy campaign movement/paths/victory/replay fields
+PASS input replay: 600 live/CPU/GPU ticks, repeated action events, state/command equivalence, CRC/epoch/capacity
+PASS replay CRC: word/canonical/sign/capacity/tamper equivalence
+PASS interactive live frame: tick=60 visible=510 shots=6 commands=583 alpha=68
+PASS interactive pixels: replay_ticks=600 samples=10 visible=506 commands=579 alpha=68 CRC=dd374ef2
+V3_GAME_MEMORY,state=10284,stream=18740,record=11500,clock=20 bytes
+PASS victory pixels: full CPU/oracle equality, WIN/R lit, commands=33 CRC=0700a89f
+PASS seal budget: same620 live states, no overflow, complete600 keys, delayed safe compare, restart/epoch reset
+PASS V3 runtime menu/levels/neutral/death/abort and per-tick recording, 600-tick two-backend replay
+PASS tier=64 live_updates=36006 replay_updates=7200 compares=6 (accelerated software only)
+PASS tier=256 live_updates=36006 replay_updates=7200 compares=6 (accelerated software only)
+PASS tier=512 live_updates=36006 replay_updates=7200 compares=6 (accelerated software only)
+PASS A/B lifecycle: wire RX/input/runtime; leases/sessions/wrap, 18x600 CPU+GPU semantic replay, live restore/held actions, epoch isolation
+108000 scheduled LIVE updates = 30min logical quantity at 60Hz; NOT elapsed endurance, pixels, board FPS, latency, or linked RAM qualification
+PASS V3 HUD real/replay, stale CPU and logic slowdown labels; legacy AUTO unchanged
+PASS real GPU menu MMIO geometry/glyph labels, two buffers, static zero-submit, dirty hint and failure invalidation
+PASS real 32B RX -> Sapphire runtime -> post-execution ACK; duplicate/no restart and menu return
+PASS V3 strict frame budget, cadence, totals and real workload range
+PASS performance challenge: all-active geometry,1024descriptors,Alpha+Key, strict budgets/health,600vs3600, bracket96,capacity and invalidation
+PASS reset work: one spawn/object, exact old state, death-restart tick and invalid-input immutability
+FRAME_LIST_DRIVER,PASS,legacy_safe,tagwrap,count585,epoch,issued,publish,bank,timeout,no_replay,busy
+HUD_LIST_IO,one_digit,descriptors=2,APB_writes=5,legacy_commands=0
+HUD_GPU_LIST,PASS,exact_pixels,A/B,logo,CPU_switch,tagwrap,cache_hit,partial_error,no_replay,timeout,bank_guard
+HUD_DIRECT,PASS,physical_AB,100_transitions,logo,shorten,errors,invalidation,canaries,full_copies=0,bytes_written=6038472
+PASS live phase accounting: exclusive sum/remainder, worst-frame attribution, deadline and bounds
+PASS Copy ahead: 600 game ticks, 20 full-pixel/ordered-MMIO samples, A/B local/net, no early wait/double Copy, mismatch/error/timeout
+PASS early Copy actual issue-before-logic, A/B local/net pixels, MENU/death/CPU drains, timeout/error no alternate writer, WIN Fill
+PASS render health: warmup and sampling share the same gate
+PASS1024 host capacity,600 real interactive frames,visible>=1000,Alpha>=125,1025 rejected; NOT board FPS
+PASS real GPU submit validates once across queue waits; public try validates; guards/timeouts/errors retained
+PASS real delta submit: mixed op fields, tag wrap, full/retry/error/reinit, R7 frames=3000 commands=693221 writes=2800393 versus_full=6932210
+test_game_http_validation_and_execution (__main__.LoopbackTest) ... ok
+test_http_validation_static_whitelist_and_udp_peer (__main__.LoopbackTest) ... ok
+test_missing_peer_icmp_does_not_kill_reconnect (__main__.LoopbackTest) ... ok
+test_slow_sse_and_flood_do_not_block_atomic_udp (__main__.LoopbackTest) ... ok
+test_udp_flood_cannot_extend_browser_lease (__main__.LoopbackTest) ... ok
+test_udp_shutdown_race_does_not_raise_worker_exception (__main__.LoopbackTest) ... ok
+test_deliverable_exists (__main__.ProtocolTest) ... ok
+test_fixed_cross_language_vectors (__main__.ProtocolTest) ... ok
+test_game_wire_contract (__main__.ProtocolTest) ... ok
+test_performance_wire (__main__.ProtocolTest) ... ok
+test_wire_and_bad_packets (__main__.ProtocolTest) ... ok
+test_simulated_peer_only_ack_echo_and_lease_clear (__main__.SimulatedPeerTest) ... ok
+test_ack_gate_ownership_lease_and_rate (__main__.StateTest) ... ok
+test_bound_total_udp_rate_hello_rate_and_latest_input (__main__.StateTest) ... ok
+test_delayed_retired_firmware_and_resource_do_not_roll_back_snapshot (__main__.StateTest) ... ok
+test_game_ack_then_old_snapshot (__main__.StateTest) ... ok
+test_game_timeout_cancel_capability_and_rate (__main__.StateTest) ... ok
+test_global_sequence_wrap_across_control_observer_boundary (__main__.StateTest) ... ok
+test_global_snapshot_sequence_rejects_delayed_observer_without_ack_loss (__main__.StateTest) ... ok
+test_new_cohort_cannot_keep_verified_best (__main__.StateTest) ... ok
+test_performance_capability_order_and_exit (__main__.StateTest) ... ok
+test_quick_browser_reclaim_cannot_reset_global_snapshot_sequence (__main__.StateTest) ... ok
+test_release_competitor_cannot_clear_owner (__main__.StateTest) ... ok
+test_retry_and_reset_use_new_session_and_reject_delayed_ack (__main__.StateTest) ... ok
+test_snapshot_crc_order_wrap_stale_and_reset (__main__.StateTest) ... ok
+test_stale_then_fresh_ack_allows_one_new_session_reset_baseline (__main__.StateTest) ... ok
+test_verified_score_restart_cohort_and_global_order (__main__.StateTest) ... ok
+
+----------------------------------------------------------------------
+Ran 27 tests in 4.917s
+
+OK
+PASS real collector identity guard: old/new/missing/duplicate, including seal and HUD explicit off contradictions
+PASS requested V3 integration checks: SoftwareOnly=True RtlOnly=False. Not board qualification.

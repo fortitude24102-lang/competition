@@ -1,0 +1,117 @@
+[
+    {
+        "sha256":  "0b5972f4f526da7dd499bf72ca39813dd49330d8e3e3fec30bc7d35c215f5929",
+        "file":  "detail512-before/gpu_demo.bin",
+        "bytes":  52464
+    },
+    {
+        "sha256":  "8ab5d354b8ffb5c804e30410d328613646c4ff200928deb23ad4d53b3292bf41",
+        "file":  "detail512-before/gpu_demo.elf",
+        "bytes":  87792
+    },
+    {
+        "sha256":  "40569561ba039618acec00e39c5190b9949dd3a6653af7b851fbb85768b5406f",
+        "file":  "detail512-cache/gpu_demo.bin",
+        "bytes":  52736
+    },
+    {
+        "sha256":  "c944d3f60c96cec620e949980f71449f2558aa223ceace113455c6769b1d8ebd",
+        "file":  "detail512-cache/gpu_demo.elf",
+        "bytes":  88172
+    },
+    {
+        "sha256":  "7b5ce5847118a6474744c159b0df99d3cf305b5eb3971a2e800319e81632a13a",
+        "file":  "detail512-endpoint/gpu_demo.bin",
+        "bytes":  52520
+    },
+    {
+        "sha256":  "75133607d35de01485903b11278d73bf70529c8c3a4570bdb71ac85aabdbac4e",
+        "file":  "detail512-endpoint/gpu_demo.elf",
+        "bytes":  87848
+    },
+    {
+        "sha256":  "12be84a64c243a5b3d58088862c46449f451dd4be13e70e253614ac965976b19",
+        "file":  "detail512-reset/gpu_demo.bin",
+        "bytes":  52512
+    },
+    {
+        "sha256":  "3cee1dd5123e6418b8d2ef995f0d3dcb77adf254074efdac5cf188fdb3ed3a11",
+        "file":  "detail512-reset/gpu_demo.elf",
+        "bytes":  87840
+    },
+    {
+        "sha256":  "95b463d62c444b1d1c2a3ecec71812df6a3b85f331741884e46c48599fe091f1",
+        "file":  "native-cache/gpu_demo.bin",
+        "bytes":  54696
+    },
+    {
+        "sha256":  "b3bf2f3dbc089101dd2be854b452b2da44ef2973c3e201f987885b46261f94e8",
+        "file":  "native-cache/gpu_demo.elf",
+        "bytes":  90564
+    },
+    {
+        "sha256":  "e28a601306a663ef43ed87a6a435121174cd0c6b9ffb89bb5c42cb07e83e0a4c",
+        "file":  "native-fast/gpu_demo.bin",
+        "bytes":  54504
+    },
+    {
+        "sha256":  "d181729834aa72011abcbfbc8689bfd1b0a659dfceca9d101adb249767767341",
+        "file":  "native-fast/gpu_demo.elf",
+        "bytes":  90296
+    },
+    {
+        "sha256":  "380613535375b27f2d96c6c985e3455ac3755dd5f4d7b19a3b86de5d8aa02427",
+        "file":  "native-fixed/gpu_demo.bin",
+        "bytes":  54472
+    },
+    {
+        "sha256":  "ee16f02fe38db0bfcb60be1150aa5a07ca2852123a59cb7ec769bd8eff648638",
+        "file":  "native-fixed/gpu_demo.elf",
+        "bytes":  90232
+    },
+    {
+        "sha256":  "635cc2133e5cb075721538a4e165c4d4904086fb88246c870425beda139f7545",
+        "file":  "normal-dual/gpu_demo.bin",
+        "bytes":  54472
+    },
+    {
+        "sha256":  "25b1ad7dced73def4a19201d389925aba940b319e6f5f3ddde06d77f25826f46",
+        "file":  "normal-dual/gpu_demo.elf",
+        "bytes":  90232
+    },
+    {
+        "sha256":  "dc82fae7902e1fd238a572db28e49b947535d75f876c892562b2d8c736504a0b",
+        "file":  "plain512-cache/gpu_demo.bin",
+        "bytes":  51904
+    },
+    {
+        "sha256":  "990d497224f7dd16bd6535e04fdf38b889fd48a8dd0d1e9b11ed643e5a69e8eb",
+        "file":  "plain512-cache/gpu_demo.elf",
+        "bytes":  87340
+    },
+    {
+        "sha256":  "dd8ec6d6bea5b43a94825e16a1791a6f1db32bd4897741899c25ce4447cc5042",
+        "file":  "plain512-fast/gpu_demo.bin",
+        "bytes":  51712
+    },
+    {
+        "sha256":  "f34920eac19f5eb6a23cf4384a6bfbe689da317a03c7ed21aba8a58458dc20b2",
+        "file":  "plain512-fast/gpu_demo.elf",
+        "bytes":  87072
+    },
+    {
+        "sha256":  "672c9654da86a32d9a272ff307c0006dd69b940f7b7fdd412fa4fe9e12c3a62a",
+        "file":  "plain512-fixed/gpu_demo.bin",
+        "bytes":  51680
+    },
+    {
+        "sha256":  "07508eece097e9dac51b0c2a5ca9ef08b945f7a68f7112bc3d8e7f96599d944e",
+        "file":  "plain512-fixed/gpu_demo.elf",
+        "bytes":  87008
+    },
+    {
+        "sha256":  "a374b64c071e9a36d88f2fe7d09817be9b6f35f951a1bc0bc72a6b35303cf0d4",
+        "file":  "D:/efinity_builds/performance_challenge_20261013_r1/outflow/efinix_2d_gpu.bit",
+        "bytes":  2575050
+    }
+]

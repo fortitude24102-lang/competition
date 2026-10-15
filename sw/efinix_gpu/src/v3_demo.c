@@ -45,7 +45,7 @@ static void invalidate_physical_hud(void) {
 #if V3_HUD_LIST || V3_HUD_DIRECT
 #define V3_BUILD_ID 0x20261015u
 #elif V3_PERFORMANCE_CHALLENGE
-#define V3_BUILD_ID 0x20261013u
+#define V3_BUILD_ID 0x20261015u
 #else
 #define V3_BUILD_ID 0x20261008u
 #endif
@@ -398,7 +398,11 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   #if V3_PERFORMANCE_CHALLENGE
   else if(performance) {
    gpu_instance_stats s;
-   e=pc_build(challenge,buffers->back,network,(gpu_instance *)(uintptr_t)list_address,&s);if(e)break;
+   /* This frame owns BOTH banks until all scene batches retire. Always start
+    * at arena A, even with framebuffer B; state starts just after bank B. */
+   list_address=GPU_FRAME_LIST_BANK_A;
+   e=pc_build(challenge,buffers->back,network,(gpu_instance *)(uintptr_t)list_address,
+    GPU_FRAME_LIST_ARENA_ITEMS,&s);if(e)break;
    scene->count=s.count;scene->visible=s.visible;scene->scene_pixels=s.scene_pixels;
    scene->alpha_commands=s.alpha_commands;scene->alpha_pixels=s.alpha_pixels;list_frame=1;
   }
@@ -420,7 +424,12 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
    #if V3_COPY_AHEAD
    if(ahead) {e=gpu_wait_tag(gpu,background_tag,V3_POLLS);if(e)break;skip=1;}
    #endif
-   e=gpu_frame_list_render(&list_device,list_address+16u*skip,scene->count-skip,runtime->scene_generation,V3_POLLS);
+   #if V3_PERFORMANCE_CHALLENGE
+   if(performance)
+    e=gpu_frame_list_render_span(&list_device,list_address+16u*skip,scene->count-skip,runtime->scene_generation,V3_POLLS);
+   else
+   #endif
+    e=gpu_frame_list_render(&list_device,list_address+16u*skip,scene->count-skip,runtime->scene_generation,V3_POLLS);
   } else
 #endif
   e=menu?game_menu_draw(gpu,&menu_cache,buffers->back==GPU_FRAMEBUFFER_A?0u:1u,

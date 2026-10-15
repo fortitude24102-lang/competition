@@ -55,6 +55,9 @@ int bullet_step(bullet_state *state);
 /* Interactive-only entry: manual coordinates and kind=3 friendly projectiles.
  * The legacy entry above retains its original validation and auto-pilot. */
 int bullet_step_player(bullet_state *state,int player_x,int player_y);
+/* Optional immutable canonical game-reset snapshot; all normal step validation
+ * runs before reuse. Used only by the LIVE runtime, never the CPU renderer. */
+int bullet_step_player_cached(bullet_state *state,int player_x,int player_y,const bullet_state *initial);
 int bullet_build_frame(const bullet_state *state,uint32_t dst,int network,int glow,
                       unsigned capacity,bullet_stream *stream);
 int bullet_build_frame_player(const bullet_state *state,uint32_t dst,int network,int glow,

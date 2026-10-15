@@ -60,3 +60,17 @@ int gpu_frame_list_render(gpu_frame_list *f,uint32_t address,unsigned count,uint
  }
  d->ready=0;return GPU_DRIVER_TIMEOUT;
 }
+int gpu_frame_list_render_span(gpu_frame_list *f,uint32_t address,unsigned count,uint32_t epoch,uint32_t polls) {
+ if(f && f->active)return GPU_DRIVER_BUSY;
+ uint64_t end=(uint64_t)address+(uint64_t)count*16u;
+ if(!f || !f->gpu || !f->gpu->ready || !f->present || !polls || !count ||
+    count>GPU_FRAME_LIST_ARENA_ITEMS || (address&15u) || address<GPU_FRAME_LIST_BANK_A ||
+    end>GPU_FRAME_LIST_BANK_B+16384u)return GPU_DRIVER_ARGUMENT;
+ while(count) {
+  unsigned n=(16384u-(address&16383u))/16u;
+  if(n>count)n=count;
+  int e=gpu_frame_list_render(f,address,n,epoch,polls);if(e)return e;
+  address+=n*16u;count-=n;
+ }
+ return 0;
+}

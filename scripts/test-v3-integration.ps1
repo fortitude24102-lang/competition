@@ -24,6 +24,9 @@ try {
   @{name='v3_menu_integration';modules=@('v3_demo','net_control','asset_protocol','v3_runtime','bullet_demo','interactive_game','replay_input');extra=@('-DNC_TEST_BACKEND','-Isw/efinix_gpu/tests/include')}
   @{name='v3_frame_stats';modules=@()},
   @{name='performance_challenge';modules=@('performance_challenge')},
+  @{name='reset_work';modules=@();extra=@('-finstrument-functions')},
+  @{name='runtime_reset_cache';modules=@('v3_runtime','bullet_demo','interactive_game','replay_input');extra=@('-finstrument-functions')},
+  @{name='gpu_frame_list_driver';modules=@('gpu','gpu_instances','gpu_frame_list','bullet_demo');extra=@('-DGPU_TEST_BACKEND')},
   @{name='hud_gpu_list';modules=@('hud','hud_cache','hud_gpu_cache','gpu','gpu_instances','gpu_frame_list','bullet_demo','perf_demo','golden_renderer','rgb565');extra=@('-DGPU_TEST_BACKEND','-DV3_HUD_LIST=1','-Isw/efinix_gpu/assets/v2')},
   @{name='hud_direct';modules=@('hud','hud_cache','hud_gpu_cache','gpu','perf_demo','golden_renderer','rgb565');extra=@('-DGPU_TEST_BACKEND','-DV3_HUD_DIRECT=1','-Isw/efinix_gpu/assets/v2')},
   @{name='live_phase_stats';modules=@()},

@@ -17,6 +17,7 @@ typedef struct {
  uint8_t mode,compare_pending;
  uint8_t phase,level,menu_reason,menu_enabled,await_neutral;
  uint8_t perf_enabled;
+ uint8_t reset_initial_valid; /* recording.initial is exactly game_reset, not a mid-game replay origin. */
  uint32_t scene_generation,neutral_session,neutral_sequence;
 } v3_runtime;
 int v3_runtime_init(v3_runtime *,unsigned count,uint32_t seed,uint32_t epoch);

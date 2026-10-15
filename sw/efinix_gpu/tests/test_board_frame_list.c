@@ -33,5 +33,25 @@ int main(void) {
   CHECK(*(volatile uint32_t *)(uintptr_t)(GPU_APB_BASE+0x528)==48u);
   bsp_printf("FRAME_LIST_BOARD,epoch=%d,pixel=%x,tag=%d,bytes=48,guards=PASS\r\n",epoch,dst[0],d.last_done);
  }
+ /* Full arena, in-order Alpha exactly at the boundary followed by transparent
+  * Key operations. Both framebuffers use this same descriptor arena. */
+ for(unsigned epoch=3;epoch<=4;epoch++) {
+  src[0]=0x07e0u;src[1]=0xf81fu;src[2]=0xf800u;
+  dst[-1]=0x12345678u;dst[0]=0x554407e0u;dst[1]=0x89abcdefu;
+  volatile uint32_t *state_guard=(volatile uint32_t *)(uintptr_t)0x02d28000u;
+  *state_guard=0x76543210u;
+  for(unsigned k=0;k<2048;k++)list[k]=(gpu_instance){{k<1023?0u:k==1023?2u|256u|(128u<<16):1u,
+   0x02d40020u,0,0x00010001u}};
+  unsigned skip=epoch==4;
+  d.next_tag=65535u;
+  CHECK(!gpu_frame_list_render_span(&f,GPU_FRAME_LIST_BANK_A+16u*skip,2048u-skip,epoch,10000000u));
+  gpu_platform_sync();
+  CHECK(dst[0]==(0x55440000u|rgb565_global_alpha(0xf800u,0x07e0u,128)));
+  CHECK(dst[-1]==0x12345678u && dst[1]==0x89abcdefu && *state_guard==0x76543210u);
+  CHECK(d.last_done==(uint16_t)(65535u+2048u-skip-1u));
+  CHECK(*(volatile uint32_t *)(uintptr_t)(GPU_APB_BASE+0x51c)==epoch);
+  bsp_printf("FRAME_LIST_SPAN,epoch=%d,count=%d,pixel=%x,tag=%d,guards=PASS\r\n",
+   epoch,2048u-skip,dst[0],d.last_done);
+ }
  bsp_printf("FRAME_LIST_BOARD_STOP,result=0,publish=PASS,copy_key_alpha=PASS,tagwrap=PASS\r\n");return 0;
 }

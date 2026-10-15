@@ -17,6 +17,7 @@ int v3_runtime_init(v3_runtime *r,unsigned count,uint32_t seed,uint32_t epoch) {
  if(!r || !epoch) return GPU_DRIVER_ARGUMENT;
  memset(r,0,sizeof *r);r->epoch=epoch;r->phase=V3_PHASE_PLAY;
  int e=game_reset(&r->game,count,seed);if(e) return e;
+ r->reset_initial_valid=1;
  return replay_init(&r->recording,&r->game,epoch);
 }
 unsigned v3_level_count(unsigned level) {
@@ -35,6 +36,7 @@ int v3_runtime_menu_init(v3_runtime *r,uint32_t seed,uint32_t epoch) {
 static int restart_game(v3_runtime *r,uint32_t session,uint32_t sequence) {
  int e=game_reset(&r->game,v3_level_count(r->level),7);if(e) return e;
  e=replay_init(&r->recording,&r->game,r->epoch);if(e) return e;
+ r->reset_initial_valid=1;
  r->seal_cursor=(replay_seal_cursor){0};
  r->clock=(game_clock){0};r->cursor=(replay_cursor){0};r->replay_frames=0;
  r->mode=V3_MODE_LIVE;r->compare_pending=0;r->phase=V3_PHASE_PLAY;
@@ -66,6 +68,7 @@ int v3_runtime_set_epoch(v3_runtime *r,uint32_t epoch) {
  if(!r || !epoch || r->mode!=V3_MODE_LIVE) return GPU_DRIVER_ARGUMENT;
  r->epoch=epoch;r->compare_pending=0;r->clock=(game_clock){0};
  r->seal_cursor=(replay_seal_cursor){0};
+ r->reset_initial_valid=0;
  return replay_init(&r->recording,&r->game,epoch);
 }
 static int begin_compare(v3_runtime *r) {
@@ -108,7 +111,7 @@ int v3_runtime_advance(v3_runtime *r,const game_input *in,uint32_t us) {
   if(!r->recording.sealed && r->recording.count<REPLAY_INPUT_TICKS) {
    e=replay_record(&r->recording,&tick);if(e) return e;
   }
-  e=game_update(&r->game,&tick);if(e<0) return e;
+  e=game_update_cached(&r->game,&tick,r->reset_initial_valid?&r->recording.initial:NULL);if(e<0) return e;
   c->accumulator_x60-=1000000u;++c->total_steps;++n;
   c->pending_pressed=c->pending_released=0;tick.pressed=tick.released=0;
   if(r->menu_enabled && !r->game.hp) {enter_menu(r,V3_MENU_DEATH);return (int)n;}
@@ -142,5 +145,6 @@ int v3_runtime_frame_done(v3_runtime *r) {
  r->game=r->live_saved;r->mode=V3_MODE_LIVE;r->compare_pending=0;
  r->clock=(game_clock){0};r->replay_frames=0;
  r->seal_cursor=(replay_seal_cursor){0};
+ r->reset_initial_valid=0;
  return replay_init(&r->recording,&r->game,r->epoch);
 }

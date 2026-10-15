@@ -50,7 +50,7 @@ def _validate(kind, session, words):
         raise ValueError('GAME opcode/level/request')
     elif kind == GAME_ACK and (not words[0] or words[1] > 2):
         raise ValueError('GAME_ACK request/result')
-    elif kind == PERFORMANCE and (not 32 <= words[0] <= 909 or words[1] > words[0] or
+    elif kind == PERFORMANCE and (not 32 <= words[0] <= 1819 or words[1] > words[0] or
             not 1 <= (words[2] & 15) <= 6 or words[2] & 0xff0000f0 or words[2] >> 8 > 3600):
         raise ValueError('performance bounds/reserved fields')
 

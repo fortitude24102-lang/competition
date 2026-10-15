@@ -14,7 +14,7 @@ int game_reset(bullet_state *s,unsigned count,uint32_t seed) {
  return e;
 }
 static int clamp(int value,int low,int high) { return value<low?low:value>high?high:value; }
-int game_update(bullet_state *s,const game_input *in) {
+int game_update_cached(bullet_state *s,const game_input *in,const bullet_state *initial) {
  if(!s || !in || !s->count || s->count>BULLET_MAX_OBJECTS ||
     s->player_x<8 || s->player_x>952 || s->player_y<80 || s->player_y>532 ||
     ((in->held|in->pressed|in->released)&~V3_KEY_MASK)) return GPU_DRIVER_ARGUMENT;
@@ -23,7 +23,7 @@ int game_update(bullet_state *s,const game_input *in) {
  int dy=!!(in->held&V3_KEY_DOWN)-!!(in->held&V3_KEY_UP);
  int speed=(in->held&V3_KEY_SLOW)?1:(dx && dy)?3:4;
  int x=clamp(s->player_x+dx*speed,8,952),y=clamp(s->player_y+dy*speed,80,532);
- int e=bullet_step_player(s,x,y);
+ int e=initial?bullet_step_player_cached(s,x,y,initial):bullet_step_player(s,x,y);
  if(e) return e;
  reserve_shots(s); /* Also restore reserved slots after automatic restart. */
  if(s->hp && !s->won && (in->held&V3_KEY_FIRE) && s->round_tick%6u==1u)
@@ -34,6 +34,7 @@ int game_update(bullet_state *s,const game_input *in) {
   }
  return !!(in->pressed&V3_KEY_COMPARE);
 }
+int game_update(bullet_state *s,const game_input *in) {return game_update_cached(s,in,NULL);}
 int game_build(const bullet_state *s,uint32_t dst,int network,int glow,unsigned cap,bullet_stream *out) {
  return bullet_build_frame_player(s,dst,network,glow,cap,out);
 }

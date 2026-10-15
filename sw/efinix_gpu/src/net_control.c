@@ -169,7 +169,7 @@ void nc_discard_pending_telemetry(nc_device *d) {
 }
 int nc_queue_performance(nc_device *d,unsigned target,unsigned best,uint32_t sf) {
     unsigned stage=sf&15u;
-    if(!d || !d->ready || !d->perf_capable || target<32 || target>909 || best>target ||
+    if(!d || !d->ready || !d->perf_capable || target<32 || target>V3_PERFORMANCE_MAX_SPRITES || best>target ||
        stage<1 || stage>6 || (sf&UINT32_C(0xff0000f0)) || (sf>>8)>3600)
         return NC_ERROR_ARGUMENT;
     d->performance[0]=target;d->performance[1]=best;d->performance[2]=sf;

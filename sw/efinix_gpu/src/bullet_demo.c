@@ -23,7 +23,9 @@ int bullet_campaign_valid(const bullet_state *s) {
 int bullet_enemy_position(const bullet_state *s,unsigned enemy,int *x,int *y) {
  if(!s || enemy>=BULLET_ENEMY_COUNT || !x || !y) return GPU_DRIVER_ARGUMENT;
  *x=centers[enemy][0];*y=centers[enemy][1];
- if(!s->interactive) return 0;
+ /* At the initial interpolation endpoint phase=0, segment=0, so the
+  * waypoint contributes zero. Avoid computing/hash-dividing it per object. */
+ if(!s->interactive || !s->round_tick) return 0;
  static const int minimum_y[]={184,100,156};
  uint32_t segment=s->round_tick/120u,phase=s->round_tick%120u;
  uint32_t next=waypoint(s->seed,enemy,segment);
@@ -67,25 +69,28 @@ static void spawn(bullet_state *s,unsigned i,int warm) {
   default:break; /* Straight radial/fan, inherited Q8 speed. */
  }
 }
-int bullet_reset(bullet_state *s,unsigned count,uint32_t seed) {
+static int reset(bullet_state *s,unsigned count,uint32_t seed,int interactive) {
  if(!s || !count || count>BULLET_MAX_OBJECTS) return GPU_DRIVER_ARGUMENT;
  memset(s,0,sizeof *s); s->count=count; s->seed=seed;
  s->player_x=480; s->player_y=480; s->hp=BULLET_START_HP;
+ s->interactive=(uint8_t)interactive;
+ if(interactive)for(unsigned i=0;i<BULLET_ENEMY_COUNT;i++)s->enemy_hp[i]=BULLET_ENEMY_HP;
  for(unsigned i=0;i<count;i++) spawn(s,i,1);
  return 0;
 }
+int bullet_reset(bullet_state *s,unsigned count,uint32_t seed) {
+ return reset(s,count,seed,0);
+}
 int bullet_reset_player(bullet_state *s,unsigned count,uint32_t seed) {
- int e=bullet_reset(s,count,seed);if(e) return e;
- s->interactive=1;
- for(unsigned i=0;i<BULLET_ENEMY_COUNT;i++) s->enemy_hp[i]=BULLET_ENEMY_HP;
- for(unsigned i=0;i<count;i++) spawn(s,i,1);
- return 0;
+ /* Set the final mode BEFORE spawning: the previous noninteractive pass was
+  * immediately overwritten and doubled work on every interactive restart. */
+ return reset(s,count,seed,1);
 }
 static int pixel_coordinate(int32_t q8);
 static void add_score(bullet_state *s,uint32_t points) {
  s->score=UINT32_MAX-s->score<points?UINT32_MAX:s->score+points;
 }
-static int step(bullet_state *s,int manual,int player_x,int player_y) {
+static int step(bullet_state *s,int manual,int player_x,int player_y,const bullet_state *initial) {
  if(!s || !s->count || s->count>BULLET_MAX_OBJECTS || s->hp>BULLET_START_HP || !bullet_campaign_valid(s) ||
     s->invulnerable>BULLET_PROTECTION_TICKS ||
     (!s->hp && (!s->game_over_ticks || s->game_over_ticks>BULLET_RESTART_TICKS)))
@@ -99,6 +104,11 @@ static int step(bullet_state *s,int manual,int player_x,int player_y) {
  if(!s->hp) {
   if(!--s->game_over_ticks) {
    uint32_t tick=s->tick;
+   if(manual && s->interactive && initial && initial!=s && initial->interactive &&
+      initial->count==s->count && initial->seed==s->seed && !initial->tick && !initial->round_tick &&
+      initial->hp==BULLET_START_HP && !initial->won) {
+    *s=*initial;s->tick=tick;return 0;
+   }
    int e=manual && s->interactive?bullet_reset_player(s,s->count,s->seed):bullet_reset(s,s->count,s->seed);
    s->tick=tick; return e;
   }
@@ -174,8 +184,11 @@ static int step(bullet_state *s,int manual,int player_x,int player_y) {
  }
  return 0;
 }
-int bullet_step(bullet_state *s) { return step(s,0,0,0); }
-int bullet_step_player(bullet_state *s,int x,int y) { return step(s,1,x,y); }
+int bullet_step(bullet_state *s) { return step(s,0,0,0,NULL); }
+int bullet_step_player(bullet_state *s,int x,int y) { return step(s,1,x,y,NULL); }
+int bullet_step_player_cached(bullet_state *s,int x,int y,const bullet_state *initial) {
+ return step(s,1,x,y,initial);
+}
 int bullet_prepare_frame(bullet_state *s,unsigned count,unsigned frame,uint32_t seed) {
  if(frame>=BULLET_REPLAY_FRAMES) return GPU_DRIVER_ARGUMENT;
  int e=bullet_reset(s,count,seed); if(e) return e;
