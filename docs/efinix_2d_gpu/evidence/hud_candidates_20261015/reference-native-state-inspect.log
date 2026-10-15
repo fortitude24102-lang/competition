@@ -1,0 +1,17 @@
+Open On-Chip Debugger 0.11.0+dev-04060-g967f8f6f0-dirty (2026-03-24-19:56)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+Info : auto-selecting first available session transport "jtag". To override use 'transport select <transport>'.
+Info : set servers polling period to 50ms
+Info : clock speed 800 kHz
+Info : JTAG tap: fpga_spinal.bridge tap/device found: 0x10660a79 (mfg: 0x53c (Efinix Inc), part: 0x0660, ver: 0x1)
+[fpga_spinal.cpu0] Target successfully examined.
+Info : starting gdb server for fpga_spinal.cpu0 on 3333
+Info : Listening on port 3333 for gdb connections
+0x02d29c68: 00000e10 00000000 00000000 00000000 00000000 00192f9a 0019658f 00000000 
+0x02d29c88: 0000036b 0000036b 0000006e 0000006e 49584efb 00000001 6506dd3e 00000001 
+0x02d29ca8: 00000000 00000000 00000007 00000e62 00000019 0000036b 0000038d 0000036b 
+0x02d29cc8: 0000036c 00000000 00000000 00000006 00000100 00000000 
+
+shutdown command invoked

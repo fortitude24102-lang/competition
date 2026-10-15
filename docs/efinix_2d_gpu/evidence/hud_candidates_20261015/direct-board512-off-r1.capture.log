@@ -1,0 +1,83 @@
+Open On-Chip Debugger 0.11.0+dev-04060-g967f8f6f0-dirty (2026-03-24-19:56)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+Info : auto-selecting first available session transport "jtag". To override use 'transport select <transport>'.
+Info : set servers polling period to 50ms
+Info : clock speed 800 kHz
+Info : JTAG tap: fpga_spinal.bridge tap/device found: 0x10660a79 (mfg: 0x53c (Efinix Inc), part: 0x0660, ver: 0x1)
+[fpga_spinal.cpu0] Target successfully examined.
+Info : starting gdb server for fpga_spinal.cpu0 on 3333
+Info : Listening on port 3333 for gdb connections
+Info : JTAG tap: fpga_spinal.bridge tap/device found: 0x10660a79 (mfg: 0x53c (Efinix Inc), part: 0x0660, ver: 0x1)
+shutdown command invoked
+BULLET_ASSET,id=101,bytes=1036800,retries=0,result=0
+BULLET_ASSET,id=102,bytes=3104,retries=0,result=0
+TEXTURE_CACHE,result=0,base=02a00000,bytes=3104,network=1
+V3_HUD_DIRECT,enabled=0
+V3_FRAME_LIST,present=1,enabled=1
+V3_SEAL_BUDGET,words=256
+V3_COPY_AHEAD,enabled=1
+V3_LOGIC_COPY,enabl
+ed=1
+
+HUD_LOGO,id=103,bytes=28000,retries=0,result=0,enabled=1
+V3_COUNTER_BASELINE,under_lo=366120,under_hi=0
+V3_PROBE_START,warm=30,samples=600,log_windows=1
+V3_READY,build=20261015,epoch=00030002,network=1,state=02d00000,mode=LIVE,count=512
+
+V3_PERF,mode=0,tick=57,seq=0,x=480,y=480,visible=504,fps_x
+10=300,scene_us=3441,p95_work_us=19966,under=0,miss=4,keys=00000000,age=-1
+
+V3_PERF,mode=0,tick=117,seq=0,x=480,y=480,visible=502,fps_x10=300,scene_us=3404,p95_work_us=20106,under=0,miss=6,keys=00000000,age=-1
+
+V3_PERF,mode=0,tick=1
+63,seq=0,x=480,y=480,visible=501,fps_x10=400,scene_us=3590,p95_work_us=20431,under=0,miss=0,keys=00000000,age=-1
+
+V3_PERF,mode=0,tick=193,seq=0,x=480,y=480,visible=501,fps_x10=601,scene_us=3812,p95_work_us=14235,under=0,miss=0,keys=00000000,age=-1
+
+V3_PERF,mode=0,tick=223,seq=0,x=480,y=480,visible=501,fps_x10=601,scene_us=3805,p95_work_us=14320,under=0,miss=0,keys=00000000,age=-1
+
+
+V3_PERF,mode=0,tick=253,seq=0,x=480,y=480,visible=501,fps_x10=601,scene_us=3810,p95_work_us=1427
+8,under=0,miss=0,keys=00000000,age=-1
+
+V3_PERF,mode=0,tick=299,seq=0,x=480,y=480,visible=504,fps_x10=383,scene_us=3589,p95_work_us=19205,under=0,miss=3,keys=
+00000000,age=-1
+
+V3_PERF,mode=0,tick=359,seq=0,x=480,y=480,visible=504,fps_x10=300,scene_us=3411,p95_work_us=20120,under=0,miss=6,keys=00000000,age=-1
+
+V3_PERF,mode=0,tick=417,seq=0,x=480,y=480,visible=501,fps_x10=316,scene_us=3427,p95_work_us=20372,under=0,miss=0,keys=00000000,age=-1
+
+V3_PERF,mode=0,tick=447,seq=0,x=480,y=480,visible=501,fps_x10=601,scene_us=3807,p95_work_us=14235,under=0,miss=0,keys=00000000,age=-1
+
+V3_PERF,mode=0,tick=477,seq=0,x=480,y=480,visible=501,fps_x10=601,scene_us=3806,p95_work_us=14262,under=0,miss=0,keys=00000000,age=-1
+
+V3_PERF,mode=0,tick=507,seq=0,x=480,y=480,visible=501,fps_x10=601,s
+cene_us=3812,p95_work_us=14189,under=0,miss=0,keys=00000000,age=-1
+
+V3_PERF,mode=0,tick=540,seq=0,x=480,y=480,visible=504,fps_x10=530,scene_us=3770,p95_work_us=18916,under=0,miss=4,keys=00000000,age=-1
+
+V3_PERF,mode=0,tick=591,seq=0,x=480,y=480,visible=504,fps_x10=346,scene_us=3560,p95_work_us=19861,under=0,miss=7,keys=00000000,age=-1
+
+V3_PERF,mode=0,tick=651,seq=0,x=480,y=480,visible=502,fps_x10=300,scene_us=3386,p95_work_us=20753,under=0,miss=4,keys=00000000,age=-1
+
+V3_PERF,mode=0,tick=697,seq=0,x=480,y=480,visible=501,fps_x10=400,scene_us=3598,p95_work_us=20475,under=0,miss=0,keys=00000000,age=-1
+
+
+V3_PERF,mode=0,tick=727,seq=0,x=480,y=480,visible=501,fps_x10=601,scene_us=3811,p95_work_us=14227
+,under=0,miss=0,keys=00000000,age=-1
+
+V3_PERF,mode=0,tick=757,seq=0,x=480,y=480,visible=501,fps_x10=601,scene_us=3811,p95_work_us=14301,under=0,miss=0,keys=00000000,age=-1
+
+V3_PERF,mode=0,tick=787,seq=0,x=480,y=480,visible=501,fps_x10=601,scene_us=3807,p95_work_us=14272,under=0,miss=0,keys=00000000,age=-1
+
+V3_PERF,mode=0,tick=833,seq=0,x=480,y=480,vis
+ible=504,fps_x10=383,scene_us=3601,p95_work_us=19151,under=0,miss=5,keys=00000000,age=-1
+
+V3_PERF,mode=0,tick=893,seq=0,x=480,y=480,visible=504,fps_x10=300,scene_us=3408,p95_work_us=20175,under=0,miss=7,keys=00000000,age=-1
+V3_SEAL_STATE,count=6
+00,sealed=1,words=256,offset=5228,crc=c0ecf1df
+V3_PROBE,target=512,frames=600,fps_x10=430,work_mean_us=16143,work_max_us=21281,wall_max_us=33277,work_miss=236,late_present=237,under=0,errors=0,visible_min=499,visible_max=504,alpha_min=66,alpha_max=67,log_mean_us=20,log_max_us=615
+V3_PROBE_STOP,result=0
+

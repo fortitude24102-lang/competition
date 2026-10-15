@@ -1,0 +1,159 @@
+[info] welcome to sbt 1.12.4 (Ubuntu Java 17.0.20)
+[info] loading project definition from /mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/project
+[info] loading settings for project root from build.sbt...
+[info] set current project to smallproject-chisel (in build file:/mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/)
+[info] Defining Compile / unmanagedSources
+[info] The new value will be used by Compile / bspBuildTargetSourcesItem, Compile / sources
+[info] Reapplying settings...
+[info] set current project to smallproject-chisel (in build file:/mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/)
+[info] Defining Test / unmanagedSources
+[info] The new value will be used by Test / bspBuildTargetSourcesItem, Test / sources
+[info] Reapplying settings...
+[info] set current project to smallproject-chisel (in build file:/mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/)
+COPY enabled=true tag=0 fault=0 words=32 AR=1 AW=1 cycles=155 fifo_peak=16 r_gap=70 w_gap=98
+COPY enabled=true tag=1 fault=0 words=771 AR=5 AW=4 cycles=1196 fifo_peak=16 r_gap=381 w_gap=338
+COPY enabled=true tag=2 fault=0 words=3 AR=1 AW=1 cycles=110 fifo_peak=3 r_gap=0 w_gap=82
+COPY enabled=true tag=3 fault=0 words=12 AR=3 AW=3 cycles=170 fifo_peak=0 r_gap=84 w_gap=88
+COPY enabled=true tag=4 fault=1 words=771 AR=5 AW=4 cycles=1202 fifo_peak=16 r_gap=390 w_gap=345
+COPY enabled=true tag=5 fault=2 words=771 AR=5 AW=4 cycles=1230 fifo_peak=16 r_gap=409 w_gap=373
+COPY enabled=true tag=6 fault=3 words=771 AR=5 AW=4 cycles=1190 fifo_peak=16 r_gap=374 w_gap=331
+COPY enabled=true tag=7 fault=4 words=771 AR=5 AW=4 cycles=1222 fifo_peak=16 r_gap=399 w_gap=362
+COPY enabled=true tag=8 fault=5 words=771 AR=5 AW=4 cycles=1205 fifo_peak=16 r_gap=402 w_gap=349
+COPY enabled=true tag=9 fault=6 words=771 AR=5 AW=4 cycles=1163 fifo_peak=16 r_gap=357 w_gap=305
+COPY enabled=true tag=10 fault=0 words=32 AR=1 AW=1 cycles=151 fifo_peak=16 r_gap=77 w_gap=93
+COPY enabled=false tag=0 fault=0 words=32 AR=8 AW=8 cycles=313 fifo_peak=0 r_gap=90 w_gap=102
+[info] CopyStreamSpec:
+[info] continuous Copy using the existing AXI engines
+[info] - preserves bytes and delayed B completion with continuous Copy enabled=true
+[info] - preserves bytes and delayed B completion with continuous Copy enabled=false
+[info] - rejects invalid Copy descriptors without any memory access
+[info] - flushes buffered Copy on whole-system reset and serializes the next Alpha after Copy B
+[info] PixelPipeExtSpec:
+[info] - runs real Copy, Fill, and Alpha RTL and preserves pending pixels across stalls
+[info] FrameListBatchSpec:
+[info] - executes whole DDR lists through the real Top and waits for pixel retirement
+[info] RenderEngineSpec:
+[info] official Sapphire external AXI boundary
+[info] - matches the 32-bit data, 32-bit address, 4-bit ID and 8-bit burst contract
+[info] - keeps every AXI request inactive after reset until a GPU command exists
+[info] - executes an APB-submitted Fill through the real pixel pipe and reports completion
+[info] RenderEngine completion order
+[info] - does not let a rejected queued command complete ahead of an active Fill
+[info] AxiReadEngine
+[info] - splits at 4 KB and preserves every beat while the consumer applies backpressure
+[info] - reports a non-OKAY read response when the request completes
+[info] AxiWriteEngine
+[info] - splits at 4 KB and preserves data and half-word strobes under backpressure
+[info] - reports a non-OKAY write response when the request completes
+[info] Solid Fill path
+[info] - generates every RGB565 address in a strided rectangle
+[info] - packs adjacent RGB565 pixels and flushes half words at row boundaries
+[info] - fills a strided rectangle through the pixel-pipe and AXI handshakes
+[info] - copies an odd-width strided rectangle from an upper-halfword source
+[info] - streams aligned Copy and Color Key words without waiting for the pixel pipeline
+[info] Color Key path
+[info] - routes a valid Color Key command to the dense engine instead of rejecting it
+[info] - preserves transparent pixels in aligned and halfword-phase bursts
+[info] Global Alpha path
+[info] - pairs foreground and background pixels under random AXI delays
+[info] - does not leak an Alpha background read error into the following Fill
+[info] PixelReadAligner
+[info] - selects the upper first pixel and stops after an odd pixel count under backpressure
+[info] - handles lower-first even widths and can restart on a strided next row
+[info] GpuSystemSpec:
+[info] FrameSwapController
+[info] - holds both framebuffer addresses until vblank and completes the matching PRESENT tag
+[info] - routes an APB PRESENT through the command queue and updates scanout only at vblank
+[info] Sparse render path
+[info] - matches color-key output while reading fewer source bytes and never writing transparent pixels
+[info] - completes with AXI error when a failing write overlaps a delayed token read
+[info] ScanoutDma
+[info] - reads a strided framebuffer in order and marks line and frame boundaries
+[info] - waits for the configured FIFO low watermark before issuing the next row
+[info] - streams all 518400 production pixels across split bursts with a fixed frame CRC
+[info] Efinix2dGpuTopSpec:
+[info] Efinix2dGpuTop
+[info] - refills through the high watermark while Render, Scanout and Asset share DDR
+[info] - keeps emergency QoS enabled during a later pending frame swap
+[info] - keeps scanout off until software requests the first frame swap
+[info] - drains the frozen 16/32/64/96/128 Sprite-equivalent tiers without losing commands or counters
+[info] - routes Asset APB and commits a three-byte network packet through the third DDR client
+[info] - reports a guard truncation without issuing an Asset DDR address
+[info] TextureCacheBlitSpec:
+[info] GPU texture-cache blits
+[info] - matches DDR pixels for aligned and halfword Key plus Alpha without foreground AR
+[info] - falls back as a whole command after a range miss, invalidate, or preload error
+[info] - keeps Alpha background and write response errors on the DDR path
+[info] WordKeyDmaSpec:
+[info] halfword-phase Color Key DMA
+[info] - keeps overlapping strided Key reads on the legacy pixel path
+[info] - counts partial and transparent pixels independently from actual written bytes in RenderEngine
+[info] - preserves guards and transparent lanes without the pixel pipe across offsets, strides and AXI stalls
+[info] FrameListReaderSpec:
+[info] whole-list AXI prefetch
+[info] - prefetches ordered descriptors with burst/backpressure and rejects whole malformed batches
+[info] InstanceStreamSpec:
+[info] compact instance integration
+[info] - executes Copy, transparent Key and Alpha in order, then returns the queue to legacy commands
+[info] - exposes the frozen 0400 window without altering the legacy GPU identity
+[info] instance expansion and acceptance
+[info] - holds complete fields under backpressure, freezes templates and advances tags only once
+[info] - rejects partial templates, malformed offsets/headers/sizes and a faulted backend before enqueue
+[info] HudListCompatibilitySpec:
+[info] - expands glyph logo and final HUD Copy in order without changing the RTL ABI
+[info] AssetDmaWriterSpec:
+[info] Asset stream guard handoff
+[info] - fails a truncated packet before any DDR write
+[info] AssetDmaWriter
+[info] - honors ABORT coincident with the final AXI completion
+[info] - packs 1/2/3/1023/1024 bytes exactly under deterministic AXI backpressure
+[info] - splits at 4 KiB, reports B errors, and aborts a buffered packet before issuing AXI
+[info] TextureCacheSpec:
+[info] TextureCache
+[info] - preloads 3104 bytes and serves unaligned word streams
+[info] - splits a maximum preload at 4 KiB and holds data under backpressure
+[info] - keeps the old image invalid during reload
+[info] - rejects an errored AXI preload without partial validity
+[info] GpuPerfCountersSpec:
+[info] - counts active cycles, completed pixels, AXI bytes, stalls, underflows, and DDR grants
+[info] - gives clear priority over simultaneous events and resumes counting on the next cycle
+[info] - carries from the low 32-bit word into the high word without truncation
+[info] AssetDmaRegsSpec:
+[info] AssetDmaRegs
+[info] - atomically starts a valid descriptor without changing any V1 register offset
+[info] - holds valid metadata under backpressure, commits once, and drops duplicates once
+[info] - rejects wrong metadata and address overflow without losing the active descriptor
+[info] - keeps a failed AXI packet uncommitted until software aborts and retries
+[info] DdrQosArbiterSpec:
+[info] DdrQosArbiter
+[info] - drains a full Render burst before serving Scanout despite Render response backpressure
+[info] - cancels unpresented addresses at emergency entry but holds presented AXI VALID
+[info] - locks response ownership for complete read and write transactions and rotates priority
+[info] - pauses render and asset admissions during scanout emergency and resumes after high watermark
+[info] - alternates continuously requested Render and Asset writes by complete transaction
+[info] - services a draining scanout FIFO under continuous Asset write pressure
+[info] - bounds three-client waits on a bandwidth-limited shared DDR without scanout underflow
+[info] - counts simultaneous Scanout and Asset grants against the Render wait bound
+[info] SparseDecoderSpec:
+[info] SparseDecoder
+[info] - decodes odd literal runs, row boundaries, and an all-transparent row under backpressure
+[info] - rejects a run crossing the row, an early row end, and non-zero odd-run padding
+[info] GpuFrontEndSpec:
+[info] official Sapphire GPU contract
+[info] - uses the APB and DDR addresses frozen by the official demo plan
+[info] CommandQueue
+[info] - stores exactly sixteen commands and preserves order across simultaneous dequeue and enqueue
+[info] CommandValidator
+[info] - rejects malformed commands before they can reach DDR
+[info] GpuApbRegs
+[info] - controls a validated idle-only texture cache and snapshots its traffic
+[info] - returns read data only in the APB access phase after a setup phase
+[info] - programs valid QoS hysteresis thresholds and rejects invalid writes without changing them
+[info] - reads identity, writes staging fields, submits atomically, and errors on invalid offsets or a full queue
+[info] - holds a coherent performance snapshot and emits one-cycle clear requests
+[info] Run completed in 27 minutes, 23 seconds.
+[info] Total number of tests run: 83
+[info] Suites: completed 18, aborted 0
+[info] Tests: succeeded 83, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.
+[success] Total time: 1649 s (0:27:29.0), completed Oct 15, 2026, 11:34:47 AM

@@ -1,0 +1,2 @@
+HUD_LIST_IO,one_digit,descriptors=2,APB_writes=5,legacy_commands=0
+HUD_GPU_LIST,PASS,exact_pixels,A/B,logo,CPU_switch,tagwrap,cache_hit,partial_error,no_replay,timeout,bank_guard

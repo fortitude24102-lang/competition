@@ -1,0 +1,53 @@
+DAMAGE_UNIT,PASS,two_buffers,alpha_bottom,cold,epoch,capacity,cost,failed_commit,bounds
+DAMAGE_GOLDEN,tile=16,gap=0,target=32,equal_frames=600,full=6,bytes_mean=43893,extra_commands_x10=286
+DAMAGE_GOLDEN,tile=16,gap=0,target=64,equal_frames=600,full=6,bytes_mean=68143,extra_commands_x10=488
+DAMAGE_GOLDEN,tile=16,gap=0,target=128,equal_frames=600,full=6,bytes_mean=103500,extra_commands_x10=732
+DAMAGE_GOLDEN,tile=16,gap=0,target=256,equal_frames=600,full=7,bytes_mean=166105,extra_commands_x10=1070
+DAMAGE_GOLDEN,tile=16,gap=0,target=512,equal_frames=600,full=562,bytes_mean=858006,extra_commands_x10=83
+DAMAGE_GOLDEN,tile=16,gap=2,target=32,equal_frames=600,full=6,bytes_mean=46884,extra_commands_x10=273
+DAMAGE_GOLDEN,tile=16,gap=2,target=64,equal_frames=600,full=6,bytes_mean=75054,extra_commands_x10=446
+DAMAGE_GOLDEN,tile=16,gap=2,target=128,equal_frames=600,full=6,bytes_mean=116647,extra_commands_x10=633
+DAMAGE_GOLDEN,tile=16,gap=2,target=256,equal_frames=600,full=6,bytes_mean=195761,extra_commands_x10=810
+DAMAGE_GOLDEN,tile=16,gap=2,target=512,equal_frames=600,full=50,bytes_mean=352314,extra_commands_x10=940
+DAMAGE_GOLDEN,tile=16,gap=4,target=32,equal_frames=600,full=6,bytes_mean=51406,extra_commands_x10=261
+DAMAGE_GOLDEN,tile=16,gap=4,target=64,equal_frames=600,full=6,bytes_mean=86317,extra_commands_x10=412
+DAMAGE_GOLDEN,tile=16,gap=4,target=128,equal_frames=600,full=6,bytes_mean=137423,extra_commands_x10=557
+DAMAGE_GOLDEN,tile=16,gap=4,target=256,equal_frames=600,full=6,bytes_mean=237559,extra_commands_x10=640
+DAMAGE_GOLDEN,tile=16,gap=4,target=512,equal_frames=600,full=6,bytes_mean=382866,extra_commands_x10=707
+DAMAGE_GOLDEN,tile=32,gap=0,target=32,equal_frames=600,full=6,bytes_mean=90496,extra_commands_x10=225
+DAMAGE_GOLDEN,tile=32,gap=0,target=64,equal_frames=600,full=6,bytes_mean=141882,extra_commands_x10=336
+DAMAGE_GOLDEN,tile=32,gap=0,target=128,equal_frames=600,full=6,bytes_mean=207212,extra_commands_x10=436
+DAMAGE_GOLDEN,tile=32,gap=0,target=256,equal_frames=600,full=6,bytes_mean=304686,extra_commands_x10=524
+DAMAGE_GOLDEN,tile=32,gap=0,target=512,equal_frames=600,full=6,bytes_mean=445039,extra_commands_x10=602
+DAMAGE_GOLDEN,tile=32,gap=2,target=32,equal_frames=600,full=6,bytes_mean=103910,extra_commands_x10=196
+DAMAGE_GOLDEN,tile=32,gap=2,target=64,equal_frames=600,full=6,bytes_mean=171998,extra_commands_x10=264
+DAMAGE_GOLDEN,tile=32,gap=2,target=128,equal_frames=600,full=6,bytes_mean=257813,extra_commands_x10=301
+DAMAGE_GOLDEN,tile=32,gap=2,target=256,equal_frames=600,full=6,bytes_mean=379252,extra_commands_x10=282
+DAMAGE_GOLDEN,tile=32,gap=2,target=512,equal_frames=600,full=6,bytes_mean=544080,extra_commands_x10=261
+DAMAGE_GOLDEN,tile=32,gap=4,target=32,equal_frames=600,full=6,bytes_mean=128066,extra_commands_x10=169
+DAMAGE_GOLDEN,tile=32,gap=4,target=64,equal_frames=600,full=6,bytes_mean=220642,extra_commands_x10=209
+DAMAGE_GOLDEN,tile=32,gap=4,target=128,equal_frames=600,full=6,bytes_mean=325585,extra_commands_x10=219
+DAMAGE_GOLDEN,tile=32,gap=4,target=256,equal_frames=600,full=6,bytes_mean=442323,extra_commands_x10=201
+DAMAGE_GOLDEN,tile=32,gap=4,target=512,equal_frames=600,full=6,bytes_mean=600922,extra_commands_x10=182
+DAMAGE_RESULT,PASS,frames=18000,bytewise_ROI_and_HUD
+local scene CRC=8e341090
+HUD maximum test uses 601/1024 commands
+PASS: V2 scene, CPU pixels/CRC, GPU submission, timing and HUD (host only)
+PASS bullet state: deterministic motion, replay, clipping, capacity, recycling
+PASS gameplay: hit/protection/graze/death/restart/autopilot/effect budget/replay/overflow/graze recycle
+PASS bullet pixels: tiers=32/64/128/256/512; representative visible=126 commands=151 pixels=599464 CRC=24244e8c
+PASS bullet gameplay: tick=90 hp=3 score=3 grazes=0 alpha_commands=20 alpha_pixels=2880
+PASS preview512: tick=0 visible=511 commands=584 CRC=5b06c0a8
+PASS effects512: tick=0 alpha_commands=68 alpha_pixels=9792 hp=3 score=0 grazes=0
+PASS preview512: tick=90 visible=509 commands=582 CRC=cfcfbb34
+PASS effects512: tick=90 alpha_commands=68 alpha_pixels=9720 hp=2 score=43 grazes=4
+PASS preview512: tick=110 visible=511 commands=584 CRC=505248a8
+PASS effects512: tick=110 alpha_commands=68 alpha_pixels=9732 hp=2 score=53 grazes=5
+PASS preview512: tick=180 visible=512 commands=585 CRC=25d53afc
+PASS effects512: tick=180 alpha_commands=68 alpha_pixels=9732 hp=2 score=86 grazes=8
+PASS scenario: shield hp=2 protection=60 CRC=3b4c5822
+PASS scenario: game_over hp=0 protection=0 CRC=d53f8eb7
+PASS HUD cache: legible 5x7 glyphs, 4px gutters, bounded layout, exact pixels, text invalidation, A/B copy, DDR canary
+PASS GPU HUD glyphs and logo: exact raster, one changed digit=504B/one Copy, cache hit=zero commands, warning priority, CPU/GPU switch, A/B copy, partial failure recovery, canaries
+DAMAGE_ACCEPTANCE,PASS,mixed_cadence14,zero_miss,work,under,error,incomplete
+DAMAGE_SUITE,PASS,C_suites=8,golden_frames=18000,UBSan

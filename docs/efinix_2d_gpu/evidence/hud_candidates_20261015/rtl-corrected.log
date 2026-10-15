@@ -1,0 +1,22 @@
+[info] welcome to sbt 1.12.4 (Ubuntu Java 17.0.20)
+[info] loading project definition from /mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/project
+[info] loading settings for project root from build.sbt...
+[info] set current project to smallproject-chisel (in build file:/mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/)
+[info] Defining Compile / unmanagedSources
+[info] The new value will be used by Compile / bspBuildTargetSourcesItem, Compile / sources
+[info] Reapplying settings...
+[info] set current project to smallproject-chisel (in build file:/mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/)
+[info] Defining Test / unmanagedSources
+[info] The new value will be used by Test / bspBuildTargetSourcesItem, Test / sources
+[info] Reapplying settings...
+[info] set current project to smallproject-chisel (in build file:/mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/)
+[info] compiling 1 Scala source to /mnt/d/ZYNQ/smallproject/.worktrees/pango-riscv-cpu/chisel/target/scala-2.13/test-classes ...
+[info] done compiling
+[info] HudListCompatibilitySpec:
+[info] - expands glyph logo and final HUD Copy in order without changing the RTL ABI
+[info] Run completed in 17 seconds, 754 milliseconds.
+[info] Total number of tests run: 1
+[info] Suites: completed 1, aborted 0
+[info] Tests: succeeded 1, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.
+[success] Total time: 31 s, completed Oct 15, 2026, 10:43:46 AM

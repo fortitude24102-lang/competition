@@ -9,6 +9,29 @@
 #include "bsp.h"
 #include "network_assets.h"
 #include "../assets/hud/hud_logo_catalog.h"
+#ifndef V3_HUD_DIRECT
+#define V3_HUD_DIRECT 0
+#endif
+#if V3_HUD_DIRECT && V3_HUD_LIST
+#error "Choose one HUD candidate"
+#endif
+#if V3_HUD_DIRECT
+static hud_framebuffer_cache physical_hud;
+#define V3_HUD_DIRECT_WORD 0x02d10014u
+static void invalidate_physical_hud(void) {
+ physical_hud.buffers[0].valid=physical_hud.buffers[1].valid=0;
+}
+#endif
+#ifndef V3_HUD_LIST
+#define V3_HUD_LIST 0
+#endif
+#if V3_HUD_LIST
+#include "hud_gpu_list.h"
+#if !V3_FRAME_LIST
+#error "HUD list requires FrameList"
+#endif
+#define V3_HUD_LIST_WORD 0x02d10010u
+#endif
 #ifndef V3_PERFORMANCE_CHALLENGE
 #define V3_PERFORMANCE_CHALLENGE 0
 #endif
@@ -18,6 +41,10 @@
 /* V3_FRAME_LIST is supplied by the candidate build, never enabled implicitly. */
 #error "Performance challenge requires FrameList"
 #endif
+#endif
+#if V3_HUD_LIST || V3_HUD_DIRECT
+#define V3_BUILD_ID 0x20261015u
+#elif V3_PERFORMANCE_CHALLENGE
 #define V3_BUILD_ID 0x20261013u
 #else
 #define V3_BUILD_ID 0x20261008u
@@ -163,6 +190,16 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  nc_device control;nc_input raw={0};game_input input={0};
  int e=nc_init(&control,GPU_APB_BASE);
  if(e) {bsp_printf("V3_CONTROL,unavailable=%d; use frozen R7 firmware\r\n",e);return 1;}
+#if V3_HUD_DIRECT
+ invalidate_physical_hud();
+ int hud_direct_enabled=1;
+ #if V3_PROBE_FRAMES
+ uint32_t direct_choice=*(volatile uint32_t *)(uintptr_t)V3_HUD_DIRECT_WORD;
+ if(direct_choice>1u)return 1;
+ hud_direct_enabled=direct_choice==1u;
+ #endif
+ bsp_printf("V3_HUD_DIRECT,enabled=%d\r\n",hud_direct_enabled);
+#endif
 #if V3_FRAME_LIST
  gpu_frame_list list_device;
  e=gpu_frame_list_init(&list_device,gpu,network);if(e)return 1;
@@ -172,6 +209,16 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  int list_enabled=list_device.present;
  #endif
  bsp_printf("V3_FRAME_LIST,present=%d,enabled=%d\r\n",list_device.present,list_enabled);
+ #if V3_HUD_LIST
+ int hud_list_enabled=list_enabled;
+  #if V3_PROBE_FRAMES
+ uint32_t hud_choice=*(volatile uint32_t *)(uintptr_t)V3_HUD_LIST_WORD;
+ if(hud_choice>1u)return 1;
+ hud_list_enabled=hud_list_enabled && hud_choice==1u;
+  #endif
+ if(hud_list_enabled) {e=hud_gpu_list_init(&list_device,network);if(e)return 1;}
+ bsp_printf("V3_HUD_LIST,enabled=%d\r\n",hud_list_enabled);
+ #endif
 #endif
 #if V3_PROBE_FRAMES
  e=v3_runtime_init(runtime,V3_START_COUNT,7,V3_RESOURCE_EPOCH);
@@ -325,11 +372,18 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   if(results.generation!=runtime->scene_generation) {
    v3_scene_metrics_transition(&results,runtime->scene_generation,menu);
    window=(perf_window){0};frame=0;hud_cache->valid=0;game_menu_invalidate(&menu_cache);
+   #if V3_HUD_DIRECT
+   invalidate_physical_hud();
+   #endif
    nc_discard_pending_telemetry(&control);last_report=now_ms()-V3_TELEMETRY_DEFAULT_MS;
    previous_logic=logic;start=gpu_platform_cycles();
    bsp_printf("V3_SCENE,phase=%s,level=%d,count=%d,generation=%d,reason=%d\r\n",menu?"MENU":"PLAY",runtime->level,menu?0:runtime->game.count,runtime->scene_generation,runtime->menu_reason);
   }
-  if(mode!=previous_mode) {window=(perf_window){0};frame=0;previous_mode=(uint8_t)mode;hud_cache->valid=0;if(mode==V3_MODE_CPU) {results.cpu_fresh=0;results.pending_cpu_fps=results.pending_cpu_us=0;}}
+  if(mode!=previous_mode) {window=(perf_window){0};frame=0;previous_mode=(uint8_t)mode;hud_cache->valid=0;
+   #if V3_HUD_DIRECT
+   invalidate_physical_hud(); /* CPU scene writes the full framebuffer. */
+   #endif
+   if(mode==V3_MODE_CPU) {results.cpu_fresh=0;results.pending_cpu_fps=results.pending_cpu_us=0;}}
 #if V3_COPY_AHEAD
   int ahead=copy_ahead && !menu && mode!=V3_MODE_CPU;
   if(ahead && !background_issued) {e=copy_ahead_begin(gpu,buffers->back,network,&background,&background_tag,V3_POLLS);if(e)break;}
@@ -393,10 +447,33 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
 #if V3_DETAIL_PROBE
   uint64_t detail_hud_start=gpu_platform_cycles();
 #endif
+  #if V3_HUD_LIST
+  if(hud_list_enabled && mode!=V3_MODE_CPU) {
+   /* Scene batch above has retired. This exact bank can now be reused for
+    * glyph updates followed by one complete HUD Copy, before PRESENT. */
+   e=hud_render_gpu_list(&list_device,&metrics,hud_cache,overlay,buffers->back,
+    list_address,runtime->scene_generation,V3_POLLS);
+   if(e)break;
+  } else {
+  #endif
+  #if V3_HUD_DIRECT
+  if(hud_direct_enabled && mode!=V3_MODE_CPU) {
+   /* All GPU scene/menu/WIN writers above are clipped to y>=72 and retired.
+    * Keep independent physical A/B histories; never skip based on front/back. */
+   e=hud_render_gpu_direct(gpu,&metrics,&physical_hud,overlay,buffers->back,V3_POLLS);
+   if(e)break;
+  } else {
+  #endif
   e=mode==V3_MODE_CPU?hud_update_cache(&metrics,hud_cache,overlay):hud_update_gpu_cache(gpu,&metrics,hud_cache,overlay,V3_POLLS);
   if(e) break;
   gpu_platform_sync();e=hud_cached_command(buffers->back,hud_cache,&overlay->commands[0]);if(e) break;
   e=mode==V3_MODE_CPU?perf_render_cpu(overlay->commands,1):perf_render_gpu(gpu,overlay->commands,1,V3_POLLS);if(e) break;
+  #if V3_HUD_DIRECT
+  }
+  #endif
+  #if V3_HUD_LIST
+  }
+  #endif
   gpu_platform_sync();uint64_t present_start=gpu_platform_cycles();
 #if V3_DETAIL_PROBE
   uint32_t detail_hud_us=us(present_start-detail_hud_start);

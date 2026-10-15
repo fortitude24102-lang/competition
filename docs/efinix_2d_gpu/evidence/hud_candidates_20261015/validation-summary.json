@@ -1,0 +1,79 @@
+{
+  "date": "2026-10-15",
+  "gpu_rtl": {
+    "command": "scripts/test-v3-gpu.ps1 -LogPath generated/verification/v3/hud-list-20261015/full-gpu-suite.log",
+    "passed": 83,
+    "suites": 18,
+    "failed": 0,
+    "aborted": 0,
+    "canceled": 0,
+    "ignored": 0,
+    "pending": 0,
+    "scope": "GPU only; not full SoC"
+  },
+  "software": {
+    "integration_c_suites": 23,
+    "udp_http_contracts": 27,
+    "damage_c_suites": 8,
+    "damage_golden_frames": 18000,
+    "instance_fields_r7": 12000,
+    "instance_fields_current_game": 9600,
+    "instance_full_pixel_samples": 3,
+    "guards": "PASS identity and build guards",
+    "reference_tests": "Expected assertions fail against old rendering paths; corrected fixtures pass"
+  },
+  "native_direct": {
+    "bin_sha256": "beec564204e66b64fd36dd1d62616f76244a470e004f2fc91e86281456e16956",
+    "result": "CAPACITY_QUALIFIED",
+    "sprites": 909,
+    "alpha_halos": 114,
+    "frames": 3600,
+    "fps_x100": 6010,
+    "max_work_us": 15615,
+    "max_wall_us": 16640,
+    "work_miss": 0,
+    "late": 0,
+    "new_underflows": 0,
+    "errors": 0,
+    "post_verify_hold_seconds": 5,
+    "descriptor_capacity": 1024
+  },
+  "native_reference": {
+    "bin_sha256": "8cf952e55e785629e3a835a75d2e9cb799014b7e4037bfe699aafecc81a54107",
+    "result": "NOT_QUALIFIED",
+    "script_exit": 1,
+    "last_target": 875,
+    "last_stage": 6,
+    "best": 0,
+    "statistics_frames": 3600,
+    "stored_window_work_miss": 0,
+    "stored_window_late": 0,
+    "stored_window_underflows": 0,
+    "stored_window_errors": 0,
+    "post_window_cadence_miss_observed": true,
+    "note": "Qualification invalidated after the stored3600 window; do not replace historical872 with875."
+  },
+  "ordinary_512": {
+    "list_probe": "59.9FPS in all four off/on/off/on groups;2 work misses and2 late presents each",
+    "direct_probe": "43.0FPS off /44.9FPS on; regression not localized; not enabled by default",
+    "old_path_recheck": "59.9FPS,2 misses/late",
+    "evidence": "cohorts.json"
+  },
+  "restore": {
+    "firmware_build": "0x20261013",
+    "hud_list": false,
+    "hud_direct": false,
+    "mode": "MENU",
+    "owned": false,
+    "flash_written": false,
+    "release_replaced": false,
+    "remote_pushed": false
+  },
+  "limitations": [
+    "Direct512 terminal probe regression cause unresolved",
+    "Direct full v3_demo_run CPU-to-GPU switch is not covered by automated host test; independent review minor retained",
+    "No new manual HDMI or board pixel comparison for the candidate",
+    "No full CPU600tick comparison, CPU mid-draw cancellation fix, physical disconnect, runtime stack high-water or30-minute endurance",
+    "Historical SoftwareDriverSpec/PangoBringupSpec exceptions not rerun or resolved"
+  ]
+}

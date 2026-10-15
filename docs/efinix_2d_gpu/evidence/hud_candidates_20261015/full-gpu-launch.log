@@ -1,0 +1,34 @@
+PASS preview512: tick=180 visible=512 commands=585 CRC=25d53afc
+PASS effects512: tick=180 alpha_commands=68 alpha_pixels=9732 hp=2 score=86 grazes=8
+PASS scenario: shield hp=2 protection=60 CRC=3b4c5822
+PASS scenario: game_over hp=0 protection=0 CRC=d53f8eb7
+PASS HUD cache: legible 5x7 glyphs, 4px gutters, bounded layout, exact pixels, text invalidation, A/B copy, DDR canary
+PASS GPU HUD glyphs and logo: exact raster, one changed digit=504B/one Copy, cache hit=zero commands, warning priority, CPU/GPU switch, A/B copy, partial failure recovery, canaries
+DAMAGE_ACCEPTANCE,PASS,mixed_cadence14,zero_miss,work,under,error,incomplete
+DAMAGE_SUITE,PASS,C_suites=8,golden_frames=18000,UBSan
+[info] - counts simultaneous Scanout and Asset grants against the Render wait bound
+[info] SparseDecoderSpec:
+[info] SparseDecoder
+[info] - decodes odd literal runs, row boundaries, and an all-transparent row under backpressure
+[info] - rejects a run crossing the row, an early row end, and non-zero odd-run padding
+[info] GpuFrontEndSpec:
+[info] official Sapphire GPU contract
+[info] - uses the APB and DDR addresses frozen by the official demo plan
+[info] CommandQueue
+[info] - stores exactly sixteen commands and preserves order across simultaneous dequeue and enqueue
+[info] CommandValidator
+[info] - rejects malformed commands before they can reach DDR
+[info] GpuApbRegs
+[info] - controls a validated idle-only texture cache and snapshots its traffic
+[info] - returns read data only in the APB access phase after a setup phase
+[info] - programs valid QoS hysteresis thresholds and rejects invalid writes without changing them
+[info] - reads identity, writes staging fields, submits atomically, and errors on invalid offsets or a full queue
+[info] - holds a coherent performance snapshot and emits one-cycle clear requests
+[info] Run completed in 27 minutes, 23 seconds.
+[info] Total number of tests run: 83
+[info] Suites: completed 18, aborted 0
+[info] Tests: succeeded 83, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.
+[success] Total time: 1649 s (0:27:29.0), completed Oct 15, 2026, 11:34:47 AM
+[PASS] GPU RTL simulation only; log: D:\ZYNQ\smallproject\.worktrees\pango-riscv-cpu\generated\verification\v3\hud-list-20261015\full-gpu-suite.log
+[NOT RUN] Board timing/FPS and full SoC tests; historical SoC exceptions remain separate.

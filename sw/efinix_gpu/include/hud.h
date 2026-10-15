@@ -65,5 +65,12 @@ int hud_update_cache(const hud_comparison *metrics,hud_raster_cache *cache,hud_c
 void hud_init_glyph_atlas(void);
 int hud_update_gpu_cache(gpu_device *device,const hud_comparison *metrics,
  hud_raster_cache *cache,hud_command_stream *scratch,uint32_t poll_limit);
+/* V3_HUD_DIRECT candidate. One history per PHYSICAL framebuffer, not per
+ * front/back role. Caller invalidates both on scene/mode/resource changes or
+ * any writer touching y<72, and retires the scene before calling. No PRESENT
+ * until success; the CPU comparison continues using the shared cache above. */
+typedef struct {hud_raster_cache buffers[2];} hud_framebuffer_cache;
+int hud_render_gpu_direct(gpu_device *device,const hud_comparison *metrics,
+ hud_framebuffer_cache *cache,hud_command_stream *scratch,uint32_t destination,uint32_t poll_limit);
 int hud_cached_command(uint32_t destination,const hud_raster_cache *cache,gpu_command *command);
 #endif
