@@ -14,7 +14,8 @@ class ScanoutDma(
     frameWidth: Int = GpuMemoryMap.FrameWidth,
     frameHeight: Int = GpuMemoryMap.FrameHeight,
     strideBytes: Int = GpuMemoryMap.FrameWidth * GpuMemoryMap.BytesPerPixel,
-    lowWatermark: Int = 256
+    lowWatermark: Int = 256,
+    enableWordPipeline: Boolean = false
 ) extends Module {
   require(frameWidth > 0 && frameHeight > 0)
   require(strideBytes >= frameWidth * GpuMemoryMap.BytesPerPixel)
@@ -32,7 +33,7 @@ class ScanoutDma(
   })
 
   private val reader = Module(new AxiReadEngine)
-  private val aligner = Module(new PixelReadAligner)
+  private val aligner = Module(new PixelReadAligner(continuousWords=enableWordPipeline))
   private val idle :: waitDemand :: startAligner :: startRead :: stream :: waitRead :: Nil = Enum(6)
   private val state = RegInit(idle)
   private val rowBase = Reg(UInt(32.W))

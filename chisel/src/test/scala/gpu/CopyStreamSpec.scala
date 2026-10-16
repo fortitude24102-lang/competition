@@ -7,9 +7,9 @@ import testutil.StableChiselSim
 
 class CopyStreamSpec extends AnyFunSpec with StableChiselSim with Matchers {
   describe("continuous Copy using the existing AXI engines") {
-    for (enabled <- Seq(true, false)) {
-    it(s"preserves bytes and delayed B completion with continuous Copy enabled=$enabled") {
-      simulate(new DenseBlitEngine(enableCopyStream = enabled)) { dut =>
+    for ((enabled, burstBuffer) <- Seq((true, false), (false, false), (true, true))) {
+    it(s"preserves bytes and delayed B completion with continuous Copy enabled=$enabled burstBuffer=$burstBuffer") {
+      simulate(new DenseBlitEngine(enableCopyStream = enabled, enableCopyBurstBuffer = burstBuffer)) { dut =>
         dut.io.command.valid.poke(false)
         dut.io.pixelRequest.ready.poke(false)
         dut.io.pixelResult.valid.poke(false)
@@ -146,8 +146,8 @@ class CopyStreamSpec extends AnyFunSpec with StableChiselSim with Matchers {
           }
           reads.toSeq shouldBe expectedReads
           writes.toSeq shouldBe expectedWrites
-          if (enabled && stride == width * 2) { peakBuffered should be > 1; peakBuffered should be <= 16 }
-          println(s"COPY enabled=$enabled tag=$tag fault=$fault words=$writtenWords AR=${reads.size} AW=${writes.size} cycles=$cycles fifo_peak=$peakBuffered r_gap=$readGaps w_gap=$writeGaps")
+          if (enabled && stride == width * 2) { peakBuffered should be > 1; peakBuffered should be <= (if(burstBuffer) 256 else 16) }
+          println(s"COPY enabled=$enabled burstBuffer=$burstBuffer tag=$tag fault=$fault words=$writtenWords AR=${reads.size} AW=${writes.size} cycles=$cycles fifo_peak=$peakBuffered r_gap=$readGaps w_gap=$writeGaps")
           // Completion is stable until acknowledged; idle must not accept a second command.
           dut.io.command.valid.poke(false)
           dut.io.command.ready.expect(false)

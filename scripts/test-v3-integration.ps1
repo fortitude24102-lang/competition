@@ -49,6 +49,10 @@ try {
  Check 'stripe plus list HUD real MENU/WIN routing'
  & python sw/efinix_gpu/tests/test_control_gateway.py
  Check 'real UDP/HTTP gateway contracts'
+ & python sw/efinix_gpu/tests/test_control_keepalive.py
+ Check 'independent collector heartbeat'
+ & powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-game-menu-board-cache.ps1
+ Check 'challenge collector freshness and cleanup'
  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/tests/test-game-probe-identity.ps1
  Check 'terminal cohort identity guard'
  }

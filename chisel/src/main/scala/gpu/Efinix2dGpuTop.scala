@@ -16,7 +16,8 @@ class ApbSlavePort extends Bundle {
 
 class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean = false,
   enableFrameLists: Boolean = false, enableKeyPrefetch: Boolean = false,
-  enableStripeScratchpad: Boolean = false) extends Module {
+  enableStripeScratchpad: Boolean = false, enableCopyBurstBuffer: Boolean = false,
+  enableScanoutWordPipeline: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val apb = new ApbSlavePort
     val axi = new Axi4MasterPort
@@ -44,8 +45,8 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   private val batch = if(enableFrameLists) Some(Module(new FrameListBatch)) else None
   private val assetRegs = Module(new AssetDmaRegs)
   private val assetWriter = Module(new AssetDmaWriter)
-  private val render = Module(new RenderEngine(enableCopyStream,enableFrameLists,enableKeyPrefetch))
-  private val scanout = Module(new ScanoutDma)
+  private val render = Module(new RenderEngine(enableCopyStream,enableFrameLists,enableKeyPrefetch,enableCopyBurstBuffer))
+  private val scanout = Module(new ScanoutDma(enableWordPipeline=enableScanoutWordPipeline))
   private val ddr = Module(new DdrQosArbiter)
   private val renderMemory = if(enableStripeScratchpad) {
     val scratch = Module(new StripeScratchpad)

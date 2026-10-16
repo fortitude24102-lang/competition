@@ -6,7 +6,8 @@ param(
  [Parameter(Mandatory=$true)][string]$OutDirectory,
  [switch]$LoadBit,
  [uint32]$ExpectedBuild=0x20261008,
- [switch]$PerformanceChallenge
+ [switch]$PerformanceChallenge,
+ [string]$Python='python'
 )
 # JTAG only. Real HTTP/UDP acknowledgements, not simulated game state.
 # Plane movement, death, replay completion and visual checks remain manual.
@@ -28,6 +29,49 @@ $serial=New-Object IO.Ports.SerialPort $SerialPort,115200,'None',8,'One'
 $serial.ReadTimeout=100
 $client=[guid]::NewGuid().ToString('N');$held=0;$action=0;$request=0;$acquired=$false
 $timer=[Diagnostics.Stopwatch]::StartNew();$lastKey=-1000.0;$lastStatus=-1000.0;$state=$null;$tail=''
+$keepalive=$null;[uint32]$challengeSession=0
+function Start-GameKeepalive {
+ if($script:keepalive -or !$script:acquired -or $script:held) {throw 'Keepalive requires the existing neutral collector owner'}
+ $info=New-Object Diagnostics.ProcessStartInfo
+ $info.FileName=(Get-Command $Python -CommandType Application -ErrorAction Stop).Source
+ $info.Arguments='-u "'+(Join-Path $PSScriptRoot 'control-keepalive.py')+'"'
+ $info.UseShellExecute=$false;$info.CreateNoWindow=$true
+ $info.RedirectStandardInput=$true;$info.RedirectStandardOutput=$true;$info.RedirectStandardError=$true
+ $script:keepalive=New-Object Diagnostics.Process
+ $script:keepalive.StartInfo=$info
+ if(!$script:keepalive.Start()) {throw 'Keepalive process did not start'}
+ # Token goes through a private pipe, never process arguments or logs.
+ $config=@{url=$GatewayUrl;body=@{token=$boot.token;client=$client;keys=0;action_sequence=$action;release=$false}}
+ $script:keepalive.StandardInput.WriteLine(($config|ConvertTo-Json -Depth 3 -Compress))
+ $script:keepalive.StandardInput.Flush()
+}
+function Stop-GameKeepalive {
+ if(!$script:keepalive) {return}
+ $child=$script:keepalive
+ try {
+  try {$child.StandardInput.Close()} catch {}
+  if(!$child.WaitForExit(2000)) {$child.Kill();$child.WaitForExit()}
+  ("KEEPALIVE_EXIT,code="+$child.ExitCode+"`n"+$child.StandardOutput.ReadToEnd()+$child.StandardError.ReadToEnd()) |
+   Out-File "$outPath/keepalive.log" -Encoding utf8
+ } finally {$child.Dispose();$script:keepalive=$null}
+}
+function Assert-ChallengeContinuity($snapshot,[uint32]$session) {
+ if(!$snapshot.stale -and ($snapshot.session -ne $session -or
+    ($snapshot.telemetry.raw.status_flags -band 0x3000) -ne 0x3000 -or
+    ($snapshot.telemetry.raw.status_flags -band 1024))) {
+  throw 'Challenge control session interrupted; raw capture retained, no qualification claimed'
+ }
+}
+function Assert-QualifiedPerformance($snapshot,[uint32]$session,[uint32]$best) {
+ if(!$snapshot -or $snapshot.stale -or !$snapshot.owned -or !$snapshot.acknowledged -or
+    $snapshot.session -ne $session -or $snapshot.telemetry.session -ne $session -or
+    !$snapshot.performance -or $snapshot.performance.stale -or $snapshot.performance.session -ne $session -or
+    !$best -or $snapshot.performance.best -ne $best -or $snapshot.performance.frames -ne 3600 -or
+    $snapshot.performance.stage -notin 4,5) {
+  throw 'Final qualification is missing/stale/interrupted; raw capture retained, no qualification claimed'
+ }
+ Assert-ChallengeContinuity $snapshot $session
+}
 function Capture {
  $chunk=$serial.ReadExisting()
  if($chunk) {
@@ -42,6 +86,7 @@ function Post($path,$body) {
 }
 function Tick {
  Capture
+ if($script:keepalive -and $script:keepalive.HasExited) {throw 'Independent collector heartbeat stopped; raw capture retained'}
  if($script:acquired -and $timer.Elapsed.TotalMilliseconds-$script:lastKey -ge 70) {
   $null=Post '/api/control' @{token=$boot.token;client=$client;keys=$script:held;action_sequence=$script:action;release=$false}
   $script:lastKey=$timer.Elapsed.TotalMilliseconds
@@ -50,6 +95,7 @@ function Tick {
   $script:state=Invoke-RestMethod "$GatewayUrl/api/status" -TimeoutSec 1
   [IO.File]::AppendAllText("$outPath/http.jsonl",($script:state|ConvertTo-Json -Depth 8 -Compress)+"`n")
   $script:lastStatus=$timer.Elapsed.TotalMilliseconds
+  if($script:challengeSession) {Assert-ChallengeContinuity $script:state $script:challengeSession}
   if(!$script:state.stale -and $script:state.telemetry -and
    ($script:state.telemetry.raw.gpu_error_delta -or $script:state.telemetry.raw.scanout_underflow_delta)) {throw 'Board health counter nonzero'}
  }
@@ -120,6 +166,8 @@ try {
   Wait { !$state.stale -and $state.telemetry.raw.simulation_tick -lt $resetTick -and
    $state.performance -and !$state.performance.best -and $state.performance.target -eq 64 } 3 'R clears run and score'
   [IO.File]::AppendAllText("$outPath/transitions.log","PASS challenge lease retirement/new session/R reset`n")
+  $challengeSession=[uint32]$state.session
+  Start-GameKeepalive
   Wait { !$state.stale -and $state.performance -and !$state.performance.stale -and $state.performance.stage -ge 4 } 900 'automatic search and full3600 verification'
   if($state.performance.stage -eq 6 -or !$state.performance.best -or $state.performance.frames -ne 3600) {throw 'Challenge did not produce a qualified full3600 result'}
   $verifiedBest=$state.performance.best
@@ -129,18 +177,23 @@ try {
    if(!$state.stale -and $state.performance -and !$state.performance.stale -and
        ($state.performance.stage -notin 4,5 -or $state.performance.best -ne $verifiedBest)) {throw 'Qualification invalidated after completion'}
   }
+  Assert-QualifiedPerformance $state $challengeSession $verifiedBest
   $state|ConvertTo-Json -Depth 8 | Out-File "$outPath/performance-final.json" -Encoding utf8
   "PASS real performance: best=$($state.performance.best),stage=$($state.performance.stage),frames=$($state.performance.frames)"
+  $challengeSession=0
   Game 'menu' 0
   Wait { !$state.performance } 2 'old challenge result cleared on MENU'
   Wait { $tail -match 'PERF_RESULT,.*frames=3600' } 2 'final counters emitted outside timed workload'
  }
  'PASS real four-tier START/MENU ACK+snapshot. Movement/death/visual/replay still need separate evidence.'
 } finally {
- if($acquired) {
-  try {$null=Post '/api/control' @{token=$boot.token;client=$client;keys=0;action_sequence=$action;release=$true}} catch {Write-Warning 'Release failed; board lease expires in 250ms'}
+ $challengeSession=0
+ try {Stop-GameKeepalive} finally {
+  if($acquired) {
+   try {$null=Post '/api/control' @{token=$boot.token;client=$client;keys=0;action_sequence=$action;release=$true}} catch {Write-Warning 'Release failed; board lease expires in 250ms'}
+  }
+  if($serial.IsOpen) {$serial.Close()};$serial.Dispose()
+  Get-FileHash -LiteralPath $binPath | Format-List | Out-File "$outPath/bin-hash.txt"
+  if($LoadBit) {Get-FileHash -LiteralPath $Bit | Format-List | Out-File "$outPath/bit-hash.txt"}
  }
- if($serial.IsOpen) {$serial.Close()};$serial.Dispose()
- Get-FileHash -LiteralPath $binPath | Format-List | Out-File "$outPath/bin-hash.txt"
- if($LoadBit) {Get-FileHash -LiteralPath $Bit | Format-List | Out-File "$outPath/bit-hash.txt"}
 }

@@ -11,7 +11,7 @@ class FrontendPerfEvents extends Bundle {
 }
 
 class RenderEngine(enableCopyStream: Boolean = true, countFrontend: Boolean = false,
-  enableKeyPrefetch: Boolean = false) extends Module {
+  enableKeyPrefetch: Boolean = false, enableCopyBurstBuffer: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val command = Flipped(Decoupled(new GpuCommand))
     val vblank = Input(Bool())
@@ -48,7 +48,7 @@ class RenderEngine(enableCopyStream: Boolean = true, countFrontend: Boolean = fa
 
   private val queue = Module(new CommandQueue)
   private val validator = Module(new CommandValidator)
-  private val blit = Module(new DenseBlitEngine(enableCopyStream, enableKeyPrefetch))
+  private val blit = Module(new DenseBlitEngine(enableCopyStream, enableKeyPrefetch, enableCopyBurstBuffer))
   private val sparse = Module(new SparseBlitEngine)
   private val swap = Module(new FrameSwapController)
   private val pixel = Module(new PixelPipeHarness)

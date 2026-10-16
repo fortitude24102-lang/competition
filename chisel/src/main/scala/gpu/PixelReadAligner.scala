@@ -13,7 +13,7 @@ class AlignedPixel extends Bundle {
   val last = Bool()
 }
 
-class PixelReadAligner extends Module {
+class PixelReadAligner(continuousWords: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val start = Flipped(Decoupled(new PixelReadConfig))
     val input = Flipped(Decoupled(UInt(32.W)))
@@ -32,7 +32,9 @@ class PixelReadAligner extends Module {
 
   doneReg := false.B
   io.start.ready := !active && !buffered
-  io.input.ready := active && !buffered
+  // Replace the word on its final halfword handshake, never on a row's final pixel.
+  private val replaceWord = continuousWords.B && io.output.fire && upperPhase && remaining =/= 1.U
+  io.input.ready := active && (!buffered || replaceWord)
   io.output.valid := active && buffered
   io.output.bits.pixel := Mux(upperPhase, word(31, 16), word(15, 0))
   io.output.bits.last := remaining === 1.U
@@ -64,7 +66,7 @@ class PixelReadAligner extends Module {
     }.otherwise {
       remaining := remaining - 1.U
       when(upperPhase) {
-        buffered := false.B
+        buffered := io.input.fire
       }.otherwise {
         upperPhase := true.B
       }

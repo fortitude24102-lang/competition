@@ -6,7 +6,7 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import testutil.StableChiselSim
 
-class ScanoutDmaProductionHarness extends Module {
+class ScanoutDmaProductionHarness(enableWordPipeline: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val done = Output(Bool())
     val mismatch = Output(Bool())
@@ -19,7 +19,7 @@ class ScanoutDmaProductionHarness extends Module {
     val frameCrc = Output(UInt(32.W))
   })
 
-  private val scanout = Module(new ScanoutDma)
+  private val scanout = Module(new ScanoutDma(enableWordPipeline=enableWordPipeline))
   private val base = GpuMemoryMap.FramebufferA.U(32.W)
   private val readAddress = RegInit(base)
   private val readBeats = RegInit(0.U(9.W))

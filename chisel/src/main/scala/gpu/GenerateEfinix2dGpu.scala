@@ -9,6 +9,8 @@ object GenerateEfinix2dGpu extends App {
   private val lists = args.contains("--frame-lists")
   private val keyPrefetch = args.contains("--key-prefetch")
   private val stripes = args.contains("--stripe-scratchpad")
-  ChiselStage.emitSystemVerilogFile(new Efinix2dGpuTop(!legacyCopy, instances,lists,keyPrefetch,stripes),
-    args.filterNot(a => Set("--legacy-copy", "--instances", "--frame-lists", "--key-prefetch", "--stripe-scratchpad")(a)))
+  private val burstBuffer = args.contains("--copy-burst-buffer")
+  private val scanoutPipeline = args.contains("--scanout-word-pipeline")
+  ChiselStage.emitSystemVerilogFile(new Efinix2dGpuTop(!legacyCopy, instances,lists,keyPrefetch,stripes,burstBuffer,scanoutPipeline),
+    args.filterNot(a => Set("--legacy-copy", "--instances", "--frame-lists", "--key-prefetch", "--stripe-scratchpad", "--copy-burst-buffer", "--scanout-word-pipeline")(a)))
 }

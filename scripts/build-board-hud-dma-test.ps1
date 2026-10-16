@@ -1,5 +1,5 @@
 param(
- [ValidateSet('hud','key','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','qos-sweep','live-phases','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances','replay-crc','frame-list','stripes')][string]$Test='hud',
+ [ValidateSet('hud','key','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','qos-sweep','live-phases','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances','replay-crc','frame-list','stripes','sprite-phases')][string]$Test='hud',
  [string]$RiscvGcc='D:/efinity/risc_v_gcc/toolchain/bin/riscv-none-elf-gcc.exe',
  [string]$Soc='D:/efinity_builds/competition_day1_20260906/sapphire/soc',
  [switch]$InstanceExpandProbe,
@@ -45,6 +45,7 @@ try {
   'replay-crc' {'generated/verification/v3/replay-crc/board'}
   'frame-list' {'generated/verification/v3/frame-list/board'}
   'stripes' {'generated/verification/v3/rows-stripes-20261016/board'}
+  'sprite-phases' {'generated/verification/v3/sprite-phases-20261016/board'}
  }
  if($InstanceExpandProbe) { $out+='-expand-probe' }
  if($OutDirectory) {
@@ -83,6 +84,7 @@ try {
   'replay-crc' {'sw/efinix_gpu/tests/test_board_replay_crc.c'}
   'frame-list' {'sw/efinix_gpu/tests/test_board_frame_list.c'}
   'stripes' {'sw/efinix_gpu/tests/test_board_stripes.c'}
+  'sprite-phases' {'sw/efinix_gpu/tests/test_board_sprite_phases.c'}
  }
  [string[]]$probeFlags=@()
  if($InstanceExpandProbe) { $probeFlags=@('-DINSTANCE_EXPAND_PROBE=1') }

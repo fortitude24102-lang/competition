@@ -3,7 +3,8 @@ package gpu
 import chisel3._
 import chisel3.util._
 
-class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boolean = false) extends Module {
+class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boolean = false,
+  enableCopyBurstBuffer: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val command = Flipped(Decoupled(new GpuCommand))
     val pixelRequest = Decoupled(new PixelTransaction)
@@ -32,7 +33,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   private val alphaBackgroundBuffer = Module(new Queue(UInt(32.W), 33))
   private val packer = Module(new PixelWritePacker)
   private val writer = Module(new AxiWriteEngine)
-  private val copyStream = Module(new CopyStreamEngine)
+  private val copyStream = Module(new CopyStreamEngine(if(enableCopyBurstBuffer) 256 else 16))
   private val keyStream = if (enableKeyPrefetch) Some(Module(new CachedKeyStream)) else None
   private val readAddressArbiter = Module(new RRArbiter(new Axi4Address, 2))
 

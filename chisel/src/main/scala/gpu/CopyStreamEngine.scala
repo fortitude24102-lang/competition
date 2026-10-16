@@ -4,9 +4,10 @@ import chisel3._
 import chisel3.util._
 
 /** Continuous Copy scheduler. Reuses DenseBlit's AXI engines and their burst limits.
-  * A 16-word FIFO decouples R from W/B stalls; this is not a multi-outstanding CDMA.
+  * A bounded FIFO decouples R from W/B stalls; this is not a multi-outstanding CDMA.
   */
-class CopyStreamEngine extends Module {
+class CopyStreamEngine(bufferWords: Int = 16) extends Module {
+  require(bufferWords == 16 || bufferWords == 256)
   val io = IO(new Bundle {
     val command = Flipped(Decoupled(new GpuCommand))
     val eligible = Output(Bool())
@@ -29,7 +30,7 @@ class CopyStreamEngine extends Module {
   private val readFinished = RegInit(false.B)
   private val writeFinished = RegInit(false.B)
   private val errorSeen = RegInit(false.B)
-  private val fifo = Module(new Queue(UInt(32.W), 16))
+  private val fifo = Module(new Queue(UInt(32.W), bufferWords))
 
   private val incoming = io.command.bits
   private val rowBytes = incoming.widthPixels << 1
