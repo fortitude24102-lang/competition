@@ -8,6 +8,15 @@
 #include "render_phase_health.h"
 #include "bsp.h"
 #include "network_assets.h"
+#ifndef V3_STRIPE_RENDER
+#define V3_STRIPE_RENDER 0
+#endif
+#if V3_STRIPE_RENDER
+#include "gpu_stripes.h"
+#if !V3_FRAME_LIST
+#error "Stripe render requires FrameList"
+#endif
+#endif
 #include "../assets/hud/hud_logo_catalog.h"
 #ifndef V3_HUD_DIRECT
 #define V3_HUD_DIRECT 0
@@ -42,7 +51,9 @@ static void invalidate_physical_hud(void) {
 #error "Performance challenge requires FrameList"
 #endif
 #endif
-#if V3_HUD_LIST || V3_HUD_DIRECT
+#if V3_STRIPE_RENDER
+#define V3_BUILD_ID 0x20261016u
+#elif V3_HUD_LIST || V3_HUD_DIRECT
 #define V3_BUILD_ID 0x20261015u
 #elif V3_PERFORMANCE_CHALLENGE
 #define V3_BUILD_ID 0x20261015u
@@ -209,6 +220,12 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  int list_enabled=list_device.present;
  #endif
  bsp_printf("V3_FRAME_LIST,present=%d,enabled=%d\r\n",list_device.present,list_enabled);
+ #if V3_STRIPE_RENDER
+ if(!list_enabled || !gpu_stripes_supported(gpu)) {
+  bsp_printf("V3_STRIPES,unsupported; candidate requires stripe BIT\r\n");return 1;
+ }
+ bsp_printf("V3_STRIPES,enabled=1,height=8\r\n");
+ #endif
  #if V3_HUD_LIST
  int hud_list_enabled=list_enabled;
   #if V3_PROBE_FRAMES
@@ -246,6 +263,9 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  int copy_ahead=*(volatile uint32_t *)(uintptr_t)V3_COPY_AHEAD_WORD==1u;
  #else
  int copy_ahead=1;
+ #endif
+ #if V3_STRIPE_RENDER
+ copy_ahead=0; /* Strip load replaces the full-frame Copy, never issue both. */
  #endif
  bsp_printf("V3_COPY_AHEAD,enabled=%d\r\n",copy_ahead);
  #if V3_LOGIC_COPY
@@ -392,6 +412,9 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
 #if V3_FRAME_LIST
   int list_frame=0;
   uint32_t list_address=buffers->back==GPU_FRAMEBUFFER_A?GPU_FRAME_LIST_BANK_A:GPU_FRAME_LIST_BANK_B;
+  #if V3_STRIPE_RENDER
+  list_address=GPU_STRIPE_SCENE_ADDR;
+  #endif
 #endif
   if(menu) {scene->count=scene->visible=scene->alpha_commands=scene->alpha_pixels=0;}
 #if V3_FRAME_LIST
@@ -400,7 +423,9 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
    gpu_instance_stats s;
    /* This frame owns BOTH banks until all scene batches retire. Always start
     * at arena A, even with framebuffer B; state starts just after bank B. */
+   #if !V3_STRIPE_RENDER
    list_address=GPU_FRAME_LIST_BANK_A;
+   #endif
    e=pc_build(challenge,buffers->back,network,(gpu_instance *)(uintptr_t)list_address,
     GPU_FRAME_LIST_ARENA_ITEMS,&s);if(e)break;
    scene->count=s.count;scene->visible=s.visible;scene->scene_pixels=s.scene_pixels;
@@ -420,6 +445,12 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   gpu_platform_sync();uint64_t render_start=gpu_platform_cycles();
 #if V3_FRAME_LIST
   if(list_frame) {
+   #if V3_STRIPE_RENDER
+   e=gpu_stripes_render(&list_device,network,buffers->back,
+    (const gpu_instance *)(uintptr_t)list_address,scene->count,
+    (gpu_instance *)(uintptr_t)GPU_STRIPE_BINS_ADDR,GPU_STRIPE_BIN_ITEMS,
+    runtime->scene_generation,V3_POLLS);
+   #else
    unsigned skip=0;
    #if V3_COPY_AHEAD
    if(ahead) {e=gpu_wait_tag(gpu,background_tag,V3_POLLS);if(e)break;skip=1;}
@@ -430,6 +461,7 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
    else
    #endif
     e=gpu_frame_list_render(&list_device,list_address+16u*skip,scene->count-skip,runtime->scene_generation,V3_POLLS);
+   #endif
   } else
 #endif
   e=menu?game_menu_draw(gpu,&menu_cache,buffers->back==GPU_FRAMEBUFFER_A?0u:1u,
@@ -440,6 +472,10 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
 #endif
    perf_render_gpu(gpu,scene->commands,scene->count,V3_POLLS);
   gpu_platform_sync();uint32_t render_us=us(gpu_platform_cycles()-render_start);if(e) break;
+  #if V3_STRIPE_RENDER
+  /* MENU/WIN do not enter list_frame. Restore the HUD bank on EVERY scene path. */
+  list_address=buffers->back==GPU_FRAMEBUFFER_A?GPU_FRAME_LIST_BANK_A:GPU_FRAME_LIST_BANK_B;
+  #endif
   metrics=(hud_comparison){.cpu_fps_x10=results.cpu_fps,.gpu_fps_x10=results.gpu_fps,.cpu_render_us=results.cpu_us,.gpu_render_us=results.gpu_us,
    .cpu_valid=(uint8_t)(results.cpu_fps!=0),.gpu_valid=(uint8_t)(!menu && results.gpu_fps!=0),.gpu_active=(uint8_t)(mode!=V3_MODE_CPU),
    .network_ready=(uint8_t)network,.bullet_demo=1,.gameplay=(uint8_t)!menu,.sprites=(uint16_t)scene->visible,

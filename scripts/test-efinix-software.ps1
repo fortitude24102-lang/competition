@@ -20,6 +20,7 @@ param(
     [switch]$ReplayCrcNibble,
     [switch]$ReplaySealBudget,
     [switch]$FrameList,
+    [switch]$StripeRender,
     [switch]$PerformanceChallenge,
     [switch]$HudList,
     [switch]$HudDirect,
@@ -43,6 +44,8 @@ try {
     if ($ReplayCrcNibble -and (!$Interactive -or !$OutDirectory -or $PublishRelease)) {throw 'ReplayCrcNibble requires separate Interactive candidate output; no release overwrite'}
     if ($ReplaySealBudget -and (!$ReplayCrcNibble -or !$Interactive -or !$OutDirectory -or $PublishRelease)) {throw 'ReplaySealBudget requires separate nibble-CRC Interactive candidate; no release overwrite'}
     if ($FrameList -and (!$Interactive -or !$OutDirectory -or $PublishRelease -or $ObjectCapacity -ne 512)) {throw 'FrameList requires separate 512-capacity Interactive candidate; no release overwrite'}
+    if ($StripeRender -and (!$FrameList -or !$Interactive -or !$OutDirectory -or $PublishRelease)) {throw 'StripeRender requires separate FrameList Interactive candidate'}
+    if ($StripeRender -and (!$PSBoundParameters.ContainsKey('NetworkLocalIp') -or !$PSBoundParameters.ContainsKey('NetworkPeerIp'))) {throw 'StripeRender requires explicit network addresses'}
     if ($HudList -and (!$FrameList -or !$Interactive -or !$OutDirectory -or $PublishRelease)) {throw 'HudList requires separate FrameList Interactive candidate; no release overwrite'}
     if ($HudList -and (!$PSBoundParameters.ContainsKey('NetworkLocalIp') -or !$PSBoundParameters.ContainsKey('NetworkPeerIp'))) {throw 'HudList requires explicit network addresses'}
     if ($HudList -and $HudDirect) {throw 'Choose one HUD candidate'}
@@ -127,6 +130,7 @@ try {
     if ($ReplayCrcNibble) { $profileFlag += '-DREPLAY_CRC_NIBBLE=1' }
     if ($ReplaySealBudget) { $profileFlag += '-DV3_REPLAY_SEAL_BUDGET=1' }
     if ($FrameList) { $profileFlag += '-DV3_FRAME_LIST=1' }
+    if ($StripeRender) { $profileFlag += '-DV3_STRIPE_RENDER=1' }
     if ($PerformanceChallenge) { $profileFlag += '-DV3_PERFORMANCE_CHALLENGE=1' }
     if ($HudList) { $profileFlag += '-DV3_HUD_LIST=1' }
     if ($HudDirect) { $profileFlag += '-DV3_HUD_DIRECT=1' }

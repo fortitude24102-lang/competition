@@ -43,6 +43,10 @@ try {
   & wsl "./$out/test_$($test.name)" | Tee-Object "$out/test_$($test.name).log"
   Check $test.name
  }
+ & wsl bash scripts/test-gpu-stripes.sh
+ Check 'stable stripe bins and exact Alpha/Key pixels'
+ & wsl bash scripts/test-stripe-hud-route.sh
+ Check 'stripe plus list HUD real MENU/WIN routing'
  & python sw/efinix_gpu/tests/test_control_gateway.py
  Check 'real UDP/HTTP gateway contracts'
  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/tests/test-game-probe-identity.ps1
