@@ -6,10 +6,32 @@ import org.scalatest.matchers.should.Matchers
 import testutil.StableChiselSim
 
 private final case class TextureCacheRunResult(
-  readIds: Seq[Int], writes: Seq[(BigInt, BigInt, Boolean)])
+  readIds: Seq[Int], writes: Seq[(BigInt, BigInt, Boolean)], cycles: Int)
 
 class TextureCacheBlitSpec extends AnyFunSpec with StableChiselSim with Matchers {
   describe("GPU texture-cache blits") {
+    it("prefetches packed multirow Key without changing pixels or clipped fallback") {
+      val results = Seq(false, true).map { enabled =>
+        var result: TextureCacheRunResult = null
+        simulate(new RenderEngine(enableKeyPrefetch = enabled)) { d =>
+          val src = GpuMemoryMap.DenseAssets.longValue
+          val words = (0 until 32).map(i => (src + i * 4L) ->
+            (if (i % 3 == 0) 0xbeefbeefL else 0x12345678L)).toMap
+          init(d); preload(d, words, src, 128)
+          result = run(d, words, GpuOpcode.ColorKey, src, 0x02000102L, 8, 0xbeef, 255,
+            height = 8, dstStride = 1920)
+          result.readIds shouldBe empty
+          d.io.perfCacheBytes.expect(128)
+          // Width7/source+2 cannot use the packed row path; Alpha still uses the old pipeline.
+          run(d, words, GpuOpcode.ColorKey, src + 2, 0x02010102L, 7, 0xbeef, 255).readIds shouldBe empty
+          run(d, words, GpuOpcode.Alpha, src, 0x02020100L, 2, 0, 128).readIds shouldBe Seq(1)
+        }
+        result
+      }
+      results(1).writes shouldBe results(0).writes
+      results(1).cycles should be < results(0).cycles
+      info(s"cached 8x8 strided Key cycles: legacy=${results(0).cycles}, prefetch=${results(1).cycles}")
+    }
     it("matches DDR pixels for aligned and halfword Key plus Alpha without foreground AR") {
       simulate(new RenderEngine) { dut =>
         val atlas = GpuMemoryMap.DenseAssets.longValue
@@ -157,7 +179,7 @@ class TextureCacheBlitSpec extends AnyFunSpec with StableChiselSim with Matchers
                   src: Long, dst: Long, width: Int, key: Int,
                   alpha: Int, readErrorId: Option[Int] = None,
                   writeError: Boolean = false,
-                  expectedError: Int = GpuError.None): TextureCacheRunResult = {
+                  expectedError: Int = GpuError.None, height: Int = 1, dstStride: Int = 0): TextureCacheRunResult = {
     var submitted = false
     var completed = false
     var readAddress = 0L
@@ -168,16 +190,18 @@ class TextureCacheBlitSpec extends AnyFunSpec with StableChiselSim with Matchers
     val readIds = collection.mutable.ArrayBuffer.empty[Int]
     val writes = collection.mutable.ArrayBuffer.empty[(BigInt, BigInt, Boolean)]
 
-    for (_ <- 0 until 1200 if !completed) {
+    var cycles = 0
+    for (_ <- 0 until 2400 if !completed) {
+      cycles += 1
       dut.io.command.valid.poke(!submitted)
       dut.io.command.bits.poke(0.U.asTypeOf(new GpuCommand))
       dut.io.command.bits.op.poke(op)
       dut.io.command.bits.srcAddr.poke(src)
       dut.io.command.bits.dstAddr.poke(dst)
       dut.io.command.bits.srcStride.poke(width * 2)
-      dut.io.command.bits.dstStride.poke(width * 2)
+      dut.io.command.bits.dstStride.poke(if(dstStride == 0) width * 2 else dstStride)
       dut.io.command.bits.widthPixels.poke(width)
-      dut.io.command.bits.heightPixels.poke(1)
+      dut.io.command.bits.heightPixels.poke(height)
       dut.io.command.bits.colorKey.poke(key)
       dut.io.command.bits.alpha.poke(alpha)
       dut.io.command.bits.tag.poke(dst & 0xffff)
@@ -229,6 +253,6 @@ class TextureCacheBlitSpec extends AnyFunSpec with StableChiselSim with Matchers
     dut.io.axi.r.valid.poke(false)
     dut.io.axi.b.valid.poke(false)
     completed shouldBe true
-    TextureCacheRunResult(readIds.toSeq, writes.toSeq)
+    TextureCacheRunResult(readIds.toSeq, writes.toSeq, cycles)
   }
 }
