@@ -2,6 +2,8 @@ param(
   [string[]]$Suite = @(),
   [string]$LogPath = '',
   [switch]$Generate,
+  [switch]$KeyPrefetch,
+  [switch]$StripeScratchpad,
   [switch]$SoftwareOnly
 )
 $ErrorActionPreference = 'Stop'
@@ -14,6 +16,7 @@ $LogPath = [IO.Path]::GetFullPath($LogPath)
 New-Item -ItemType Directory -Force -Path (Split-Path $LogPath) | Out-Null
 $wslRoot = '/mnt/' + $projectRoot.Substring(0, 1).ToLowerInvariant() + $projectRoot.Substring(2).Replace('\', '/')
 if ($SoftwareOnly -and ($Generate -or $Suite.Count)) { throw 'SoftwareOnly cannot select/generate RTL.' }
+if (($KeyPrefetch -or $StripeScratchpad) -and !$Generate) { throw 'Candidate hardware switches require Generate' }
 if (Test-Path (Join-Path $projectRoot 'scripts/test-v3-damage.sh')) {
  $softwareLog=$LogPath+'.software.log'
  $savedPreference=$ErrorActionPreference
@@ -32,7 +35,11 @@ $environment = $environment.Substring(0, $environment.IndexOf('bash "$project_ro
 $compileFilter = 'set Compile / unmanagedSources := (Compile / unmanagedSources).value.filter(_.getPath.contains("/gpu/"))'
 $testFilter = 'set Test / unmanagedSources := (Test / unmanagedSources).value.filter(f => f.getPath.contains("/gpu/") || f.getPath.contains("/testutil/"))'
 $test = if ($Suite.Count) { 'testOnly ' + ($Suite -join ' ') } else { 'test' }
-$generateCommand = if ($Generate) { " 'runMain gpu.GenerateEfinix2dGpu --target-dir ../generated/verification/v3/copy/rtl --split-verilog'" } else { '' }
+$candidateFlags = if ($KeyPrefetch -or $StripeScratchpad) { ' --instances --frame-lists' } else { '' }
+if ($KeyPrefetch) { $candidateFlags += ' --key-prefetch' }
+if ($StripeScratchpad) { $candidateFlags += ' --stripe-scratchpad' }
+$rtlOutput = if ($StripeScratchpad) { 'rows-stripes-20261016/rtl' } elseif ($KeyPrefetch) { 'rows-stripes-20261016/rtl-key' } else { 'copy/rtl' }
+$generateCommand = if ($Generate) { " 'runMain gpu.GenerateEfinix2dGpu --target-dir ../generated/verification/v3/$rtlOutput --split-verilog$candidateFlags'" } else { '' }
 $command = "set -euo pipefail`n" + $environment + "`ncd '$wslRoot/chisel'`nexec bash /mnt/d/Chisel-environment/sbt/bin/sbt '$compileFilter' '$testFilter' '$test'$generateCommand`n"
 # Windows PowerShell 5 turns native stderr (including WSL proxy warnings) into
 # ErrorRecords. Capture those warnings without mistaking them for test failure.

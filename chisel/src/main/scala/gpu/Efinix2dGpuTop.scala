@@ -15,7 +15,8 @@ class ApbSlavePort extends Bundle {
 }
 
 class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean = false,
-  enableFrameLists: Boolean = false) extends Module {
+  enableFrameLists: Boolean = false, enableKeyPrefetch: Boolean = false,
+  enableStripeScratchpad: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val apb = new ApbSlavePort
     val axi = new Axi4MasterPort
@@ -38,14 +39,19 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   })
 
   private val hasFrontend = enableInstances || enableFrameLists
-  private val regs = Module(new GpuApbRegs(hasFrontend,enableFrameLists))
+  private val regs = Module(new GpuApbRegs(hasFrontend,enableFrameLists,enableStripeScratchpad))
   private val instances = if (hasFrontend) Some(Module(new InstanceStream(enableFrameLists))) else None
   private val batch = if(enableFrameLists) Some(Module(new FrameListBatch)) else None
   private val assetRegs = Module(new AssetDmaRegs)
   private val assetWriter = Module(new AssetDmaWriter)
-  private val render = Module(new RenderEngine(enableCopyStream,enableFrameLists))
+  private val render = Module(new RenderEngine(enableCopyStream,enableFrameLists,enableKeyPrefetch))
   private val scanout = Module(new ScanoutDma)
   private val ddr = Module(new DdrQosArbiter)
+  private val renderMemory = if(enableStripeScratchpad) {
+    val scratch = Module(new StripeScratchpad)
+    scratch.io.in <> render.io.axi
+    scratch.io.ddr
+  } else render.io.axi
   private val lastDoneTag = RegInit(0.U(16.W))
   private val lastError = RegInit(GpuError.None.U(8.W))
   private val irq = RegInit(false.B)
@@ -196,16 +202,16 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
 
   if(enableFrameLists) {
     val b = batch.get
-    ddr.io.render.aw <> render.io.axi.aw;ddr.io.render.w <> render.io.axi.w
-    render.io.axi.b <> ddr.io.render.b
-    ddr.io.render.ar.valid := Mux(b.io.fetching,b.io.axiAr.valid,render.io.axi.ar.valid)
-    ddr.io.render.ar.bits := Mux(b.io.fetching,b.io.axiAr.bits,render.io.axi.ar.bits)
+    ddr.io.render.aw <> renderMemory.aw;ddr.io.render.w <> renderMemory.w
+    renderMemory.b <> ddr.io.render.b
+    ddr.io.render.ar.valid := Mux(b.io.fetching,b.io.axiAr.valid,renderMemory.ar.valid)
+    ddr.io.render.ar.bits := Mux(b.io.fetching,b.io.axiAr.bits,renderMemory.ar.bits)
     b.io.axiAr.ready := ddr.io.render.ar.ready && b.io.fetching
-    render.io.axi.ar.ready := ddr.io.render.ar.ready && !b.io.fetching
+    renderMemory.ar.ready := ddr.io.render.ar.ready && !b.io.fetching
     b.io.axiR.valid := ddr.io.render.r.valid && b.io.fetching;b.io.axiR.bits := ddr.io.render.r.bits
-    render.io.axi.r.valid := ddr.io.render.r.valid && !b.io.fetching;render.io.axi.r.bits := ddr.io.render.r.bits
-    ddr.io.render.r.ready := Mux(b.io.fetching,b.io.axiR.ready,render.io.axi.r.ready)
-  } else { ddr.io.render <> render.io.axi }
+    renderMemory.r.valid := ddr.io.render.r.valid && !b.io.fetching;renderMemory.r.bits := ddr.io.render.r.bits
+    ddr.io.render.r.ready := Mux(b.io.fetching,b.io.axiR.ready,renderMemory.r.ready)
+  } else { ddr.io.render <> renderMemory }
   ddr.io.scanout <> scanout.io.axi
   ddr.io.asset <> assetWriter.io.axi
   ddr.io.scanoutLevel := io.scanoutLevel
