@@ -19,15 +19,16 @@
 <h3>背景Copy隔离测试 · 像素吞吐与DDR访问效率</h3>
 <div class="table-scroll"><table><thead><tr><th>指标</th><th>优化前</th><th>优化后</th></tr></thead><tbody id="comparison-copy"></tbody></table></div>
 <p class="muted">像素吞吐＝960×468÷Copy耗时；有效带宽＝计数器字节÷同一耗时。单向AXI峰值＝32bit×100MHz＝400MB/s；读、写分别作分母，不把两者相加后除以单向峰值。提高的是有效吞吐，不代表整机DDR更忙。</p>
-<div class="measurement-note"><strong>RISC-V与DDR的统计边界</strong><p>当前未独立采集RISC-V真实占用率。裸机GPU等待、PRESENT等待都可能由软核忙等；帧工作时间和GPU忙时不能相减成CPU占用率。上表只展示明确可验证的帧预算占用。</p>
-<p>DDR一栏展示GPU Copy侧AXI等效有效载荷利用率，不是DDR芯片物理总利用率；不含显示读取、CPU访存和资源DMA。未计量的指标不显示猜测百分比。</p></div>
+<div class="measurement-note"><strong>已测指标与尚未覆盖的范围</strong><p>上方历史测试：已测帧工作耗时、Copy像素吞吐和GPU Copy侧有效带宽，未包含CPU分阶段计时。</p>
+<p>新增测量固件：已独立计时软核逻辑、命令构建、驱动提交与GPU轮询、PRESENT等待，并采集GPU处理像素和读写字节。前后对照见<a href="#kernel-panel">下方软核与GPU专项计数</a>。</p>
+<p>尚未测得完整RISC-V总占用率与整机DDR物理利用率。逻辑＋构建占比不包含其他CPU工作及忙等；帧工作耗时不能直接当作CPU占用率。DDR百分比仅为GPU侧AXI有效载荷利用率，不含显示读取、CPU访存及资源DMA，未测部分不推算百分比。</p></div>
 <p class="muted">整帧60.1FPS已受刷新率限制，不能宣称FPS增加16.6%。1572/1568极限挑战均迟到作废，未计为新的60FPS成绩。</p>
 <details><summary>查看测量身份与来源</summary><pre id="comparison-identity"></pre><a href="/benchmarks.json" download>下载对照原始数字与来源（JSON）</a></details>
 </div></section>
 <section id="kernel-panel" class="panel comparison" hidden><div class="section-title"><h2>新增测量固件 · 软核与GPU专项计数</h2><span class="badge">独立场景 / 非资格成绩</span></div>
 <p id="kernel-source" class="muted"></p><p><label for="kernel-target">查看历史测量档位：</label><select id="kernel-target"><option value="512">512全活动＋64 Alpha</option><option value="1536" selected>1536全活动＋192 Alpha</option></select></p>
 <div class="table-scroll"><table><thead><tr><th>指标</th><th>优化前</th><th>优化后</th></tr></thead><tbody id="comparison-kernel"></tbody></table></div>
-<p id="kernel-return" class="muted"></p><div class="measurement-note"><strong>这里确实增加了测量，但不改变指标含义</strong>
+<p id="kernel-return" class="muted"></p><div class="measurement-note"><strong>专项指标定义与测量范围</strong>
 <p>软核已测工作占比＝板端计时的逻辑更新＋命令构建时间，除以同一测量期墙钟时间；这是可归属到CPU的已测部分，不是完整CPU占用率。驱动渲染调用含提交和忙等，PRESENT也含同步忙等；裸机总CPU仍可能一直执行。FPS增加时此比例可能上升，不能据此声称CPU被优化。</p>
 <p>像素为硬件处理计数，包含透明色像素，不等于最终非透明输出。DDR数据为GPU侧有效字节，读取含列表描述符；利用率按单向400MB/s计算，不代表DDR物理总利用率。GPU busy包含PRESENT等待，不用它冒充算术单元忙碌率。</p>
 <p>固定本地素材和全活动负载，顺序执行逻辑、构建、整帧列表和PRESENT，未启用CopyAhead，不含HUD与网口管理；没有改变CPU基础渲染。600帧专项结果不能替代普通游戏实测或3600帧＋保持阶段的性能挑战。</p></div></section>
