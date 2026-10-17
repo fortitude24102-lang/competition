@@ -3,6 +3,7 @@
 const assert = require('node:assert/strict');
 const {spawn,spawnSync} = require('node:child_process');
 const path = require('node:path');
+const fs = require('node:fs');
 const net = require('node:net');
 const dgram = require('node:dgram');
 const {chromium} = require('playwright');
@@ -113,15 +114,58 @@ async function main() {
     await page.locator('#reselect').click();
     await page.waitForFunction(()=>!document.querySelector('#performance-start').disabled);
     assert.equal((await(await fetch(url+'/api/status')).json()).performance,null,'MENU discards challenge score');
-    await until(async()=>(await page.locator('#metric-firmware_build_id').textContent())!=='Unavailable');
-    assert.equal(await page.locator('#gpu-fps').textContent(),'Unavailable');
-    await until(async()=>(await page.locator('#cpu-age').textContent()).includes('no valid CPU result'));
-    assert.equal(await page.locator('#gpu-age').textContent(),'Unavailable');
+    const expectedBuild=(await(await fetch(url+'/api/status')).json()).telemetry.raw.firmware_build_id;
+    await until(async()=>(await page.locator('#metric-firmware_build_id').textContent())===String(expectedBuild));
+    assert.ok(await page.locator('#gpu-card').isHidden(),'invalid GPU result must not occupy a permanent Unavailable card');
+    assert.ok(await page.locator('#cpu-card').isHidden(),'CPU card appears only after a valid comparison');
+    assert.ok(await page.locator('#metric-render_read_bytes').locator('..').isHidden(),'unmeasured traffic is not a fabricated zero');
+    await page.waitForFunction(()=>document.querySelector('#work-gain').textContent==='16.6%');
+    assert.equal(await page.locator('#pixel-gain').textContent(),'30.4%');
+    assert.equal(await page.locator('#copy-bandwidth').textContent(),'311.68 MB/s');
+    assert.ok((await page.locator('#comparison-game').innerText()).includes('69.2%'));
+    assert.ok((await page.locator('#comparison-game').innerText()).includes('57.7%'));
+    assert.ok((await page.locator('#comparison-copy').innerText()).includes('77.92 MPixel/s'));
+    assert.ok((await page.locator('#comparison').innerText()).includes('不是DDR芯片物理总利用率'));
+    assert.ok(await page.locator('#kernel-panel').isVisible());
+    assert.ok((await page.locator('#comparison-kernel').innerText()).includes('17.166 ms'));
+    assert.ok((await page.locator('#comparison-kernel').innerText()).includes('9.34%'));
+    await page.locator('#kernel-target').selectOption('512');
+    assert.ok((await page.locator('#comparison-kernel').innerText()).includes('9.284 ms'));
+    assert.ok((await page.locator('#comparison-kernel').innerText()).includes('4.83%'));
+    assert.ok(!(await page.locator('main').innerText()).includes('Unavailable'),'no permanently unavailable metric placeholders');
     const downloadPromise=page.waitForEvent('download');await page.locator('#export').click();
     const download=await downloadPromise;await download.saveAs(path.join(root,'generated/verification/v3/gateway/browser-raw.csv'));
+    assert.ok(fs.readFileSync(path.join(root,'generated/verification/v3/gateway/browser-raw.csv'),'utf8').includes('render_read_bytes'),
+      'hiding an invalid display field must not delete it from the raw export');
     await page.screenshot({path:path.join(root,'generated/verification/v3/gateway/dashboard.png'),fullPage:true});
+    await page.setViewportSize({width:390,height:844});
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile page must not horizontally overflow');
+    await page.screenshot({path:path.join(root,'generated/verification/v3/gateway/dashboard-mobile.png'),fullPage:true});
     assert.deepEqual(errors,[]);
     await page.close();await until(async()=>!(await(await fetch(url+'/api/status')).json()).owned);
+    // Real DOM + a controlled SSE boundary, not a simulated FPS benchmark.
+    const preview=await browser.newPage({viewport:{width:1280,height:900}});
+    preview.on('pageerror',e=>errors.push(e.message));
+    await preview.addInitScript(()=>{window.EventSource=class {constructor(){window.testStream=this;}};});
+    await preview.goto(url);
+    await preview.waitForFunction(()=>window.testStream);
+    const snapshot=await(await fetch(url+'/api/status')).json();
+    snapshot.stale=false;snapshot.age_ms=0;
+    Object.assign(snapshot.telemetry.raw,{gpu_full_frame_fps_x100:6010,visible_sprites:504,requested_sprites:512,
+      pre_present_us:9618,gpu_busy_us:7000,render_read_bytes:12345,status_flags:0x710001});
+    Object.assign(snapshot.telemetry.display,{gpu_full_frame_fps_x100:6010,pre_present_us:9618,gpu_busy_us:7000,
+      render_read_bytes:null,status_flags:0x710001});
+    snapshot.telemetry.words[5]=6010;snapshot.telemetry.words[21]=0x710001;
+    await preview.evaluate(v=>window.testStream.onmessage({data:JSON.stringify(v)}),snapshot);
+    await until(async()=>await preview.locator('#gpu-card').isVisible());
+    assert.equal(await preview.locator('#gpu-fps').textContent(),'60.10');
+    assert.ok(await preview.locator('#metric-render_read_bytes').locator('..').isHidden());
+    await until(async()=>await preview.locator('#gpu-card').isHidden());
+    assert.ok(await preview.locator('#live-empty').isVisible(),'stale live metrics are removed');
+    assert.ok((await preview.locator('#mode').textContent()).includes('没有新鲜'),'stale mode is not shown as a current state');
+    assert.equal(await preview.locator('#work-gain').textContent(),'16.6%','SSE loss must not erase historical results');
+    assert.deepEqual(errors,[]);
+    await preview.close();
     console.log('PASS browser: simulated label, ACK, aliases, blur zero/release, ownership conflict, invalid FPS, raw CSV, page close');
   } finally {
     if(browser)await browser.close();

@@ -58,9 +58,61 @@
   }
 
   function formatValue(value,name) {
-    if(value===null || value===undefined) return 'Unavailable';
+    if(value===null || value===undefined) return '—';
     if(name.endsWith('fps_x100')) return (value/100).toFixed(2);
     return String(value);
+  }
+
+  function liveMetricRows(view,stale) {
+    if(stale) return [];
+    const display=view?.telemetry?.display || {};
+    return FIELDS.filter(name=>Number.isFinite(display[name])).map(name=>[name,display[name]]);
+  }
+
+  function benchmarkMetrics(data) {
+    for(const name of ['before','after','return']) {
+      const s=data.game[name];
+      if(!s || s.target!==512 || s.frames!==3600 || ['work_miss','late_present','under','errors'].some(k=>s[k]!==0))
+        throw new Error('Unqualified normal512 comparison');
+    }
+    const positive=value=>{
+      if(typeof value!=='number' || !Number.isFinite(value) || value<=0) throw new Error('Invalid benchmark measurement');
+      return value;
+    };
+    const budget=1e6/positive(data.conditions.target_fps);
+    const peak=positive(data.conditions.axi_clock_hz)*positive(data.conditions.axi_data_bits)/8;
+    const game={},copy={};
+    for(const name of ['before','after']) {
+      const g=data.game[name],c=data.copy[name];
+      game[name]={work_ms:positive(g.work_mean_us)/1000,max_ms:positive(g.work_max_us)/1000,
+        fps:positive(g.fps_x10)/10,budget_percent:g.work_mean_us/budget*100,
+        headroom_ms:(budget-g.work_mean_us)/1000};
+      const time=positive(c.us),pixels=positive(c.width)*positive(c.height);
+      const read=positive(c.rd),write=positive(c.wr);
+      copy[name]={time_ms:time/1000,mpixels_s:pixels/time,read_mb_s:read/time,write_mb_s:write/time,
+        total_mb_s:(read+write)/time,read_util_percent:read/(time/1e6)/peak*100,
+        write_util_percent:write/(time/1e6)/peak*100};
+    }
+    const a=data.copy.before,b=data.copy.after;
+    if(a.width!==b.width || a.height!==b.height || a.rd!==b.rd || a.wr!==b.wr) throw new Error('Mismatched Copy workloads');
+    return {game,copy,work_reduction_percent:(1-game.after.work_ms/game.before.work_ms)*100,
+      pixel_gain_percent:(copy.after.mpixels_s/copy.before.mpixels_s-1)*100};
+  }
+
+  function kernelMetrics(s) {
+    for(const key of ['frames','wall_us','work_us','max_work_us','render_call_us','pixels'])
+      if(!Number.isFinite(s[key]) || s[key]<=0)throw new Error('Invalid measurement window');
+    for(const key of ['logic_us','build_us','present_us','rd','wr','cache','work_miss'])
+      if(!Number.isFinite(s[key]) || s[key]<0)throw new Error('Invalid measurement counter');
+    if(s.under!==0 || s.error!==0 || s.logic_us+s.build_us+s.render_call_us+s.present_us>s.wall_us)
+      throw new Error('Unhealthy or overlapping measurement');
+    return {fps:s.frames*1e6/s.wall_us,work_mean_ms:s.work_us/s.frames/1000,max_work_ms:s.max_work_us/1000,
+      cpu_known_ms:(s.logic_us+s.build_us)/s.frames/1000,cpu_known_percent:(s.logic_us+s.build_us)/s.wall_us*100,
+      driver_ms:s.render_call_us/s.frames/1000,present_ms:s.present_us/s.frames/1000,
+      processed_mp_s:s.pixels/s.wall_us,render_processed_mp_s:s.pixels/s.render_call_us,
+      read_mb_s:s.rd/s.wall_us,write_mb_s:s.wr/s.wall_us,total_mb_s:(s.rd+s.wr)/s.wall_us,
+      render_mb_s:(s.rd+s.wr)/s.render_call_us,
+      read_util_percent:s.rd/s.wall_us/400*100,write_util_percent:s.wr/s.wall_us/400*100,work_miss:s.work_miss};
   }
 
   class SnapshotBuffer {
@@ -113,9 +165,82 @@
       canStart:ready && phase==='menu',canMenu:ready,pending,canPerformance:ready && phase==='menu' && !!(flags&(1<<12))};
   }
 
+  function modeText(view) {
+    const flags=view?.telemetry?.words[21]||0,phase=gameView(view).phase;
+    const label=phase==='menu'?'难度选择菜单':phase==='performance'?'性能挑战':
+      flags&2?'CPU/GPU比较回放':flags&4?'资源加载':flags&1?'GPU互动游戏':'等待板端场景';
+    return [label,...[[8,'本地备用素材'],[16,'控制已握手'],[32,'CPU旧对照已过期'],[512,'恢复状态']]
+      .filter(([bit])=>flags&bit).map(([,text])=>text)].join(' · ');
+  }
+
   async function boot() {
     const $=id=>document.getElementById(id);
     const banner=$('banner'), control=$('control-status'), keys=new KeyboardState(), samples=new SnapshotBuffer();
+    // Archived evidence loads independently: a disconnected board must not erase the comparison.
+    fetch('/benchmarks.json',{cache:'no-store'}).then(response=>{
+      if(!response.ok) throw new Error('历史实测文件未加载');
+      return response.json();
+    }).then(data=>{
+      const m=benchmarkMetrics(data);
+      $('work-gain').textContent=m.work_reduction_percent.toFixed(1)+'%';
+      $('pixel-gain').textContent=m.pixel_gain_percent.toFixed(1)+'%';
+      $('copy-bandwidth').textContent=m.copy.after.total_mb_s.toFixed(2)+' MB/s';
+      function row(target,label,before,after) {
+        const tr=document.createElement('tr');
+        for(const [tag,text] of [['th',label],['td',before],['td',after]]) {
+          const cell=document.createElement(tag);cell.textContent=text;tr.append(cell);
+        }
+        $(target).append(tr);
+      }
+      for(const [label,key,digits,unit] of [
+        ['整帧FPS（刷新率封顶）','fps',1,' FPS'],['平均帧工作时间（含GPU等待）','work_ms',3,' ms'],
+        ['最大帧工作时间','max_ms',3,' ms'],['60FPS工作预算占用（非CPU占用率）','budget_percent',1,'%'],
+        ['平均帧预算余量','headroom_ms',3,' ms']]) {
+        row('comparison-game',label,m.game.before[key].toFixed(digits)+unit,m.game.after[key].toFixed(digits)+unit);
+      }
+      for(const [label,key,digits,unit] of [
+        ['背景Copy耗时','time_ms',3,' ms'],['Copy像素吞吐','mpixels_s',2,' MPixel/s'],
+        ['GPU有效读带宽','read_mb_s',2,' MB/s'],['GPU有效写带宽','write_mb_s',2,' MB/s'],
+        ['有效读写合计','total_mb_s',2,' MB/s'],['读通道等效利用率','read_util_percent',1,'%'],
+        ['写通道等效利用率','write_util_percent',1,'%']]) {
+        row('comparison-copy',label,m.copy.before[key].toFixed(digits)+unit,m.copy.after[key].toFixed(digits)+unit);
+      }
+      $('comparison-source').textContent=data.recorded_on+' 历史实板 · 960×540 RGB565 · 100MHz · 两组各用同一BIN；非当前实时成绩';
+      $('comparison-return').textContent='A/B/A回测：'+data.game.before.work_mean_us/1000+' → '+
+        data.game.after.work_mean_us/1000+' → '+data.game.return.work_mean_us/1000+
+        ' ms；每组3600帧，超预算/迟到/新增下溢/错误均0。包含死亡等待/重开，可见499–504，Alpha66–67。';
+      $('comparison-identity').textContent='证据提交 '+data.source_commit+' · ZIP SHA256 '+data.evidence.sha256+
+        '\n优化前BIT '+data.versions.before.bit_sha256+'\n优化后BIT '+data.versions.after.bit_sha256+
+        '\n512探针BIN '+data.game.firmware_sha256+'\nCopy探针BIN '+data.copy.firmware_sha256+
+        '\n仓库证据 '+data.evidence.archive;
+      if(data.kernel) {
+        function showKernel() {
+          const target=Number($('kernel-target').value),records=['before','after','return'].map(name=>data.kernel[name].find(s=>s.target===target));
+          if(records.some(s=>!s || s.frames!==600 || s.alpha!==Math.ceil(target/8)) ||
+              ['pixels','rd','wr','cache','state_crc','list_crc'].some(key=>records.some(s=>s[key]!==records[0][key])))
+            throw new Error('Mismatched diagnostic workload');
+          const result=records.map(kernelMetrics);
+          $('comparison-kernel').replaceChildren();
+          for(const [label,key,digits,unit] of [
+            ['专项场景整帧FPS（非游戏资格）','fps',2,' FPS'],['平均帧工作时间','work_mean_ms',3,' ms'],
+            ['软核逻辑＋命令构建 / 帧','cpu_known_ms',3,' ms'],['软核已测工作占比（非总占用率）','cpu_known_percent',2,'%'],
+            ['驱动提交＋GPU轮询 / 帧','driver_ms',3,' ms'],['PRESENT与同步等待 / 帧','present_ms',3,' ms'],
+            ['处理像素吞吐（完整测量期）','processed_mp_s',2,' MPixel/s'],
+            ['GPU渲染调用期处理吞吐','render_processed_mp_s',2,' MPixel/s'],
+            ['GPU读写有效带宽（完整测量期）','total_mb_s',2,' MB/s'],
+            ['GPU读写有效带宽（渲染调用期）','render_mb_s',2,' MB/s'],
+            ['整期GPU侧AXI读通道等效利用率','read_util_percent',2,'%'],
+            ['整期GPU侧AXI写通道等效利用率','write_util_percent',2,'%'],['超60Hz工作预算帧数','work_miss',0,' / 600']]) {
+            row('comparison-kernel',label,result[0][key].toFixed(digits)+unit,result[1][key].toFixed(digits)+unit);
+          }
+          $('kernel-return').textContent='同一测量BIN · 每组30帧预热＋600个连续PRESENT间隔 · A/B/A帧工作均值 '+
+            result.map(s=>s.work_mean_ms.toFixed(3)).join(' → ')+' ms；三组像素/读写/Cache字节、最终状态与列表CRC一致，新增下溢/错误均0。';
+        }
+        showKernel();$('kernel-target').addEventListener('change',showKernel);$('kernel-panel').hidden=false;
+        $('kernel-source').textContent=data.kernel.recorded_on+' 新增实板测量 · 测量BIN SHA256 '+data.kernel.firmware_sha256;
+      }
+      $('comparison-values').hidden=false;
+    }).catch(()=>{$('comparison-source').textContent='历史实测未加载或不一致，不显示旧值／猜测值；实时控制不受影响。';});
     const client=Array.from(crypto.getRandomValues(new Uint8Array(16)),v=>v.toString(16).padStart(2,'0')).join('');
     let token, simulated=false,choice=null,gameSending=false,requestId=0,restartUntil=0;
     try {
@@ -180,7 +305,7 @@
     const table=$('metrics');
     for(const name of FIELDS) {
       const row=document.createElement('tr'); const label=document.createElement('th');const value=document.createElement('td');
-      label.textContent=name; value.id='metric-'+name;value.textContent='Unavailable';row.append(label,value);table.append(row);
+      label.textContent=name; value.id='metric-'+name;row.hidden=true;row.append(label,value);table.append(row);
     }
     const history=[];let lastView=null;let streamFailed=false,lastPhase=null,lastGameState=null;
     const freshness=new TelemetryFreshness();
@@ -211,12 +336,8 @@
         history.push({...t.display});if(history.length>120)history.shift();draw();
       }
       if(t) {
-        for(const name of FIELDS) $('metric-'+name).textContent=formatValue(t.display[name],name);
-        $('gpu-fps').textContent=formatValue(t.display.gpu_full_frame_fps_x100,'gpu_full_frame_fps_x100');
-        $('cpu-fps').textContent=formatValue(t.display.cpu_full_frame_fps_x100,'cpu_full_frame_fps_x100');
         $('sprites').textContent=t.raw.visible_sprites+' / '+t.raw.requested_sprites;
-        $('mode').textContent=['GPU live','Comparison replay','Loading','Local fallback','Control ACK','CPU expired','Probes enabled','Invalid counters','Paused','Recovery']
-          .filter((_,i)=>t.raw.status_flags & (1<<i)).join(' · ') || 'No active status flags';
+        $('mode').textContent=modeText(view);
       }
       $('packet-drops').textContent=String(view.dropped_packets);
       if(pump.active) control.textContent=view.acknowledged ? 'This tab controls the board' : 'Waiting for board ACK…';
@@ -225,6 +346,20 @@
     setInterval(()=>{
       const ages=freshness.view(performance.now());
       const stale=!lastView || lastView.stale || ages.stale || streamFailed;
+      const metrics=liveMetricRows(lastView,stale),valid=new Map(metrics);
+      if(stale)$('mode').textContent='当前没有新鲜板端状态';
+      $('history-panel').hidden=!history.some(row=>row.gpu_full_frame_fps_x100!=null || row.cpu_full_frame_fps_x100!=null);
+      for(const name of FIELDS) {
+        const cell=$('metric-'+name);cell.parentElement.hidden=!valid.has(name);
+        if(valid.has(name))cell.textContent=formatValue(valid.get(name),name);
+      }
+      $('live-empty').hidden=metrics.length!==0;
+      const gpu=valid.get('gpu_full_frame_fps_x100'),cpu=valid.get('cpu_full_frame_fps_x100');
+      $('gpu-card').hidden=gpu===undefined;
+      $('cpu-card').hidden=cpu===undefined;
+      $('sprites-card').hidden=stale || !lastView?.telemetry;
+      $('gpu-fps').textContent=formatValue(gpu,'gpu_full_frame_fps_x100');
+      $('cpu-fps').textContent=formatValue(cpu,'cpu_full_frame_fps_x100');
       const gv=gameView(lastView || {stale:true});
       $('difficulty-options').hidden=['play','performance'].includes(gv.phase);
       $('performance-start').disabled=!gv.canPerformance || stale || !!choice || gameSending;
@@ -253,12 +388,12 @@
           gv.phase==='performance'?'软核自动加压；方向键控制第一架飞机，R重新挑战，重选退出':'键盘控制飞机；死亡自动回到难度选择';
       }
       banner.className=stale?'warning':'healthy';
-      banner.textContent=(simulated?'SIMULATED — not board measurements. ':'')+
-        (stale?'Telemetry stale / unavailable':'Telemetry current')+
-        (ages.snapshot_age_ms!==null?' · Snapshot age '+Math.round(ages.snapshot_age_ms)+' ms':'');
-      $('gpu-age').textContent=ages.gpu_age_ms===null?'Unavailable':
-        'Snapshot age '+Math.round(ages.gpu_age_ms)+' ms'+(stale?' · stale':'');
-      $('cpu-age').textContent=!ages.cpu_valid?'Unavailable — no valid CPU result':
+      banner.textContent=(simulated?'SIMULATED — 模拟连接，不是实板成绩。 ':'')+
+        (stale?'未连接开发板或遥测已过期；上方历史对照仍可查阅':'实时遥测正常')+
+        (ages.snapshot_age_ms!==null?' · 快照 '+Math.round(ages.snapshot_age_ms)+' ms 前':'');
+      $('gpu-age').textContent=ages.gpu_age_ms===null?'':
+        '快照 '+Math.round(ages.gpu_age_ms)+' ms 前'+(stale?' · 已过期':'');
+      $('cpu-age').textContent=!ages.cpu_valid?'':
         (ages.cpu_stale?'Expired retained CPU result':'CPU result reported fresh')+
         (ages.cpu_observation_age_ms===null?' · Fresh observation time unknown':
           ' · Last fresh observation '+Math.round(ages.cpu_observation_age_ms)+' ms ago')+
@@ -267,7 +402,7 @@
     },100);
   }
 
-  const api={ControlPump,KeyboardState,SnapshotBuffer,TelemetryFreshness,formatValue,gameView};
+  const api={ControlPump,KeyboardState,SnapshotBuffer,TelemetryFreshness,formatValue,gameView,benchmarkMetrics,kernelMetrics,liveMetricRows,modeText};
   if(typeof module!=='undefined' && module.exports) module.exports=api;
   if(typeof document!=='undefined') document.addEventListener('DOMContentLoaded',boot);
   root.AetherGXDashboard=api;

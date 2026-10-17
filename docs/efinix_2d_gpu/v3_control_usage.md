@@ -1,5 +1,23 @@
 # V3 local control gateway (member A)
 
+## 2026-10-17：历史对照与专项计数
+
+打开`http://127.0.0.1:8765/`。页面上半部是固定历史数据，板卡离线仍可看；下半部才是实时完整快照。`benchmarks.json`通过原Host/CSP/白名单提供，可下载查看来源、原始数字和身份；不是板端实时新成绩。普通512、独立Copy、新计数固件是三种不同负载，不互相套用FPS。手机可横向滚动表格，不使整个页面溢出。
+
+普通512同BIN各3600帧：work11.527→9.618→回旧11.528ms；单独Copy7520→5766us、449280像素/读写各898560B，得到59.74→77.92MPixel/s及238.98→311.68MB/s读写合计。单向AXI32bit@100MHz峰值400MB/s，读/写各29.9%→39.0%；不能称DDR物理总利用率。无数值时隐藏，不写零来冒充有效。
+
+新增JTAG专项计数固件`test_board_dashboard_metrics.c`：固定512＋64Alpha、1536＋192Alpha；顺序调用真实逻辑/构建/整帧列表/PRESENT，30预热后采600个连续PRESENT间隔，计时循环不打印。复用官方核/缓存/驱动/计数器，不改CPU绘图、RTL、协议或时钟。三个阶段的像素、DDR字节、CRC一致且新增健康计数0，前后同BIN SHA256 `d8b18ca4f494cb4795b2e773936b190f4329bd632f3f2cfa06a6aa9b35bbdfe4`。
+
+- 软核已测工作比＝`(logic_us+build_us)/wall_us`，只覆盖这两个CPU区间，不是CPU总占用率，不能把`work_us-gpu_busy_us`当CPU。
+- 处理像素吞吐＝`pixels/wall_us` MPixel/s，包含透明Key像素；渲染调用期吞吐另用`render_call_us`作分母，不混窗口。
+- GPU侧有效带宽＝字节/同窗口微秒，数值单位为十进制MB/s；读含列表描述符，不含CPU、Scanout或资源DMA的全部DDR流量。
+- DDR/AXI等效读/写利用率分别除以单向400MB/s；GPU busy包含PRESENT等待，不代表算术单元占用率。
+- 新1536专项前后均约30.05FPS，优化后仍600帧超过60Hz工作预算。没有隐藏这个失败，也没有把它当作普通游戏1536成绩。
+
+复现（全部JTAG/RAM，禁止Flash）：先`build-board-hud-dma-test.ps1 -Test dashboard-metrics -OutDirectory <新目录>`，依次加载旧Key预取BIT、新Scanout换字BIT、旧BIT，每次用`measure-hud-glyphs-board.ps1`载相同BIN，指定COM9、不同新Log、`-StopPattern 'DASHBOARD_METRICS_STOP,result=0'`。不要使用该采集器的`-LoadBit`，它仍指向历史纹理候选。测完恢复新BIT、95b...正常BIN和真实四档菜单；本轮已完成。源、全部A/B/A、窗口反例、排除组及身份见[证据索引](evidence/dashboard_comparison_20261017/README.md)。
+
+以下为历史工具说明；与2026-10-17展示方式冲突的部分以本节为准。
+
 2026-10-07收尾：已同步 main `b3fc15d`，负责人已将网口/游戏接入候选并做过板测；本页工具的独立验证不是本轮新的板测。GPU/CPU卡片补充年龄口径，只读采集入口见下方“长测留证”。不改变固定27字协议、已验证网口RTL或正式固件。
 
 源码基点：`79a0b7f`，A-work 独立模块。协议依据 `v3_interface_design_20261001.md`；本工具不修改主程序、SoC 顶层、GPU 或 ASST。Python 标准库及原生 HTML/JavaScript，无安装依赖。这里只证明本地软件/假板合同，不能代表实际板卡、HDMI、性能或整机耐久已验收。
@@ -27,7 +45,7 @@ powershell -File scripts/run-control-gateway.ps1 -FakeBoardOnly -Python C:/efini
 powershell -File scripts/run-control-gateway.ps1 -Simulated -Python C:/efinity/efinity/python311/bin/python.exe
 ```
 
-假板默认监听 `127.0.0.1:8091`、仅向固定 `127.0.0.1:8090` 回传；网页与终端显示 **SIMULATED / not board measurements**。它仅实现协议校验、HELLO ACK、完整键状态/序号的接收与租约、每秒 5 个完整遥测回显。不进行游戏更新、碰撞、AI、坐标、绘图或命令生成，也不伪造 FPS。`firmware_build_id=0x53494d31`（SIM1），`simulation_tick` 在这个明确模拟工具中仅回显收到的输入序号；只有输入/网络组有效，FPS/耗时/流量/Alpha 等显示 Unavailable。键掩码保存在假板接收状态供测试核验，不被当作 Sprite 数量。
+假板默认监听 `127.0.0.1:8091`、仅向固定 `127.0.0.1:8090` 回传；网页与终端显示 **SIMULATED / not board measurements**。它仅实现协议校验、HELLO ACK、完整键状态/序号的接收与租约、每秒 5 个完整遥测回显。不进行游戏更新、碰撞、AI、坐标、绘图或命令生成，也不伪造 FPS。`firmware_build_id=0x53494d31`（SIM1），`simulation_tick` 在这个明确模拟工具中仅回显收到的输入序号；只有输入/网络组有效，FPS/耗时/流量/Alpha 等无效项不显示。键掩码保存在假板接收状态供测试核验，不被当作 Sprite 数量。
 
 ## 键盘、所有权与失联
 
@@ -41,7 +59,7 @@ powershell -File scripts/run-control-gateway.ps1 -Simulated -Python C:/efinity/e
 
 只接受 128 B AGT1 完整包，CRC 正确后一次发布 27 字；不会逐字段拼接。Sapphire 的 snapshot_id 是设备全局计数，同固件身份下跨所有控制/观察 session 和资源 epoch 按模 2^32 序号拒绝重复/过时/半区差值；切换 session 或资源不绕过检查。例如活动快照 100 后迟到的 session=0 快照 99 会被丢弃，不能覆盖数据或撤销正确 ACK；真正更新的观察快照 101 仍可标出控制已释放并启动恢复。无控制 session=0 可观察；有控制时仅当前 session 或观察者 session=0 可被接收。保留最多 4 个已退休固件身份以丢弃延迟旧固件包。500 ms 无新快照显示 stale，网页 SSE 中断也标过期并释放控制；SSE 状态刷新不是新遥测。
 
-status_flags bit16～22 对应 GPU 帧时间/FPS、CPU FPS、细分探针、流量、错误/下溢、输入/网络、Alpha/Key 有效组；无有效位显示 Unavailable。bit5 标注 CPU 保留结果已过期。页面展示板端 full-frame FPS，不从 busy_us 推算显示帧率，不运行游戏。原始字段单位沿名称（`*_us` 微秒、`*_bytes` 字节、`*_delta` 窗口增量、FPS ×100），流量/事件窗口最长 1 s，帧/窗口语义由板端状态标注。
+status_flags bit16～22 对应 GPU 帧时间/FPS、CPU FPS、细分探针、流量、错误/下溢、输入/网络、Alpha/Key 有效组；无有效位的实时字段/卡片隐藏，快照过期后隐藏所有实时值并清除旧模式文字。bit5 标注 CPU 保留结果已过期。页面展示板端 full-frame FPS，不从 busy_us 推算显示帧率，不运行游戏。原始字段单位沿名称（`*_us` 微秒、`*_bytes` 字节、`*_delta` 窗口增量、FPS ×100），流量/事件窗口最长 1 s，帧/窗口语义由板端状态标注。
 
 网页保留最近 600 个原始完整快照，图表保留最近 120 个；CSV 含接收 UTC、session、snapshot_id 和原始 27 个 u32（包括无效字段的原始值及 flags），导出不会把无效值改写为零。历史与 CSV 仅存在当前网页内存，刷新页面会清空。收包保持一个最新快照，最多 8 个 SSE 查看连接、16 个 HTTP 工作线程、500 ms socket 超时，慢客户端写入不持有 UDP 状态锁；高压收包按每轮最多 32 个数据报让出发送/租约检查机会。
 

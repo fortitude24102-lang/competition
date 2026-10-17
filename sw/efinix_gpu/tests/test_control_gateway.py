@@ -1,5 +1,6 @@
 """V3 contracts exercised with real loopback UDP/HTTP; no board required."""
 import http.client
+import hashlib
 import importlib.util
 import json
 import pathlib
@@ -10,6 +11,7 @@ import threading
 import time
 import unittest
 import zlib
+import zipfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 TOOLS = ROOT / 'sw/efinix_gpu/tools/control_gateway'
@@ -26,6 +28,57 @@ def wire(kind, session=7, sequence=9, words=None):
 
 
 class ProtocolTest(unittest.TestCase):
+    def test_archived_benchmark_numbers_match_original_evidence(self):
+        manifest=TOOLS / 'web/benchmarks.json'
+        self.assertTrue(manifest.is_file(), 'auditable historical benchmark file is missing')
+        data=json.loads(manifest.read_text(encoding='utf-8'))
+        archive=ROOT / data['evidence']['archive']
+        self.assertEqual(hashlib.sha256(archive.read_bytes()).hexdigest(),data['evidence']['sha256'])
+        with zipfile.ZipFile(archive) as z:
+            identities={x['Hash'].lower() for x in json.loads(z.read('identities.json'))}
+            for name in ['before','after']:
+                self.assertIn(data['versions'][name]['bit_sha256'],identities)
+            for group,source in [('game','bins/probe512/gpu_demo.bin'),('copy','measurements/copy-oracle/test.bin')]:
+                self.assertEqual(hashlib.sha256(z.read(source)).hexdigest(),data[group]['firmware_sha256'])
+            for group,prefix,names in [('game','V3_PROBE,',['before','after','return']),
+                                       ('copy','COPY_BOARD,trial=0,',['before','after'])]:
+                for name in names:
+                    sample=data[group][name]
+                    lines=z.read(sample['source']).decode('utf-8-sig').splitlines()
+                    line=next(s for s in lines if s.startswith(prefix))
+                    raw=dict(part.split('=',1) for part in line.split(',')[1:])
+                    for key,value in sample.items():
+                        if key!='source':self.assertEqual(int(raw[key]),value,(group,name,key))
+            for group in ['game','copy']:
+                for name in ['before','after']:
+                    sample=data[group][name]
+                    self.assertEqual(sample['under'],0)
+            self.assertEqual(data['game']['before']['frames'],3600)
+            self.assertEqual(data['game']['after']['frames'],3600)
+            self.assertEqual(data['copy']['before']['mismatch'],0)
+            self.assertEqual(data['copy']['after']['mismatch'],0)
+
+    def test_measurement_firmware_samples_match_board_capture(self):
+        data=json.loads((TOOLS/'web/benchmarks.json').read_text(encoding='utf-8'))
+        self.assertIn('kernel',data,'new measurement firmware has no auditable dashboard samples')
+        k=data['kernel'];archive=ROOT/k['evidence']['archive']
+        self.assertEqual(hashlib.sha256(archive.read_bytes()).hexdigest(),k['evidence']['sha256'])
+        with zipfile.ZipFile(archive) as z:
+            self.assertEqual(hashlib.sha256(z.read('board/test.bin')).hexdigest(),k['firmware_sha256'])
+            for name in ['before','after','return']:
+                for sample in k[name]:
+                    lines=z.read(sample['source']).decode('utf-8-sig').splitlines()
+                    line=next(s for s in lines if s.startswith('DASHBOARD_METRICS,target='+str(sample['target'])+','))
+                    raw=dict(p.split('=',1) for p in line.split(',')[1:])
+                    for key,value in sample.items():
+                        if key!='source':self.assertEqual(raw[key],str(value))
+                    self.assertEqual(sample['frames'],600)
+                    self.assertEqual(sample['under'],0);self.assertEqual(sample['error'],0)
+            for i in [0,1]:
+                for field in ['target','alpha','pixels','rd','wr','cache','state_crc','list_crc']:
+                    self.assertEqual(k['before'][i][field],k['after'][i][field])
+                    self.assertEqual(k['before'][i][field],k['return'][i][field])
+
     def test_performance_wire(self):
         import protocol as p
         for kind, words in [(4,[3,0,17]),(6,[909,909,5|(3600<<8)]),
@@ -377,6 +430,14 @@ class StateTest(unittest.TestCase):
 
 
 class LoopbackTest(unittest.TestCase):
+    def test_benchmark_is_a_static_same_origin_json_not_live_board_data(self):
+        status,data=self.request('GET','/benchmarks.json')
+        self.assertEqual(status,200,'historical comparison JSON must be served by the whitelist')
+        self.assertEqual(data['recorded_on'],'2026-10-16')
+        self.assertEqual(data['game']['before']['frames'],3600)
+        self.assertIsNone(self.gateway.state.view()['telemetry'],'static benchmarks must not fabricate live snapshots')
+        self.assertEqual(self.request('GET','/../benchmarks.json')[0],404)
+
     def test_game_http_validation_and_execution(self):
         client='a'*32
         def game(**changes):

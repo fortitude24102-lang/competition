@@ -2,6 +2,16 @@
 
 比赛主线复用官方 Sapphire RISC-V、DDR3 和 HDMI Demo，在其上增加 Chisel 二维 GPU。PC 只保存和提供资源；资源选择、完整 CRC 校验、游戏逻辑和 GPU 命令调度由板上的 RISC-V 完成，渲染由 FPGA 完成。自研 CPU 已退出比赛主线。
 
+## 性能对照网页与独立计数固件（2026-10-17）
+
+网页新增可审计的前后对照，历史实测与实时遥测分开：普通512的3600帧A/B/A、独立Copy的像素吞吐/有效带宽，以及新测量固件的512/1536全活动专项。无效或过期实时参数隐藏，CPU基础渲染成绩有有效结果才出现，27字原始CSV不删字段。数据文件`sw/efinix_gpu/tools/control_gateway/web/benchmarks.json`逐条核对两份证据ZIP及BIN/BIT身份，无新增运行依赖。
+
+新计数固件同BIN旧→新→旧，每档30预热＋600连续PRESENT间隔，无计时中串口输出。512工作均值11.949→9.284→11.949ms；1536为21.494→17.166→21.493ms，后者仍600帧超60Hz预算，不能冒充达标。三组硬件处理像素、读写/Cache字节、末态/列表CRC一致，测量窗下溢/错误增量0。此顺序执行专项不含CopyAhead、HUD及网口管理，不替代普通游戏或3600帧挑战。
+
+软核展示的是CLINT实测“逻辑＋构建”的时间/占帧比，**不是CPU总占用率**；驱动渲染与PRESENT包含忙等。GPU像素计数包括透明色处理；DDR展示GPU侧AXI有效载荷/单向400MB/s，不是DDR芯片总利用率，整期和渲染调用期分开展示。CPU基础绘图、生产固件、RTL和时钟未改。
+
+已仅JTAG恢复Scanout候选BIT＋原95b...正常BIN，三项网络资源加载成功、四档START/MENU通过，最终MENU、控制权释放、遥测新鲜、新增下溢/错误0；未写Flash、未推送。[使用与指标定义](docs/efinix_2d_gpu/v3_control_usage.md) · [本轮板测证据与边界](docs/efinix_2d_gpu/evidence/dashboard_comparison_20261017/README.md)。
+
 ## 共享DDR占用优化：显示取数同拍换字（2026-10-16，显式候选）
 
 定位到显示RGB565拆包器原本每32bit字之间有一拍空隙，持续供数也只能3拍输出2像素，延长了共享DDR读事务占用。本轮只让Scanout在高半字输出时同拍接收下一字；Alpha/Copy拆包保留旧路径，不新增DMA、FIFO或RAM，不改100MHz、CPU基础绘图、游戏负载、Alpha/Key及网口。

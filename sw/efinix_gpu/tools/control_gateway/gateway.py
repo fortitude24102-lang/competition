@@ -341,6 +341,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.events()
         files = {'/': ('index.html', 'text/html; charset=utf-8'),
                  '/dashboard.js': ('dashboard.js', 'text/javascript; charset=utf-8'),
+                 '/benchmarks.json': ('benchmarks.json', 'application/json; charset=utf-8'),
                  '/styles.css': ('styles.css', 'text/css; charset=utf-8')}
         if self.path not in files:
             return self.reply(404, {'error': 'not found'})
