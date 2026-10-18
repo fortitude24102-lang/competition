@@ -4,9 +4,10 @@ import chisel3._
 import chisel3.util._
 
 /** Packed, cached small sprites: fetch once, buffer following rows during W/B stalls.
-  * Each destination row remains a separate strided write, including zero-strobe beats.
+  * Each destination row remains a separate strided write; optional trimming removes only
+  * transparent edge words and empty rows, preserving interior zero-strobe beats.
   */
-class CachedKeyStream extends Module {
+class CachedKeyStream(trimTransparentRows: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val command = Flipped(Decoupled(new GpuCommand))
     val eligible = Output(Bool())
@@ -61,30 +62,80 @@ class CachedKeyStream extends Module {
   // Credit a COMPLETE row before AW. A later cache error can never starve promised W.
   private val launch = state === active && !rowActive && !failing && rowsLeft =/= 0.U &&
     fifo.io.count >= (command.widthPixels >> 1) && aligner.io.start.ready
-  io.writeRequest.valid := launch
-  io.writeRequest.bits.address := destination & "hfffffffc".U
-  io.writeRequest.bits.beats := ((command.widthPixels << 1) + destination(1, 0) + 3.U) >> 2
-  aligner.io.start.valid := launch && io.writeRequest.ready
+  private val rowBeats = ((command.widthPixels << 1) + destination(1, 0) + 3.U) >> 2
   aligner.io.start.bits.sourceUpper := false.B
   aligner.io.start.bits.destinationUpper := destination(1)
   aligner.io.start.bits.pixels := command.widthPixels
-  when(io.writeRequest.fire) { rowActive := true.B; wordsLeft := command.widthPixels >> 1 }
   aligner.io.input.valid := rowActive && wordsLeft =/= 0.U && fifo.io.deq.valid
   aligner.io.input.bits := fifo.io.deq.bits
   private val discard = state === active && failing && !rowActive
   fifo.io.deq.ready := discard || (rowActive && wordsLeft =/= 0.U && aligner.io.input.ready)
   when(aligner.io.input.fire) { wordsLeft := wordsLeft - 1.U }
-  io.writeData.valid := rowActive && aligner.io.output.valid
-  io.writeData.bits.data := aligner.io.output.bits.data
-  io.writeData.bits.strb := Cat(
+  private val keyStrobe = Cat(
     Fill(2, aligner.io.output.bits.lanes(1) && aligner.io.output.bits.data(31, 16) =/= command.colorKey),
     Fill(2, aligner.io.output.bits.lanes(0) && aligner.io.output.bits.data(15, 0) =/= command.colorKey))
-  aligner.io.output.ready := rowActive && io.writeData.ready
-  io.wordPixelsDone := Mux(io.writeData.fire, aligner.io.output.bits.pixels, 0.U)
+  private val rowDone = WireDefault(io.writeDone)
+  if (trimTransparentRows) {
+    // At most 16 pixels plus a halfword phase: reserve all 9 aligned words before AW.
+    val row = Reg(Vec(9, new AxiWriteBeat))
+    val collecting = RegInit(false.B)
+    val requesting = RegInit(false.B)
+    val sending = RegInit(false.B)
+    val index = RegInit(0.U(4.W))
+    val first = Reg(UInt(4.W))
+    val last = Reg(UInt(4.W))
+    val nonempty = RegInit(false.B)
+    aligner.io.start.valid := launch
+    when(aligner.io.start.fire) {
+      rowActive := true.B; wordsLeft := command.widthPixels >> 1
+      collecting := true.B; index := 0.U; nonempty := false.B
+    }
+    aligner.io.output.ready := collecting
+    io.wordPixelsDone := Mux(aligner.io.output.fire, aligner.io.output.bits.pixels, 0.U)
+    when(aligner.io.output.fire) {
+      row(index).data := aligner.io.output.bits.data
+      row(index).strb := keyStrobe
+      when(keyStrobe.orR) {
+        when(!nonempty) { first := index }
+        last := index; nonempty := true.B
+      }
+      index := index + 1.U
+      when(index === rowBeats - 1.U) {
+        collecting := false.B
+        when(failing || !(nonempty || keyStrobe.orR)) {
+          rowDone := true.B
+        }.otherwise { requesting := true.B }
+      }
+    }
+    // Once offered, hold the complete span through errors and all AW/W stalls.
+    io.writeRequest.valid := requesting
+    io.writeRequest.bits.address := (destination & "hfffffffc".U) + (first << 2)
+    io.writeRequest.bits.beats := last - first + 1.U
+    when(io.writeRequest.fire) {
+      requesting := false.B; sending := true.B; index := first
+    }
+    io.writeData.valid := sending
+    io.writeData.bits := row(index)
+    when(io.writeData.fire) {
+      index := index + 1.U
+      when(index === last) { sending := false.B }
+    }
+  } else {
+    io.writeRequest.valid := launch
+    io.writeRequest.bits.address := destination & "hfffffffc".U
+    io.writeRequest.bits.beats := rowBeats
+    aligner.io.start.valid := launch && io.writeRequest.ready
+    when(io.writeRequest.fire) { rowActive := true.B; wordsLeft := command.widthPixels >> 1 }
+    io.writeData.valid := rowActive && aligner.io.output.valid
+    io.writeData.bits.data := aligner.io.output.bits.data
+    io.writeData.bits.strb := keyStrobe
+    aligner.io.output.ready := rowActive && io.writeData.ready
+    io.wordPixelsDone := Mux(io.writeData.fire, aligner.io.output.bits.pixels, 0.U)
+  }
   when(state === active) {
     when(io.readDone) { readFinished := true.B }
     errorSeen := failing
-    when(io.writeDone) {
+    when(rowDone) {
       rowActive := false.B; rowsLeft := rowsLeft - 1.U
       destination := destination + command.dstStride
     }

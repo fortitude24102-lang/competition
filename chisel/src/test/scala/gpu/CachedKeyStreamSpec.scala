@@ -7,6 +7,48 @@ import testutil.StableChiselSim
 
 class CachedKeyStreamSpec extends AnyFunSpec with StableChiselSim with Matchers {
   describe("whole-sprite cached Key prefetch") {
+    it("counts trimmed empty-row pixels through DenseBlitEngine without any write beat") {
+      simulate(new DenseBlitEngine(enableKeyPrefetch = true, enableKeyRowTrim = true)) { d =>
+        d.io.command.valid.poke(false); d.io.completion.ready.poke(true)
+        d.io.command.bits.poke(0.U.asTypeOf(new GpuCommand))
+        d.io.command.bits.op.poke(GpuOpcode.ColorKey)
+        d.io.command.bits.srcAddr.poke(0x02a00000L); d.io.command.bits.dstAddr.poke(0x02000102L)
+        d.io.command.bits.srcStride.poke(16); d.io.command.bits.dstStride.poke(18)
+        d.io.command.bits.widthPixels.poke(8); d.io.command.bits.heightPixels.poke(1)
+        d.io.command.bits.colorKey.poke(0xbeef)
+        d.io.pixelRequest.ready.poke(true); d.io.pixelResult.valid.poke(false)
+        d.io.pixelResult.bits.poke(0.U.asTypeOf(new PixelResult))
+        d.io.textureCacheLoad.valid.poke(false)
+        d.io.textureCacheLoad.bits.base.poke(0x02a00000L); d.io.textureCacheLoad.bits.bytes.poke(16)
+        d.io.textureCacheInvalidate.poke(false); d.io.textureCachePerfClear.poke(false)
+        d.io.axi.ar.ready.poke(true); d.io.axi.aw.ready.poke(true); d.io.axi.w.ready.poke(true)
+        d.io.axi.r.valid.poke(false); d.io.axi.r.bits.poke(0.U.asTypeOf(new Axi4ReadData))
+        d.io.axi.b.valid.poke(false); d.io.axi.b.bits.poke(0.U.asTypeOf(new Axi4WriteResponse))
+        d.reset.poke(true); d.clock.step(2); d.reset.poke(false)
+        d.io.textureCacheLoad.valid.poke(true); d.clock.step(); d.io.textureCacheLoad.valid.poke(false)
+        var readLeft = 0; var arCount = 0; var submitted = false; var complete = false; var pixels = 0
+        for (_ <- 0 until 300 if !complete) {
+          d.io.axi.r.valid.poke(readLeft > 0)
+          d.io.axi.r.bits.data.poke(0xbeefbeefL); d.io.axi.r.bits.last.poke(readLeft == 1)
+          d.io.command.valid.poke(!submitted && d.io.textureCacheValid.peek().litToBoolean)
+          val ar = d.io.axi.ar.valid.peek().litToBoolean
+          val r = readLeft > 0 && d.io.axi.r.ready.peek().litToBoolean
+          val cmd = d.io.command.valid.peek().litToBoolean && d.io.command.ready.peek().litToBoolean
+          d.io.axi.aw.valid.expect(false); d.io.axi.w.valid.expect(false); d.io.pixelRequest.valid.expect(false)
+          val count = d.io.wordPixelsDone.peek().litValue.toInt
+          d.io.copyWordDone.expect(count != 0)
+          pixels += count
+          if (ar) { arCount += 1; readLeft = d.io.axi.ar.bits.len.peek().litValue.toInt + 1 }
+          complete = d.io.completion.valid.peek().litToBoolean
+          if (complete) d.io.completion.bits.error.expect(GpuError.None)
+          d.clock.step()
+          if (r) readLeft -= 1
+          if (cmd) submitted = true
+        }
+        complete shouldBe true; arCount shouldBe 1; pixels shouldBe 8
+        d.io.textureCacheHitBytes.expect(16)
+      }
+    }
     for ((failWrite, failRead, width, height, stride) <- Seq(
       (false, false, 8, 4, 1920), (false, false, 8, 4, 1922),
       (true, false, 8, 4, 1920), (false, true, 8, 4, 1920), (true, false, 16, 16, 1920))) {

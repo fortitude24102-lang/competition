@@ -4,7 +4,8 @@ import chisel3._
 import chisel3.util._
 
 class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boolean = false,
-  enableCopyBurstBuffer: Boolean = false) extends Module {
+  enableCopyBurstBuffer: Boolean = false, enableKeyRowTrim: Boolean = false) extends Module {
+  require(!enableKeyRowTrim || enableKeyPrefetch, "Key row trimming requires Key prefetch")
   val io = IO(new Bundle {
     val command = Flipped(Decoupled(new GpuCommand))
     val pixelRequest = Decoupled(new PixelTransaction)
@@ -34,7 +35,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   private val packer = Module(new PixelWritePacker)
   private val writer = Module(new AxiWriteEngine)
   private val copyStream = Module(new CopyStreamEngine(if(enableCopyBurstBuffer) 256 else 16))
-  private val keyStream = if (enableKeyPrefetch) Some(Module(new CachedKeyStream)) else None
+  private val keyStream = if (enableKeyPrefetch) Some(Module(new CachedKeyStream(enableKeyRowTrim))) else None
   private val readAddressArbiter = Module(new RRArbiter(new Axi4Address, 2))
 
   private val idle :: startRect :: startWrite :: startAligner :: startRead :: startAlphaAligners :: startAlphaReads :: waitAlphaReads :: requestPixel :: waitPixel :: waitRow :: finish :: streamCopy :: streamKey :: Nil = Enum(14)
@@ -301,7 +302,8 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   copyStream.io.writeData.ready := writer.io.data.ready && streamingCopy
   packer.io.output.ready := !fastWordBlit && writer.io.data.ready
   // Transparent pixels are processed too; partial first/last words count only valid lanes.
-  io.copyWordDone := (fastWordBlit || streamingCopy || streamingKey) && writer.io.data.fire
+  io.copyWordDone := Mux(streamingKey, keyStream.map(_.io.wordPixelsDone =/= 0.U).getOrElse(false.B),
+    (fastWordBlit || streamingCopy) && writer.io.data.fire)
   io.wordPixelsDone := Mux(streamingKey, keyStream.map(_.io.wordPixelsDone).getOrElse(0.U),
     Mux(io.copyWordDone, Mux(streamingCopy || directWordBlit, 2.U, wordAligner.io.output.bits.pixels), 0.U))
   wordAligner.io.output.ready := fastWordBlit && !directWordBlit && writer.io.data.ready && !streamingKey
