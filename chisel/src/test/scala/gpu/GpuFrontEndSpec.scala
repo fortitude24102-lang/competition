@@ -12,6 +12,8 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
     dut.io.command.dstAddr.poke(dst)
     dut.io.command.widthPixels.poke(width)
     dut.io.command.heightPixels.poke(height)
+    dut.io.command.srcWidthPixels.poke(0)
+    dut.io.command.srcHeightPixels.poke(0)
     dut.io.command.srcStride.poke(srcStride)
     dut.io.command.dstStride.poke(dstStride)
     dut.io.command.color.poke(0x1234)
@@ -29,7 +31,7 @@ class GpuFrontEndSpec extends AnyFunSpec with StableChiselSim with Matchers {
       GpuMemoryMap.DenseAssets shouldBe BigInt("02400000", 16)
       GpuMemoryMap.SparseAssets shouldBe BigInt("06000000", 16)
       GpuMemoryMap.DdrEndExclusive shouldBe BigInt("10000000", 16)
-      (new GpuCommand).getWidth shouldBe 236
+      (new GpuCommand).getWidth shouldBe 268
     }
   }
 

@@ -10,7 +10,8 @@ object GpuOpcode {
   val Alpha = 4
   val Sparse = 5
   val Present = 6
-  val Max = Present
+  val Transform = 7
+  val Max = Transform
 }
 
 object GpuError {
@@ -24,6 +25,14 @@ object GpuError {
   val QueueFull = 7
   val SparseFormat = 8
   val AxiResponse = 9
+  val TransformConfig = 10
+}
+
+object GpuTransformFlags {
+  val HFlip = 1
+  val VFlip = 2
+  val ColorKey = 16
+  val Mask = HFlip | VFlip | ColorKey
 }
 
 class GpuCommand extends Bundle {
@@ -39,6 +48,8 @@ class GpuCommand extends Bundle {
   val alpha = UInt(8.W)
   val flags = UInt(16.W)
   val tag = UInt(16.W)
+  val srcWidthPixels = UInt(16.W)
+  val srcHeightPixels = UInt(16.W)
 }
 
 class GpuCompletion extends Bundle {

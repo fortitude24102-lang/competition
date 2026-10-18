@@ -2,7 +2,7 @@ package gpu
 
 import chisel3._
 
-class CommandValidator extends Module {
+class CommandValidator(enableTransformBlit: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val command = Input(new GpuCommand)
     val valid = Output(Bool())
@@ -10,27 +10,36 @@ class CommandValidator extends Module {
   })
 
   private val command = io.command
-  private val renderOp = command.op >= GpuOpcode.Fill.U && command.op <= GpuOpcode.Sparse.U
+  private val transformOp = enableTransformBlit.B && command.op === GpuOpcode.Transform.U
+  private val renderOp = (command.op >= GpuOpcode.Fill.U && command.op <= GpuOpcode.Sparse.U) || transformOp
   private val denseSourceOp = command.op === GpuOpcode.Copy.U ||
-    command.op === GpuOpcode.ColorKey.U || command.op === GpuOpcode.Alpha.U
+    command.op === GpuOpcode.ColorKey.U || command.op === GpuOpcode.Alpha.U || transformOp
   private val sparseOp = command.op === GpuOpcode.Sparse.U
   private val destinationOp = renderOp || command.op === GpuOpcode.Present.U
-  private val legalOpcode = command.op <= GpuOpcode.Max.U
+  private val legalOpcode = command.op <= GpuOpcode.Present.U || transformOp
 
   private val rowBytes = (command.widthPixels << 1).pad(64)
   private val rowsBeforeLast = (command.heightPixels - 1.U).pad(64)
-  private val srcEnd = command.srcAddr.pad(64) + rowsBeforeLast * command.srcStride.pad(64) + rowBytes
+  private val sourceWidth = Mux(transformOp, command.srcWidthPixels, command.widthPixels)
+  private val sourceHeight = Mux(transformOp, command.srcHeightPixels, command.heightPixels)
+  private val sourceRowBytes = (sourceWidth << 1).pad(64)
+  private val sourceRowsBeforeLast = (sourceHeight - 1.U).pad(64)
+  private val srcEnd = command.srcAddr.pad(64) + sourceRowsBeforeLast * command.srcStride.pad(64) + sourceRowBytes
   private val dstEnd = command.dstAddr.pad(64) + rowsBeforeLast * command.dstStride.pad(64) + rowBytes
   private val ddrBase = GpuMemoryMap.FramebufferA.U(64.W)
   private val ddrEnd = GpuMemoryMap.DdrEndExclusive.U(64.W)
 
-  private val zeroSize = renderOp && (command.widthPixels === 0.U || command.heightPixels === 0.U)
+  private val zeroSize = renderOp && (command.widthPixels === 0.U || command.heightPixels === 0.U ||
+    (transformOp && (sourceWidth === 0.U || sourceHeight === 0.U)))
+  private val transformConfig = transformOp &&
+    (command.flags & (~GpuTransformFlags.Mask & 0xffff).U(16.W)).orR
   private val multiRow = command.heightPixels > 1.U
-  private val misaligned = (denseSourceOp && (command.srcAddr(0) || (multiRow && command.srcStride(0)))) ||
+  private val sourceMultiRow = sourceHeight > 1.U
+  private val misaligned = (denseSourceOp && (command.srcAddr(0) || ((sourceMultiRow || transformOp) && command.srcStride(0)))) ||
     (sparseOp && command.srcAddr(1, 0).orR) ||
-    (destinationOp && (command.dstAddr(0) || (multiRow && command.dstStride(0))))
+    (destinationOp && (command.dstAddr(0) || ((multiRow || transformOp) && command.dstStride(0))))
   private val strideTooSmall = (renderOp && command.dstStride < rowBytes) ||
-    (denseSourceOp && command.srcStride < rowBytes)
+    (denseSourceOp && command.srcStride < sourceRowBytes)
   private val denseSrcOutOfRange = denseSourceOp &&
     (command.srcAddr.pad(64) < ddrBase || srcEnd > ddrEnd || srcEnd <= command.srcAddr.pad(64))
   private val sparseSrcEnd = command.srcAddr.pad(64) + 4.U
@@ -41,7 +50,7 @@ class CommandValidator extends Module {
   private val regionsOverlap = command.srcAddr.pad(64) < dstEnd && command.dstAddr.pad(64) < srcEnd
   private val sameAlphaSurface = command.op === GpuOpcode.Alpha.U &&
     command.srcAddr === command.dstAddr && command.srcStride === command.dstStride
-  private val overlap = (command.op === GpuOpcode.Copy.U || command.op === GpuOpcode.Alpha.U) &&
+  private val overlap = (command.op === GpuOpcode.Copy.U || command.op === GpuOpcode.Alpha.U || transformOp) &&
     regionsOverlap && !sameAlphaSurface
   private val invalidPresentBuffer = command.op === GpuOpcode.Present.U &&
     command.dstAddr =/= GpuMemoryMap.FramebufferA.U &&
@@ -52,6 +61,8 @@ class CommandValidator extends Module {
     io.error := GpuError.InvalidOpcode.U
   }.elsewhen(zeroSize) {
     io.error := GpuError.ZeroSize.U
+  }.elsewhen(transformConfig) {
+    io.error := GpuError.TransformConfig.U
   }.elsewhen(misaligned) {
     io.error := GpuError.MisalignedAddress.U
   }.elsewhen(strideTooSmall) {
