@@ -40,6 +40,7 @@ parameter                       AXI_DATA_WIDTH     = `AXI_DATA_WIDTH
    output  wire                       system_uart_0_io_txd,
    input                              system_uart_0_io_rxd,   
    input  [3:0]                       soc_gpio_IN,
+   input  [1:0]                       user_keys_n,
    output [3:0]                       soc_gpio_OUT,
    output [3:0]                       soc_gpio_OE,
     // debug core ports
@@ -142,6 +143,12 @@ wire [11:0] gpu_scanout_level;
 // GPU-clock-domain, active-high, one-cycle underflow episode indication.
 // Consumed by the GPU performance counter through the Sapphire adapter.
 wire gpu_underflow_pulse;
+wire [3:0] sapphire_gpio_IN;
+efinix_user_keys_gpio user_keys_gpio (
+ .core_clk(core_clk), .reset_n(user_pll_locked),
+ .user_keys_n(user_keys_n), .soc_gpio_IN(soc_gpio_IN),
+ .sapphire_gpio_IN(sapphire_gpio_IN)
+);
 efinix_sapphire_adapter sapphire (
  .ge_clk(rxc), .ge_reset(ge_reset),
  .gmii_rx_valid(gmii_rx_valid), .gmii_rx_data(gmii_rx_data),
@@ -156,7 +163,7 @@ efinix_sapphire_adapter sapphire (
  .user_pll_locked(user_pll_locked),
  .system_uart_0_io_txd(system_uart_0_io_txd),
  .system_uart_0_io_rxd(system_uart_0_io_rxd),
- .soc_gpio_IN(soc_gpio_IN),
+ .soc_gpio_IN(sapphire_gpio_IN),
  .soc_gpio_OUT(soc_gpio_OUT),
  .soc_gpio_OE(soc_gpio_OE),
  .jtag_inst1_CAPTURE(jtag_inst1_CAPTURE),
