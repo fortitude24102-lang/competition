@@ -69,7 +69,7 @@ A仅灰度/缩放、Alpha旧调度；B灰度/缩放＋Alpha连续调度，两者
 - A/B各通过80例Transform/灰度/镜像/Key的DDR逐像素、padding/哨兵、像素数和有效写字节读回；同一BIN，SHA256 `506608cb5a88880564d8194c16452fab0561708698a05eff9d315efca09ce5ab`。
 - A/B各通过新增24例Alpha读回：1/3/16/65宽、两种半字起点、缓存/DDR、Alpha128及0/255端点，逐像素与独立C参考比较，padding/哨兵、处理数、读写/缓存字节均检查。缓存加载后故意修改DDR源，确认真正命中缓存。最终oracle BIN SHA256 `5a841aead984c26fb19b2ab8f6917a14c4b7c48a6f45fda0b6752c62a412e5e9`。
 - 首版Alpha oracle在A的case22像素/哨兵通过，但测试按整行估算读量，预期528B而硬件实际544B。OpenOCD快照`0xf8100060: 00000220 00000000 00000104 00000000`证明读544B/有效写260B；65宽、半字起点2时，64＋1像素两块每行读132＋4B，边界字确实重复读取。仅修测试按块计算，硬件不变；初失败、读回日志及修正后的两版24/24保留。
-- 当前保留B BIT＋双飞机Zoom BIN，SHA256 `1dc64ca838ee1b744ab23c1a14f084a350117d894c680c4ee9b33d03f92b29ab`，启动明确`color_and_gray=1`与首帧`scale_q8=256,side=16,keys=0`。同一KEY1/KEY2控制两架飞机，左右分别彩色/灰度。**不是游戏MENU，此独立固件不处理网页游戏控制；网页遥测过期不代表网口回退。**新画面人工目视尚待用户确认；上一版方向/松开保持的人工确认不冒充这一版灰度目视。
+- 当前保留B BIT＋双飞机Zoom BIN，SHA256 `1dc64ca838ee1b744ab23c1a14f084a350117d894c680c4ee9b33d03f92b29ab`，启动明确`color_and_gray=1`与首帧`scale_q8=256,side=16,keys=0`。同一KEY1/KEY2控制两架飞机，左右分别彩色/灰度。**不是游戏MENU，此独立固件不处理网页游戏控制；网页遥测过期不代表网口回退。**新画面人工目视已由用户确认，详见下方封存后的补记；不复用上一版单飞机的确认。
 - 离屏oracle不PRESENT，HDMI缺输入次数以`under_offscreen`记录，不作为栅格失败；有显示的分段/正常512仍严格要求新增下溢0。没有以此放宽游戏验收。
 
 ## 验证进度与边界
@@ -91,4 +91,10 @@ A仅灰度/缩放、Alpha旧调度；B灰度/缩放＋Alpha连续调度，两者
 
 生成器`gpu.GenerateEfinix2dGpu`使用新目录、`--split-verilog --instances --frame-lists --key-prefetch --scanout-word-pipeline --transform-blit`；B另加`--alpha-pipeline`，A不加。新建工程用`scripts/test-efinix-board.ps1 -GpuRtlDirectory <新RTL目录> -OutputDirectory <新编译目录> -Flow compile`，必须检查最终全部时序关系，不能只看进程退出0。独立固件入口为`scripts/build-board-hud-dma-test.ps1 -Test zoom|transform|alpha-pipeline -OutDirectory <全新目录>`，通过JTAG载入0x1000。新Zoom首帧必须从新加载/复位候选BIT开始；离屏oracle无PRESENT。不要为重现本轮证据重新跑已经通过的全套仿真。
 
-封存时所有烧录及串口采集进程均退出，板上继续运行B＋双飞机Zoom；没有Flash写入或远端推送。新增灰度组合的人工画面确认仍待补，不因此宣称人工验收已通过。
+封存时所有烧录及串口采集进程均退出，板上继续运行B＋双飞机Zoom；没有Flash写入或远端推送。当时新增灰度组合的人工画面确认尚待补，封存包保留该历史状态。
+
+## 封存后人工确认补记（2026-10-19）
+
+用户针对本版“左侧彩色飞机、右侧灰度飞机；KEY2按住两架一起放大、KEY1一起缩小、松开保持，灰度飞机无彩色色块或透明色底”的确认问题回复：**“画面和按键均正常”**。据此记录新组合显示与上述按键交互的人工验收通过；精确缩放速度、上下限和双键行为未单独人工测量，不新增性能资格或长期耐久结论。
+
+本补记晚于证据包封存，仅更新Markdown验收记录；`evidence.zip`及其SHA256不变，不重新烧录、不重复仿真或测量。
