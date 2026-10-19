@@ -8,6 +8,10 @@
 int main(void) {
  bsp_init();gpu_device d;gpu_frame_list f;framebuffer_pair buffers;
  CHECK(!gpu_init(&d,GPU_APB_BASE));CHECK(!gpu_frame_list_init(&f,&d,0) && f.present);
+#if GPU_AXI_DIAGNOSTICS
+ CHECK((*(volatile uint32_t *)(d.base+GPU_REG_STATUS)&(1u<<19))!=0);
+ CHECK(*(volatile uint32_t *)(d.base+0x600)==0x41585046u);
+#endif
  CHECK(!gpu_set_qos(&d,256,1536,1));
  bullet_init_local_assets();gpu_platform_sync();
  CHECK(!gpu_texture_cache_load(&d,BULLET_LOCAL_ATLAS,(BULLET_ATLAS_BYTES+3u)&~3u,10000000u));
@@ -35,12 +39,26 @@ int main(void) {
    const unsigned counts[]={1,stats.alpha_commands,stats.visible,stats.count};
    for(unsigned stage=0;stage<4;stage++) {
     CHECK(!gpu_clear_perf(&d));uint64_t start=gpu_platform_cycles();
+#if GPU_AXI_DIAGNOSTICS
+    *(volatile uint32_t *)(d.base+0x604)=3;gpu_platform_sync();
+#endif
     CHECK(!gpu_frame_list_render_span(&f,GPU_FRAME_LIST_BANK_A+starts[stage]*16u,counts[stage],1u+stage+tick*4u,10000000u));
+#if GPU_AXI_DIAGNOSTICS
+    *(volatile uint32_t *)(d.base+0x604)=0;gpu_platform_sync();
+#endif
     uint64_t elapsed=gpu_platform_cycles()-start;gpu_perf_snapshot p;CHECK(!gpu_read_perf_snapshot(&d,&p));
     bsp_printf("SPRITE_PHASE,target=%d,tick=%d,stage=%s,count=%d,ticks=%d,busy=%d,stalls=%d,rd=%d,wr=%d,cache=%d,under=%d,scan_grants=%d\r\n",
      targets[t],state->tick,names[stage],counts[stage],(uint32_t)elapsed,(uint32_t)p.cycles,
      (uint32_t)p.stalls,(uint32_t)p.read_bytes,(uint32_t)p.write_bytes,(uint32_t)p.cache_bytes,(uint32_t)p.underflows,(uint32_t)p.scanout_grants);
     CHECK(!p.underflows);
+#if GPU_AXI_DIAGNOSTICS
+    uint32_t counters[16];for(unsigned i=0;i<16;i++)counters[i]=*(volatile uint32_t *)(d.base+0x610+i*4u);
+    CHECK(counters[15] && counters[15]<BSP_CLINT_HZ*40u);
+    bsp_printf("AXI_PHASE,target=%d,tick=%d,stage=%s,wbeat=%d,wgap=%d,wstall=%d,bwait=%d,awstall=%d,awqos=%d,rbeat=%d,rgap=%d,rstall=%d,arstall=%d,arqos=%d,rcredit=%d,bcount=%d,awcount=%d,rsink=%d,window=%d\r\n",
+     targets[t],state->tick,names[stage],counters[0],counters[1],counters[2],counters[3],counters[4],counters[5],
+     counters[6],counters[7],counters[8],counters[9],counters[10],counters[11],counters[12],counters[13],counters[14],counters[15]);
+    CHECK(counters[12]==counters[13]);
+#endif
    }
    CHECK(!framebuffer_present(&d,&buffers,10000000u));
   }

@@ -18,7 +18,8 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   enableFrameLists: Boolean = false, enableKeyPrefetch: Boolean = false,
   enableStripeScratchpad: Boolean = false, enableCopyBurstBuffer: Boolean = false,
   enableScanoutWordPipeline: Boolean = false, enableKeyRowTrim: Boolean = false,
-  enableTransformBlit: Boolean = false, enableAlphaPipeline: Boolean = false) extends Module {
+  enableTransformBlit: Boolean = false, enableAlphaPipeline: Boolean = false,
+  enableAxiDiagnostics: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val apb = new ApbSlavePort
     val axi = new Axi4MasterPort
@@ -41,7 +42,8 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   })
 
   private val hasFrontend = enableInstances || enableFrameLists
-  private val regs = Module(new GpuApbRegs(hasFrontend,enableFrameLists,enableStripeScratchpad,enableTransformBlit))
+  private val regs = Module(new GpuApbRegs(hasFrontend,enableFrameLists,enableStripeScratchpad,enableTransformBlit,enableAxiDiagnostics))
+  private val diagnostics = if(enableAxiDiagnostics) Some(Module(new AxiDiagnosticRegs)) else None
   private val instances = if (hasFrontend) Some(Module(new InstanceStream(enableFrameLists))) else None
   private val batch = if(enableFrameLists) Some(Module(new FrameListBatch)) else None
   private val assetRegs = Module(new AssetDmaRegs)
@@ -49,7 +51,7 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   private val render = Module(new RenderEngine(enableCopyStream,enableFrameLists,enableKeyPrefetch,enableCopyBurstBuffer,
     enableKeyRowTrim,enableTransformBlit,enableAlphaPipeline))
   private val scanout = Module(new ScanoutDma(enableWordPipeline=enableScanoutWordPipeline))
-  private val ddr = Module(new DdrQosArbiter)
+  private val ddr = Module(new DdrQosArbiter(enableDiagnostics=enableAxiDiagnostics))
   private val renderMemory = if(enableStripeScratchpad) {
     val scratch = Module(new StripeScratchpad)
     scratch.io.in <> render.io.axi
@@ -64,6 +66,7 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   private val assetSelect = io.apb.paddr(15, 8) === 1.U
   private val instanceSelect = if (hasFrontend) io.apb.paddr(15, 8) === 4.U else false.B
   private val batchSelect = if(enableFrameLists) io.apb.paddr(15,8)===5.U else false.B
+  private val diagnosticSelect = if(enableAxiDiagnostics) io.apb.paddr(15,8)===6.U else false.B
   private val instanceActive = instances.map(_.io.active).getOrElse(false.B) || batch.map(_.io.active).getOrElse(false.B)
   // Candidate-only response stage: break the decoded read mux -> Sapphire
   // path without changing the default legacy APB timing or register ABI.
@@ -73,7 +76,7 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   private val responseReady = WireDefault(Mux(assetSelect, assetRegs.io.pready, regs.io.pready))
   private val responseError = WireDefault(Mux(assetSelect, assetRegs.io.pslverror, regs.io.pslverror))
   regs.io.paddr := io.apb.paddr
-  regs.io.psel := localSelect && !assetSelect && !instanceSelect && !batchSelect
+  regs.io.psel := localSelect && !assetSelect && !instanceSelect && !batchSelect && !diagnosticSelect
   regs.io.penable := io.apb.penable
   regs.io.pwrite := io.apb.pwrite
   regs.io.pwdata := io.apb.pwdata
@@ -82,6 +85,14 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   assetRegs.io.penable := io.apb.penable
   assetRegs.io.pwrite := io.apb.pwrite
   assetRegs.io.pwdata := io.apb.pwdata
+  diagnostics.foreach { d =>
+    d.io.apb.paddr := io.apb.paddr; d.io.apb.psel := localSelect && diagnosticSelect
+    d.io.apb.penable := io.apb.penable; d.io.apb.pwrite := io.apb.pwrite; d.io.apb.pwdata := io.apb.pwdata
+    d.io.events := ddr.io.diagnostics.get
+    when(diagnosticSelect) {
+      responseData := d.io.apb.prdata; responseReady := d.io.apb.pready; responseError := d.io.apb.pslverror
+    }
+  }
   instances.foreach { frontend =>
     frontend.io.apb.paddr := io.apb.paddr
     frontend.io.apb.psel := localSelect && instanceSelect

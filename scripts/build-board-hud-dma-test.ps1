@@ -1,5 +1,5 @@
 param(
- [ValidateSet('hud','key','key-trim','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','qos-sweep','live-phases','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances','replay-crc','frame-list','stripes','sprite-phases','dashboard-metrics','transform','zoom','alpha-pipeline')][string]$Test='hud',
+ [ValidateSet('hud','key','key-trim','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','qos-sweep','live-phases','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances','replay-crc','frame-list','stripes','sprite-phases','axi-phases','dashboard-metrics','transform','zoom','alpha-pipeline')][string]$Test='hud',
  [string]$RiscvGcc='D:/efinity/risc_v_gcc/toolchain/bin/riscv-none-elf-gcc.exe',
  [string]$Soc='D:/efinity_builds/competition_day1_20260906/sapphire/soc',
  [switch]$InstanceExpandProbe,
@@ -14,6 +14,7 @@ param(
  [string]$OutDirectory
 )
 $ErrorActionPreference='Stop'
+if($Test -eq 'axi-phases' -and !$OutDirectory) {throw 'AXI phase diagnostic requires fresh OutDirectory'}
 if($Test -eq 'live-phases' -and !$OutDirectory) {throw 'Live phase diagnostic requires fresh OutDirectory'}
 if(($LiveControl -or $LiveSplit) -and $Test -ne 'live-phases') {throw 'Live options require live-phases'}
 if($LiveControl -and $LiveSplit) {throw 'Split requires timing instrumentation'}
@@ -47,6 +48,7 @@ try {
   'frame-list' {'generated/verification/v3/frame-list/board'}
   'stripes' {'generated/verification/v3/rows-stripes-20261016/board'}
   'sprite-phases' {'generated/verification/v3/sprite-phases-20261016/board'}
+  'axi-phases' {'generated/verification/v3/axi-diagnostics-20261019/board'}
   'dashboard-metrics' {'generated/verification/v3/dashboard-comparison-20261017/board'}
   'transform' {'generated/verification/v3/dual-track-20261018/board-transform'}
   'alpha-pipeline' {'generated/verification/v3/alpha-gray-20261019/board-alpha-'+[Guid]::NewGuid().ToString('N')}
@@ -98,6 +100,7 @@ try {
   'frame-list' {'sw/efinix_gpu/tests/test_board_frame_list.c'}
   'stripes' {'sw/efinix_gpu/tests/test_board_stripes.c'}
   'sprite-phases' {'sw/efinix_gpu/tests/test_board_sprite_phases.c'}
+  'axi-phases' {'sw/efinix_gpu/tests/test_board_sprite_phases.c'}
   'dashboard-metrics' {'sw/efinix_gpu/tests/test_board_dashboard_metrics.c'}
   'transform' {'sw/efinix_gpu/tests/test_board_transform.c'}
   'alpha-pipeline' {'sw/efinix_gpu/tests/test_board_alpha_pipeline.c'}
@@ -111,6 +114,7 @@ try {
  if($LegacyValidation) {$probeFlags+='-DGPU_SUBMIT_REVALIDATE=1'}
  if($ShadowSubmit) {$probeFlags+='-DGPU_SUBMIT_SHADOW=1'}
  if($FullSubmit) {$probeFlags+='-DGPU_SUBMIT_SHADOW=0'}
+ if($Test -eq 'axi-phases') {$probeFlags+='-DGPU_AXI_DIAGNOSTICS=1'}
  if($Test -eq 'live-phases') {
   $probeFlags+="-DV3_START_COUNT=$LiveTarget"
   $probeFlags+=('-DLIVE_PHASE_TIMING='+[int](!$LiveControl))

@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 
 /** Transaction-level arbitration for Render reads/writes, Scanout reads and Asset writes. */
-class DdrQosArbiter(maxRenderWait: Int = 8) extends Module {
+class DdrQosArbiter(maxRenderWait: Int = 8, enableDiagnostics: Boolean = false) extends Module {
   require(maxRenderWait > 0)
   val io = IO(new Bundle {
     val render = Flipped(new Axi4MasterPort)
@@ -19,6 +19,7 @@ class DdrQosArbiter(maxRenderWait: Int = 8) extends Module {
     val renderGrant = Output(UInt(2.W))
     val scanoutGrant = Output(UInt(2.W))
     val assetGrant = Output(UInt(2.W))
+    val diagnostics = if(enableDiagnostics) Some(Output(Vec(16, Bool()))) else None
   })
 
   private val readIdle :: readAddress :: readData :: Nil = Enum(3)
@@ -180,5 +181,30 @@ class DdrQosArbiter(maxRenderWait: Int = 8) extends Module {
       nextWriteOwner := !writeOwner
       writeState := writeIdle
     }
+  }
+  // Observer only. Per-channel waits overlap; do not sum this vector as frame time.
+  io.diagnostics.foreach { events =>
+    val renderWrite = !writeOwner
+    val renderRead = !readOwner
+    events := VecInit(Seq(
+      io.render.w.fire, // All W beats, including WSTRB=0.
+      writeState === writeData && renderWrite && !io.render.w.valid,
+      writeState === writeData && renderWrite && io.axi.w.valid && !io.axi.w.ready,
+      writeState === writeResponse && renderWrite && !io.axi.b.valid,
+      writeState === writeAddress && renderWrite && io.axi.aw.valid && !io.axi.aw.ready,
+      io.render.aw.valid && emergency && (writeState === writeIdle ||
+        (writeState === writeAddress && !writeAddressPresented)),
+      readState === readData && renderRead && io.axi.r.fire,
+      readState === readData && renderRead && !io.axi.r.valid,
+      readState === readData && renderRead && io.axi.r.valid && !io.axi.r.ready,
+      readState === readAddress && renderRead && io.axi.ar.valid && !io.axi.ar.ready,
+      io.render.ar.valid && emergency && (readState === readIdle ||
+        (readState === readAddress && renderRead && !readAddressPresented)),
+      io.render.ar.valid && !renderResponseSpace,
+      io.render.b.fire,
+      io.render.aw.fire,
+      io.render.r.valid && !io.render.r.ready,
+      true.B
+    ))
   }
 }

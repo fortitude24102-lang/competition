@@ -27,16 +27,16 @@
 **Files:** 新AxiDiagnosticRegs.scala与AxiDiagnosticsSpec.scala；修改DdrQosArbiter.scala、GpuApbRegs.scala、Efinix2dGpuTop.scala、GenerateEfinix2dGpu.scala、scripts/test-v3-gpu.ps1。
 **Interfaces:** DdrQosArbiter尾参`enableDiagnostics:Boolean=false`，`io.diagnostics:Option[Vec[Bool]]`16项；AxiDiagnosticRegs输入`events:Vec[Bool](16)`与ApbSlavePort；Top尾参`enableAxiDiagnostics:Boolean=false`。
 
-- [ ] 写AxiDiagnosticsSpec：CONTROL3清零启用；literal事件0/3/7脉冲分别2/5/3；CONTROL0后不增长；非法CONTROL4与只读写报错且计数/启停不变；仲裁器实际Render W/B延迟及R缺数事件，Scanout/Asset排除。先运行看到缺少类/接口的RED。
-- [ ] 实现页ID0x41585046、CONTROL0x0604、计数0x0610..0x064c，按Spec事件连线。Top诊断候选状态声明bit19、路由新页，默认不实例化。生成`--axi-diagnostics`，脚本`-AxiDiagnostics`必须Generate并使用独立新RTL路径。
-- [ ] 定向`gpu.AxiDiagnosticsSpec gpu.DdrQosArbiterSpec`通过；Top候选APB读ID/能力/清零、默认无能力在同套覆盖。只作本地提交。
+- [x] 写AxiDiagnosticsSpec：CONTROL3清零启用；literal事件0/3/7脉冲分别2/5/3；CONTROL0后不增长；非法CONTROL4与只读写报错且计数/启停不变；仲裁器实际Render W/B延迟及R缺数事件，Scanout/Asset排除。先运行看到缺少类/接口的RED。
+- [x] 实现页ID0x41585046、CONTROL0x0604、计数0x0610..0x064c，按Spec事件连线。Top诊断候选状态声明bit19、路由新页，默认不实例化。生成`--axi-diagnostics`，脚本`-AxiDiagnostics`必须Generate并使用独立新RTL路径。
+- [x] 定向`gpu.AxiDiagnosticsSpec gpu.DdrQosArbiterSpec`共11项通过；Top候选APB读ID/能力/清零、默认无能力在同套覆盖。只作本地提交。
 
 ### Task 2: 阶段固件与实板选择门
 
 **Files:** 修改sw/efinix_gpu/tests/test_board_sprite_phases.c、scripts/build-board-hud-dma-test.ps1；新增本轮evidence README，更新主README。
-**Interfaces:** `-Test sprite-phases -AxiDiagnostics -OutDirectory <全新>`生成`GPU_AXI_DIAGNOSTICS=1`固件，只有STATUS bit19存在时访问0x0600；输出`AXI_PHASE`含16项。默认不加参数保持旧诊断工作量。
+**Interfaces:** `-Test axi-phases -OutDirectory <全新>`生成`GPU_AXI_DIAGNOSTICS=1`固件，只有STATUS bit19存在时访问0x0600；输出`AXI_PHASE`含16项。原sprite-phases目标保持旧诊断工作量。
 
-- [ ] 先验证构建入口拒绝未知AxiDiagnostics，再加受限开关（仅sprite-phases且新目录），构建RV32固件；不修改原保存测量BIN。
+- [x] 原未知AxiDiagnostics被非advanced脚本静默忽略，首BIN隔离未加载；改用ValidateSet axi-phases，RED确实拒绝，加入独立目标后RV32固件构建通过；不修改原保存测量BIN。
 - [ ] 最终GPU全套一次；受影响软件检查及生成一文件一模块RTL；综合检查全部16项最终时序关系。时序失败只修诊断实现或保持离线，不加载不合格位流。
 - [ ] 板卡就绪时JTAG加载诊断候选；沿用原24阶段与CRC/数量/有效字节核对，零新增下溢/硬件错误；读取16项并明确总线拍与有效字节区别。对照旧同场景耗时，说明诊断开销边界。
 - [ ] 记录选择结论及下一项设计：先比较Key/BG的B尾等待、W供应空拍、R供应/显示准入，而非先写双在途。恢复已验证双飞机Zoom BIT/BIN，关闭采集/烧录；本地提交证据，不推送。

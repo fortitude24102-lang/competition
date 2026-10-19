@@ -14,7 +14,8 @@ object GenerateEfinix2dGpu extends App {
   private val keyTrim = args.contains("--key-row-trim")
   private val transform = args.contains("--transform-blit")
   private val alphaPipeline = args.contains("--alpha-pipeline")
+  private val axiDiagnostics = args.contains("--axi-diagnostics")
   require(!keyTrim || keyPrefetch, "Key row trim requires Key prefetch")
-  ChiselStage.emitSystemVerilogFile(new Efinix2dGpuTop(!legacyCopy, instances,lists,keyPrefetch,stripes,burstBuffer,scanoutPipeline,keyTrim,transform,alphaPipeline),
-    args.filterNot(a => Set("--legacy-copy", "--instances", "--frame-lists", "--key-prefetch", "--stripe-scratchpad", "--copy-burst-buffer", "--scanout-word-pipeline", "--key-row-trim", "--transform-blit", "--alpha-pipeline")(a)))
+  ChiselStage.emitSystemVerilogFile(new Efinix2dGpuTop(!legacyCopy, instances,lists,keyPrefetch,stripes,burstBuffer,scanoutPipeline,keyTrim,transform,alphaPipeline,axiDiagnostics),
+    args.filterNot(a => Set("--legacy-copy", "--instances", "--frame-lists", "--key-prefetch", "--stripe-scratchpad", "--copy-burst-buffer", "--scanout-word-pipeline", "--key-row-trim", "--transform-blit", "--alpha-pipeline", "--axi-diagnostics")(a)))
 }
