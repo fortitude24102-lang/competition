@@ -18,7 +18,7 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   enableFrameLists: Boolean = false, enableKeyPrefetch: Boolean = false,
   enableStripeScratchpad: Boolean = false, enableCopyBurstBuffer: Boolean = false,
   enableScanoutWordPipeline: Boolean = false, enableKeyRowTrim: Boolean = false,
-  enableTransformBlit: Boolean = false) extends Module {
+  enableTransformBlit: Boolean = false, enableAlphaPipeline: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val apb = new ApbSlavePort
     val axi = new Axi4MasterPort
@@ -47,7 +47,7 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   private val assetRegs = Module(new AssetDmaRegs)
   private val assetWriter = Module(new AssetDmaWriter)
   private val render = Module(new RenderEngine(enableCopyStream,enableFrameLists,enableKeyPrefetch,enableCopyBurstBuffer,
-    enableKeyRowTrim,enableTransformBlit))
+    enableKeyRowTrim,enableTransformBlit,enableAlphaPipeline))
   private val scanout = Module(new ScanoutDma(enableWordPipeline=enableScanoutWordPipeline))
   private val ddr = Module(new DdrQosArbiter)
   private val renderMemory = if(enableStripeScratchpad) {

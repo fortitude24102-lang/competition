@@ -4,7 +4,8 @@ import chisel3._
 import chisel3.util._
 
 class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boolean = false,
-  enableCopyBurstBuffer: Boolean = false, enableKeyRowTrim: Boolean = false) extends Module {
+  enableCopyBurstBuffer: Boolean = false, enableKeyRowTrim: Boolean = false,
+  enableAlphaPipeline: Boolean = false) extends Module {
   require(!enableKeyRowTrim || enableKeyPrefetch, "Key row trimming requires Key prefetch")
   val io = IO(new Bundle {
     val command = Flipped(Decoupled(new GpuCommand))
@@ -23,7 +24,8 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
     val textureCacheHitBytes = Output(UInt(64.W))
   })
 
-  private val rect = Module(new RectAddressGen)
+  private val retireRect = WireDefault(false.B)
+  private val rect = withReset(reset.asBool || retireRect) { Module(new RectAddressGen) }
   private val reader = Module(new AxiReadEngine(0))
   private val backgroundReader = Module(new AxiReadEngine(1))
   private val textureCache = Module(new TextureCache)
@@ -34,6 +36,12 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   private val alphaBackgroundBuffer = Module(new Queue(UInt(32.W), 33))
   private val packer = Module(new PixelWritePacker)
   private val writer = Module(new AxiWriteEngine)
+  private val alphaMetadata = if(enableAlphaPipeline) Some(Module(new Queue(new Bundle {
+    val address = UInt(32.W)
+    val rowLast = Bool()
+    val last = Bool()
+    val chunkLast = Bool()
+  }, 2, pipe = true))) else None
   private val copyStream = Module(new CopyStreamEngine(if(enableCopyBurstBuffer) 256 else 16))
   private val keyStream = if (enableKeyPrefetch) Some(Module(new CachedKeyStream(enableKeyRowTrim))) else None
   private val readAddressArbiter = Module(new RRArbiter(new Axi4Address, 2))
@@ -61,6 +69,9 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   private val dynamicWriteOutstanding = RegInit(false.B)
   private val completionError = RegInit(GpuError.None.U(8.W))
   private val useTextureCache = RegInit(false.B)
+  // A row failure may leave later rows unvisited. Retire only the address
+  // generator after bus/pixel drain, so the following command can start.
+  retireRect := state === finish
 
   textureCache.io.load.valid := io.textureCacheLoad.valid
   textureCache.io.load.bits := io.textureCacheLoad.bits
@@ -245,18 +256,29 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
 
   private val sourceValid = !hasSource ||
     (aligner.io.output.valid && (!isAlpha || backgroundAligner.io.output.valid))
-  io.pixelRequest.valid := state === requestPixel && rect.io.address.valid && sourceValid
+  private val pipelinedAlpha = enableAlphaPipeline.B && isAlpha
+  private val metadataReady = !pipelinedAlpha || alphaMetadata.map(_.io.enq.ready).getOrElse(true.B)
+  io.pixelRequest.valid := state === requestPixel && rect.io.address.valid && sourceValid && metadataReady
   io.pixelRequest.bits.op := commandReg.op(2, 0)
   io.pixelRequest.bits.foreground := aligner.io.output.bits.pixel
   io.pixelRequest.bits.background := Mux(isAlpha, backgroundAligner.io.output.bits.pixel, 0.U)
   io.pixelRequest.bits.fillColor := commandReg.color
   io.pixelRequest.bits.colorKey := commandReg.colorKey
   io.pixelRequest.bits.alpha := commandReg.alpha
-  rect.io.address.ready := state === requestPixel && io.pixelRequest.ready && sourceValid
+  rect.io.address.ready := state === requestPixel && io.pixelRequest.ready && sourceValid && metadataReady
   aligner.io.output.ready := state === requestPixel && hasSource && rect.io.address.valid && io.pixelRequest.ready &&
-    (!isAlpha || backgroundAligner.io.output.valid)
+    (!isAlpha || backgroundAligner.io.output.valid) && metadataReady
   backgroundAligner.io.output.ready := state === requestPixel && isAlpha && rect.io.address.valid &&
-    io.pixelRequest.ready && aligner.io.output.valid
+    io.pixelRequest.ready && aligner.io.output.valid && metadataReady
+
+  alphaMetadata.foreach { q =>
+    q.io.enq.valid := pipelinedAlpha && io.pixelRequest.fire
+    q.io.enq.bits.address := rect.io.address.bits.address
+    q.io.enq.bits.rowLast := rect.io.address.bits.rowLast
+    q.io.enq.bits.last := rect.io.address.bits.last
+    q.io.enq.bits.chunkLast := aligner.io.output.bits.last
+    q.io.deq.ready := pipelinedAlpha && io.pixelResult.fire
+  }
 
   when(io.pixelRequest.fire) {
     pixelAddress := rect.io.address.bits.address
@@ -264,7 +286,8 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
     pixelLast := rect.io.address.bits.last
     pixelChunkLast := aligner.io.output.bits.last
     when(isAlpha) { alphaSrcAddress := alphaSrcAddress + 2.U }
-    state := waitPixel
+    // Once the final chunk pixel is accepted, drain results before new reads.
+    when(!pipelinedAlpha || aligner.io.output.bits.last) { state := waitPixel }
   }
 
   packer.io.input.valid := state === waitPixel && io.pixelResult.valid
@@ -274,8 +297,30 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   packer.io.input.bits.rowLast := pixelRowLast || (isAlpha && pixelChunkLast)
   io.pixelResult.ready := state === waitPixel && packer.io.input.ready
 
+  alphaMetadata.foreach { q =>
+    when(pipelinedAlpha) {
+      val receiving = state === requestPixel || state === waitPixel
+      packer.io.input.valid := receiving && q.io.deq.valid && io.pixelResult.valid
+      packer.io.input.bits.address := q.io.deq.bits.address
+      packer.io.input.bits.rowLast := q.io.deq.bits.rowLast || q.io.deq.bits.chunkLast
+      io.pixelResult.ready := receiving && q.io.deq.valid && packer.io.input.ready
+    }
+  }
+
   when(io.pixelResult.fire) {
-    state := Mux(pixelRowLast, waitRow, Mux(isAlpha && pixelChunkLast, startAlphaAligners, requestPixel))
+    if(enableAlphaPipeline) {
+      val meta = alphaMetadata.get.io.deq.bits
+      when(pipelinedAlpha) {
+        when(meta.chunkLast) {
+          pixelLast := meta.last
+          state := Mux(meta.rowLast, waitRow, startAlphaAligners)
+        }
+      }.otherwise {
+        state := Mux(pixelRowLast, waitRow, Mux(isAlpha && pixelChunkLast, startAlphaAligners, requestPixel))
+      }
+    } else {
+      state := Mux(pixelRowLast, waitRow, Mux(isAlpha && pixelChunkLast, startAlphaAligners, requestPixel))
+    }
   }
 
   // Keep every beat in the burst, including transparent words with WSTRB=0.
@@ -309,7 +354,9 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   wordAligner.io.output.ready := fastWordBlit && !directWordBlit && writer.io.data.ready && !streamingKey
 
   when(writer.io.done) {
-    rowWriteDone := true.B
+    // done may retire the previous Alpha chunk on the very cycle the next
+    // request is accepted. The new transaction must remain incomplete.
+    rowWriteDone := !writer.io.request.fire
     rowWriteError := rowWriteError || writer.io.error
     dynamicWriteOutstanding := false.B
   }
