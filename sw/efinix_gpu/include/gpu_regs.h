@@ -25,6 +25,7 @@
 #define GPU_STATUS_QUEUE_HIGH_WATER_SHIFT 8u
 #define GPU_STATUS_QUEUE_HIGH_WATER_MASK (0x1fu << GPU_STATUS_QUEUE_HIGH_WATER_SHIFT)
 #define GPU_STATUS_IRQ_PENDING (1u << 13)
+#define GPU_STATUS_TRANSFORM_PRESENT (1u << 17)
 #define GPU_PERF_CONTROL_SNAPSHOT 1u
 #define GPU_PERF_CONTROL_CLEAR (1u << 1)
 #define GPU_QOS_LOW_MASK 0x00000fffu
@@ -89,6 +90,7 @@
 #define GPU_REG_TEXTURE_CACHE_STATUS 0x009cu
 #define GPU_REG_PERF_CACHE_BYTES_LO 0x00a0u
 #define GPU_REG_PERF_CACHE_BYTES_HI 0x00a4u
+#define GPU_REG_TRANSFORM_SOURCE_SIZE 0x00a8u
 #define GPU_REG_ASSET_SESSION 0x0100u
 #define GPU_REG_ASSET_DST_ADDR 0x0104u
 #define GPU_REG_ASSET_ID 0x0108u
@@ -146,6 +148,7 @@ typedef struct {
     uint32_t texture_cache_status;
     uint32_t perf_cache_bytes_lo;
     uint32_t perf_cache_bytes_hi;
+    uint32_t transform_source_size;
 } gpu_register_layout;
 _Static_assert(offsetof(gpu_register_layout, id) == GPU_REG_ID, "register offset");
 _Static_assert(offsetof(gpu_register_layout, version) == GPU_REG_VERSION, "register offset");
@@ -189,5 +192,6 @@ _Static_assert(offsetof(gpu_register_layout, texture_cache_control) == GPU_REG_T
 _Static_assert(offsetof(gpu_register_layout, texture_cache_status) == GPU_REG_TEXTURE_CACHE_STATUS, "register offset");
 _Static_assert(offsetof(gpu_register_layout, perf_cache_bytes_lo) == GPU_REG_PERF_CACHE_BYTES_LO, "register offset");
 _Static_assert(offsetof(gpu_register_layout, perf_cache_bytes_hi) == GPU_REG_PERF_CACHE_BYTES_HI, "register offset");
-_Static_assert(sizeof(gpu_register_layout) == 0xa8, "register extent");
+_Static_assert(offsetof(gpu_register_layout, transform_source_size) == GPU_REG_TRANSFORM_SOURCE_SIZE, "register offset");
+_Static_assert(sizeof(gpu_register_layout) == 0xac, "register extent");
 #endif

@@ -87,7 +87,10 @@ class AssetDmaRegsSpec extends AnyFunSpec with StableChiselSim with Matchers {
         dut.io.descriptor.maxLength.expect(2048)
         transfer(dut, AssetDmaRegisterMap.Status, write = false)._1 shouldBe 1
         GpuRegisterMap.PerfScanoutGrantsHi shouldBe 0x008c
-        GpuRegisterMap.All.max shouldBe 0x00a4
+        GpuRegisterMap.PerfCacheBytesHi shouldBe 0x00a4
+        GpuRegisterMap.All.filterNot(_ == GpuRegisterMap.TransformSourceSize).max shouldBe 0x00a4
+        GpuRegisterMap.TransformSourceSize shouldBe 0x00a8
+        GpuRegisterMap.All.distinct.size shouldBe GpuRegisterMap.All.size
         GpuRegisterMap.All.max should be < AssetDmaRegisterMap.All.min
         AssetDmaRegisterMap.All.min shouldBe 0x0100
       }

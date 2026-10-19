@@ -39,6 +39,7 @@
     <efx:design_file name="vendor/sapphire_ddr3/rtl/memory_test/common/divider.v" version="default" library="default" />
     <efx:design_file name="vendor/sapphire_ddr3/rtl/memory_test/common/bit1_delaym.v" version="default" library="default" />
     <efx:design_file name="rtl/board_top.v" version="default" library="default" />
+    <efx:design_file name="rtl/efinix_user_keys_gpio.v" version="default" library="default" />
     <efx:design_file name="rtl/efinix_sapphire_adapter.v" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/GpuApbRegs.sv" version="default" library="default" />
     <efx:design_file name="../../generated/efinix_gpu/AssetDmaRegs.sv" version="default" library="default" />

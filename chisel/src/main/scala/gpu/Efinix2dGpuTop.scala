@@ -17,7 +17,8 @@ class ApbSlavePort extends Bundle {
 class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean = false,
   enableFrameLists: Boolean = false, enableKeyPrefetch: Boolean = false,
   enableStripeScratchpad: Boolean = false, enableCopyBurstBuffer: Boolean = false,
-  enableScanoutWordPipeline: Boolean = false) extends Module {
+  enableScanoutWordPipeline: Boolean = false, enableKeyRowTrim: Boolean = false,
+  enableTransformBlit: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val apb = new ApbSlavePort
     val axi = new Axi4MasterPort
@@ -40,12 +41,13 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   })
 
   private val hasFrontend = enableInstances || enableFrameLists
-  private val regs = Module(new GpuApbRegs(hasFrontend,enableFrameLists,enableStripeScratchpad))
+  private val regs = Module(new GpuApbRegs(hasFrontend,enableFrameLists,enableStripeScratchpad,enableTransformBlit))
   private val instances = if (hasFrontend) Some(Module(new InstanceStream(enableFrameLists))) else None
   private val batch = if(enableFrameLists) Some(Module(new FrameListBatch)) else None
   private val assetRegs = Module(new AssetDmaRegs)
   private val assetWriter = Module(new AssetDmaWriter)
-  private val render = Module(new RenderEngine(enableCopyStream,enableFrameLists,enableKeyPrefetch,enableCopyBurstBuffer))
+  private val render = Module(new RenderEngine(enableCopyStream,enableFrameLists,enableKeyPrefetch,enableCopyBurstBuffer,
+    enableKeyRowTrim,enableTransformBlit))
   private val scanout = Module(new ScanoutDma(enableWordPipeline=enableScanoutWordPipeline))
   private val ddr = Module(new DdrQosArbiter)
   private val renderMemory = if(enableStripeScratchpad) {

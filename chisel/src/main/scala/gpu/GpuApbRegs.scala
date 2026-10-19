@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 
 class GpuApbRegs(instancePresent: Boolean = false, frameListPresent: Boolean = false,
-  stripePresent: Boolean = false) extends Module {
+  stripePresent: Boolean = false, transformPresent: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val paddr = Input(UInt(16.W))
     val psel = Input(Bool())
@@ -57,7 +57,8 @@ class GpuApbRegs(instancePresent: Boolean = false, frameListPresent: Boolean = f
   private val submit = transfer && write && address === GpuRegisterMap.Control.U && writeData(0)
   private val perfCapture = transfer && write &&
     address === GpuRegisterMap.PerfControl.U && writeData(0)
-  private val legalOffset = VecInit(GpuRegisterMap.All.map(offset => address === offset.U)).asUInt.orR
+  private val legalOffsets = GpuRegisterMap.All.filter(o => transformPresent || o != GpuRegisterMap.TransformSourceSize)
+  private val legalOffset = VecInit(legalOffsets.map(offset => address === offset.U)).asUInt.orR
   private val perfCycles = RegInit(0.U(64.W))
   private val perfPixels = RegInit(0.U(64.W))
   private val perfReadBytes = RegInit(0.U(64.W))
@@ -160,6 +161,12 @@ class GpuApbRegs(instancePresent: Boolean = false, frameListPresent: Boolean = f
         shadow.flags := writeData(31, 16)
       }
       is(GpuRegisterMap.Tag.U) { shadow.tag := writeData(15, 0) }
+      is(GpuRegisterMap.TransformSourceSize.U) {
+        if(transformPresent) {
+          shadow.srcWidthPixels := writeData(15, 0)
+          shadow.srcHeightPixels := writeData(31, 16)
+        }
+      }
       is(GpuRegisterMap.QosWatermarks.U) {
         when(qosWriteValid) {
           qosLowWatermark := writeData(11, 0)
@@ -179,7 +186,7 @@ class GpuApbRegs(instancePresent: Boolean = false, frameListPresent: Boolean = f
     is(GpuRegisterMap.Status.U) {
       io.prdata := Cat(
         ((if (instancePresent) 1 else 0) | (if(frameListPresent) 2 else 0) |
-          (if(stripePresent) 4 else 0)).U(18.W), io.irqPending, io.queueHighWater,
+          (if(stripePresent) 4 else 0) | (if(transformPresent) 8 else 0)).U(18.W), io.irqPending, io.queueHighWater,
         io.engineBusy, io.queueFull, io.queueEmpty, io.queueLevel
       )
     }
@@ -192,6 +199,9 @@ class GpuApbRegs(instancePresent: Boolean = false, frameListPresent: Boolean = f
     is(GpuRegisterMap.ColorKey.U) { io.prdata := Cat(shadow.colorKey, shadow.color) }
     is(GpuRegisterMap.AlphaFlags.U) { io.prdata := Cat(shadow.flags, 0.U(8.W), shadow.alpha) }
     is(GpuRegisterMap.Tag.U) { io.prdata := shadow.tag }
+    is(GpuRegisterMap.TransformSourceSize.U) {
+      if(transformPresent) { io.prdata := Cat(shadow.srcHeightPixels, shadow.srcWidthPixels) }
+    }
     is(GpuRegisterMap.LastDone.U) { io.prdata := io.lastDoneTag }
     is(GpuRegisterMap.Error.U) { io.prdata := io.lastError }
     is(GpuRegisterMap.QueueLevel.U) { io.prdata := io.queueLevel }

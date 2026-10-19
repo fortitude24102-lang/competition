@@ -84,6 +84,7 @@ object GpuRegisterMap {
   val TextureCacheStatus = 0x009c
   val PerfCacheBytesLo = 0x00a0
   val PerfCacheBytesHi = 0x00a4
+  val TransformSourceSize = 0x00a8
 
   val All: Seq[Int] = Seq(
     Id, Version, Status, Control, Op, SrcAddr, DstAddr, Size, SrcStride,
@@ -94,6 +95,6 @@ object GpuRegisterMap {
     PerfStallsHi, PerfUnderflowsLo, PerfUnderflowsHi, PerfRenderGrantsLo,
     PerfRenderGrantsHi, PerfScanoutGrantsLo, PerfScanoutGrantsHi,
     TextureCacheBase, TextureCacheBytes, TextureCacheControl,
-    TextureCacheStatus, PerfCacheBytesLo, PerfCacheBytesHi
+    TextureCacheStatus, PerfCacheBytesLo, PerfCacheBytesHi, TransformSourceSize
   )
 }
