@@ -29,7 +29,19 @@ static int surface(uint32_t address,uint32_t stride,uint16_t width,uint16_t heig
 }
 
 static inline __attribute__((always_inline)) int validate(const gpu_command *c) {
- if(!c || c->flags) return GPU_DRIVER_ARGUMENT;
+ if(!c) return GPU_DRIVER_ARGUMENT;
+ if(c->op==GPU_OP_TRANSFORM) {
+  if(!c->width_pixels || !c->height_pixels || !c->src_width_pixels || !c->src_height_pixels)
+   return GPU_ERROR_ZERO_SIZE;
+  if(c->flags&~GPU_TRANSFORM_FLAGS_MASK) return GPU_ERROR_TRANSFORM_CONFIG;
+  uint16_t sw=c->src_width_pixels,sh=c->src_height_pixels;
+  int e=surface(c->src_addr,c->src_stride,sw,sh);if(e) return e;
+  e=surface(c->dst_addr,c->dst_stride,c->width_pixels,c->height_pixels);if(e) return e;
+  uint64_t se=(uint64_t)c->src_addr+(uint64_t)(sh-1u)*c->src_stride+(uint32_t)sw*2u;
+  uint64_t de=(uint64_t)c->dst_addr+(uint64_t)(c->height_pixels-1u)*c->dst_stride+(uint32_t)c->width_pixels*2u;
+  return (uint64_t)c->src_addr<de && (uint64_t)c->dst_addr<se ? GPU_ERROR_OVERLAPPING_COPY : 0;
+ }
+ if(c->flags) return GPU_DRIVER_ARGUMENT;
  int e;
  if(c->op==GPU_OP_FILL) return surface(c->dst_addr,c->dst_stride,c->width_pixels,c->height_pixels);
  if(c->op==GPU_OP_PRESENT)
@@ -98,8 +110,12 @@ static inline __attribute__((always_inline)) void write_command(gpu_device *d,co
  write_field(d,GPU_REG_OP,c->op); write_field(d,GPU_REG_SRC_ADDR,c->src_addr); write_field(d,GPU_REG_DST_ADDR,c->dst_addr);
  write_field(d,GPU_REG_SIZE,gpu_pack_size(c->width_pixels,c->height_pixels));
  write_field(d,GPU_REG_SRC_STRIDE,c->src_stride); write_field(d,GPU_REG_DST_STRIDE,c->dst_stride);
- write_field(d,GPU_REG_COLOR_KEY,gpu_pack_color_key(c->color,c->color_key));
- write_field(d,GPU_REG_ALPHA_FLAGS,gpu_pack_alpha_flags(c->alpha,c->flags)); wr(d,GPU_REG_TAG,tag);
+ write_field(d,GPU_REG_COLOR_KEY,gpu_pack_color_key(c->op==GPU_OP_TRANSFORM ? 0 : c->color,c->color_key));
+ write_field(d,GPU_REG_ALPHA_FLAGS,gpu_pack_alpha_flags(c->alpha,c->flags));
+ /* Outside the legacy eight-word delta cache: always write optional source size. */
+ if(c->op==GPU_OP_TRANSFORM)
+  wr(d,GPU_REG_TRANSFORM_SOURCE_SIZE,gpu_pack_size(c->src_width_pixels,c->src_height_pixels));
+ wr(d,GPU_REG_TAG,tag);
  gpu_io_fence(); wr(d,GPU_REG_CONTROL,GPU_CONTROL_SUBMIT); gpu_io_fence();
 #if GPU_SUBMIT_SHADOW
  d->shadow_valid=1;
@@ -122,6 +138,7 @@ static inline __attribute__((always_inline)) int try_submit_validated(gpu_device
  d->hardware_error=(uint8_t)(rd(d,GPU_REG_ERROR)&GPU_ERROR_MASK);
  if(d->hardware_error) return GPU_DRIVER_HARDWARE;
  uint32_t status=rd(d,GPU_REG_STATUS);
+ if(c->op==GPU_OP_TRANSFORM && !(status&GPU_STATUS_TRANSFORM_PRESENT)) return GPU_DRIVER_ARGUMENT;
  uint8_t level=(uint8_t)(status&GPU_STATUS_QUEUE_LEVEL_MASK);
  if(level>d->queue_high_watermark) d->queue_high_watermark=level;
  if((status&GPU_STATUS_FULL) || d->outstanding>=GPU_COMMAND_QUEUE_DEPTH) return GPU_DRIVER_AGAIN;
@@ -196,6 +213,13 @@ int gpu_sparse_async(gpu_device *d,uint32_t src,uint32_t dst,uint32_t ds,uint16_
 }
 int gpu_present_async(gpu_device *d,uint32_t back,uint16_t *tag) {
  gpu_command c={.op=GPU_OP_PRESENT,.dst_addr=back,.dst_stride=2,.width_pixels=1,.height_pixels=1};
+ return gpu_try_submit(d,&c,tag);
+}
+int gpu_transform_blit_async(gpu_device *d,uint32_t src,uint32_t dst,uint32_t ss,uint32_t ds,
+ uint16_t sw,uint16_t sh,uint16_t w,uint16_t h,uint16_t flags,uint16_t key,uint16_t *tag) {
+ gpu_command c={.op=GPU_OP_TRANSFORM,.src_addr=src,.dst_addr=dst,.src_stride=ss,.dst_stride=ds,
+  .width_pixels=w,.height_pixels=h,.flags=flags,.color_key=key,
+  .src_width_pixels=sw,.src_height_pixels=sh};
  return gpu_try_submit(d,&c,tag);
 }
 int gpu_wait_tag(gpu_device *d,uint16_t tag,uint32_t poll_limit) {

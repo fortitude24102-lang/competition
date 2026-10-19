@@ -5,19 +5,37 @@
 #define GPU_SUBMIT_SHADOW 0
 #endif
 enum gpu_opcode { GPU_OP_NOP=0, GPU_OP_FILL=1, GPU_OP_COPY=2,
-    GPU_OP_COLOR_KEY=3, GPU_OP_ALPHA=4, GPU_OP_SPARSE=5, GPU_OP_PRESENT=6 };
+    GPU_OP_COLOR_KEY=3, GPU_OP_ALPHA=4, GPU_OP_SPARSE=5, GPU_OP_PRESENT=6,
+    GPU_OP_TRANSFORM=7 };
 enum gpu_error { GPU_ERROR_NONE=0, GPU_ERROR_INVALID_OPCODE=1,
     GPU_ERROR_ZERO_SIZE=2, GPU_ERROR_MISALIGNED_ADDRESS=3,
     GPU_ERROR_STRIDE_TOO_SMALL=4, GPU_ERROR_ADDRESS_RANGE=5,
     GPU_ERROR_OVERLAPPING_COPY=6, GPU_ERROR_QUEUE_FULL=7,
-    GPU_ERROR_SPARSE_FORMAT=8, GPU_ERROR_AXI_RESPONSE=9 };
+    GPU_ERROR_SPARSE_FORMAT=8, GPU_ERROR_AXI_RESPONSE=9, GPU_ERROR_TRANSFORM_CONFIG=10 };
+enum gpu_transform_flags { GPU_TRANSFORM_HFLIP=1, GPU_TRANSFORM_VFLIP=2,
+    GPU_TRANSFORM_COLOR_KEY=16, GPU_TRANSFORM_FLAGS_MASK=19 };
 /* Field contract, not a packed hardware descriptor. op uses only low 4 bits;
- * flags are reserved by current execution logic: callers should supply zero. */
+ * flags must be zero for legacy operations; Transform uses gpu_transform_flags.
+ * Transform width/height describe OUTPUT pixels, not source dimensions.
+ * Transform source sizes alias unused color/tag storage; the driver assigns
+ * the hardware submission tag independently of the command's tag member. */
 typedef struct {
     uint32_t src_addr, dst_addr, src_stride, dst_stride;
-    uint16_t width_pixels, height_pixels, color, color_key, flags, tag;
+    uint16_t width_pixels, height_pixels;
+    union { uint16_t color; uint16_t src_width_pixels; };
+    uint16_t color_key, flags;
+    union { uint16_t tag; uint16_t src_height_pixels; };
     uint8_t op, alpha;
 } gpu_command;
+_Static_assert(sizeof(gpu_command)==32, "legacy command extent");
+_Static_assert(offsetof(gpu_command,src_addr)==0 && offsetof(gpu_command,dst_addr)==4 &&
+               offsetof(gpu_command,src_stride)==8 && offsetof(gpu_command,dst_stride)==12 &&
+               offsetof(gpu_command,width_pixels)==16 && offsetof(gpu_command,height_pixels)==18 &&
+               offsetof(gpu_command,color)==20 && offsetof(gpu_command,src_width_pixels)==20 &&
+               offsetof(gpu_command,color_key)==22 && offsetof(gpu_command,flags)==24 &&
+               offsetof(gpu_command,tag)==26 && offsetof(gpu_command,src_height_pixels)==26 &&
+               offsetof(gpu_command,op)==28 && offsetof(gpu_command,alpha)==29,
+               "legacy command offsets and Transform aliases");
 _Static_assert(sizeof(uint32_t)==4 && sizeof(uint16_t)==2 && sizeof(uint8_t)==1,
                "command scalar widths");
 _Static_assert((GPU_ALPHA_MASK & (0xffffu << GPU_FLAGS_SHIFT)) == 0,
@@ -72,6 +90,12 @@ int gpu_color_key_async(gpu_device *d,uint32_t src,uint32_t dst,uint32_t src_str
 int gpu_alpha_async(gpu_device *d,uint32_t src,uint32_t dst,uint32_t src_stride,uint32_t dst_stride,uint16_t w,uint16_t h,uint8_t alpha,uint16_t *tag);
 int gpu_sparse_async(gpu_device *d,uint32_t tokens,uint32_t dst,uint32_t dst_stride,uint16_t w,uint16_t h,uint16_t *tag);
 int gpu_present_async(gpu_device *d,uint32_t back_buffer,uint16_t *tag);
+/* Requires STATUS.TRANSFORM_PRESENT. Arbitrary nearest-neighbor dimensions,
+ * then source H/V mirror. Source and destination surfaces must not overlap. */
+int gpu_transform_blit_async(gpu_device *d,uint32_t src,uint32_t dst,
+ uint32_t src_stride,uint32_t dst_stride,uint16_t src_width,uint16_t src_height,
+ uint16_t width,uint16_t height,
+ uint16_t flags,uint16_t color_key,uint16_t *tag);
 int gpu_wait_tag(gpu_device *d,uint16_t tag,uint32_t poll_limit);
 int gpu_set_qos(gpu_device *d,uint16_t low,uint16_t high,int adaptive);
 int gpu_clear_perf(gpu_device *d);
