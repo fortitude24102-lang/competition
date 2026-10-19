@@ -244,6 +244,24 @@ class TransformBlitSpec extends AnyFunSpec with StableChiselSim with Matchers {
     }
   }
 
+  it("converts sampled pixels to gray after source-Key comparison, not before") {
+    simulate(new TransformBlitEngine) { dut =>
+      val bus = new Bus(dut)
+      bus.tick()
+      val source = Seq(Seq(0xf800,0x07e0,0x001f),Seq(0,0xffff,0xabcd))
+      bus.run(3,2,32,40,source)
+      // floor((R8+2*G8+B8)/4): red/blue63, green127, black0, white255.
+      bus.expectPixels(3,Seq(0x39e7,0x7bef,0x39e7,0,0xffff,0x8410))
+      bus.run(5,3,32|16|3,41,source)
+      bus.expectPixels(5,Seq(0x5a5a,0x5a5a,0xffff,0xffff,0,
+        0x5a5a,0x5a5a,0xffff,0xffff,0,0x39e7,0x39e7,0x7bef,0x7bef,0x39e7))
+      bus.run(1,1,32,42,Seq(Seq(0xffff)))
+      bus.expectPixels(1,Seq(0xffff))
+      bus.run(1,1,0,43,Seq(Seq(0xf800)))
+      bus.expectPixels(1,Seq(0xf800))
+    }
+  }
+
   it("retires once after R or B faults and accepts the following command only after retirement") {
     simulate(new TransformBlitEngine) { dut =>
       val bus = new Bus(dut)

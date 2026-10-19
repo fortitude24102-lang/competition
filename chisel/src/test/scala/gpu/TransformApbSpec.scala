@@ -33,7 +33,7 @@ class TransformApbSpec extends AnyFunSpec with StableChiselSim with Matchers {
     it("advertises and latches source dimensions without changing output size or tag") {
       simulate(new GpuApbRegs(instancePresent=true,frameListPresent=true,transformPresent=true)) { d =>
         init(d)
-        transfer(d,0x08,false) shouldBe (BigInt(0x2c020),false)
+        transfer(d,0x08,false) shouldBe (BigInt(0x6c020),false)
         transfer(d,0xa8,true,0x00030005)._2 shouldBe false
         transfer(d,0xa8,false) shouldBe (BigInt(0x00030005),false)
         transfer(d,0x10,true,7);transfer(d,0x1c,true,0x00070009);transfer(d,0x30,true,42)

@@ -66,7 +66,16 @@ class TransformBlitEngine extends Module {
   writer.io.request.bits.address := destinationAddress
   writer.io.request.bits.beats := 1.U
   writer.io.data.valid := state === waitWrite
-  writer.io.data.bits.data := Cat(pixel, pixel)
+  // Replicate RGB565 bits to 8-bit channels, then use multiplier-free
+  // approximate luminance. Key above always compares the original pixel.
+  private val r8 = Cat(pixel(15, 11), pixel(15, 13))
+  private val g8 = Cat(pixel(10, 5), pixel(10, 9))
+  private val b8 = Cat(pixel(4, 0), pixel(4, 2))
+  private val graySum = (r8 +& b8) +& (g8 << 1)
+  private val y8 = graySum(9, 2)
+  private val gray565 = Cat(y8(7, 3), y8(7, 2), y8(7, 3))
+  private val outputPixel = Mux(command.flags(5), gray565, pixel)
+  writer.io.data.bits.data := Cat(outputPixel, outputPixel)
   writer.io.data.bits.strb := Mux(destinationAddress(1), "hc".U, "h3".U)
   when(writer.io.request.fire) { state := waitWrite }
   when(state === waitWrite && writer.io.done) {

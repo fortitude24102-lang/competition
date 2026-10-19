@@ -57,7 +57,15 @@ int main(void) {
  uint16_t tag;assert(!gpu_fill_async(&d,GPU_FRAMEBUFFER_A,4,2,2,0x1234,&tag));
  regs[GPU_REG_LAST_DONE/4]=tag;assert(!gpu_wait_tag(&d,tag,2));
  regs[GPU_REG_STATUS/4]=GPU_STATUS_EMPTY|(1u<<17);
- c=command();c.flags=32;rejected(&d,c,10);
+ /* A scaling-only old BIT must reject gray before MMIO/tag changes. */
+ c=command();c.flags=32;rejected(&d,c,GPU_DRIVER_ARGUMENT);
+ regs[GPU_REG_STATUS/4]=GPU_STATUS_EMPTY|(1u<<17)|(1u<<18);
+ accepted(&d,c);
+ c.flags=51;accepted(&d,c);
+ regs[GPU_REG_STATUS/4]=GPU_STATUS_EMPTY|(1u<<18);
+ rejected(&d,c,GPU_DRIVER_ARGUMENT); /* Gray bit alone is not Transform. */
+ regs[GPU_REG_STATUS/4]=GPU_STATUS_EMPTY|(1u<<17)|(1u<<18);
+ c=command();c.flags=64;rejected(&d,c,10);
  c=command();c.flags=12;rejected(&d,c,10);
  c=command();c.flags=4;rejected(&d,c,10);
  c=command();c.src_width_pixels=0;rejected(&d,c,GPU_ERROR_ZERO_SIZE);

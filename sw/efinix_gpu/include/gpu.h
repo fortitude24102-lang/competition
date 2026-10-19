@@ -13,7 +13,7 @@ enum gpu_error { GPU_ERROR_NONE=0, GPU_ERROR_INVALID_OPCODE=1,
     GPU_ERROR_OVERLAPPING_COPY=6, GPU_ERROR_QUEUE_FULL=7,
     GPU_ERROR_SPARSE_FORMAT=8, GPU_ERROR_AXI_RESPONSE=9, GPU_ERROR_TRANSFORM_CONFIG=10 };
 enum gpu_transform_flags { GPU_TRANSFORM_HFLIP=1, GPU_TRANSFORM_VFLIP=2,
-    GPU_TRANSFORM_COLOR_KEY=16, GPU_TRANSFORM_FLAGS_MASK=19 };
+    GPU_TRANSFORM_COLOR_KEY=16, GPU_TRANSFORM_GRAYSCALE=32, GPU_TRANSFORM_FLAGS_MASK=51 };
 /* Field contract, not a packed hardware descriptor. op uses only low 4 bits;
  * flags must be zero for legacy operations; Transform uses gpu_transform_flags.
  * Transform width/height describe OUTPUT pixels, not source dimensions.
@@ -90,8 +90,10 @@ int gpu_color_key_async(gpu_device *d,uint32_t src,uint32_t dst,uint32_t src_str
 int gpu_alpha_async(gpu_device *d,uint32_t src,uint32_t dst,uint32_t src_stride,uint32_t dst_stride,uint16_t w,uint16_t h,uint8_t alpha,uint16_t *tag);
 int gpu_sparse_async(gpu_device *d,uint32_t tokens,uint32_t dst,uint32_t dst_stride,uint16_t w,uint16_t h,uint16_t *tag);
 int gpu_present_async(gpu_device *d,uint32_t back_buffer,uint16_t *tag);
-/* Requires STATUS.TRANSFORM_PRESENT. Arbitrary nearest-neighbor dimensions,
- * then source H/V mirror. Source and destination surfaces must not overlap. */
+/* Requires STATUS.TRANSFORM_PRESENT; GRAYSCALE also needs its own capability.
+ * Nearest-neighbor source H/V mirror; source-Key comparison precedes gray.
+ * Gray Y8=(R8+2*G8+B8)/4, expanded by bit replication and truncated to RGB565.
+ * Source and destination surfaces must not overlap. */
 int gpu_transform_blit_async(gpu_device *d,uint32_t src,uint32_t dst,
  uint32_t src_stride,uint32_t dst_stride,uint16_t src_width,uint16_t src_height,
  uint16_t width,uint16_t height,

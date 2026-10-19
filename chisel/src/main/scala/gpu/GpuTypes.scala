@@ -32,7 +32,8 @@ object GpuTransformFlags {
   val HFlip = 1
   val VFlip = 2
   val ColorKey = 16
-  val Mask = HFlip | VFlip | ColorKey
+  val Grayscale = 32
+  val Mask = HFlip | VFlip | ColorKey | Grayscale
 }
 
 class GpuCommand extends Bundle {

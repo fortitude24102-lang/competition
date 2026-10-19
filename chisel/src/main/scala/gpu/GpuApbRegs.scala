@@ -186,7 +186,7 @@ class GpuApbRegs(instancePresent: Boolean = false, frameListPresent: Boolean = f
     is(GpuRegisterMap.Status.U) {
       io.prdata := Cat(
         ((if (instancePresent) 1 else 0) | (if(frameListPresent) 2 else 0) |
-          (if(stripePresent) 4 else 0) | (if(transformPresent) 8 else 0)).U(18.W), io.irqPending, io.queueHighWater,
+          (if(stripePresent) 4 else 0) | (if(transformPresent) 24 else 0)).U(18.W), io.irqPending, io.queueHighWater,
         io.engineBusy, io.queueFull, io.queueEmpty, io.queueLevel
       )
     }

@@ -139,6 +139,8 @@ static inline __attribute__((always_inline)) int try_submit_validated(gpu_device
  if(d->hardware_error) return GPU_DRIVER_HARDWARE;
  uint32_t status=rd(d,GPU_REG_STATUS);
  if(c->op==GPU_OP_TRANSFORM && !(status&GPU_STATUS_TRANSFORM_PRESENT)) return GPU_DRIVER_ARGUMENT;
+ if(c->op==GPU_OP_TRANSFORM && (c->flags&GPU_TRANSFORM_GRAYSCALE) &&
+    !(status&GPU_STATUS_GRAYSCALE_PRESENT)) return GPU_DRIVER_ARGUMENT;
  uint8_t level=(uint8_t)(status&GPU_STATUS_QUEUE_LEVEL_MASK);
  if(level>d->queue_high_watermark) d->queue_high_watermark=level;
  if((status&GPU_STATUS_FULL) || d->outstanding>=GPU_COMMAND_QUEUE_DEPTH) return GPU_DRIVER_AGAIN;
