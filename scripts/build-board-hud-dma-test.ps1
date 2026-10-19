@@ -1,5 +1,5 @@
 param(
- [ValidateSet('hud','key','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','qos-sweep','live-phases','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances','replay-crc','frame-list','stripes','sprite-phases','dashboard-metrics')][string]$Test='hud',
+ [ValidateSet('hud','key','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','qos-sweep','live-phases','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances','replay-crc','frame-list','stripes','sprite-phases','dashboard-metrics','transform','zoom')][string]$Test='hud',
  [string]$RiscvGcc='D:/efinity/risc_v_gcc/toolchain/bin/riscv-none-elf-gcc.exe',
  [string]$Soc='D:/efinity_builds/competition_day1_20260906/sapphire/soc',
  [switch]$InstanceExpandProbe,
@@ -47,6 +47,8 @@ try {
   'stripes' {'generated/verification/v3/rows-stripes-20261016/board'}
   'sprite-phases' {'generated/verification/v3/sprite-phases-20261016/board'}
   'dashboard-metrics' {'generated/verification/v3/dashboard-comparison-20261017/board'}
+  'transform' {'generated/verification/v3/dual-track-20261018/board-transform'}
+  'zoom' {'generated/verification/v3/dual-track-20261018/board-zoom-'+[Guid]::NewGuid().ToString('N')}
  }
  if($InstanceExpandProbe) { $out+='-expand-probe' }
  if($OutDirectory) {
@@ -54,6 +56,12 @@ try {
   if(Test-Path -LiteralPath $out) {throw 'Refusing to overwrite diagnostic output'}
  }
  New-Item -ItemType Directory -Force $out | Out-Null
+ if($Test -eq 'zoom') {
+  & wsl gcc -std=c11 -O2 -Wall -Wextra -Werror '-fsanitize=address,undefined' -DZOOM_HOST_TEST -Isw/efinix_gpu/include sw/efinix_gpu/tests/test_board_zoom.c -o "$out/test_zoom_text"
+  if($LASTEXITCODE -ne 0) { throw 'Zoom glyph host compile failed' }
+  & wsl "./$out/test_zoom_text"
+  if($LASTEXITCODE -ne 0) { throw 'Zoom glyph host checks failed' }
+ }
  if($Test -in @('render-phases','qos-sweep')) {
   & wsl gcc -std=c11 -O2 -Wall -Wextra -Werror -fsanitize=undefined -Isw/efinix_gpu/include sw/efinix_gpu/tests/test_submit_probe.c -o "$out/test_submit_probe"
   if($LASTEXITCODE -ne 0) { throw 'Diagnostic submit probe host compile failed' }
@@ -66,6 +74,7 @@ try {
   Where-Object { $_ -ne 'src/main.c' -and !($Test -in @('render-phases','qos-sweep') -and $_ -eq 'src/gpu.c') } | ForEach-Object { "sw/efinix_gpu/$_" })
  if($Test -eq 'live-phases') {$sources=@($sources | Where-Object {$_ -ne 'sw/efinix_gpu/src/v3_demo.c'})}
  if($Test -eq 'replay-crc') {$sources=@($sources | Where-Object {$_ -ne 'sw/efinix_gpu/src/replay_input.c'})}
+ if($Test -eq 'zoom') {$sources+='sw/efinix_gpu/src/zoom_control.c'}
  $sources+=switch($Test) {
   'hud' {'sw/efinix_gpu/tests/test_board_hud_dma.c'}
   'key' {'sw/efinix_gpu/tests/test_board_key_burst.c'}
@@ -87,6 +96,8 @@ try {
   'stripes' {'sw/efinix_gpu/tests/test_board_stripes.c'}
   'sprite-phases' {'sw/efinix_gpu/tests/test_board_sprite_phases.c'}
   'dashboard-metrics' {'sw/efinix_gpu/tests/test_board_dashboard_metrics.c'}
+  'transform' {'sw/efinix_gpu/tests/test_board_transform.c'}
+  'zoom' {'sw/efinix_gpu/tests/test_board_zoom.c'}
  }
  [string[]]$probeFlags=@()
  if($InstanceExpandProbe) { $probeFlags=@('-DINSTANCE_EXPAND_PROBE=1') }
