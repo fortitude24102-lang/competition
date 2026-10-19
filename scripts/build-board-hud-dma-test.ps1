@@ -1,5 +1,5 @@
 param(
- [ValidateSet('hud','key','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','qos-sweep','live-phases','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances','replay-crc','frame-list','stripes','sprite-phases','dashboard-metrics','transform','zoom')][string]$Test='hud',
+ [ValidateSet('hud','key','key-trim','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','qos-sweep','live-phases','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances','replay-crc','frame-list','stripes','sprite-phases','dashboard-metrics','transform','zoom')][string]$Test='hud',
  [string]$RiscvGcc='D:/efinity/risc_v_gcc/toolchain/bin/riscv-none-elf-gcc.exe',
  [string]$Soc='D:/efinity_builds/competition_day1_20260906/sapphire/soc',
  [switch]$InstanceExpandProbe,
@@ -29,6 +29,7 @@ try {
  $out=switch($Test) {
   'hud' {'generated/verification/board-hud-dma'}
   'key' {'generated/verification/board-key-burst'}
+  'key-trim' {'generated/verification/v3/dual-track-20261018/board-key-trim-'+[Guid]::NewGuid().ToString('N')}
   'texture' {'generated/verification/board-texture-cache'}
   'texture-profile' {'generated/verification/board-texture-cache-profile'}
   'hud-glyphs' {'generated/verification/board-hud-glyphs'}
@@ -78,6 +79,7 @@ try {
  $sources+=switch($Test) {
   'hud' {'sw/efinix_gpu/tests/test_board_hud_dma.c'}
   'key' {'sw/efinix_gpu/tests/test_board_key_burst.c'}
+  'key-trim' {'sw/efinix_gpu/tests/test_board_key_trim.c'}
   'texture' {'sw/efinix_gpu/tests/test_board_texture_cache.c'}
   'texture-profile' {'sw/efinix_gpu/tests/test_board_texture_cache_profile.c'}
   'hud-glyphs' {'sw/efinix_gpu/tests/test_board_hud_glyphs.c'}
