@@ -72,7 +72,11 @@ openocd.exe -f ftdi_ti.cfg -f debug_ti.cfg -c "init; mww 0xf810004c 1; echo [mdw
 
 证据ZIP SHA256：`9d181fc5288b4ab366b37b9248ce24f5580e1643f46b92539e490011dd2e72f9`，841303字节、306项；已核对关键日志存在及包内三份最终BIN的哈希。全部烧录进程已退出，串口采集已关闭，仅本地提交，未推送。
 
-当前板上运行最终功能BIT＋C32独立Zoom BIN `board-zoom-layout32/test.bin`（SHA256 `7699dae71aba3d12514af96c40995fdb0670cab9d565310d6b1d613e9b0644a6`），首帧日志`ZOOM_FRAME,scale_q8=256,side=16,keys=0`。最终C32像素oracle为`board-transform-layout32/test.bin`，SHA256 `f71d4d183ecf24aa16d0795d6d56c13df157bcb458543382b956e471c0ba00bf`。按当前用户要求保留演示供物理按键确认，**不是正常游戏MENU**，此独立固件不处理网页游戏控制，不能把网页遥测过期当成网口硬件回退。实际KEY身份、按住时长与释放的人工确认尚未取得，不能用控制器仿真冒充物理按键验收。
+当前板上运行最终功能BIT＋C32独立Zoom BIN `board-zoom-layout32/test.bin`（SHA256 `7699dae71aba3d12514af96c40995fdb0670cab9d565310d6b1d613e9b0644a6`），首帧日志`ZOOM_FRAME,scale_q8=256,side=16,keys=0`。最终C32像素oracle为`board-transform-layout32/test.bin`，SHA256 `f71d4d183ecf24aa16d0795d6d56c13df157bcb458543382b956e471c0ba00bf`。保留独立演示，**不是正常游戏MENU**，此独立固件不处理网页游戏控制，不能把网页遥测过期当成网口硬件回退。
+
+### HDMI与物理按键人工确认（2026-10-19）
+
+用户在上述演示运行时回复：“正常，方向与松开保持均正确”。据此记录HDMI画面与按键反应正常，KEY2放大、KEY1缩小、松开保持通过人工确认。未据此宣称精确0.5x/秒速度、上下限或双键暂停已单独完成人工测量。这条确认在证据ZIP封存后补记于本文；ZIP及上述哈希保持不变，包内不包含此次人工回复。本次仅更新记录，没有重新烧录或重复仿真。
 
 边界：历史SoC两项异常、实际栈水位/长时间耐久未补验。工作进程曾主动停止旧完整HDMI子系统长仿真（此前六项小RTL仿真通过），不能称RTL/SoC全部套件通过。提交缓存的Transform→旧命令混合序列本轮未专门测，代码审查未发现转换错误；默认路径及旧命令缓存回归通过，缓存仍默认关闭。
 
