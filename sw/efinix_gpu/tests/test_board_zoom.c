@@ -25,6 +25,19 @@ static unsigned zoom_text(gpu_command *commands, uint32_t dst, unsigned row,
     return count;
 }
 
+static void zoom_plane(gpu_command *c, uint32_t back, unsigned side, unsigned gray) {
+    unsigned center_x = gray ? GPU_FRAME_WIDTH * 3u / 4u : GPU_FRAME_WIDTH / 4u;
+    *c = (gpu_command){.op = GPU_OP_TRANSFORM,
+        .src_addr = BULLET_LOCAL_ATLAS + BULLET_PLAYER_OFFSET,
+        .dst_addr = back + ((GPU_FRAME_HEIGHT - side) / 2u) * GPU_FRAME_STRIDE +
+                    (center_x - side / 2u) * 2u,
+        .src_stride = 32, .dst_stride = GPU_FRAME_STRIDE,
+        .width_pixels = (uint16_t)side, .height_pixels = (uint16_t)side,
+        .src_width_pixels = 16, .src_height_pixels = 16,
+        .flags = GPU_TRANSFORM_COLOR_KEY | (gray ? GPU_TRANSFORM_GRAYSCALE : 0),
+        .color_key = BULLET_COLOR_KEY};
+}
+
 #ifdef ZOOM_HOST_TEST
 #include <assert.h>
 int main(void) {
@@ -44,6 +57,17 @@ int main(void) {
     assert(zoom_text(c, GPU_FRAMEBUFFER_A, 0, long_line) == 64);
     assert(c[64].src_addr == 0x12345678u);
     assert(zoom_text(c, GPU_FRAMEBUFFER_A, 0, "") == 0);
+    gpu_command plane;
+    zoom_plane(&plane, GPU_FRAMEBUFFER_B, 16, 0);
+    assert(plane.op == GPU_OP_TRANSFORM && plane.width_pixels == 16 && plane.height_pixels == 16);
+    assert(plane.src_width_pixels == 16 && plane.src_height_pixels == 16);
+    assert(plane.flags == GPU_TRANSFORM_COLOR_KEY && plane.color_key == BULLET_COLOR_KEY);
+    assert(plane.src_addr == BULLET_LOCAL_ATLAS + BULLET_PLAYER_OFFSET);
+    assert(plane.dst_addr == GPU_FRAMEBUFFER_B + 262u * 1920u + 232u * 2u);
+    zoom_plane(&plane, GPU_FRAMEBUFFER_B, 64, 1);
+    assert(plane.width_pixels == 64 && plane.height_pixels == 64);
+    assert(plane.flags == (GPU_TRANSFORM_COLOR_KEY | GPU_TRANSFORM_GRAYSCALE));
+    assert(plane.dst_addr == GPU_FRAMEBUFFER_B + 238u * 1920u + 688u * 2u);
     puts("PASS zoom demo text: atlas addressing, framebuffer positioning, bounds, fallback");
     return 0;
 }
@@ -67,7 +91,8 @@ int main(void) {
     gpu_device gpu = {0};
     int e = gpu_init(&gpu, GPU_APB_BASE);
     if (e) goto stop;
-    if (!(*(volatile uint32_t *)(gpu.base + GPU_REG_STATUS) & GPU_STATUS_TRANSFORM_PRESENT)) {
+    const uint32_t required = GPU_STATUS_TRANSFORM_PRESENT | GPU_STATUS_GRAYSCALE_PRESENT;
+    if ((*(volatile uint32_t *)(gpu.base + GPU_REG_STATUS) & required) != required) {
         e = GPU_DRIVER_ARGUMENT;
         goto stop;
     }
@@ -83,7 +108,7 @@ int main(void) {
     zoom_control control;
     zoom_control_init(&control, now);
     unsigned shown_side = 0;
-    bsp_printf("ZOOM_START,source=16,min=4,max=64,key1=shrink,key2=grow\r\n");
+    bsp_printf("ZOOM_START,source=16,min=4,max=64,key1=shrink,key2=grow,color_and_gray=1\r\n");
     for (;;) {
         now = (uint32_t)(gpu_platform_cycles() / (BSP_CLINT_HZ / 1000u));
         unsigned keys = (~gpio_getInput(SYSTEM_GPIO_0_IO_CTRL)) & 3u;
@@ -106,21 +131,18 @@ int main(void) {
         unsigned percent = (side * 100u + 8u) / 16u;
         snprintf(size_line, sizeof size_line, "SCALE %u.%02uX  SIDE %uPX",
                  percent / 100u, percent % 100u, side);
-        const char *lines[] = {"GPU AIRPLANE ZOOM", "HOLD KEY1 SHRINK  HOLD KEY2 GROW",
-                               size_line, "RELEASE FREEZES  BOTH KEYS PAUSE"};
-        for (unsigned row = 0; row < 4; ++row) {
+        const char *lines[] = {"GPU ZOOM AND GRAYSCALE", "HOLD KEY1 SHRINK  HOLD KEY2 GROW",
+                               size_line, "RELEASE FREEZES  BOTH KEYS PAUSE",
+                               "             COLOR                            GRAYSCALE"};
+        for (unsigned row = 0; row < 5; ++row) {
             unsigned count = zoom_text(glyphs, buffers.back, row, lines[row]);
             e = perf_render_gpu(&gpu, glyphs, count, polls);
             if (e) goto stop;
         }
-        uint16_t tag;
-        uint32_t dst = buffers.back + ((GPU_FRAME_HEIGHT - side) / 2u) * GPU_FRAME_STRIDE +
-                       ((GPU_FRAME_WIDTH - side) / 2u) * 2u;
-        e = gpu_transform_blit_async(&gpu, BULLET_LOCAL_ATLAS + BULLET_PLAYER_OFFSET,
-            dst, 32, GPU_FRAME_STRIDE, 16, 16, (uint16_t)side, (uint16_t)side,
-            GPU_TRANSFORM_COLOR_KEY, BULLET_COLOR_KEY, &tag);
-        if (e) goto stop;
-        e = gpu_wait_tag(&gpu, tag, polls);
+        gpu_command planes[2];
+        zoom_plane(&planes[0], buffers.back, side, 0);
+        zoom_plane(&planes[1], buffers.back, side, 1);
+        e = perf_render_gpu(&gpu, planes, 2, polls);
         if (e) goto stop;
         /* First PRESENT enables scanout only after a complete frame exists. */
         e = framebuffer_present(&gpu, &buffers, polls);

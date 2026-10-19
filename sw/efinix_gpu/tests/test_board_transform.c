@@ -11,20 +11,22 @@ void gpu_platform_sync(void) {
 int main(void) {
  bsp_init();gpu_device d;int result=gpu_init(&d,GPU_APB_BASE);
  if(result) return result;
- if(!(*(volatile uint32_t *)(d.base+GPU_REG_STATUS)&GPU_STATUS_TRANSFORM_PRESENT)) {
+ uint32_t required=GPU_STATUS_TRANSFORM_PRESENT|GPU_STATUS_GRAYSCALE_PRESENT;
+ if((*(volatile uint32_t *)(d.base+GPU_REG_STATUS)&required)!=required) {
   bsp_printf("TRANSFORM_BOARD_FAIL,capability=0\r\n");return GPU_DRIVER_ARGUMENT;
  }
  /* Private test firmware owns these surfaces, no game/assets/list are live. */
  volatile uint16_t *src=(volatile uint16_t *)0x02410002u;
  volatile uint16_t *dst=(volatile uint16_t *)0x02600002u;
- static const uint16_t pixels[16]={0x1234,0xbeef,0x5678,0x9abc,
+ static const uint16_t pixels[16]={0xf800,0xbeef,0x07e0,0x001f,
   0x1111,0x2222,0x3333,0x4444,0x5555,0x6666,0xbeef,0x8888,
   0x9999,0xaaaa,0xbbbb,0xcccc};
  for(unsigned y=0;y<4;y++) for(unsigned x=0;x<6;x++) src[y*6+x]=x<4?pixels[y*4+x]:0xdead;
  for(unsigned mode=0;mode<5;mode++) for(unsigned mirror=0;mirror<4;mirror++)
-  for(unsigned keyed=0;keyed<2;keyed++) {
+  for(unsigned keyed=0;keyed<2;keyed++) for(unsigned gray=0;gray<2;gray++) {
    unsigned side=mode==1?8:mode==2?2:mode==3?5:mode==4?3:4;
-   uint16_t flags=(uint16_t)(mirror|(keyed?GPU_TRANSFORM_COLOR_KEY:0));
+   uint16_t flags=(uint16_t)(mirror|(keyed?GPU_TRANSFORM_COLOR_KEY:0)|
+    (gray?GPU_TRANSFORM_GRAYSCALE:0));
    for(unsigned i=0;i<100;i++) dst[i]=0xa55a;
    dst[-1]=0xa55a;gpu_platform_sync();gpu_perf_snapshot before,after;
    result=gpu_read_perf_snapshot(&d,&before);if(result) goto stop;
@@ -44,7 +46,14 @@ int main(void) {
      if(mirror&1u) sx=3u-sx;
      if(mirror&2u) sy=3u-sy;
      uint16_t p=pixels[sy*4+sx];
-     if(!keyed || p!=0xbeef) {expected=p;written++;}
+     if(!keyed || p!=0xbeef) {
+      if(gray) {
+       unsigned r=p>>11,g=(p>>5)&63u,b=p&31u;
+       unsigned y8=((r*8u+r/4u)+2u*(g*4u+g/16u)+(b*8u+b/4u))/4u;
+       p=(uint16_t)((y8/8u)*2048u+(y8/4u)*32u+y8/8u);
+      }
+      expected=p;written++;
+     }
     }
     mismatch+=dst[y*11+x]!=expected;
    }

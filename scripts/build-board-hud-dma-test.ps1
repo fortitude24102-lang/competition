@@ -1,5 +1,5 @@
 param(
- [ValidateSet('hud','key','key-trim','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','qos-sweep','live-phases','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances','replay-crc','frame-list','stripes','sprite-phases','dashboard-metrics','transform','zoom')][string]$Test='hud',
+ [ValidateSet('hud','key','key-trim','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','qos-sweep','live-phases','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances','replay-crc','frame-list','stripes','sprite-phases','dashboard-metrics','transform','zoom','alpha-pipeline')][string]$Test='hud',
  [string]$RiscvGcc='D:/efinity/risc_v_gcc/toolchain/bin/riscv-none-elf-gcc.exe',
  [string]$Soc='D:/efinity_builds/competition_day1_20260906/sapphire/soc',
  [switch]$InstanceExpandProbe,
@@ -49,6 +49,7 @@ try {
   'sprite-phases' {'generated/verification/v3/sprite-phases-20261016/board'}
   'dashboard-metrics' {'generated/verification/v3/dashboard-comparison-20261017/board'}
   'transform' {'generated/verification/v3/dual-track-20261018/board-transform'}
+  'alpha-pipeline' {'generated/verification/v3/alpha-gray-20261019/board-alpha-'+[Guid]::NewGuid().ToString('N')}
   'zoom' {'generated/verification/v3/dual-track-20261018/board-zoom-'+[Guid]::NewGuid().ToString('N')}
  }
  if($InstanceExpandProbe) { $out+='-expand-probe' }
@@ -99,6 +100,7 @@ try {
   'sprite-phases' {'sw/efinix_gpu/tests/test_board_sprite_phases.c'}
   'dashboard-metrics' {'sw/efinix_gpu/tests/test_board_dashboard_metrics.c'}
   'transform' {'sw/efinix_gpu/tests/test_board_transform.c'}
+  'alpha-pipeline' {'sw/efinix_gpu/tests/test_board_alpha_pipeline.c'}
   'zoom' {'sw/efinix_gpu/tests/test_board_zoom.c'}
  }
  [string[]]$probeFlags=@()
