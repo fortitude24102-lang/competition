@@ -7,7 +7,8 @@ import chisel3.util._
   * Each destination row remains a separate strided write; optional trimming removes only
   * transparent edge words and empty rows, preserving interior zero-strobe beats.
   */
-class CachedKeyStream(trimTransparentRows: Boolean = false) extends Module {
+class CachedKeyStream(trimTransparentRows: Boolean = false, pipelineWrites: Boolean = false) extends Module {
+  require(!trimTransparentRows || !pipelineWrites, "Measure Key pipelining without row trimming")
   val io = IO(new Bundle {
     val command = Flipped(Decoupled(new GpuCommand))
     val eligible = Output(Bool())
@@ -32,6 +33,7 @@ class CachedKeyStream(trimTransparentRows: Boolean = false) extends Module {
   private val readFinished = RegInit(false.B)
   private val rowActive = RegInit(false.B)
   private val errorSeen = RegInit(false.B)
+  private val pendingRows = if(pipelineWrites) Some(RegInit(0.U(2.W))) else None
   private val fifo = Module(new Queue(UInt(32.W), 16))
   private val aligner = Module(new Rgb565WordAligner)
   private val in = io.command.bits
@@ -50,6 +52,7 @@ class CachedKeyStream(trimTransparentRows: Boolean = false) extends Module {
     command := in; destination := in.dstAddr; rowsLeft := in.heightPixels
     readIssued := false.B; readFinished := false.B; errorSeen := false.B
     rowActive := false.B; wordsLeft := 0.U; state := active
+    pendingRows.foreach(_ := 0.U)
   }
   io.readRequest.valid := state === active && !readIssued
   io.readRequest.bits.address := command.srcAddr
@@ -75,6 +78,16 @@ class CachedKeyStream(trimTransparentRows: Boolean = false) extends Module {
     Fill(2, aligner.io.output.bits.lanes(1) && aligner.io.output.bits.data(31, 16) =/= command.colorKey),
     Fill(2, aligner.io.output.bits.lanes(0) && aligner.io.output.bits.data(15, 0) =/= command.colorKey))
   private val rowDone = WireDefault(io.writeDone)
+  if(pipelineWrites) {
+    val outputLeft = RegInit(0.U(4.W))
+    when(io.writeRequest.fire) { outputLeft := rowBeats }
+    when(io.writeData.fire) { outputLeft := outputLeft - 1.U }
+    rowDone := io.writeData.fire && outputLeft === 1.U
+    when(state === active && (io.writeRequest.fire =/= io.writeDone)) {
+      val rows = pendingRows.get
+      rows := Mux(io.writeRequest.fire, rows + 1.U, rows - 1.U)
+    }
+  }
   if (trimTransparentRows) {
     // At most 16 pixels plus a halfword phase: reserve all 9 aligned words before AW.
     val row = Reg(Vec(9, new AxiWriteBeat))
@@ -139,7 +152,8 @@ class CachedKeyStream(trimTransparentRows: Boolean = false) extends Module {
       rowActive := false.B; rowsLeft := rowsLeft - 1.U
       destination := destination + command.dstStride
     }
-    when(readFinished && !rowActive && !fifo.io.deq.valid && (rowsLeft === 0.U || failing)) {
+    when(readFinished && !rowActive && !fifo.io.deq.valid && pendingRows.getOrElse(0.U) === 0.U &&
+      (rowsLeft === 0.U || failing)) {
       state := finish
     }
   }

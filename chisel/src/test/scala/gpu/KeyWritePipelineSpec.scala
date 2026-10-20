@@ -61,5 +61,44 @@ class KeyWritePipelineSpec extends AnyFunSpec with StableChiselSim with Matchers
         d.io.done.expect(false); d.io.request.ready.expect(true)
       }
     }
+
+    for (failedRequest <- Seq(0, 1)) {
+      it(s"drains an accepted row with AW stalled and isolates B error request=$failedRequest") {
+        simulate(new AxiWritePipeline) { d =>
+          d.io.request.valid.poke(false); d.io.request.bits.address.poke(0x1000); d.io.request.bits.beats.poke(1)
+          d.io.data.valid.poke(false); d.io.data.bits.data.poke(0x12345678L); d.io.data.bits.strb.poke(15)
+          d.io.axiAw.ready.poke(true); d.io.axiW.ready.poke(true); d.io.axiB.valid.poke(false)
+          d.io.axiB.bits.poke(0.U.asTypeOf(new Axi4WriteResponse))
+          def acceptRow(address: Int): Unit = {
+            d.io.request.bits.address.poke(address); d.io.request.valid.poke(true)
+            d.io.request.ready.expect(true); d.clock.step(); d.io.request.valid.poke(false)
+          }
+          def sendWord(): Unit = {
+            d.io.data.valid.poke(true); d.io.axiW.valid.expect(true); d.io.axiW.bits.last.expect(true)
+            d.clock.step(); d.io.data.valid.poke(false); d.io.done.expect(false)
+          }
+          acceptRow(0x1000); d.clock.step(); sendWord()
+          acceptRow(0x1800); d.io.axiAw.ready.poke(false)
+          d.io.axiAw.valid.expect(true); d.io.axiAw.bits.addr.expect(0x1800)
+          d.io.axiB.valid.poke(true); d.io.axiB.bits.resp.poke(if(failedRequest==0)2 else 0)
+          d.io.axiB.ready.expect(true); d.clock.step(); d.io.axiB.valid.poke(false)
+          d.io.done.expect(true); d.io.error.expect(failedRequest==0)
+          for (_ <- 0 until 3) {
+            d.io.axiAw.valid.expect(true); d.io.axiAw.bits.addr.expect(0x1800)
+            d.io.axiAw.bits.len.expect(0); d.io.request.ready.expect(false); d.clock.step()
+          }
+          d.io.done.expect(false); d.io.axiAw.ready.poke(true); d.clock.step(); sendWord()
+          if(failedRequest==0)d.io.request.ready.expect(false)
+          d.io.axiB.valid.poke(true); d.io.axiB.bits.resp.poke(if(failedRequest==1)2 else 0)
+          d.clock.step(); d.io.axiB.valid.poke(false)
+          d.io.done.expect(true); d.io.error.expect(failedRequest==1)
+          d.clock.step(2); d.io.done.expect(false); d.io.request.ready.expect(true)
+          acceptRow(0x2000); d.clock.step(); sendWord()
+          d.io.axiB.bits.resp.poke(0); d.io.axiB.valid.poke(true); d.clock.step()
+          d.io.axiB.valid.poke(false); d.io.done.expect(true); d.io.error.expect(false)
+          d.clock.step(); d.io.done.expect(false)
+        }
+      }
+    }
   }
 }

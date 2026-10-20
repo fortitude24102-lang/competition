@@ -5,8 +5,9 @@ import chisel3.util._
 
 class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boolean = false,
   enableCopyBurstBuffer: Boolean = false, enableKeyRowTrim: Boolean = false,
-  enableAlphaPipeline: Boolean = false) extends Module {
+  enableAlphaPipeline: Boolean = false, enableKeyWritePipeline: Boolean = false) extends Module {
   require(!enableKeyRowTrim || enableKeyPrefetch, "Key row trimming requires Key prefetch")
+  require(!enableKeyWritePipeline || (enableKeyPrefetch && !enableKeyRowTrim), "Key write pipeline requires untrimmed Key prefetch")
   val io = IO(new Bundle {
     val command = Flipped(Decoupled(new GpuCommand))
     val pixelRequest = Decoupled(new PixelTransaction)
@@ -36,6 +37,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   private val alphaBackgroundBuffer = Module(new Queue(UInt(32.W), 33))
   private val packer = Module(new PixelWritePacker)
   private val writer = Module(new AxiWriteEngine)
+  private val keyWriter = if(enableKeyWritePipeline) Some(Module(new AxiWritePipeline)) else None
   private val alphaMetadata = if(enableAlphaPipeline) Some(Module(new Queue(new Bundle {
     val address = UInt(32.W)
     val rowLast = Bool()
@@ -43,7 +45,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
     val chunkLast = Bool()
   }, 2, pipe = true))) else None
   private val copyStream = Module(new CopyStreamEngine(if(enableCopyBurstBuffer) 256 else 16))
-  private val keyStream = if (enableKeyPrefetch) Some(Module(new CachedKeyStream(enableKeyRowTrim))) else None
+  private val keyStream = if (enableKeyPrefetch) Some(Module(new CachedKeyStream(enableKeyRowTrim,enableKeyWritePipeline))) else None
   private val readAddressArbiter = Module(new RRArbiter(new Axi4Address, 2))
 
   private val idle :: startRect :: startWrite :: startAligner :: startRead :: startAlphaAligners :: startAlphaReads :: waitAlphaReads :: requestPixel :: waitPixel :: waitRow :: finish :: streamCopy :: streamKey :: Nil = Enum(14)
@@ -118,10 +120,10 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
     k.io.command.bits := incomingCommand
     k.io.readDone := textureCache.io.readDone && streamingKey
     k.io.readError := textureCache.io.readError
-    k.io.writeDone := writer.io.done && streamingKey
-    k.io.writeError := writer.io.error
-    k.io.writeRequest.ready := writer.io.request.ready && streamingKey
-    k.io.writeData.ready := writer.io.data.ready && streamingKey
+    k.io.writeDone := keyWriter.map(_.io.done).getOrElse(writer.io.done) && streamingKey
+    k.io.writeError := keyWriter.map(_.io.error).getOrElse(writer.io.error)
+    k.io.writeRequest.ready := keyWriter.map(_.io.request.ready).getOrElse(writer.io.request.ready) && streamingKey
+    k.io.writeData.ready := keyWriter.map(_.io.data.ready).getOrElse(writer.io.data.ready) && streamingKey
     k.io.readRequest.ready := textureCache.io.readRequest.ready && streamingKey
     k.io.readData.valid := textureCache.io.readData.valid && streamingKey
     k.io.readData.bits := textureCache.io.readData.bits
@@ -172,7 +174,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   private val fixedWriteRequest = state === startWrite
   private val dynamicWriteRequest = isColorKey && !fastWordBlit &&
     packer.io.output.valid && !dynamicWriteOutstanding
-  writer.io.request.valid := Mux(streamingKey, keyStream.map(_.io.writeRequest.valid).getOrElse(false.B),
+  writer.io.request.valid := Mux(streamingKey, (!enableKeyWritePipeline).B && keyStream.map(_.io.writeRequest.valid).getOrElse(false.B),
     Mux(streamingCopy, copyStream.io.writeRequest.valid, fixedWriteRequest || dynamicWriteRequest))
   writer.io.request.bits.address := Mux(streamingKey, keyWriteRequest.address,
     Mux(streamingCopy, copyStream.io.writeRequest.bits.address,
@@ -336,7 +338,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   private val keyWordStrobe = Cat(
     Fill(2, validLanes(1) && wordData(31, 16) =/= commandReg.colorKey),
     Fill(2, validLanes(0) && wordData(15, 0) =/= commandReg.colorKey))
-  writer.io.data.valid := Mux(streamingKey, keyStream.map(_.io.writeData.valid).getOrElse(false.B),
+  writer.io.data.valid := Mux(streamingKey, (!enableKeyWritePipeline).B && keyStream.map(_.io.writeData.valid).getOrElse(false.B),
     Mux(streamingCopy, copyStream.io.writeData.valid, Mux(fastWordBlit,
       Mux(directWordBlit, sourceDataValid, wordAligner.io.output.valid), packer.io.output.valid)))
   writer.io.data.bits.data := Mux(streamingKey, keyWriteData.data,
@@ -421,6 +423,23 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   writer.io.axiB.valid := io.axi.b.valid
   writer.io.axiB.bits := io.axi.b.bits
   io.axi.b.ready := writer.io.axiB.ready
+  keyWriter.foreach { w =>
+    w.io.request.valid := streamingKey && keyStream.get.io.writeRequest.valid
+    w.io.request.bits := keyWriteRequest
+    w.io.data.valid := streamingKey && keyStream.get.io.writeData.valid
+    w.io.data.bits := keyWriteData
+    io.axi.aw.valid := Mux(streamingKey,w.io.axiAw.valid,writer.io.axiAw.valid)
+    io.axi.aw.bits := Mux(streamingKey,w.io.axiAw.bits,writer.io.axiAw.bits)
+    io.axi.w.valid := Mux(streamingKey,w.io.axiW.valid,writer.io.axiW.valid)
+    io.axi.w.bits := Mux(streamingKey,w.io.axiW.bits,writer.io.axiW.bits)
+    w.io.axiAw.ready := io.axi.aw.ready && streamingKey
+    w.io.axiW.ready := io.axi.w.ready && streamingKey
+    w.io.axiB.valid := io.axi.b.valid && streamingKey; w.io.axiB.bits := io.axi.b.bits
+    writer.io.axiAw.ready := io.axi.aw.ready && !streamingKey
+    writer.io.axiW.ready := io.axi.w.ready && !streamingKey
+    writer.io.axiB.valid := io.axi.b.valid && !streamingKey
+    io.axi.b.ready := Mux(streamingKey,w.io.axiB.ready,writer.io.axiB.ready)
+  }
 
   readAddressArbiter.io.in(0) <> reader.io.axiAr
   readAddressArbiter.io.in(1) <> backgroundReader.io.axiAr

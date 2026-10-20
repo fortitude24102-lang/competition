@@ -35,15 +35,15 @@
 **Files:** CachedKeyStream.scala、DenseBlitEngine.scala、DdrQosArbiter.scala、RenderEngine.scala、Efinix2dGpuTop.scala、GenerateEfinix2dGpu.scala、test-v3-gpu.ps1；扩展KeyWritePipelineSpec候选集成。
 **Interfaces:** 尾参数`enableKeyWritePipeline:Boolean=false`从Top/Render/Dense传播，CachedKeyStream尾参数`pipelineWrites:Boolean=false`；DdrQos尾参数`enableWritePipeline:Boolean=false`。生成与脚本使用独立新目录。
 
-- [ ] 实际候选Key在B延迟下第二行发AW、最终B前不完成；DDR候选Render/Asset交错B所有权及紧急准入测试先RED。
-- [ ] 实现行W推进与pendingRows守恒；Dense仅Key选择新writer；arbiter ownerFIFO在WLAST入队，预留slot后AW、B独立回送；诊断按B队首计。
-- [ ] 定向候选的像素/掩码、两半字相位、4KiB边界、cache错误、B错误＋后继Fill通过，默认旧套件按影响范围验证，不重复已通过未改变的套件。
+- [x] 实际候选Key在B延迟下第二行发AW、最终B前不完成；DDR候选Render/Asset交错B所有权及紧急准入测试先RED。
+- [x] 实现行W推进与pendingRows守恒；Dense仅Key选择新writer；arbiter ownerFIFO在WLAST入队，预留slot后AW、B独立回送；诊断按B队首计。
+- [x] 定向候选的像素/掩码、两半字相位、4KiB边界、cache错误、B错误＋后继Fill通过；当前源码默认兼容30套119项一次通过，另诊断3项和候选14项，合计35套136项，不重复通过批次。
 
 ### Task 3: 时序与净收益
 
 **Files:** 生成RTL/独立编译目录、证据索引/README；正式release不变。
 **Interfaces:** 既有保存分段/普通512/诊断固件，无改工作量和评分规则。
 
-- [ ] 独立审查，关键覆盖缺口先RED再修；生成split-verilog，最终16个setup/hold均正才上板。
-- [ ] 同诊断/分段与普通512固件分别A/B/A，核对数量/CRC/读写/Cache/物理事务及零新增下溢/错误；看整帧平均与最坏值，不只看Key局部。无收益回旧路径。
+- [x] 独立审查，补齐错误归属和后继命令覆盖（未发现RTL缺陷，不伪造bug RED）；生成split-verilog，最终16个setup/hold均正才上板。
+- [x] 同诊断/分段与普通512固件分别A/B/A，核对数量/CRC/读写/Cache/物理事务及零新增下溢/错误；看整帧平均与最坏值，不只看Key局部。普通512均值减少7.72%，最大值无改善，保留显式候选。
 - [ ] 封存实测与负结果，本地提交，不推送；恢复已验证演示并结束采集/烧录。极限资格需另外3600帧及后续保持，未跑不称新成绩。

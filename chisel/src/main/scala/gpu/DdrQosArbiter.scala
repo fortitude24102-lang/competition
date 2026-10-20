@@ -4,7 +4,8 @@ import chisel3._
 import chisel3.util._
 
 /** Transaction-level arbitration for Render reads/writes, Scanout reads and Asset writes. */
-class DdrQosArbiter(maxRenderWait: Int = 8, enableDiagnostics: Boolean = false) extends Module {
+class DdrQosArbiter(maxRenderWait: Int = 8, enableDiagnostics: Boolean = false,
+  enableWritePipeline: Boolean = false) extends Module {
   require(maxRenderWait > 0)
   val io = IO(new Bundle {
     val render = Flipped(new Axi4MasterPort)
@@ -32,6 +33,14 @@ class DdrQosArbiter(maxRenderWait: Int = 8, enableDiagnostics: Boolean = false) 
   private val writeAddressPresented = RegInit(false.B)
   private val nextReadOwner = RegInit(false.B)
   private val nextWriteOwner = RegInit(false.B)
+  // One active W burst reserves a slot before AW; only completed W enter this FIFO.
+  private val writeResponses = if(enableWritePipeline) Some(Module(new Queue(Bool(), 2))) else None
+  private val writeResponseSpace = writeResponses.map(_.io.enq.ready).getOrElse(true.B)
+  writeResponses.foreach { q =>
+    q.io.enq.valid := io.axi.w.fire && io.axi.w.bits.last
+    q.io.enq.bits := writeOwner
+    q.io.deq.ready := io.axi.b.valid && Mux(q.io.deq.bits,io.asset.b.ready,io.render.b.ready)
+  }
   private val scanoutPriority = RegInit(false.B)
   private val renderWait = RegInit(0.U(log2Ceil(maxRenderWait + 1).W))
   // Render can stall R while waiting for a new AW, which emergency QoS blocks.
@@ -65,7 +74,7 @@ class DdrQosArbiter(maxRenderWait: Int = 8, enableDiagnostics: Boolean = false) 
       readAddressPresented := false.B
     }
   }
-  when(writeState === writeIdle && !emergency) {
+  when(writeState === writeIdle && !emergency && writeResponseSpace) {
     val renderEligible = io.render.aw.valid
     val assetEligible = io.asset.aw.valid && !repayRender
     when(renderEligible || assetEligible) {
@@ -159,7 +168,10 @@ class DdrQosArbiter(maxRenderWait: Int = 8, enableDiagnostics: Boolean = false) 
     io.axi.w.bits := Mux(writeOwner, io.asset.w.bits, io.render.w.bits)
     when(writeOwner) { io.asset.w.ready := io.axi.w.ready }
       .otherwise { io.render.w.ready := io.axi.w.ready }
-    when(io.axi.w.fire && io.axi.w.bits.last) { writeState := writeResponse }
+    when(io.axi.w.fire && io.axi.w.bits.last) {
+      if(enableWritePipeline) { writeState := writeIdle; nextWriteOwner := !writeOwner }
+      else { writeState := writeResponse }
+    }
   }
 
   io.render.b.valid := false.B
@@ -169,17 +181,21 @@ class DdrQosArbiter(maxRenderWait: Int = 8, enableDiagnostics: Boolean = false) 
   io.asset.b.valid := false.B
   io.asset.b.bits := io.axi.b.bits
   io.axi.b.ready := false.B
-  when(writeState === writeResponse) {
-    when(writeOwner) {
-      io.asset.b.valid := io.axi.b.valid
-      io.axi.b.ready := io.asset.b.ready
-    }.otherwise {
-      io.render.b.valid := io.axi.b.valid
-      io.axi.b.ready := io.render.b.ready
-    }
-    when(io.axi.b.fire) {
-      nextWriteOwner := !writeOwner
-      writeState := writeIdle
+  if(enableWritePipeline) {
+    val q = writeResponses.get
+    io.asset.b.valid := io.axi.b.valid && q.io.deq.valid && q.io.deq.bits
+    io.render.b.valid := io.axi.b.valid && q.io.deq.valid && !q.io.deq.bits
+    io.axi.b.ready := q.io.deq.valid && Mux(q.io.deq.bits,io.asset.b.ready,io.render.b.ready)
+  } else {
+    when(writeState === writeResponse) {
+      when(writeOwner) {
+        io.asset.b.valid := io.axi.b.valid
+        io.axi.b.ready := io.asset.b.ready
+      }.otherwise {
+        io.render.b.valid := io.axi.b.valid
+        io.axi.b.ready := io.render.b.ready
+      }
+      when(io.axi.b.fire) { nextWriteOwner := !writeOwner; writeState := writeIdle }
     }
   }
   // Observer only. Per-channel waits overlap; do not sum this vector as frame time.
@@ -190,7 +206,10 @@ class DdrQosArbiter(maxRenderWait: Int = 8, enableDiagnostics: Boolean = false) 
       io.render.w.fire, // All W beats, including WSTRB=0.
       writeState === writeData && renderWrite && !io.render.w.valid,
       writeState === writeData && renderWrite && io.axi.w.valid && !io.axi.w.ready,
-      writeState === writeResponse && renderWrite && !io.axi.b.valid,
+      (if(enableWritePipeline) {
+        val q=writeResponses.get
+        q.io.deq.valid && !q.io.deq.bits && !io.axi.b.valid
+      } else writeState === writeResponse && renderWrite && !io.axi.b.valid),
       writeState === writeAddress && renderWrite && io.axi.aw.valid && !io.axi.aw.ready,
       io.render.aw.valid && emergency && (writeState === writeIdle ||
         (writeState === writeAddress && !writeAddressPresented)),

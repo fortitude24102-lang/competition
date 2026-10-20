@@ -19,7 +19,7 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   enableStripeScratchpad: Boolean = false, enableCopyBurstBuffer: Boolean = false,
   enableScanoutWordPipeline: Boolean = false, enableKeyRowTrim: Boolean = false,
   enableTransformBlit: Boolean = false, enableAlphaPipeline: Boolean = false,
-  enableAxiDiagnostics: Boolean = false) extends Module {
+  enableAxiDiagnostics: Boolean = false, enableKeyWritePipeline: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val apb = new ApbSlavePort
     val axi = new Axi4MasterPort
@@ -49,9 +49,9 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   private val assetRegs = Module(new AssetDmaRegs)
   private val assetWriter = Module(new AssetDmaWriter)
   private val render = Module(new RenderEngine(enableCopyStream,enableFrameLists,enableKeyPrefetch,enableCopyBurstBuffer,
-    enableKeyRowTrim,enableTransformBlit,enableAlphaPipeline))
+    enableKeyRowTrim,enableTransformBlit,enableAlphaPipeline,enableKeyWritePipeline))
   private val scanout = Module(new ScanoutDma(enableWordPipeline=enableScanoutWordPipeline))
-  private val ddr = Module(new DdrQosArbiter(enableDiagnostics=enableAxiDiagnostics))
+  private val ddr = Module(new DdrQosArbiter(enableDiagnostics=enableAxiDiagnostics,enableWritePipeline=enableKeyWritePipeline))
   private val renderMemory = if(enableStripeScratchpad) {
     val scratch = Module(new StripeScratchpad)
     scratch.io.in <> render.io.axi
