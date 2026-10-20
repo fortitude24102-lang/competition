@@ -46,10 +46,11 @@ class SmallCopyPrefetchSpec extends AnyFunSpec with StableChiselSim with Matcher
       d.io.command.bits.tag.poke(tag+submitted)
       d.io.command.bits.srcAddr.poke(if(submitted==0)s.src else if(submitted==1)0L else s.src)
       d.io.command.bits.dstAddr.poke(if(submitted==0)s.dst else 0x02100000L+submitted*0x100L)
-      d.io.command.bits.widthPixels.poke(if(submitted==0)s.w else 1)
+      val followingWidth=if(cached && submitted==2)2 else 1
+      d.io.command.bits.widthPixels.poke(if(submitted==0)s.w else followingWidth)
       d.io.command.bits.heightPixels.poke(if(submitted==0)s.h else 1)
-      d.io.command.bits.srcStride.poke(if(submitted==0)s.w*2 else 2)
-      d.io.command.bits.dstStride.poke(if(submitted==0)s.stride else 2)
+      d.io.command.bits.srcStride.poke(if(submitted==0)s.w*2 else followingWidth*2)
+      d.io.command.bits.dstStride.poke(if(submitted==0)s.stride else followingWidth*2)
       d.io.command.bits.colorKey.poke(0xf81f);d.io.command.bits.color.poke(0xf800);d.io.command.bits.alpha.poke(255)
       d.io.axi.ar.ready.poke(rLeft==0 && cycles%5!=2)
       d.io.axi.r.valid.poke(rLeft>0 && cycles%3!=1)
@@ -104,10 +105,11 @@ class SmallCopyPrefetchSpec extends AnyFunSpec with StableChiselSim with Matcher
         if(s.stride>s.w*2 || (y==0 && b<0) || (y==s.h-1 && b>=s.w*2) || (b>=0 && b<s.w*2))
           mem(s.dst+y*s.stride+b) shouldBe want
       }
-      (d.io.perfPixels.peek().litValue-beforePixels) shouldBe BigInt(s.w*s.h+3)
+      (d.io.perfPixels.peek().litValue-beforePixels) shouldBe BigInt(s.w*s.h+(if(cached)4 else 3))
     }
     mem(0x02100100L) shouldBe 0;mem(0x02100101L) shouldBe 0xf8
     mem(0x02100200L) shouldBe 0x5a;mem(0x02100201L) shouldBe 0x5a // Key skips magenta
+    if(cached) {mem(0x02100202L) shouldBe 0x59;mem(0x02100203L) shouldBe 0x12}
     mem(0x02100300L) shouldBe 0x1f;mem(0x02100301L) shouldBe 0xf8 // Alpha255 copies magenta
     Result(cycles,copyReads,copyWrites,overlap)
   }

@@ -48,7 +48,7 @@ GPU busy14.83448ms与CPU/Copy重叠，不可再与上表相加。下溢/错误0�
 
 新增真实RenderEngine三项测试通过：正常/回退、6类R/B故障与后续Fill/Key/Alpha、真实纹理缓存共存。独立字节期望、哨兵、品红、14×18、半字+stride1922、高32/33、源+2、奇数宽、紧凑Copy、4KiB均覆盖；延迟B条件14×18从2035到1122周期（约−44.86%），AR18→1、AW仍18。仿真周期不是板端FPS，固定延迟不是对DDR时序的完整建模。
 
-生成目录`generated/verification/v3/copy-retirement-20261020/rtl-c5c807b86b51474d904f027dfcbef193`，60个单模块HDL。Efinity工程`D:/efinity_builds/small_copy_prefetch_20261020_r1`的map/interface/pnr/pgm通过；最终16项setup/hold全正，core+0.278/+0.026ns，全局最小setup+0.273ns/hold+0.012ns。XLR52768/60800（较旧版增加30），RAM179/256、DSP37/160不增；仍不是超频依据。原网口CDC映射1488对数据/2请求/2应答全覆盖，实际布线最大1.315/0.815/1.153ns，均小于原8ns约束；解析器XLR786/RAM1，既有SDC警告保留，不宣称零警告或所有历史SoC问题已解决。
+生成目录`generated/verification/v3/copy-retirement-20261020/rtl-c5c807b86b51474d904f027dfcbef193`，60个单模块HDL。Efinity工程`D:/efinity_builds/small_copy_prefetch_20261020_r1`的map/interface/pnr/pgm通过；最终16项setup/hold全正，core+0.278/+0.026ns，全局最小setup+0.257ns/hold+0.012ns。XLR52768/60800（较旧版增加30），RAM179/256、DSP37/160不增；仍不是超频依据。原网口CDC映射1488对数据/2请求/2应答全覆盖，实际布线最大1.315/0.815/1.153ns，均小于原8ns约束；解析器XLR786/RAM1，既有SDC警告保留，不宣称零警告或所有历史SoC问题已解决。
 
 新BIT SHA256`118491efb159cc4c8ad2f47b42fc073b5d956a43e9d106fe944df4db2f250dce`。
 
@@ -93,6 +93,10 @@ GPU busy14.83448ms与CPU/Copy重叠，不可再与上表相加。下溢/错误0�
 ## 验证、复现与交付边界
 
 实现66e954f，设计/计划54ca692。新增RenderEngine测试分两次增量通过（2项正常/故障＋1项缓存共存）；原受影响8套34项通过，完整软件集成含新增trace、协议/网关/心跳和真实APB/MAC子系统通过。不重复已验证且未改变的旧35套136项，不把历史SoC两项异常补称修复。
+
+一次独立只读全差异审查未发现新的生产正确性问题。审查指出报告的最小setup曾误写+0.273ns，已按tx_cal_clk实际+0.257ns更正（仍全正）；同时把缓存切换用例扩为偶数宽2、包含品红跳过和非透明像素，直接覆盖共享FIFO的DDR Copy→缓存Key→Alpha，补充1/1通过。只改测试和文档，不改已测BIT/BIN，也不为该补测重跑未变化的全部长仿真。
+
+故障仿真中的错误RLAST仍提供请求规定的拍数，只证明错误标记/排空，不证明任意从设备缺拍或永久停响应的自动恢复。既有reader/arbiter协议约束未改，这类破损总线恢复仍需另测，必要时系统复位；不把本轮测试包装成完整容错认证。
 
 在既有Chisel环境中生成时用：
 
