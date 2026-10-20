@@ -111,3 +111,5 @@ runMain gpu.GenerateEfinix2dGpu --target-dir <全新目录> --split-verilog --in
 执行取舍：沿用现有Windows链接工作区与原生记录（WSL技能辅助脚本不识别D:/ gitdir，不改.git）；按用户既有无中断授权直接执行默认关闭候选；只重测受影响GPU套件并保留旧全量证据。因此无关模块和长期稳定性仍不作为本轮新增保证；这些取舍不改变像素或资格规则。
 
 原始证据目录：generated/verification/v3/copy-retirement-20261020/。负结果和未通过的候选均保留；2065是本轮复核值，不是硬件绝对极限。
+
+[证据封存](evidence.zip)，SHA256`c93137f108c81c34a24ab35898af9ff723219d32a607c85e019b05ff4816dd1c`。185项条目，含最终BIT/正常BIN、旧BIT对照、隔离的诊断BIN、实际RTL、源码/计划/审查、正负日志、原始HTTP和失败帧DDR快照；包内BIT哈希复核一致。被否决暂存方案只收源码/补丁，不收可误用的暂存BIN。包内README为封包前快照，不包含本段自身ZIP哈希；旧容量封存ZIP仍为06b415...未改动。
