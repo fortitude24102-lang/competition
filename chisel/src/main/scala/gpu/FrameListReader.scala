@@ -13,7 +13,7 @@ class FrameListRequest extends Bundle {
   * ponytail: prefetch one complete <=16KiB list before pixel reads share DDR;
   * a streaming FIFO needs a separate arbitration/deadlock proof first.
   */
-class FrameListReader(maxDescriptors: Int = 1024) extends Module {
+class FrameListReader(maxDescriptors: Int = 1024, extendedArena: Boolean = false) extends Module {
   require(maxDescriptors > 0 && maxDescriptors <= 1024)
   val io = IO(new Bundle {
     val request = Flipped(Decoupled(new FrameListRequest))
@@ -58,7 +58,8 @@ class FrameListReader(maxDescriptors: Int = 1024) extends Module {
   private val lastByte = end - 1.U
   private val legal = io.request.bits.count > 0.U && io.request.bits.count <= maxDescriptors.U &&
     io.request.bits.address(3,0) === 0.U && io.request.bits.address >= "h02d20000".U &&
-    end <= "h02d28000".U(64.W) && io.request.bits.address(31,14) === lastByte(31,14)
+    end <= (if(extendedArena) "h02d30000".U(64.W) else "h02d28000".U(64.W)) &&
+    io.request.bits.address(31,14) === lastByte(31,14)
   when(io.request.fire) {
     words := 0.U
     index := 0.U

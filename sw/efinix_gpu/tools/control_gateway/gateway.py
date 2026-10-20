@@ -62,12 +62,13 @@ class GatewayState:
         now=time.monotonic() if now is None else now
         if (opcode not in ('start','menu','performance') or type(level) is not int or
                 type(request_id) is not int or not 1<=request_id<=0xffffffff or
-                not (opcode=='start' and 1<=level<=4 or opcode in ('menu','performance') and level==0)): return 400
+                not (opcode=='start' and 1<=level<=len(p.LEVEL_COUNTS) or opcode in ('menu','performance') and level==0)): return 400
         with self.lock:
             self._expire(now);self._game_timeout(now)
             if self.owner!=client: return 409
             t=self.telemetry
             if not self.acknowledged or t is None or now-self.telemetry_time>=STALE or not t.words[21]&(1<<11): return 503
+            if opcode=='start' and level>4 and not t.words[21]&(1<<14): return 503
             g=self.game_request
             if g and g['session']==self.session and g['request_id']==request_id:
                 return 202 if (g['opcode'],g['level'])==(opcode,level) else 409

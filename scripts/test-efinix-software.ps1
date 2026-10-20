@@ -43,7 +43,7 @@ try {
     if ($LogicCopy -and (!$CopyAhead -or !$Interactive -or !$OutDirectory -or $PublishRelease)) {throw 'LogicCopy requires separate CopyAhead Interactive candidate; no release overwrite'}
     if ($ReplayCrcNibble -and (!$Interactive -or !$OutDirectory -or $PublishRelease)) {throw 'ReplayCrcNibble requires separate Interactive candidate output; no release overwrite'}
     if ($ReplaySealBudget -and (!$ReplayCrcNibble -or !$Interactive -or !$OutDirectory -or $PublishRelease)) {throw 'ReplaySealBudget requires separate nibble-CRC Interactive candidate; no release overwrite'}
-    if ($FrameList -and (!$Interactive -or !$OutDirectory -or $PublishRelease -or $ObjectCapacity -ne 512)) {throw 'FrameList requires separate 512-capacity Interactive candidate; no release overwrite'}
+    if ($FrameList -and (!$Interactive -or !$OutDirectory -or $PublishRelease)) {throw 'FrameList requires separate Interactive candidate; no release overwrite'}
     if ($StripeRender -and (!$FrameList -or !$Interactive -or !$OutDirectory -or $PublishRelease)) {throw 'StripeRender requires separate FrameList Interactive candidate'}
     if ($StripeRender -and (!$PSBoundParameters.ContainsKey('NetworkLocalIp') -or !$PSBoundParameters.ContainsKey('NetworkPeerIp'))) {throw 'StripeRender requires explicit network addresses'}
     if ($HudList -and (!$FrameList -or !$Interactive -or !$OutDirectory -or $PublishRelease)) {throw 'HudList requires separate FrameList Interactive candidate; no release overwrite'}

@@ -19,7 +19,9 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   enableStripeScratchpad: Boolean = false, enableCopyBurstBuffer: Boolean = false,
   enableScanoutWordPipeline: Boolean = false, enableKeyRowTrim: Boolean = false,
   enableTransformBlit: Boolean = false, enableAlphaPipeline: Boolean = false,
-  enableAxiDiagnostics: Boolean = false, enableKeyWritePipeline: Boolean = false) extends Module {
+  enableAxiDiagnostics: Boolean = false, enableKeyWritePipeline: Boolean = false,
+  enableExtendedListArena: Boolean = false) extends Module {
+  require(!enableExtendedListArena || enableFrameLists, "Extended list arena requires frame lists")
   val io = IO(new Bundle {
     val apb = new ApbSlavePort
     val axi = new Axi4MasterPort
@@ -42,10 +44,10 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   })
 
   private val hasFrontend = enableInstances || enableFrameLists
-  private val regs = Module(new GpuApbRegs(hasFrontend,enableFrameLists,enableStripeScratchpad,enableTransformBlit,enableAxiDiagnostics))
+  private val regs = Module(new GpuApbRegs(hasFrontend,enableFrameLists,enableStripeScratchpad,enableTransformBlit,enableAxiDiagnostics,enableExtendedListArena))
   private val diagnostics = if(enableAxiDiagnostics) Some(Module(new AxiDiagnosticRegs)) else None
   private val instances = if (hasFrontend) Some(Module(new InstanceStream(enableFrameLists))) else None
-  private val batch = if(enableFrameLists) Some(Module(new FrameListBatch)) else None
+  private val batch = if(enableFrameLists) Some(Module(new FrameListBatch(enableExtendedListArena))) else None
   private val assetRegs = Module(new AssetDmaRegs)
   private val assetWriter = Module(new AssetDmaWriter)
   private val render = Module(new RenderEngine(enableCopyStream,enableFrameLists,enableKeyPrefetch,enableCopyBurstBuffer,

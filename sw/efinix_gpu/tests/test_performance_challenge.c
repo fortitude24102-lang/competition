@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 static pc_state state;
-static gpu_instance descriptors[2049];
+static gpu_instance descriptors[4097];
 static void frame(int pass) {
  assert(pc_record(&state,100000000,pass?1500000:1700000,pass?1663900:3327800,0,0,state.target,(state.target+7)/8)>=0);
 }
@@ -59,7 +59,20 @@ int main(void) {
    assert(d->words[0]==(i?2u+(i+7u+state.tick/8u)%6u:8u));
   }
  }
- assert(pc_init(NULL,64,7)<0 && pc_init(&state,1820,7)<0);
+ assert(!pc_init(&state,3640,7));
+ while(state.target!=3640)trial(1);
+ memset(descriptors,0xa5,sizeof descriptors);
+ assert(pc_build(&state,GPU_FRAMEBUFFER_A,1,descriptors,4095,&stats)==GPU_DRIVER_ARGUMENT);
+ assert(!stats.count && descriptors[0].words[0]==0xa5a5a5a5u);
+ assert(!pc_build(&state,GPU_FRAMEBUFFER_A,1,descriptors,4096,&stats));
+ assert(stats.count==4096 && stats.visible==3640 && stats.alpha_commands==455);
+ assert(descriptors[4096].words[0]==0xa5a5a5a5u && descriptors[4096].words[3]==0xa5a5a5a5u);
+ for(unsigned i=0;i<3640;i++) {
+  assert(descriptors[456+i].words[0]==(i?2u+state.sprites[i].shape:8u));
+  assert(descriptors[456+i].words[1]==GPU_FRAMEBUFFER_A+(uint32_t)state.sprites[i].y*1920u+(uint32_t)state.sprites[i].x*2u);
+ }
+ assert(PC_STATE_ADDRESS>=GPU_FRAME_LIST_BANK_A+4096u*16u && PC_STATE_ADDRESS+sizeof(state)<=0x02d40000u);
+ assert(pc_init(NULL,64,7)<0 && pc_init(&state,3641,7)<0);
  assert(!pc_init(&state,512,7));
  assert(pc_record(&state,100000000,1500000,1663900,1,0,64,8)>=0);
  assert(state.stage==PC_FAILED && !state.best); /* Warmup health cannot be discarded. */
@@ -79,5 +92,5 @@ int main(void) {
  assert(!state.best); /* Precise59.9999 is not rounded60.0. */
  assert(!pc_init(&state,64,7));trial(1);trial(0);
  assert(!state.best && state.target<64 && state.stage<PC_DONE); /* Long recheck fail researches lower bracket. */
- puts("PASS performance challenge:1819active/2048descriptors,explicit capacity/canary,old909layout,Alpha+Key,strict600vs3600,bounds and invalidation");
+ puts("PASS performance challenge:3640active/4096descriptors,1819/909compat,capacity/canary,Alpha+Key,strict600vs3600,bounds/invalidation");
 }

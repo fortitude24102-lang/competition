@@ -7,6 +7,7 @@
     'input_age_ms','status_flags','p95_work_us','present_wait_us','alpha_commands','alpha_pixels','key_commands'];
   const MAP = {ArrowLeft:1,KeyA:1,ArrowRight:2,KeyD:2,ArrowUp:4,KeyW:4,ArrowDown:8,KeyS:8,
     Space:16,KeyZ:16,ShiftLeft:32,ShiftRight:32,KeyR:64,KeyC:128};
+  const LEVEL_COUNTS=[64,128,256,512,786,1024];
 
   class KeyboardState {
     constructor() { this.down = new Set(); this.action = 0; }
@@ -158,10 +159,10 @@
   function gameView(view) {
     const flags=view?.telemetry?.words[21]||0,supported=!!(flags&(1<<11));
     const phase=supported?(flags&(1<<10)?'menu':flags&(1<<13)?'performance':'play'):'unknown';
-    const counts=[64,128,256,512],index=counts.indexOf(view?.telemetry?.words[3]);
+    const maxLevel=flags&(1<<14)?6:4,index=LEVEL_COUNTS.indexOf(view?.telemetry?.words[3]);
     const pending=['pending','await_snapshot'].includes(view?.game?.state);
     const ready=supported && !view.stale && (view.age_ms==null || view.age_ms<500) && !pending;
-    return {supported,phase,level:phase==='play' && index>=0?index+1:null,
+    return {supported,phase,level:phase==='play' && index>=0 && index<maxLevel?index+1:null,maxLevel,
       canStart:ready && phase==='menu',canMenu:ready,pending,canPerformance:ready && phase==='menu' && !!(flags&(1<<12))};
   }
 
@@ -272,7 +273,7 @@
       if(!pump.active) {pump.acquire();$('acquire').disabled=true;}
       $('game-status').textContent='正在获取控制并等待开发板确认…';
     }
-    for(let level=1;level<=4;level++) $('level-'+level).addEventListener('click',()=>choose('start',level));
+    for(let level=1;level<=LEVEL_COUNTS.length;level++) $('level-'+level).addEventListener('click',()=>choose('start',level));
     $('reselect').addEventListener('click',()=>choose('menu',0));
     $('performance-start').addEventListener('click',()=>choose('performance',0));
     document.addEventListener('keydown',event=>{
@@ -368,9 +369,9 @@
         stale || !perf || perf.stale?'等待新鲜板端挑战数据，旧成绩不作当前结论':
         ['','预热','搜索','60秒复核','60秒复核通过','达到本次配置容量（非硬件极限）','失败／成绩失效'][perf.stage]+
         ' · 活动 '+perf.target+' · 窗口 '+perf.frames+' 帧 · 已复核最佳 '+perf.best;
-      $('current-difficulty').textContent=gv.level?'当前难度 '+gv.level+' · '+[64,128,256,512][gv.level-1]+' Sprite 请求档位':'';
+      $('current-difficulty').textContent=gv.level?'当前难度 '+gv.level+' · '+LEVEL_COUNTS[gv.level-1]+' Sprite 请求档位':'';
       $('reselect').disabled=!gv.canMenu || stale || !!choice || gameSending;
-      for(let level=1;level<=4;level++) $('level-'+level).disabled=!gv.canStart || stale || !!choice || gameSending;
+      for(let level=1;level<=LEVEL_COUNTS.length;level++) $('level-'+level).disabled=!gv.canStart || level>gv.maxLevel || stale || !!choice || gameSending;
       if(choice && performance.now()>=choice.deadline) {choice=null;$('game-status').textContent='请求超时，状态未知；等待真实板端状态。';}
       if(choice && !gameSending && !stale && lastView.acknowledged && pump.active && gv.supported) {
         const selected=choice;gameSending=true;

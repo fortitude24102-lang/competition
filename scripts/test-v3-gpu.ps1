@@ -10,6 +10,7 @@ param(
   [switch]$AlphaPipeline,
   [switch]$AxiDiagnostics,
   [switch]$KeyWritePipeline,
+  [switch]$ExtendedListArena,
   [switch]$StripeScratchpad,
   [switch]$SoftwareOnly
 )
@@ -23,7 +24,7 @@ $LogPath = [IO.Path]::GetFullPath($LogPath)
 New-Item -ItemType Directory -Force -Path (Split-Path $LogPath) | Out-Null
 $wslRoot = '/mnt/' + $projectRoot.Substring(0, 1).ToLowerInvariant() + $projectRoot.Substring(2).Replace('\', '/')
 if ($SoftwareOnly -and ($Generate -or $Suite.Count)) { throw 'SoftwareOnly cannot select/generate RTL.' }
-if (($KeyPrefetch -or $StripeScratchpad -or $CopyBurstBuffer -or $ScanoutWordPipeline -or $KeyRowTrim -or $TransformBlit -or $AlphaPipeline -or $AxiDiagnostics -or $KeyWritePipeline) -and !$Generate) { throw 'Candidate hardware switches require Generate' }
+if (($KeyPrefetch -or $StripeScratchpad -or $CopyBurstBuffer -or $ScanoutWordPipeline -or $KeyRowTrim -or $TransformBlit -or $AlphaPipeline -or $AxiDiagnostics -or $KeyWritePipeline -or $ExtendedListArena) -and !$Generate) { throw 'Candidate hardware switches require Generate' }
 if ($KeyWritePipeline -and (!$KeyPrefetch -or $KeyRowTrim)) {throw 'KeyWritePipeline requires untrimmed KeyPrefetch'}
 if ($KeyRowTrim -and !$KeyPrefetch) { throw 'KeyRowTrim requires KeyPrefetch' }
 if (Test-Path (Join-Path $projectRoot 'scripts/test-v3-damage.sh')) {
@@ -44,7 +45,7 @@ $environment = $environment.Substring(0, $environment.IndexOf('bash "$project_ro
 $compileFilter = 'set Compile / unmanagedSources := (Compile / unmanagedSources).value.filter(_.getPath.contains("/gpu/"))'
 $testFilter = 'set Test / unmanagedSources := (Test / unmanagedSources).value.filter(f => f.getPath.contains("/gpu/") || f.getPath.contains("/testutil/"))'
 $test = if ($Suite.Count) { 'testOnly ' + ($Suite -join ' ') } else { 'test' }
-$candidateFlags = if ($KeyPrefetch -or $StripeScratchpad -or $CopyBurstBuffer -or $ScanoutWordPipeline -or $KeyRowTrim -or $TransformBlit -or $AlphaPipeline -or $AxiDiagnostics -or $KeyWritePipeline) { ' --instances --frame-lists' } else { '' }
+$candidateFlags = if ($KeyPrefetch -or $StripeScratchpad -or $CopyBurstBuffer -or $ScanoutWordPipeline -or $KeyRowTrim -or $TransformBlit -or $AlphaPipeline -or $AxiDiagnostics -or $KeyWritePipeline -or $ExtendedListArena) { ' --instances --frame-lists' } else { '' }
 if ($KeyPrefetch) { $candidateFlags += ' --key-prefetch' }
 if ($StripeScratchpad) { $candidateFlags += ' --stripe-scratchpad' }
 if ($CopyBurstBuffer) { $candidateFlags += ' --copy-burst-buffer' }
@@ -54,11 +55,13 @@ if ($TransformBlit) { $candidateFlags += ' --transform-blit' }
 if ($AlphaPipeline) { $candidateFlags += ' --alpha-pipeline' }
 if ($AxiDiagnostics) { $candidateFlags += ' --axi-diagnostics' }
 if ($KeyWritePipeline) { $candidateFlags += ' --key-write-pipeline' }
+if ($ExtendedListArena) { $candidateFlags += ' --extended-list-arena' }
 if ($CopyBurstBuffer -and $StripeScratchpad) { throw 'Measure Copy staging without the experimental stripe path' }
 if ($ScanoutWordPipeline -and ($CopyBurstBuffer -or $StripeScratchpad)) { throw 'Measure Scanout word replacement independently' }
 $rtlOutput = if ($AlphaPipeline) { if($TransformBlit) { 'alpha-gray-20261019/rtl-both' } else { 'alpha-gray-20261019/rtl-alpha' } } elseif ($KeyRowTrim -and $TransformBlit) { 'dual-track-20261018/rtl-both' } elseif ($KeyRowTrim) { 'dual-track-20261018/rtl-key-trim' } elseif ($TransformBlit) { 'alpha-gray-20261019/rtl-gray' } elseif ($ScanoutWordPipeline) { 'scanout-word-pipeline-20261016/rtl' } elseif ($CopyBurstBuffer) { 'copy-burst-buffer-20261016/rtl' } elseif ($StripeScratchpad) { 'rows-stripes-20261016/rtl' } elseif ($KeyPrefetch) { 'rows-stripes-20261016/rtl-key' } else { 'copy/rtl' }
 if ($AxiDiagnostics) { $rtlOutput = 'axi-diagnostics-20261019/rtl-'+[Guid]::NewGuid().ToString('N') }
 if ($KeyWritePipeline) { $rtlOutput = 'key-write-pipeline-20261019/rtl-'+[Guid]::NewGuid().ToString('N') }
+if ($ExtendedListArena) { $rtlOutput = 'capacity-six-levels-20261020/rtl-'+[Guid]::NewGuid().ToString('N') }
 $generateCommand = if ($Generate) { " 'runMain gpu.GenerateEfinix2dGpu --target-dir ../generated/verification/v3/$rtlOutput --split-verilog$candidateFlags'" } else { '' }
 $command = "set -euo pipefail`n" + $environment + "`ncd '$wslRoot/chisel'`nexec bash /mnt/d/Chisel-environment/sbt/bin/sbt '$compileFilter' '$testFilter' '$test'$generateCommand`n"
 # Windows PowerShell 5 turns native stderr (including WSL proxy warnings) into

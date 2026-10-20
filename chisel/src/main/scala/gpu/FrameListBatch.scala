@@ -6,7 +6,7 @@ import chisel3.util._
 /** One GPU owner. sticky done is backend retirement, NOT Reader's pulse.
   * ponytail: no local AXI timeout/reset; outstanding responses require a
   * coordinated system reset, never an unsafe reset of this client alone. */
-class FrameListBatch extends Module {
+class FrameListBatch(extendedArena: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val apb = new ApbSlavePort
     val idle = Input(Bool())
@@ -23,7 +23,7 @@ class FrameListBatch extends Module {
     val axiAr = Decoupled(new Axi4Address)
     val axiR = Flipped(Decoupled(new Axi4ReadData))
   })
-  private val reader = Module(new FrameListReader())
+  private val reader = Module(new FrameListReader(extendedArena=extendedArena))
   private val idle :: launch :: fetching :: drain :: Nil = Enum(4)
   private val state = RegInit(idle)
   private val base = RegInit(0.U(32.W))

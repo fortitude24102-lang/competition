@@ -29,10 +29,11 @@
 - [ ] 本地提交容量实现。
 
 ### Task 2: 六档端到端
-**Files:** v3_runtime.c、game_menu.c/.h、v3_demo.c、net_control.c、v3_control_protocol.h、test-efinix-software.ps1；protocol.py/gateway.py/fake_board.py、web/index.html/dashboard.js；现有对应C/Python/JS测试、test-game-menu-board.ps1。
+**Files:** v3_runtime.c、game_menu.c/.h、v3_demo.c、net_control.c、v3_control_protocol.h、test-efinix-software.ps1；board/efinix_ti60/rtl/net/control_udp_rx.v与tb_net_control.sv；protocol.py/gateway.py/fake_board.py、web/index.html/dashboard.js；现有对应C/Python/JS测试、test-game-menu-board.ps1。
 **Interfaces:** v3_level_count1..6映射上述精确数字，>对象容量返回0；status bit14仅1024配置声明；game_menu_cache.levels=6表示六卡，默认旧4；新网页限制旧固件5/6。
 - [ ] 先写六档runtime、菜单字形/几何、真实网络ACK/无效7、网关cap门、JS映射与浏览器按钮RED。
 - [ ] 实现容量1024构建、列表大场景baseA、六卡/六按钮、能力边界，键盘/死亡/重选及旧档行为不变，GREEN。
+- [x] 补齐硬件网口接收层1..6准入；真实router/CRC/CDC/APB测试先复现level5被丢，再最小修复，level7仍拒绝；六套网络RTL及实际子系统回归通过。原计划/首轮审查未覆盖此层，已补正。
 - [ ] 当前软件/网关/协议套件一次完整检查，固件实际链接和DDR/4KiB栈边界检查；本地提交。
 
 ### Task 3: 集成与上板

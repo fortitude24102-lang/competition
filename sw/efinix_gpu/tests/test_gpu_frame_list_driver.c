@@ -5,13 +5,13 @@
 #include <stdio.h>
 #include <string.h>
 static uint32_t regs[512];
-static unsigned enabled,starts,legacy,new_reads,synced,syncs;
+static unsigned enabled,extended,starts,legacy,new_reads,synced,syncs;
 static int fault,timeout,wrong_epoch,wrong_count;
 static unsigned fail_start,timeout_start;
 static uint32_t addresses[8],counts[8],tags[8],epochs[8];
 uint32_t gpu_io_read(uintptr_t a) {
  unsigned r=(unsigned)(a-GPU_APB_BASE);
- if(r==GPU_REG_STATUS) return GPU_STATUS_EMPTY|(13u<<8)|(enabled?(3u<<14):0);
+ if(r==GPU_REG_STATUS) return GPU_STATUS_EMPTY|(13u<<8)|(enabled?(3u<<14):0)|(extended?(1u<<20):0);
  if(r>=0x400) {++new_reads;assert(enabled);}
  if(r==0x400)return GPU_INSTANCE_ID;
  if(r==0x500)return GPU_FRAME_LIST_ID;
@@ -36,7 +36,7 @@ void gpu_io_write(uintptr_t a,uint32_t v) {
 void gpu_io_fence(void) {}
 void gpu_platform_sync(void){synced=1;++syncs;}
 static gpu_device init(int present) {
- memset(regs,0,sizeof regs);enabled=(unsigned)present;
+ memset(regs,0,sizeof regs);enabled=(unsigned)present;extended=present==2;
  starts=legacy=new_reads=synced=syncs=0;fault=timeout=wrong_epoch=wrong_count=0;
  fail_start=timeout_start=0;
  regs[GPU_REG_ID/4]=GPU_ID_VALUE;regs[GPU_REG_VERSION/4]=GPU_VERSION_VALUE;
@@ -96,5 +96,25 @@ int main(void) {
   assert(starts==2 && d.submitted_count==1024 && f.active && !d.ready && !legacy);
   assert(gpu_frame_list_render_span(&f,0x02d20000,1025,22,2)==GPU_DRIVER_BUSY && starts==2);
  }
- puts("FRAME_LIST_DRIVER,PASS,legacy_safe,tagwrap,count585,epoch,issued,publish,bank,timeout,no_replay,busy");
+ d=init(2);assert(!gpu_frame_list_init(&f,&d,1) && f.arena_items==4096);
+ d.next_tag=65535;d.last_done=65534;regs[GPU_REG_LAST_DONE/4]=65534;
+ assert(!gpu_frame_list_render_span(&f,0x02d20000,4096,31,10));
+ assert(starts==4 && d.submitted_count==4096 && d.next_tag==4095 && d.last_done==4094);
+ for(unsigned i=0;i<4;i++) {
+  assert(addresses[i]==0x02d20000u+i*16384u && counts[i]==1024);
+  assert(tags[i]==(uint16_t)(65535u+i*1024u) && epochs[i]==31);
+ }
+ n=starts;
+ assert(gpu_frame_list_render_span(&f,0x02d20000,4097,32,10)==GPU_DRIVER_ARGUMENT);
+ assert(gpu_frame_list_render_span(&f,0x02d2fff0,2,32,10)==GPU_DRIVER_ARGUMENT && starts==n);
+ d=init(1);assert(!gpu_frame_list_init(&f,&d,1) && f.arena_items==2048);
+ assert(gpu_frame_list_render_span(&f,0x02d20000,4096,32,10)==GPU_DRIVER_ARGUMENT && !starts);
+ for(unsigned t=0;t<2;t++) {
+  d=init(2);assert(!gpu_frame_list_init(&f,&d,1));
+  if(t)timeout_start=3;else fail_start=3;
+  assert(gpu_frame_list_render_span(&f,0x02d20000,4096,32,2)==(t?GPU_DRIVER_TIMEOUT:GPU_DRIVER_HARDWARE));
+  assert(starts==3 && d.submitted_count==2048 && f.active && !d.ready);
+  assert(gpu_frame_list_render_span(&f,0x02d20000,4096,32,2)==GPU_DRIVER_BUSY && starts==3);
+ }
+ puts("FRAME_LIST_DRIVER,PASS,legacy_safe,tagwrap,4banks,4096items,epoch,publish,full_range_before_START,no_replay");
 }

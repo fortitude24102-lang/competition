@@ -4,6 +4,7 @@
 typedef struct {
  uint32_t destination[2],generation[2];
  uint8_t valid_mask,network[2],performance;
+ uint8_t levels,drawn_levels[2]; /* 0/4: legacy layout, 6: expanded layout. */
 } game_menu_cache;
 void game_menu_invalidate(game_menu_cache *cache);
 int game_menu_draw(gpu_device *gpu,game_menu_cache *cache,unsigned buffer_index,

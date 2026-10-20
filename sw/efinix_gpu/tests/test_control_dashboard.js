@@ -75,16 +75,19 @@ async function main() {
   assert.equal(modeText({telemetry:{words:menuWords}}),'难度选择菜单 · CPU旧对照已过期');
   menuWords[21]=0x0d00;
   let gv=gameView({stale:false,age_ms:0,telemetry:{words:menuWords},game:null});
-  assert.deepEqual(gv,{supported:true,phase:'menu',level:null,canStart:true,canMenu:true,pending:false,canPerformance:false});
+  assert.deepEqual(gv,{supported:true,phase:'menu',level:null,maxLevel:4,canStart:true,canMenu:true,pending:false,canPerformance:false});
   menuWords[21]=0x1d00;
   assert.equal(gameView({stale:false,age_ms:0,telemetry:{words:menuWords}}).canPerformance,true);
   menuWords[21]=0x3801;
   assert.equal(gameView({stale:false,age_ms:0,telemetry:{words:menuWords}}).phase,'performance');
   menuWords[21]=0x0d00;
-  for(const [level,count] of [[1,64],[2,128],[3,256],[4,512]]) {
-    const words=menuWords.slice();words[21]=0x0801;words[3]=count;
+  for(const [level,count] of [[1,64],[2,128],[3,256],[4,512],[5,786],[6,1024]]) {
+    const words=menuWords.slice();words[21]=0x4801;words[3]=count;
     assert.equal(gameView({stale:false,age_ms:0,telemetry:{words}}).level,level);
   }
+  assert.equal(gameView({stale:false,age_ms:0,telemetry:{words:menuWords}}).maxLevel,4);
+  menuWords[21]=0x4d00;
+  assert.equal(gameView({stale:false,age_ms:0,telemetry:{words:menuWords}}).maxLevel,6);
   assert.equal(gameView({stale:true,telemetry:{words:menuWords}}).canStart,false);
   assert.equal(gameView({stale:false,telemetry:{words:Array(27).fill(0)}}).supported,false);
   gv=gameView({stale:false,age_ms:0,telemetry:{words:menuWords},game:{state:'await_snapshot'}});

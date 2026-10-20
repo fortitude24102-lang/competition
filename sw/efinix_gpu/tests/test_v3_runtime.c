@@ -69,7 +69,7 @@ static void test_menu_levels(void) {
   assert(!(f&V3_VALID_GPU_TIMING));
  }
  assert(!v3_level_count(0) && !v3_level_count(5));
- assert(v3_runtime_game_command(&runtime,1,5,7,12)<0);
+ assert(v3_runtime_game_command(&runtime,1,5,7,12)==1); /* Valid new level, unsupported by this legacy-capacity build. */
  assert(v3_runtime_game_command(&runtime,2,1,7,12)<0);
 }
 static void test_start_requires_new_neutral(void) {

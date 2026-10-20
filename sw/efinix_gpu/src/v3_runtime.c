@@ -5,6 +5,7 @@ uint32_t v3_runtime_status(const v3_runtime *r,int network,int connected,
  int menu=r->menu_enabled && r->phase==V3_PHASE_MENU;
  return (r->mode==V3_MODE_LIVE?V3_STATUS_GPU_REALTIME:V3_STATUS_COMPARE_REPLAY)
   |(r->menu_enabled?V3_STATUS_GAME_MENU_CAPABLE:0)
+  |(r->menu_enabled && BULLET_MAX_OBJECTS>=1024?V3_STATUS_SIX_LEVELS:0)
   |(r->perf_enabled?V3_STATUS_PERFORMANCE_CAPABLE:0)
   |(r->phase==V3_PHASE_PERFORMANCE?V3_STATUS_PERFORMANCE_ACTIVE:0)
   |(menu?V3_STATUS_MENU|V3_STATUS_PAUSED:0)
@@ -21,7 +22,8 @@ int v3_runtime_init(v3_runtime *r,unsigned count,uint32_t seed,uint32_t epoch) {
  return replay_init(&r->recording,&r->game,epoch);
 }
 unsigned v3_level_count(unsigned level) {
- return level>=1 && level<=4?64u<<(level-1):0;
+ static const unsigned counts[]={64,128,256,512,786,1024};
+ return level>=1 && level<=6 && counts[level-1]<=BULLET_MAX_OBJECTS?counts[level-1]:0;
 }
 static void enter_menu(v3_runtime *r,unsigned reason) {
  r->phase=V3_PHASE_MENU;r->menu_reason=(uint8_t)reason;r->mode=V3_MODE_LIVE;
@@ -45,8 +47,9 @@ static int restart_game(v3_runtime *r,uint32_t session,uint32_t sequence) {
 }
 int v3_runtime_game_command(v3_runtime *r,unsigned op,unsigned level,uint32_t session,uint32_t sequence) {
  if(!r || !r->menu_enabled || !session ||
-    !((op==V3_GAME_START && v3_level_count(level)) || (op==V3_GAME_MENU && !level) ||
+    !((op==V3_GAME_START && level>=1 && level<=6) || (op==V3_GAME_MENU && !level) ||
       (op==V3_GAME_PERFORMANCE && !level))) return GPU_DRIVER_ARGUMENT;
+ if(op==V3_GAME_START && !v3_level_count(level))return 1; /* Valid but unsupported in a 512-capacity build. */
  if(op==V3_GAME_PERFORMANCE && !r->perf_enabled)return 1; /* Nonfatal unsupported command. */
  if(op==V3_GAME_MENU) {enter_menu(r,V3_MENU_REQUEST);return 0;}
  if(r->phase!=V3_PHASE_MENU) return 1;

@@ -5,7 +5,7 @@
 #include "interactive_game.h"
 #include "v3_frame_stats.h"
 #define PC_MAX_SPRITES V3_PERFORMANCE_MAX_SPRITES
-#define PC_STATE_ADDRESS 0x02d28000u
+#define PC_STATE_ADDRESS 0x02d30000u
 #define PC_WARM_FRAMES 60u
 #define PC_SEARCH_FRAMES 600u
 #define PC_VERIFY_FRAMES 3600u
@@ -19,7 +19,8 @@ typedef struct {
  uint8_t growing,confirming;
 } pc_state;
 _Static_assert(PC_STATE_ADDRESS+sizeof(pc_state)<=0x02d40000u,"performance DDR bound");
-_Static_assert(1u+PC_MAX_SPRITES+(PC_MAX_SPRITES+7u)/8u==GPU_FRAME_LIST_ARENA_ITEMS,"dual descriptor bank capacity");
+_Static_assert(PC_STATE_ADDRESS>=GPU_FRAME_LIST_BANK_A+GPU_FRAME_LIST_ARENA_ITEMS*16u,"performance state/list overlap");
+_Static_assert(1u+PC_MAX_SPRITES+(PC_MAX_SPRITES+7u)/8u==GPU_FRAME_LIST_ARENA_ITEMS,"four descriptor bank capacity");
 int pc_init(pc_state *,unsigned maximum,uint32_t seed);
 int pc_advance(pc_state *,const game_input *);
 /* Reject insufficient capacity before writing any descriptor. */

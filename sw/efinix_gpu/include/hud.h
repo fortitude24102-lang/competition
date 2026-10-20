@@ -2,6 +2,7 @@
 #define EFINIX_GPU_HUD_H
 #include "gpu.h"
 #define HUD_MAX_COMMANDS 1024u
+#define HUD_COMMAND_SCRATCH_ADDR 0x02d80000u
 typedef struct {
  uint16_t fps, sprite_count, cpu_busy_permille, queue_high_watermark;
  uint16_t underflow_count, error_code;

@@ -5,7 +5,8 @@ import zlib
 
 HELLO, KEYS, ACK, GAME, GAME_ACK, PERFORMANCE, TELEMETRY = 1, 2, 3, 4, 5, 6, 0x80
 GAME_START, GAME_MENU, GAME_PERFORMANCE = 1, 2, 3
-STATUS_ALLOWED = 0x007f3fff
+STATUS_ALLOWED = 0x007f7fff
+LEVEL_COUNTS = (64,128,256,512,786,1024)
 FIELDS = (
     'firmware_build_id', 'resource_epoch', 'simulation_tick', 'requested_sprites',
     'visible_sprites', 'gpu_full_frame_fps_x100', 'cpu_full_frame_fps_x100',
@@ -45,12 +46,12 @@ def _validate(kind, session, words):
     elif kind == ACK and tuple(words) != (1, 0, 0):
         raise ValueError('ACK must accept HELLO')
     elif kind == GAME and (not words[2] or not (
-            words[0] == GAME_START and 1 <= words[1] <= 4 or
+            words[0] == GAME_START and 1 <= words[1] <= len(LEVEL_COUNTS) or
             words[0] in (GAME_MENU, GAME_PERFORMANCE) and words[1] == 0)):
         raise ValueError('GAME opcode/level/request')
     elif kind == GAME_ACK and (not words[0] or words[1] > 2):
         raise ValueError('GAME_ACK request/result')
-    elif kind == PERFORMANCE and (not 32 <= words[0] <= 1819 or words[1] > words[0] or
+    elif kind == PERFORMANCE and (not 32 <= words[0] <= 3640 or words[1] > words[0] or
             not 1 <= (words[2] & 15) <= 6 or words[2] & 0xff0000f0 or words[2] >> 8 > 3600):
         raise ValueError('performance bounds/reserved fields')
 

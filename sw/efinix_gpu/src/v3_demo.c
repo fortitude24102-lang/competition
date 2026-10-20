@@ -300,6 +300,7 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  nc_telemetry telemetry={.firmware_build_id=V3_BUILD_ID,.resource_epoch=V3_RESOURCE_EPOCH};
  perf_window window={0};v3_scene_metrics results={0};game_menu_cache menu_cache={0};
  menu_cache.performance=runtime->perf_enabled;
+ menu_cache.levels=BULLET_MAX_OBJECTS>=1024?6:4;
  uint32_t last_report=0,under_delta=0,miss_delta=0,last_drops=0,last_rejected=0;
  uint64_t previous_present=gpu_platform_cycles(),previous_logic=previous_present;
  gpu_perf_snapshot initial;
@@ -371,7 +372,7 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   }
   if(performance) {
    if(challenge_scene!=runtime->scene_generation) {
-    e=pc_init(challenge,PC_MAX_SPRITES,7);if(e)break;
+    e=pc_init(challenge,(list_device.arena_items-1u)*8u/9u,7);if(e)break;
     challenge_scene=runtime->scene_generation;challenge_generation=0;
    }
    e=pc_advance(challenge,&input);if(e)break;
@@ -412,6 +413,9 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
 #if V3_FRAME_LIST
   int list_frame=0;
   uint32_t list_address=buffers->back==GPU_FRAMEBUFFER_A?GPU_FRAME_LIST_BANK_A:GPU_FRAME_LIST_BANK_B;
+  #if BULLET_OBJECT_CAPACITY >= 1024 && !V3_STRIPE_RENDER
+  list_address=GPU_FRAME_LIST_BANK_A; /* One scene may span banks; framebuffer A/B still alternate. */
+  #endif
   #if V3_STRIPE_RENDER
   list_address=GPU_STRIPE_SCENE_ADDR;
   #endif
@@ -421,8 +425,8 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   #if V3_PERFORMANCE_CHALLENGE
   else if(performance) {
    gpu_instance_stats s;
-   /* This frame owns BOTH banks until all scene batches retire. Always start
-    * at arena A, even with framebuffer B; state starts just after bank B. */
+   /* Own the actual arena until all scene batches retire. Always start at A;
+    * challenge state is disjoint from all four possible list banks. */
    #if !V3_STRIPE_RENDER
    list_address=GPU_FRAME_LIST_BANK_A;
    #endif
@@ -455,12 +459,7 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
    #if V3_COPY_AHEAD
    if(ahead) {e=gpu_wait_tag(gpu,background_tag,V3_POLLS);if(e)break;skip=1;}
    #endif
-   #if V3_PERFORMANCE_CHALLENGE
-   if(performance)
-    e=gpu_frame_list_render_span(&list_device,list_address+16u*skip,scene->count-skip,runtime->scene_generation,V3_POLLS);
-   else
-   #endif
-    e=gpu_frame_list_render(&list_device,list_address+16u*skip,scene->count-skip,runtime->scene_generation,V3_POLLS);
+   e=gpu_frame_list_render_span(&list_device,list_address+16u*skip,scene->count-skip,runtime->scene_generation,V3_POLLS);
    #endif
   } else
 #endif

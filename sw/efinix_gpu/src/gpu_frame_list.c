@@ -26,13 +26,14 @@ int gpu_frame_list_init(gpu_frame_list *f,gpu_device *d,int network) {
  int e=gpu_instances_init(&frontend,d);if(e)return e;
  unsigned n=gpu_instances_templates(network,templates);
  e=gpu_instances_program(&frontend,templates,n);if(e)return e;
+ f->arena_items=(capability&GPU_FRAME_LIST_EXTENDED_CAPABILITY)?GPU_FRAME_LIST_ARENA_ITEMS:GPU_FRAME_LIST_LEGACY_ITEMS;
  f->present=1;return 0;
 }
 int gpu_frame_list_render(gpu_frame_list *f,uint32_t address,unsigned count,uint32_t epoch,uint32_t polls) {
  if(f && f->active)return GPU_DRIVER_BUSY;
  uint64_t end=(uint64_t)address+(uint64_t)count*16u;
  if(!f || !f->gpu || !f->gpu->ready || !f->present || !polls || !count || count>1024 ||
-   (address&15u) || address<GPU_FRAME_LIST_BANK_A || end>GPU_FRAME_LIST_BANK_B+16384u ||
+   (address&15u) || address<GPU_FRAME_LIST_BANK_A || end>(uint64_t)GPU_FRAME_LIST_BANK_A+f->arena_items*16u ||
    ((uint64_t)address>>14)!=((end-1u)>>14))return GPU_DRIVER_ARGUMENT;
  gpu_device *d=f->gpu;
  if(rd(f,0x504)&1u)return GPU_DRIVER_BUSY;
@@ -64,8 +65,8 @@ int gpu_frame_list_render_span(gpu_frame_list *f,uint32_t address,unsigned count
  if(f && f->active)return GPU_DRIVER_BUSY;
  uint64_t end=(uint64_t)address+(uint64_t)count*16u;
  if(!f || !f->gpu || !f->gpu->ready || !f->present || !polls || !count ||
-    count>GPU_FRAME_LIST_ARENA_ITEMS || (address&15u) || address<GPU_FRAME_LIST_BANK_A ||
-    end>GPU_FRAME_LIST_BANK_B+16384u)return GPU_DRIVER_ARGUMENT;
+    count>f->arena_items || (address&15u) || address<GPU_FRAME_LIST_BANK_A ||
+    end>(uint64_t)GPU_FRAME_LIST_BANK_A+f->arena_items*16u)return GPU_DRIVER_ARGUMENT;
  while(count) {
   unsigned n=(16384u-(address&16383u))/16u;
   if(n>count)n=count;

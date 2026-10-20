@@ -7,6 +7,7 @@ param(
  [switch]$LoadBit,
  [uint32]$ExpectedBuild=0x20261008,
  [switch]$PerformanceChallenge,
+ [ValidateSet(4,6)][int]$LevelCount=4,
  [string]$Python='python'
 )
 # JTAG only. Real HTTP/UDP acknowledgements, not simulated game state.
@@ -114,7 +115,8 @@ function Game($opcode,$level) {
  Wait { $state.game -and $state.game.request_id -eq $request -and $state.game.state -eq 'applied' -and !$state.stale } 2.5 "$opcode level $level ACK plus snapshot"
  $flags=$state.telemetry.raw.status_flags
  if($opcode -eq 'start') {
-  if(($flags -band 1024) -or $state.telemetry.raw.requested_sprites -ne (64 -shl ($level-1))) {throw 'Applied START state disagrees with board'}
+  $expectedCounts=@(64,128,256,512,786,1024)
+  if(($flags -band 1024) -or $state.telemetry.raw.requested_sprites -ne $expectedCounts[$level-1]) {throw 'Applied START state disagrees with board'}
  } elseif($opcode -eq 'performance') {
   if(($flags -band 0x3000) -ne 0x3000 -or ($flags -band 1024)) {throw 'Performance entry capability/phase invalid'}
  } elseif(!($flags -band 1024) -or $state.telemetry.raw.requested_sprites -ne 0 -or ($flags -band 65536)) {throw 'MENU workload/timing invalid'}
@@ -140,7 +142,8 @@ try {
  $readyPattern='V3_READY,build='+$ExpectedBuild.ToString('x')+'.*mode=MENU'
  Wait { $tail -match $readyPattern -and !$state.stale -and $state.acknowledged -and $state.telemetry.session -eq $state.session -and $state.telemetry.raw.firmware_build_id -eq $ExpectedBuild -and ($state.telemetry.raw.status_flags -band 3072) -eq 3072 } 90 'new MENU startup'
  Wait {$state.acknowledged -and !$state.stale -and $state.telemetry.session -eq $state.session} 3 'control ownership ACK'
- foreach($level in 1..4) {
+ if($LevelCount -eq 6 -and !($state.telemetry.raw.status_flags -band 0x4000)){throw 'Board does not advertise six game tiers'}
+ foreach($level in 1..$LevelCount) {
   Game 'start' $level
   $until=$timer.Elapsed.TotalSeconds+.8
   while($timer.Elapsed.TotalSeconds -lt $until) {Tick}
@@ -185,7 +188,7 @@ try {
   Wait { !$state.performance } 2 'old challenge result cleared on MENU'
   Wait { $tail -match 'PERF_RESULT,.*frames=3600' } 2 'final counters emitted outside timed workload'
  }
- 'PASS real four-tier START/MENU ACK+snapshot. Movement/death/visual/replay still need separate evidence.'
+ "PASS real $LevelCount-tier START/MENU ACK+snapshot. Movement/death/visual/replay still need separate evidence."
 } finally {
  $challengeSession=0
  try {Stop-GameKeepalive} finally {

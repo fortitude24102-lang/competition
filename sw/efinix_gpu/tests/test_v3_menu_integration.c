@@ -34,5 +34,15 @@ int main(void) {
  CHECK(runtime.phase==V3_PHASE_MENU && !d.perf_pending);
  enqueue(1,8,1,0,0,0);nc_poll(&d,259,&in);
  CHECK(!v3_runtime_control(&runtime,&in) && runtime.phase==V3_PHASE_MENU);
+ #if BULLET_OBJECT_CAPACITY >= 1024
+ for(unsigned level=5;level<=6;level++) {
+  reset();CHECK(!nc_init(&d,0));CHECK(!v3_runtime_menu_init(&runtime,7,3));
+  enqueue(1,7,1,0,0,0);nc_poll(&d,0,&in);nc_try_publish(&d,NULL,0);hw.tx_ready=1;
+  game_packet(2,1,level,11,0);CHECK(nc_poll(&d,1,&in)>0 && nc_take_game(&d,&cmd)==1);
+  CHECK(!v3_apply_game_command(&runtime,&d,&cmd));
+  CHECK(runtime.game.count==(level==5?786u:1024u));
+  CHECK(nc_try_publish(&d,NULL,1)>0 && hw.sent[5]==5 && !read_be(hw.sent+20));
+ }
+ #endif
  puts("PASS real 32B RX -> Sapphire runtime -> post-execution ACK; duplicate/no restart and menu return");
 }

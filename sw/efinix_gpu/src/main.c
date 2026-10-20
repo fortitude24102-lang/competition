@@ -45,7 +45,16 @@ static const unsigned tiers[]={32,64,128,256,512};
 static perf_stream scene;
 static const unsigned tiers[]={16,32,64,96,128,192,256};
 #endif
+#if V3_INTERACTIVE && BULLET_OBJECT_CAPACITY >= 1024
+#include "gpu_stripes.h"
+/* Capacity expansion only: keep the CPU scene command buffer and 4KiB stack
+ * in their original memory, placing the full-sized HUD scratch after PC state. */
+_Static_assert(HUD_COMMAND_SCRATCH_ADDR>=GPU_STRIPE_BINS_ADDR+GPU_STRIPE_BIN_ITEMS*sizeof(gpu_instance),"HUD scratch/stripe overlap");
+_Static_assert(HUD_COMMAND_SCRATCH_ADDR+sizeof(hud_command_stream)<=GPU_STRIPE_BASE,"HUD scratch DDR bound");
+#define overlay (*(hud_command_stream *)(uintptr_t)HUD_COMMAND_SCRATCH_ADDR)
+#else
 static hud_command_stream overlay;
+#endif
 static benchmark_frame_sample gpu_samples[BENCHMARK_FRAME_COUNT];
 
 #ifdef V2_PROFILE

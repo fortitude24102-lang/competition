@@ -82,7 +82,7 @@ static int valid_packet(const uint8_t *p) {
     if(p[5]==V3_PACKET_KEYS) return !(be32(p+16)&~(uint32_t)V3_KEY_MASK) && !be32(p+24);
     if(p[5]==V3_PACKET_GAME) {
         uint32_t op=be32(p+16),level=be32(p+20);
-        return be32(p+24) && ((op==V3_GAME_START && level>=1 && level<=4) ||
+        return be32(p+24) && ((op==V3_GAME_START && level>=1 && level<=6) ||
                              ((op==V3_GAME_MENU || op==V3_GAME_PERFORMANCE) && level==0));
     }
     return 0;

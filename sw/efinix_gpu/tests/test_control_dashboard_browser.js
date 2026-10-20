@@ -80,11 +80,13 @@ async function main() {
         body:JSON.stringify({token,client:'b'.repeat(32),keys:1,action_sequence:0,release:false})})).status;
     });
     assert.equal(conflict,409);
-    for(let level=2;level<=4;level++) {
+    for(let level=2;level<=6;level++) {
       await page.locator('#reselect').click();
       await page.waitForFunction(()=>!document.querySelector('#difficulty-options').hidden && !document.querySelector('#level-1').disabled);
       await page.locator('#level-'+level).click();
       await page.waitForFunction(l=>document.querySelector('#current-difficulty').textContent.includes('难度 '+l),level);
+      const expected=[64,128,256,512,786,1024][level-1];
+      assert.ok((await page.locator('#current-difficulty').textContent()).includes(expected+' Sprite'));
       await until(async()=>(await(await fetch(url+'/api/status')).json()).game?.state==='applied');
     }
     await page.keyboard.down('ArrowRight');
@@ -125,7 +127,7 @@ async function main() {
     assert.ok((await page.locator('#comparison-game').innerText()).includes('69.2%'));
     assert.ok((await page.locator('#comparison-game').innerText()).includes('57.7%'));
     assert.ok((await page.locator('#comparison-copy').innerText()).includes('77.92 MPixel/s'));
-    assert.ok((await page.locator('#comparison').innerText()).includes('不是DDR芯片物理总利用率'));
+    assert.ok((await page.locator('#comparison').innerText()).includes('尚未测得完整RISC-V总占用率与整机DDR物理利用率'));
     assert.ok(await page.locator('#kernel-panel').isVisible());
     assert.ok((await page.locator('#comparison-kernel').innerText()).includes('17.166 ms'));
     assert.ok((await page.locator('#comparison-kernel').innerText()).includes('9.34%'));

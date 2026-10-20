@@ -172,12 +172,21 @@ module tb_net_control;
         make_control(4,10);bytes[19]=2;bytes[27]=12;seal_control();send_bytes(32,32,31);
         if(accepted!=old_accepted+2) $fatal(1,"valid GAME MENU lost");
         apb(1,16'h0308,1,0,0,0);apb(1,16'h030c,1,0,0,0);
+        // Exercise actual router/CRC/CDC/APB admission for both new game tiers.
+        for(k=5;k<=6;k=k+1) begin
+            old_accepted=accepted;
+            make_control(4,20+k);bytes[19]=1;bytes[23]=8'(k);bytes[27]=8'(20+k);
+            seal_control();send_bytes(32,32,31);
+            if(accepted!=old_accepted+1) $fatal(1,"valid six-tier START %0d lost",k);
+            apb(1,16'h0308,1,0,0,0);
+            apb(0,16'h0334,0,0,32'(k)<<24,1);apb(1,16'h030c,1,0,0,0);
+        end
         old_accepted=accepted;
         for(k=0;k<7;k=k+1) begin
             make_control(4,11+k);bytes[19]=1;bytes[23]=1;bytes[27]=1;
             case(k)
                 0: bytes[23]=0;
-                1: bytes[23]=5;
+                1: bytes[23]=7;
                 2: bytes[19]=3;
                 3: bytes[27]=0;
                 4: bytes[19]=2; // MENU level must be zero.

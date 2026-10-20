@@ -4,6 +4,7 @@
 #include "game_menu.h"
 static uint32_t regs[64],done,fail_at;
 static unsigned count;
+static unsigned six_levels;
 static gpu_command commands[512];
 uint32_t gpu_io_read(uintptr_t a) {
  unsigned r=(unsigned)(a-GPU_APB_BASE);
@@ -26,13 +27,14 @@ void gpu_io_write(uintptr_t a,uint32_t v) {
 }
 void gpu_io_fence(void) {}
 static void check_frame(uint32_t dst) {
- const unsigned xs[]={96,496,96,496},ys[]={144,144,288,288};unsigned cards=0,glyphs=0;
+ const unsigned xs[]={96,496,96,496,96,496},ys[]={144,144,232,232,320,320};unsigned cards=0,glyphs=0;
+ const unsigned old_ys[]={144,144,288,288};
  for(unsigned i=0;i<count;i++) {
   const gpu_command *c=&commands[i];unsigned off=c->dst_addr-dst,x=(off%GPU_FRAME_STRIDE)/2,y=off/GPU_FRAME_STRIDE;
   assert(x+c->width_pixels<=960 && y>=72 && y+c->height_pixels<=540);
   assert(c->dst_stride==GPU_FRAME_STRIDE);
-  if(c->width_pixels==368 && c->height_pixels==104) {
-   assert(cards<4 && x==xs[cards] && y==ys[cards]);++cards;
+  if(c->width_pixels==368 && c->height_pixels==(six_levels?80u:104u)) {
+   assert(cards<(six_levels?6u:4u) && x==xs[cards] && y==(six_levels?ys[cards]:old_ys[cards]));++cards;
   }
   if(c->op==GPU_OP_COPY) {
    assert(c->width_pixels==14 && c->height_pixels==18);
@@ -40,14 +42,14 @@ static void check_frame(uint32_t dst) {
    ++glyphs;
   } else assert(c->op==GPU_OP_FILL);
  }
- assert(cards==4 && glyphs>70);
+ assert(cards==(six_levels?6u:4u) && glyphs>70);
  /* Independently decode emitted labels, not a call to the text builder. */
- const char *labels[]={"LEVEL 1 - 64 SPRITES","LEVEL 2 - 128 SPRITES","LEVEL 3 - 256 SPRITES","LEVEL 4 - 512 SPRITES"};
- for(unsigned k=0;k<4;k++) {
+ const char *labels[]={"LEVEL 1 - 64 SPRITES","LEVEL 2 - 128 SPRITES","LEVEL 3 - 256 SPRITES","LEVEL 4 - 512 SPRITES","LEVEL 5 - 786 SPRITES","LEVEL 6 - 1024 SPRITES"};
+ for(unsigned k=0;k<(six_levels?6u:4u);k++) {
   char text[40]={0};unsigned n=0;
   for(unsigned i=0;i<count;i++) {
    gpu_command *c=&commands[i];unsigned off=c->dst_addr-dst;
-   if(c->op==GPU_OP_COPY && off/GPU_FRAME_STRIDE==ys[k]+20 && off%GPU_FRAME_STRIDE>=2*(xs[k]+16) && off%GPU_FRAME_STRIDE<2*(xs[k]+360)) {
+   if(c->op==GPU_OP_COPY && off/GPU_FRAME_STRIDE==(six_levels?ys[k]+14u:old_ys[k]+20u) && off%GPU_FRAME_STRIDE>=2*(xs[k]+16) && off%GPU_FRAME_STRIDE<2*(xs[k]+360)) {
     unsigned glyph=((c->src_addr-HUD_GLYPH_ATLAS_ADDR)%HUD_GLYPH_BANK_BYTES)/HUD_GLYPH_CELL_BYTES;
     assert(glyph<39 && n<sizeof text-1);text[n++]=HUD_GLYPH_CHARACTERS[glyph];
    }
@@ -74,5 +76,9 @@ int main(void) {
   assert(commands[i].dst_addr==GPU_FRAMEBUFFER_A+412u*GPU_FRAME_STRIDE+192);++strips;
  }
  assert(strips==1);check_frame(GPU_FRAMEBUFFER_A);
+ /* Changing the number of cards must invalidate an otherwise identical cache. */
+ count=0;six_levels=1;c.levels=6;
+ assert(!game_menu_draw(&d,&c,0,GPU_FRAMEBUFFER_A,3,1,&scratch,1000));check_frame(GPU_FRAMEBUFFER_A);
+ count=0;assert(!game_menu_draw(&d,&c,1,GPU_FRAMEBUFFER_B,3,1,&scratch,1000));check_frame(GPU_FRAMEBUFFER_B);
  puts("PASS real GPU menu MMIO geometry/glyph labels, two buffers, static zero-submit, dirty hint and failure invalidation");
 }

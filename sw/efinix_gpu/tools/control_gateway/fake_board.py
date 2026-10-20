@@ -36,7 +36,7 @@ class FakeBoard:
             words[21] = (1 << 21) | ((1 << 4) if self.session else 0)
             if self.game_menu:
                 words[3]=self.count if not self.menu else 0
-                words[21]|=(1<<11)|((1<<10)|(1<<8) if self.menu else 1)
+                words[21]|=(1<<11)|(1<<14)|((1<<10)|(1<<8) if self.menu else 1)
                 if self.performance_capable: words[21]|=1<<12
                 if self.performance: words[21]|=1<<13
             return tuple(words)
@@ -83,7 +83,7 @@ class FakeBoard:
                                     1 if op in (p.GAME_START,p.GAME_PERFORMANCE) and not self.menu else 0)
                                 if not result:
                                     self.menu=op==p.GAME_MENU
-                                    self.count=64<<(level-1) if op==p.GAME_START else 0
+                                    self.count=p.LEVEL_COUNTS[level-1] if op==p.GAME_START else 0
                                     self.performance=op==p.GAME_PERFORMANCE
                                     if self.performance:self.count=64
                                 self.last_game=(request,op,level,result,self.snapshot)

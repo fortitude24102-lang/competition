@@ -82,11 +82,11 @@ class ProtocolTest(unittest.TestCase):
     def test_performance_wire(self):
         import protocol as p
         for kind, words in [(4,[3,0,17]),(6,[909,909,5|(3600<<8)]),
-                            (6,[1819,1819,5|(3600<<8)]),(6,[64,0,1])]:
+                            (6,[1819,1819,5|(3600<<8)]),(6,[3640,3640,5|(3600<<8)]),(6,[64,0,1])]:
             packet=wire(kind,words=words)
             self.assertEqual(p.decode(packet).words,tuple(words))
             self.assertEqual(p.encode(kind,7,9,words),packet)
-        for words in [[1820,0,1],[64,65,1],[64,0,7],[64,0,0x10],[64,0,1|(3601<<8)]]:
+        for words in [[3641,0,1],[64,65,1],[64,0,7],[64,0,0x10],[64,0,1|(3601<<8)]]:
             with self.assertRaises(ValueError):p.decode(wire(6,words=words))
     def test_game_wire_contract(self):
         import protocol as p
@@ -95,17 +95,19 @@ class ProtocolTest(unittest.TestCase):
         self.assertEqual(p.decode(packet).words, (1, 4, 11))
         self.assertEqual(p.encode(4, 7, 9, (1, 4, 11)), packet)
         self.assertEqual(len(packet), 32)
-        for kind, words in [(4, [1, 1, 1]), (4, [2, 0, 2]),
+        for kind, words in [(4, [1, 1, 1]), (4, [1, 5, 1]), (4, [1, 6, 1]), (4, [2, 0, 2]),
                             (5, [11, 0, 99]), (5, [11, 1, 0]), (5, [11, 2, 0])]:
             self.assertEqual(p.decode(wire(kind, words=words)).words, tuple(words))
-        for kind, words in [(4, [1, 0, 1]), (4, [1, 5, 1]), (4, [2, 1, 1]),
+        for kind, words in [(4, [1, 0, 1]), (4, [1, 7, 1]), (4, [2, 1, 1]),
                             (4, [3, 1, 1]), (4, [1, 1, 0]), (5, [0, 0, 0]),
                             (5, [11, 3, 0]), (6, [1, 1, 1])]:
             with self.assertRaises(ValueError): p.decode(wire(kind, words=words))
         for bad in [packet[:-1], packet+b'\0', packet[:-1]+bytes([packet[-1]^1])]:
             with self.assertRaises(ValueError): p.decode(bad)
-        words = [0]*27; words[21] = 0x007f0fff
-        self.assertEqual(p.decode(wire(128, words=words)).words[21], 0x007f0fff)
+        words = [0]*27; words[21] = 0x007f4fff
+        self.assertEqual(p.decode(wire(128, words=words)).words[21], 0x007f4fff)
+        words[21]|=1<<15
+        with self.assertRaises(ValueError):p.decode(wire(128,words=words))
 
     def test_deliverable_exists(self):
         self.assertIsNotNone(importlib.util.find_spec('protocol'), 'fixed packet codec missing')
@@ -137,6 +139,25 @@ class ProtocolTest(unittest.TestCase):
 
 
 class StateTest(unittest.TestCase):
+    def test_six_tiers_require_fresh_advertised_capability(self):
+        import protocol as p
+        for level in (5,6):
+            from gateway import GatewayState
+            s=GatewayState();client='a'*32
+            s.control(client,0,0,now=0);hello=p.decode(s.next_packet(0))
+            self.assertTrue(s.receive(wire(3,hello.session,hello.sequence,[1,0,0]),.01))
+            words=[0]*27;words[21]=0x0d10
+            self.assertTrue(s.receive(wire(128,hello.session,99,words),.02))
+            self.assertEqual(s.game(client,'start',level,11,now=.03),503)
+            self.assertIsNone(s.view(.03)['game'])
+            words[21]|=1<<14
+            self.assertTrue(s.receive(wire(128,hello.session,100,words),.04))
+            self.assertEqual(s.game(client,'start',level,11,now=.05),202)
+            heartbeat=p.decode(s.next_packet(.06))
+            self.assertEqual(heartbeat.kind,p.KEYS);self.assertEqual(heartbeat.words,(0,0,0))
+            command=p.decode(s.next_packet(.1))
+            self.assertEqual(command.kind,p.GAME);self.assertEqual(command.words,(1,level,11))
+
     def test_verified_score_restart_cohort_and_global_order(self):
         s=self.game_state();c='a'*32
         w=[0]*27;w[2]=4000;w[3]=855;w[21]=0x3811
@@ -444,7 +465,7 @@ class LoopbackTest(unittest.TestCase):
             obj=dict(token=self.token,client=client,opcode='start',level=1,request_id=11)
             obj.update(changes);return self.request('POST','/api/game',obj)[0]
         self.assertEqual(game(),409)
-        for changes in [dict(level=True),dict(level=5),dict(request_id=0),dict(request_id=True),
+        for changes in [dict(level=True),dict(level=7),dict(request_id=0),dict(request_id=True),
                         dict(opcode='menu',level=1),dict(extra=1)]:
             self.assertEqual(game(**changes),400)
         self.assertEqual(self.request('POST','/api/game',raw='x'*1025)[0],413)
