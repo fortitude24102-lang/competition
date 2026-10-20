@@ -24,6 +24,7 @@ try {
   @{name='v3_menu_integration';modules=@('v3_demo','net_control','asset_protocol','v3_runtime','bullet_demo','interactive_game','replay_input');extra=@('-DNC_TEST_BACKEND','-Isw/efinix_gpu/tests/include')}
   @{name='v3_frame_stats';modules=@()},
   @{name='performance_challenge';modules=@('performance_challenge')},
+  @{name='performance_trace';modules=@('performance_challenge')},
   @{name='reset_work';modules=@();extra=@('-finstrument-functions')},
   @{name='runtime_reset_cache';modules=@('v3_runtime','bullet_demo','interactive_game','replay_input');extra=@('-finstrument-functions')},
   @{name='gpu_frame_list_driver';modules=@('gpu','gpu_instances','gpu_frame_list','bullet_demo');extra=@('-DGPU_TEST_BACKEND')},

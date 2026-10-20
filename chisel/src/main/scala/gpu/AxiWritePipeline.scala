@@ -3,7 +3,7 @@ package gpu
 import chisel3._
 import chisel3.util._
 
-/** Optional Key writer: ordered W, at most two bursts, retirement at final B. */
+/** Optional small-blit writer: ordered W, at most two bursts, retirement at final B. */
 class AxiWritePipeline extends Module {
   val io = IO(new Bundle {
     val request = Flipped(Decoupled(new AxiWriteRequest))

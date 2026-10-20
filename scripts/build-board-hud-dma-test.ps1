@@ -1,5 +1,5 @@
 param(
- [ValidateSet('hud','key','key-trim','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','qos-sweep','live-phases','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances','replay-crc','frame-list','stripes','sprite-phases','axi-phases','dashboard-metrics','transform','zoom','alpha-pipeline')][string]$Test='hud',
+ [ValidateSet('hud','key','key-trim','texture','texture-profile','hud-glyphs','hud-glyph-sweep','render-phases','qos-sweep','live-phases','copy-stream','damage-cost','damage-sweep','damage-plan','damage-lower','instances','replay-crc','frame-list','stripes','sprite-phases','axi-phases','dashboard-metrics','transform','zoom','alpha-pipeline','performance-trace')][string]$Test='hud',
  [string]$RiscvGcc='D:/efinity/risc_v_gcc/toolchain/bin/riscv-none-elf-gcc.exe',
  [string]$Soc='D:/efinity_builds/competition_day1_20260906/sapphire/soc',
  [switch]$InstanceExpandProbe,
@@ -15,6 +15,7 @@ param(
 )
 $ErrorActionPreference='Stop'
 if($Test -eq 'axi-phases' -and !$OutDirectory) {throw 'AXI phase diagnostic requires fresh OutDirectory'}
+if($Test -eq 'performance-trace' -and !$OutDirectory) {throw 'Performance trace requires fresh OutDirectory'}
 if($Test -eq 'live-phases' -and !$OutDirectory) {throw 'Live phase diagnostic requires fresh OutDirectory'}
 if(($LiveControl -or $LiveSplit) -and $Test -ne 'live-phases') {throw 'Live options require live-phases'}
 if($LiveControl -and $LiveSplit) {throw 'Split requires timing instrumentation'}
@@ -76,7 +77,7 @@ try {
  $sourceLine=Get-Content sw/efinix_gpu/Makefile | Where-Object { $_ -match '^SOURCES = ' }
  $sources=@(($sourceLine -replace '^SOURCES = ','') -split '\s+' |
   Where-Object { $_ -ne 'src/main.c' -and !($Test -in @('render-phases','qos-sweep') -and $_ -eq 'src/gpu.c') } | ForEach-Object { "sw/efinix_gpu/$_" })
- if($Test -eq 'live-phases') {$sources=@($sources | Where-Object {$_ -ne 'sw/efinix_gpu/src/v3_demo.c'})}
+ if($Test -in @('live-phases','performance-trace')) {$sources=@($sources | Where-Object {$_ -ne 'sw/efinix_gpu/src/v3_demo.c'})}
  if($Test -eq 'replay-crc') {$sources=@($sources | Where-Object {$_ -ne 'sw/efinix_gpu/src/replay_input.c'})}
  if($Test -eq 'zoom') {$sources+='sw/efinix_gpu/src/zoom_control.c'}
  $sources+=switch($Test) {
@@ -104,6 +105,7 @@ try {
   'dashboard-metrics' {'sw/efinix_gpu/tests/test_board_dashboard_metrics.c'}
   'transform' {'sw/efinix_gpu/tests/test_board_transform.c'}
   'alpha-pipeline' {'sw/efinix_gpu/tests/test_board_alpha_pipeline.c'}
+  'performance-trace' {'sw/efinix_gpu/tests/test_board_performance_trace.c'}
   'zoom' {'sw/efinix_gpu/tests/test_board_zoom.c'}
  }
  [string[]]$probeFlags=@()
@@ -115,6 +117,11 @@ try {
  if($ShadowSubmit) {$probeFlags+='-DGPU_SUBMIT_SHADOW=1'}
  if($FullSubmit) {$probeFlags+='-DGPU_SUBMIT_SHADOW=0'}
  if($Test -eq 'axi-phases') {$probeFlags+='-DGPU_AXI_DIAGNOSTICS=1'}
+ if($Test -eq 'performance-trace') {
+  $probeFlags+=@('-DV3_INTERACTIVE=1','-DV3_COPY_AHEAD=1','-DV3_LOGIC_COPY=1',
+   '-DV3_FRAME_LIST=1','-DV3_PERFORMANCE_CHALLENGE=1','-DV3_HUD_DIRECT=1',
+   '-DREPLAY_CRC_NIBBLE=1','-DV3_REPLAY_SEAL_BUDGET=1','-DBULLET_OBJECT_CAPACITY=1024')
+ }
  if($Test -eq 'live-phases') {
   $probeFlags+="-DV3_START_COUNT=$LiveTarget"
   $probeFlags+=('-DLIVE_PHASE_TIMING='+[int](!$LiveControl))

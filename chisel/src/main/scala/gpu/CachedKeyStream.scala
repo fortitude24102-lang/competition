@@ -3,12 +3,14 @@ package gpu
 import chisel3._
 import chisel3.util._
 
-/** Packed, cached small sprites: fetch once, buffer following rows during W/B stalls.
+/** Packed small sprites: cached Key (or optional DDR strided Copy), fetched once.
   * Each destination row remains a separate strided write; optional trimming removes only
   * transparent edge words and empty rows, preserving interior zero-strobe beats.
   */
-class CachedKeyStream(trimTransparentRows: Boolean = false, pipelineWrites: Boolean = false) extends Module {
+class CachedKeyStream(trimTransparentRows: Boolean = false, pipelineWrites: Boolean = false,
+  allowCopyPrefetch: Boolean = false) extends Module {
   require(!trimTransparentRows || !pipelineWrites, "Measure Key pipelining without row trimming")
+  require(!allowCopyPrefetch || (pipelineWrites && !trimTransparentRows), "Copy prefetch requires untrimmed write pipeline")
   val io = IO(new Bundle {
     val command = Flipped(Decoupled(new GpuCommand))
     val eligible = Output(Bool())
@@ -41,9 +43,13 @@ class CachedKeyStream(trimTransparentRows: Boolean = false, pipelineWrites: Bool
   private val srcEnd = in.srcAddr.pad(64) + bytes.pad(64)
   private val dstEnd = in.dstAddr.pad(64) +
     ((in.heightPixels - 1.U)(15, 0) * in.dstStride).pad(64) + (in.widthPixels << 1).pad(64)
-  io.eligible := in.op === GpuOpcode.ColorKey.U && in.widthPixels =/= 0.U &&
+  private val keyShape = in.op === GpuOpcode.ColorKey.U && in.heightPixels <= 16.U
+  // Strictly strided Copy is disjoint from the contiguous CopyStream DMA.
+  private val copyShape = allowCopyPrefetch.B && in.op === GpuOpcode.Copy.U &&
+    in.heightPixels <= 32.U && in.dstStride > (in.widthPixels << 1)
+  io.eligible := (keyShape || copyShape) && in.widthPixels =/= 0.U &&
     in.widthPixels <= 16.U && !in.widthPixels(0) && in.heightPixels =/= 0.U &&
-    in.heightPixels <= 16.U && in.srcAddr(1, 0) === 0.U && !in.dstAddr(0) &&
+    in.srcAddr(1, 0) === 0.U && !in.dstAddr(0) &&
     in.srcStride === (in.widthPixels << 1) && !in.dstStride(0) &&
     in.dstStride >= (in.widthPixels << 1) &&
     (srcEnd <= in.dstAddr || dstEnd <= in.srcAddr)
@@ -75,8 +81,8 @@ class CachedKeyStream(trimTransparentRows: Boolean = false, pipelineWrites: Bool
   fifo.io.deq.ready := discard || (rowActive && wordsLeft =/= 0.U && aligner.io.input.ready)
   when(aligner.io.input.fire) { wordsLeft := wordsLeft - 1.U }
   private val keyStrobe = Cat(
-    Fill(2, aligner.io.output.bits.lanes(1) && aligner.io.output.bits.data(31, 16) =/= command.colorKey),
-    Fill(2, aligner.io.output.bits.lanes(0) && aligner.io.output.bits.data(15, 0) =/= command.colorKey))
+    Fill(2, aligner.io.output.bits.lanes(1) && (command.op === GpuOpcode.Copy.U || aligner.io.output.bits.data(31, 16) =/= command.colorKey)),
+    Fill(2, aligner.io.output.bits.lanes(0) && (command.op === GpuOpcode.Copy.U || aligner.io.output.bits.data(15, 0) =/= command.colorKey)))
   private val rowDone = WireDefault(io.writeDone)
   if(pipelineWrites) {
     val outputLeft = RegInit(0.U(4.W))

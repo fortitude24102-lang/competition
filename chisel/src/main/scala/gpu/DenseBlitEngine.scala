@@ -5,9 +5,11 @@ import chisel3.util._
 
 class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boolean = false,
   enableCopyBurstBuffer: Boolean = false, enableKeyRowTrim: Boolean = false,
-  enableAlphaPipeline: Boolean = false, enableKeyWritePipeline: Boolean = false) extends Module {
+  enableAlphaPipeline: Boolean = false, enableKeyWritePipeline: Boolean = false,
+  enableSmallCopyPrefetch: Boolean = false) extends Module {
   require(!enableKeyRowTrim || enableKeyPrefetch, "Key row trimming requires Key prefetch")
   require(!enableKeyWritePipeline || (enableKeyPrefetch && !enableKeyRowTrim), "Key write pipeline requires untrimmed Key prefetch")
+  require(!enableSmallCopyPrefetch || enableKeyWritePipeline, "Small Copy prefetch requires Key write pipeline")
   val io = IO(new Bundle {
     val command = Flipped(Decoupled(new GpuCommand))
     val pixelRequest = Decoupled(new PixelTransaction)
@@ -45,7 +47,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
     val chunkLast = Bool()
   }, 2, pipe = true))) else None
   private val copyStream = Module(new CopyStreamEngine(if(enableCopyBurstBuffer) 256 else 16))
-  private val keyStream = if (enableKeyPrefetch) Some(Module(new CachedKeyStream(enableKeyRowTrim,enableKeyWritePipeline))) else None
+  private val keyStream = if (enableKeyPrefetch) Some(Module(new CachedKeyStream(enableKeyRowTrim,enableKeyWritePipeline,enableSmallCopyPrefetch))) else None
   private val readAddressArbiter = Module(new RRArbiter(new Axi4Address, 2))
 
   private val idle :: startRect :: startWrite :: startAligner :: startRead :: startAlphaAligners :: startAlphaReads :: waitAlphaReads :: requestPixel :: waitPixel :: waitRow :: finish :: streamCopy :: streamKey :: Nil = Enum(14)
@@ -90,7 +92,8 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   private val keyWriteRequest = keyStream.map(_.io.writeRequest.bits).getOrElse(0.U.asTypeOf(new AxiWriteRequest))
   private val keyWriteData = keyStream.map(_.io.writeData.bits).getOrElse(0.U.asTypeOf(new AxiWriteBeat))
   private val keyReadRequest = keyStream.map(_.io.readRequest.bits).getOrElse(0.U.asTypeOf(new AxiReadRequest))
-  private val selectCopyStream = enableCopyStream.B && copyStream.io.eligible
+  private val selectCopyStream = enableCopyStream.B && copyStream.io.eligible &&
+    !keyStream.map(_.io.eligible).getOrElse(false.B)
   copyStream.io.command.valid := io.command.valid && io.command.ready && selectCopyStream
   copyStream.io.command.bits := io.command.bits
   copyStream.io.readDone := reader.io.done && streamingCopy
@@ -114,19 +117,21 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   private val incomingCacheHit = textureCache.io.valid &&
     (incomingCommand.op === GpuOpcode.ColorKey.U || incomingCommand.op === GpuOpcode.Alpha.U) &&
     incomingCommand.srcAddr >= textureCache.io.base && sourceEnd64 <= cacheEnd64
-  private val selectKeyStream = incomingCacheHit && keyStream.map(_.io.eligible).getOrElse(false.B)
+  private val selectKeyStream = (incomingCacheHit ||
+    (enableSmallCopyPrefetch.B && incomingCommand.op === GpuOpcode.Copy.U)) &&
+    keyStream.map(_.io.eligible).getOrElse(false.B)
   keyStream.foreach { k =>
     k.io.command.valid := io.command.valid && io.command.ready && selectKeyStream
     k.io.command.bits := incomingCommand
-    k.io.readDone := textureCache.io.readDone && streamingKey
-    k.io.readError := textureCache.io.readError
+    k.io.readDone := Mux(useTextureCache,textureCache.io.readDone,reader.io.done) && streamingKey
+    k.io.readError := Mux(useTextureCache,textureCache.io.readError,reader.io.error)
     k.io.writeDone := keyWriter.map(_.io.done).getOrElse(writer.io.done) && streamingKey
     k.io.writeError := keyWriter.map(_.io.error).getOrElse(writer.io.error)
     k.io.writeRequest.ready := keyWriter.map(_.io.request.ready).getOrElse(writer.io.request.ready) && streamingKey
     k.io.writeData.ready := keyWriter.map(_.io.data.ready).getOrElse(writer.io.data.ready) && streamingKey
-    k.io.readRequest.ready := textureCache.io.readRequest.ready && streamingKey
-    k.io.readData.valid := textureCache.io.readData.valid && streamingKey
-    k.io.readData.bits := textureCache.io.readData.bits
+    k.io.readRequest.ready := Mux(useTextureCache,textureCache.io.readRequest.ready,reader.io.request.ready) && streamingKey
+    k.io.readData.valid := Mux(useTextureCache,textureCache.io.readData.valid,reader.io.data.valid) && streamingKey
+    k.io.readData.bits := Mux(useTextureCache,textureCache.io.readData.bits,reader.io.data.bits)
     k.io.completion.ready := io.completion.ready && streamingKey
   }
   when(io.command.fire) {
@@ -231,13 +236,16 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
     textureCache.io.readRequest.ready, reader.io.request.ready)
   private val sourceReadValid = startingSourceRead ||
     (startingAlphaReads && backgroundReader.io.request.ready)
-  reader.io.request.valid := Mux(streamingCopy, copyStream.io.readRequest.valid,
-    sourceReadValid && !useTextureCache)
-  reader.io.request.bits.address := Mux(streamingCopy, copyStream.io.readRequest.bits.address, sourceReadAddress)
-  reader.io.request.bits.bytes := Mux(streamingCopy, copyStream.io.readRequest.bits.bytes, sourceReadBytes)
+  reader.io.request.valid := Mux(streamingKey,
+    keyStream.map(_.io.readRequest.valid).getOrElse(false.B) && !useTextureCache,
+    Mux(streamingCopy, copyStream.io.readRequest.valid, sourceReadValid && !useTextureCache))
+  reader.io.request.bits.address := Mux(streamingKey,keyReadRequest.address,
+    Mux(streamingCopy, copyStream.io.readRequest.bits.address, sourceReadAddress))
+  reader.io.request.bits.bytes := Mux(streamingKey,keyReadRequest.bytes,
+    Mux(streamingCopy, copyStream.io.readRequest.bits.bytes, sourceReadBytes))
   copyStream.io.readRequest.ready := reader.io.request.ready && streamingCopy
   textureCache.io.readRequest.valid := Mux(streamingKey,
-    keyStream.map(_.io.readRequest.valid).getOrElse(false.B), sourceReadValid && useTextureCache)
+    keyStream.map(_.io.readRequest.valid).getOrElse(false.B) && useTextureCache, sourceReadValid && useTextureCache)
   textureCache.io.readRequest.bits.address := Mux(streamingKey, keyReadRequest.address, sourceReadAddress)
   textureCache.io.readRequest.bits.bytes := Mux(streamingKey, keyReadRequest.bytes, sourceReadBytes)
   backgroundReader.io.request.valid := startingAlphaReads && sourceReadReady
@@ -471,10 +479,12 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   private val sourceDataReady = Mux(isAlpha, alphaForegroundBuffer.io.enq.ready,
     Mux(fastWordBlit, Mux(directWordBlit, writer.io.data.ready,
       wordAligner.io.input.ready), aligner.io.input.ready))
-  reader.io.data.ready := Mux(streamingCopy, copyStream.io.readData.ready, sourceDataReady && !useTextureCache)
+  reader.io.data.ready := Mux(streamingKey,
+    keyStream.map(_.io.readData.ready).getOrElse(false.B) && !useTextureCache,
+    Mux(streamingCopy, copyStream.io.readData.ready, sourceDataReady && !useTextureCache))
   copyStream.io.readData.valid := reader.io.data.valid && streamingCopy
   copyStream.io.readData.bits := reader.io.data.bits
-  textureCache.io.readData.ready := Mux(streamingKey, keyStream.map(_.io.readData.ready).getOrElse(false.B),
+  textureCache.io.readData.ready := Mux(streamingKey, keyStream.map(_.io.readData.ready).getOrElse(false.B) && useTextureCache,
     sourceDataReady && useTextureCache)
   wordAligner.io.input.valid := fastWordBlit && !directWordBlit && sourceDataValid && !streamingKey
   wordAligner.io.input.bits := sourceDataBits.data
