@@ -14,7 +14,7 @@ class RenderEngine(enableCopyStream: Boolean = true, countFrontend: Boolean = fa
   enableKeyPrefetch: Boolean = false, enableCopyBurstBuffer: Boolean = false,
   enableKeyRowTrim: Boolean = false, enableTransformBlit: Boolean = false,
   enableAlphaPipeline: Boolean = false, enableKeyWritePipeline: Boolean = false,
-  enableSmallCopyPrefetch: Boolean = false) extends Module {
+  enableSmallCopyPrefetch: Boolean = false, writeCredits: Int = 2) extends Module {
   val io = IO(new Bundle {
     val command = Flipped(Decoupled(new GpuCommand))
     val vblank = Input(Bool())
@@ -51,7 +51,7 @@ class RenderEngine(enableCopyStream: Boolean = true, countFrontend: Boolean = fa
 
   private val queue = Module(new CommandQueue)
   private val validator = Module(new CommandValidator(enableTransformBlit))
-  private val blit = Module(new DenseBlitEngine(enableCopyStream, enableKeyPrefetch, enableCopyBurstBuffer, enableKeyRowTrim, enableAlphaPipeline,enableKeyWritePipeline,enableSmallCopyPrefetch))
+  private val blit = Module(new DenseBlitEngine(enableCopyStream, enableKeyPrefetch, enableCopyBurstBuffer, enableKeyRowTrim, enableAlphaPipeline,enableKeyWritePipeline,enableSmallCopyPrefetch,writeCredits))
   private val transform = if(enableTransformBlit) Some(Module(new TransformBlitEngine)) else None
   private val transformIdle = transform.map(_.io.command.ready).getOrElse(true.B)
   private val sparse = Module(new SparseBlitEngine)

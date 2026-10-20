@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import scala.collection.mutable
 import testutil.StableChiselSim
 
-private class CachedKeyPipelineHarness extends Module {
+private class CachedKeyPipelineHarness(writeCredits:Int=2) extends Module {
   val io = IO(new Bundle {
     val command = Flipped(Decoupled(new GpuCommand))
     val readRequest = Decoupled(new AxiReadRequest)
@@ -17,8 +17,8 @@ private class CachedKeyPipelineHarness extends Module {
     val completion = Decoupled(new GpuCompletion)
     val pixels = Output(UInt(2.W))
   })
-  private val k = Module(new CachedKeyStream(pipelineWrites=true))
-  private val w = Module(new AxiWritePipeline)
+  private val k = Module(new CachedKeyStream(pipelineWrites=true,writeCredits=writeCredits))
+  private val w = Module(new AxiWritePipeline(writeCredits))
   k.io.command <> io.command; io.readRequest <> k.io.readRequest; k.io.readData <> io.readData
   k.io.readDone := io.readDone; k.io.readError := io.readError
   w.io.request <> k.io.writeRequest; w.io.data <> k.io.writeData
@@ -30,12 +30,16 @@ private class CachedKeyPipelineHarness extends Module {
 
 class CachedKeyPipelineSpec extends AnyFunSpec with StableChiselSim with Matchers {
   describe("cached Key row issue and retirement") {
-    for(phase <- Seq(0,2); fault <- Seq("none","B","cache")) {
-      it(s"preserves pixels and drains every promised row phase=$phase fault=$fault") {
-        simulate(new CachedKeyPipelineHarness) { d =>
-          val pixels = Vector(0xf81f,0x1234,0x5678,0xf81f,0xffff,0x9abc,0xf81f,0,
+    val cases=(for(phase<-Seq(0,2);fault<-Seq("none","B","cache"))yield(2,phase,fault)) ++
+      Seq((4,0,"none"),(4,2,"none"),(4,2,"B"),(4,0,"cache"))
+    for((credits,phase,fault) <- cases) {
+      it(s"preserves pixels and drains every promised row credits=$credits phase=$phase fault=$fault") {
+        simulate(new CachedKeyPipelineHarness(credits)) { d =>
+          val pattern = Vector(0xf81f,0x1234,0x5678,0xf81f,0xffff,0x9abc,0xf81f,0,
             0x101,0x202,0x303,0x404,0xf81f,0xf81f,0x707,0x808,
             0xf81f,0xf81f,0x1111,0x2222,0x3333,0x4444,0x5555,0x6666)
+          val pixels=if(credits==4)pattern++pattern else pattern
+          val height=pixels.size/8
           val words = pixels.grouped(2).map(p => BigInt(p(0)) | (BigInt(p(1)) << 16)).toVector
           val base = 0x4000+phase
           val memory = mutable.Map.empty[Int,Int].withDefaultValue(0x5a)
@@ -47,7 +51,7 @@ class CachedKeyPipelineSpec extends AnyFunSpec with StableChiselSim with Matcher
           d.io.command.bits.op.poke(GpuOpcode.ColorKey); d.io.command.bits.srcAddr.poke(0x2000)
           d.io.command.bits.dstAddr.poke(base); d.io.command.bits.srcStride.poke(16)
           d.io.command.bits.dstStride.poke(1920); d.io.command.bits.widthPixels.poke(8)
-          d.io.command.bits.heightPixels.poke(3); d.io.command.bits.colorKey.poke(0xf81f); d.io.command.bits.tag.poke(7)
+          d.io.command.bits.heightPixels.poke(height); d.io.command.bits.colorKey.poke(0xf81f); d.io.command.bits.tag.poke(7)
           d.io.command.valid.poke(true); d.io.completion.ready.poke(true)
           d.io.readRequest.ready.poke(false); d.io.readData.valid.poke(false)
           d.io.readData.bits.poke(0.U.asTypeOf(new AxiReadBeat)); d.io.readDone.poke(false); d.io.readError.poke(false)
@@ -65,7 +69,7 @@ class CachedKeyPipelineSpec extends AnyFunSpec with StableChiselSim with Matcher
             val reply = replies.headOption.filter(_._1<=cycle)
             d.io.axi.b.valid.poke(reply.nonEmpty); d.io.axi.b.bits.resp.poke(reply.map(_._2).getOrElse(0))
             if(d.io.readRequest.valid.peek().litToBoolean) {
-              d.io.readRequest.bits.address.expect(0x2000); d.io.readRequest.bits.bytes.expect(48); cacheActive=true
+              d.io.readRequest.bits.address.expect(0x2000); d.io.readRequest.bits.bytes.expect(pixels.size*2); cacheActive=true
             }
             val inputFire=d.io.readData.valid.peek().litToBoolean && d.io.readData.ready.peek().litToBoolean
             sendDone=inputFire && source==words.size-1
@@ -97,12 +101,12 @@ class CachedKeyPipelineSpec extends AnyFunSpec with StableChiselSim with Matcher
             d.clock.step(); cycle+=1
           }
           assert(finished,s"timeout source=$source AW=$awCount B=$bCount")
-          source shouldBe 12; bCount shouldBe awCount
-          if(fault=="none") {awCount shouldBe 3; maxReplies shouldBe 2}
-          else if(fault=="B") awCount shouldBe 2
-          else assert(awCount>=1 && awCount<=2)
+          source shouldBe words.size; bCount shouldBe awCount
+          if(fault=="none") {awCount shouldBe height; maxReplies shouldBe credits}
+          else if(fault=="B") awCount shouldBe credits
+          else assert(awCount>=1 && awCount<=height)
           processed shouldBe awCount*8
-          for(y<-0 until 3; byte<- -2 until 20) {
+          for(y<-0 until height; byte<- -2 until 20) {
             val x=byte/2
             val want=if(y<awCount && byte>=0 && byte<16 && pixels(y*8+x)!=0xf81f)
               (pixels(y*8+x)>>((byte&1)*8))&255 else 0x5a

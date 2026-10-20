@@ -3,8 +3,9 @@ package gpu
 import chisel3._
 import chisel3.util._
 
-/** Optional small-blit writer: ordered W, at most two bursts, retirement at final B. */
-class AxiWritePipeline extends Module {
+/** Optional small-blit writer: ordered W, bounded bursts, retirement at final B. */
+class AxiWritePipeline(writeCredits: Int = 2) extends Module {
+  require(writeCredits == 2 || writeCredits == 4, "Small-blit write credits must be 2 or 4")
   val io = IO(new Bundle {
     val request = Flipped(Decoupled(new AxiWriteRequest))
     val data = Flipped(Decoupled(new AxiWriteBeat))
@@ -19,7 +20,7 @@ class AxiWritePipeline extends Module {
   private val address = Reg(UInt(32.W))
   private val remaining = Reg(UInt(32.W))
   private val burstLeft = Reg(UInt(9.W))
-  private val responses = Module(new Queue(Bool(), 2)) // Final burst of a request.
+  private val responses = Module(new Queue(Bool(), writeCredits)) // Final burst of a request.
   private val responseError = io.axiB.bits.resp =/= Axi4.Okay.U || io.axiB.bits.id =/= 0.U
   private val requestError = RegInit(false.B)
   private val haltNewRequests = RegInit(false.B)

@@ -6,7 +6,9 @@ import chisel3.util._
 class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boolean = false,
   enableCopyBurstBuffer: Boolean = false, enableKeyRowTrim: Boolean = false,
   enableAlphaPipeline: Boolean = false, enableKeyWritePipeline: Boolean = false,
-  enableSmallCopyPrefetch: Boolean = false) extends Module {
+  enableSmallCopyPrefetch: Boolean = false, writeCredits: Int = 2) extends Module {
+  require(writeCredits == 2 || writeCredits == 4, "Small-blit write credits must be 2 or 4")
+  require(writeCredits == 2 || enableKeyWritePipeline, "Four write credits require Key write pipeline")
   require(!enableKeyRowTrim || enableKeyPrefetch, "Key row trimming requires Key prefetch")
   require(!enableKeyWritePipeline || (enableKeyPrefetch && !enableKeyRowTrim), "Key write pipeline requires untrimmed Key prefetch")
   require(!enableSmallCopyPrefetch || enableKeyWritePipeline, "Small Copy prefetch requires Key write pipeline")
@@ -39,7 +41,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   private val alphaBackgroundBuffer = Module(new Queue(UInt(32.W), 33))
   private val packer = Module(new PixelWritePacker)
   private val writer = Module(new AxiWriteEngine)
-  private val keyWriter = if(enableKeyWritePipeline) Some(Module(new AxiWritePipeline)) else None
+  private val keyWriter = if(enableKeyWritePipeline) Some(Module(new AxiWritePipeline(writeCredits))) else None
   private val alphaMetadata = if(enableAlphaPipeline) Some(Module(new Queue(new Bundle {
     val address = UInt(32.W)
     val rowLast = Bool()
@@ -47,7 +49,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
     val chunkLast = Bool()
   }, 2, pipe = true))) else None
   private val copyStream = Module(new CopyStreamEngine(if(enableCopyBurstBuffer) 256 else 16))
-  private val keyStream = if (enableKeyPrefetch) Some(Module(new CachedKeyStream(enableKeyRowTrim,enableKeyWritePipeline,enableSmallCopyPrefetch))) else None
+  private val keyStream = if (enableKeyPrefetch) Some(Module(new CachedKeyStream(enableKeyRowTrim,enableKeyWritePipeline,enableSmallCopyPrefetch,writeCredits))) else None
   private val readAddressArbiter = Module(new RRArbiter(new Axi4Address, 2))
 
   private val idle :: startRect :: startWrite :: startAligner :: startRead :: startAlphaAligners :: startAlphaReads :: waitAlphaReads :: requestPixel :: waitPixel :: waitRow :: finish :: streamCopy :: streamKey :: Nil = Enum(14)

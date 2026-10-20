@@ -24,10 +24,10 @@ Files: AxiWritePipeline.scala, CachedKeyStream.scala, DdrQosArbiter.scala, Dense
 
 Interfaces: trailing `writeCredits:Int=2`, only2/4; CLI `--four-write-credits`. Top passes the same value to writer path and DDR arbitration. Existing decoupled ports unchanged.
 
-- [ ] Write tests for four credits, no fifth admission, every B error position/BID, split4KiB, pending-row retirement, owner/emergency drain and golden Copy/Key/Alpha recovery. Run `testOnly gpu.KeyWritePipelineSpec -- -z four`; expected missing parameter/credit behavior RED.
-- [ ] Implement queue depth and `log2Ceil(writeCredits+1)` row count, propagate build option and reject incompatible configurations. Default2 behavior unchanged.
-- [ ] Run writer, arbiter, cached-row and DDR QoS suites plus new four-credit full-Render test. Expected all pass; finite-delay four-credit completion faster than two in the same fixture, no byte/tag/error mismatch. Read logs, do not repeat unchanged long suites.
-- [ ] Commit tested code locally.
+- [x] Write tests for four credits, no fifth admission, every B error position/BID, split4KiB, pending-row retirement, owner/emergency drain and golden Copy/Key/Alpha recovery. Run `testOnly gpu.KeyWritePipelineSpec -- -z four`; expected missing parameter/credit behavior RED.
+- [x] Implement queue depth and `log2Ceil(writeCredits+1)` row count, propagate build option and reject incompatible configurations. Default2 behavior unchanged.
+- [x] Run writer, arbiter, cached-row and DDR QoS suites plus new four-credit full-Render test. Expected all pass; finite-delay four-credit completion faster than two in the same fixture, no byte/tag/error mismatch. Read logs, do not repeat unchanged long suites.
+- [x] Commit tested code locally.
 
 ### Task2: physical gates, board decision, evidence
 

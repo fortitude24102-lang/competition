@@ -20,7 +20,8 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   enableScanoutWordPipeline: Boolean = false, enableKeyRowTrim: Boolean = false,
   enableTransformBlit: Boolean = false, enableAlphaPipeline: Boolean = false,
   enableAxiDiagnostics: Boolean = false, enableKeyWritePipeline: Boolean = false,
-  enableExtendedListArena: Boolean = false, enableSmallCopyPrefetch: Boolean = false) extends Module {
+  enableExtendedListArena: Boolean = false, enableSmallCopyPrefetch: Boolean = false,
+  writeCredits: Int = 2) extends Module {
   require(!enableExtendedListArena || enableFrameLists, "Extended list arena requires frame lists")
   val io = IO(new Bundle {
     val apb = new ApbSlavePort
@@ -51,9 +52,10 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   private val assetRegs = Module(new AssetDmaRegs)
   private val assetWriter = Module(new AssetDmaWriter)
   private val render = Module(new RenderEngine(enableCopyStream,enableFrameLists,enableKeyPrefetch,enableCopyBurstBuffer,
-    enableKeyRowTrim,enableTransformBlit,enableAlphaPipeline,enableKeyWritePipeline,enableSmallCopyPrefetch))
+    enableKeyRowTrim,enableTransformBlit,enableAlphaPipeline,enableKeyWritePipeline,enableSmallCopyPrefetch,writeCredits))
   private val scanout = Module(new ScanoutDma(enableWordPipeline=enableScanoutWordPipeline))
-  private val ddr = Module(new DdrQosArbiter(enableDiagnostics=enableAxiDiagnostics,enableWritePipeline=enableKeyWritePipeline))
+  private val ddr = Module(new DdrQosArbiter(enableDiagnostics=enableAxiDiagnostics,
+    enableWritePipeline=enableKeyWritePipeline,writeCredits=writeCredits))
   private val renderMemory = if(enableStripeScratchpad) {
     val scratch = Module(new StripeScratchpad)
     scratch.io.in <> render.io.axi

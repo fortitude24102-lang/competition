@@ -5,8 +5,10 @@ import chisel3.util._
 
 /** Transaction-level arbitration for Render reads/writes, Scanout reads and Asset writes. */
 class DdrQosArbiter(maxRenderWait: Int = 8, enableDiagnostics: Boolean = false,
-  enableWritePipeline: Boolean = false) extends Module {
+  enableWritePipeline: Boolean = false, writeCredits: Int = 2) extends Module {
   require(maxRenderWait > 0)
+  require(writeCredits == 2 || writeCredits == 4, "Small-blit write credits must be 2 or 4")
+  require(writeCredits == 2 || enableWritePipeline, "Four write credits require write pipeline")
   val io = IO(new Bundle {
     val render = Flipped(new Axi4MasterPort)
     val scanout = Flipped(new Axi4MasterPort)
@@ -34,7 +36,7 @@ class DdrQosArbiter(maxRenderWait: Int = 8, enableDiagnostics: Boolean = false,
   private val nextReadOwner = RegInit(false.B)
   private val nextWriteOwner = RegInit(false.B)
   // One active W burst reserves a slot before AW; only completed W enter this FIFO.
-  private val writeResponses = if(enableWritePipeline) Some(Module(new Queue(Bool(), 2))) else None
+  private val writeResponses = if(enableWritePipeline) Some(Module(new Queue(Bool(), writeCredits))) else None
   private val writeResponseSpace = writeResponses.map(_.io.enq.ready).getOrElse(true.B)
   writeResponses.foreach { q =>
     q.io.enq.valid := io.axi.w.fire && io.axi.w.bits.last

@@ -11,7 +11,7 @@ import testutil.StableChiselSim
   * or deadlock on failed reads/B; consuming DDR beats through cache-only mux. */
 class SmallCopyPrefetchSpec extends AnyFunSpec with StableChiselSim with Matchers {
   private case class Shape(w:Int=14,h:Int=18,stride:Int=1920,src:Long=0x02400000L,dst:Long=0x02000100L)
-  private case class Result(cycles:Int,reads:Int,writes:Int,overlap:Boolean)
+  private case class Result(cycles:Int,reads:Int,writes:Int,overlap:Boolean,peakWrites:Int)
   private def init(d:RenderEngine):Unit = {
     d.io.command.valid.poke(false);d.io.command.bits.poke(0.U.asTypeOf(new GpuCommand))
     d.io.completion.ready.poke(true);d.io.vblank.poke(false);d.io.perfClear.poke(false)
@@ -23,7 +23,7 @@ class SmallCopyPrefetchSpec extends AnyFunSpec with StableChiselSim with Matcher
     d.io.axi.b.valid.poke(false);d.io.axi.b.bits.poke(0.U.asTypeOf(new Axi4WriteResponse))
     d.clock.step()
   }
-  private def run(d:RenderEngine,s:Shape,tag:Int,fault:Int=0,cached:Boolean=false):Result = {
+  private def run(d:RenderEngine,s:Shape,tag:Int,fault:Int=0,cached:Boolean=false,bDelay:Int=80):Result = {
     val mem=mutable.Map.empty[Long,Int].withDefaultValue(0x5a)
     // Deliberately includes transparent-key magenta: Copy MUST still write it.
     val pixels=Vector.tabulate(s.w*s.h)(i=>if(i%5==0)0xf81f else (i*37+0x1234)&65535)
@@ -39,6 +39,7 @@ class SmallCopyPrefetchSpec extends AnyFunSpec with StableChiselSim with Matcher
     var ra=0L;var rLeft=0;var rId=0;var wOffset=0
     var submitted=0;var completed=0;var cycles=0;var arCount=0;var awCount=0
     var bCount=0;var rCount=0;var copyReads=0;var copyWrites=0;var overlap=false
+    var peakWrites=0
     while(completed<4 && cycles<16000) {
       d.io.command.valid.poke(submitted<4 && (!cached || d.io.textureCacheValid.peek().litToBoolean))
       d.io.command.bits.poke(0.U.asTypeOf(new GpuCommand))
@@ -77,14 +78,14 @@ class SmallCopyPrefetchSpec extends AnyFunSpec with StableChiselSim with Matcher
         assert((a&4095L)+4*n<=4096,"AW crossed 4KiB")
         if(a>=0x02100100L)assert(completed>0 && rLeft==0 && writes.isEmpty && replies.isEmpty,"following command before drain")
         if(completed==0){copyWrites+=1;if(awCount>bCount)overlap=true}
-        awCount+=1;writes.enqueue((a,n))
+        awCount+=1;peakWrites=math.max(peakWrites,awCount-bCount);writes.enqueue((a,n))
       }
       if(fire(d.io.axi.w.valid,d.io.axi.w.ready)) {
         assert(writes.nonEmpty);val(a,n)=writes.head
         val word=d.io.axi.w.bits.data.peek().litValue;val strb=d.io.axi.w.bits.strb.peek().litValue.toInt
         for(l<-0 until 4 if (strb&(1<<l))!=0)mem(a+4*wOffset+l)=((word>>(8*l))&255).toInt
         d.io.axi.w.bits.last.expect(wOffset==n-1);wOffset+=1
-        if(wOffset==n){writes.dequeue();wOffset=0;replies.enqueue(cycles+80)}
+        if(wOffset==n){writes.dequeue();wOffset=0;replies.enqueue(cycles+bDelay)}
       }
       if(bv && d.io.axi.b.ready.peek().litToBoolean){replies.dequeue();bCount+=1}
       if(d.io.completion.valid.peek().litToBoolean) {
@@ -111,7 +112,7 @@ class SmallCopyPrefetchSpec extends AnyFunSpec with StableChiselSim with Matcher
     mem(0x02100200L) shouldBe 0x5a;mem(0x02100201L) shouldBe 0x5a // Key skips magenta
     if(cached) {mem(0x02100202L) shouldBe 0x59;mem(0x02100203L) shouldBe 0x12}
     mem(0x02100300L) shouldBe 0x1f;mem(0x02100301L) shouldBe 0xf8 // Alpha255 copies magenta
-    Result(cycles,copyReads,copyWrites,overlap)
+    Result(cycles,copyReads,copyWrites,overlap,peakWrites)
   }
   it("copies packed strided glyphs once, preserves every lane and beats legacy retirement") {
     val cycles=Seq(false,true).map { enabled =>
@@ -145,5 +146,23 @@ class SmallCopyPrefetchSpec extends AnyFunSpec with StableChiselSim with Matcher
       init(d);run(d,Shape(),220,cached=true).reads shouldBe 1
       d.io.perfCacheBytes.expect(8) // One 32-bit cache word for Key, one for Alpha.
     }
+  }
+  it("uses four credits without early retirement across Copy, cached Key, Alpha and response faults") {
+    val results=Seq(2,4).map { credits =>
+      var result:Result=null
+      simulate(new RenderEngine(enableKeyPrefetch=true,enableKeyWritePipeline=true,
+        enableSmallCopyPrefetch=true,writeCredits=credits)) { d =>
+        init(d);result=run(d,Shape(),300,cached=true,bDelay=180)
+        result.peakWrites shouldBe credits; result.reads shouldBe 1
+        if(credits==4) {
+          run(d,Shape(8,32,1922,dst=0x02000ffeL),310,bDelay=180)
+          for(fault<-1 to 6)run(d,Shape(),320+fault*10,fault,bDelay=180)
+          run(d,Shape(),400,cached=true,bDelay=180)
+        }
+      }
+      result.cycles
+    }
+    results(1) should be < results(0)
+    info(s"same delayed-B Copy: two=${results(0)}, four=${results(1)}")
   }
 }

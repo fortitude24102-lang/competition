@@ -19,6 +19,45 @@ class KeyWriteArbiterSpec extends AnyFunSpec with StableChiselSim with Matchers 
     d.io.axi.b.valid.poke(false); d.io.axi.b.bits.poke(0.U.asTypeOf(new Axi4WriteResponse))
   }
   describe("two-response DDR write arbitration") {
+    it("routes four owner credits and holds a fifth offered AW through scanout emergency") {
+      simulate(new DdrQosArbiter(enableDiagnostics=true,enableWritePipeline=true,writeCredits=4)) { d =>
+        init(d)
+        val owners=Seq(d.io.render,d.io.asset,d.io.render,d.io.asset)
+        for((p,i)<-owners.zipWithIndex) {
+          p.aw.valid.poke(true); p.aw.bits.addr.poke(0x1000+i*256); d.clock.step()
+          d.io.axi.aw.valid.expect(true); d.io.axi.aw.bits.addr.expect(0x1000+i*256); d.clock.step()
+          p.aw.valid.poke(false); p.w.valid.poke(true); p.w.bits.last.poke(true)
+          p.w.bits.data.poke(i+1); p.w.bits.strb.poke(15); d.io.axi.w.bits.data.expect(i+1)
+          d.clock.step(); p.w.valid.poke(false)
+        }
+        d.io.render.aw.valid.poke(true); d.io.render.aw.bits.addr.poke(0x3000)
+        d.clock.step(3); d.io.axi.aw.valid.expect(false)
+        // Head B cannot be delivered to Asset while Render applies backpressure.
+        d.io.render.b.ready.poke(false); d.io.axi.b.valid.poke(true)
+        d.io.axi.b.bits.id.poke(1); d.io.axi.b.bits.resp.poke(2)
+        d.io.render.b.valid.expect(true); d.io.asset.b.valid.expect(false); d.io.axi.b.ready.expect(false)
+        d.clock.step(3); d.io.render.b.bits.id.expect(1); d.io.render.b.bits.resp.expect(2)
+        d.io.axi.aw.ready.poke(false); d.io.render.b.ready.poke(true); d.clock.step()
+        d.io.axi.b.valid.poke(false); d.io.axi.b.bits.id.poke(0); d.io.axi.b.bits.resp.poke(0)
+        d.clock.step(); d.io.axi.aw.valid.expect(true); d.clock.step()
+        d.io.scanoutLevel.poke(0); d.io.scanout.ar.valid.poke(true); d.io.scanout.ar.bits.addr.poke(0x8000)
+        d.clock.step(); d.io.axi.ar.valid.expect(true); d.io.axi.ar.bits.addr.expect(0x8000)
+        d.clock.step(); d.io.scanout.ar.valid.poke(false)
+        d.io.axi.r.valid.poke(true); d.io.axi.r.bits.last.poke(true)
+        d.io.scanout.r.valid.expect(true); d.clock.step(); d.io.axi.r.valid.poke(false)
+        d.io.axi.aw.valid.expect(true); d.io.axi.aw.bits.addr.expect(0x3000)
+        d.io.axi.aw.ready.poke(true); d.clock.step(); d.io.render.aw.valid.poke(false)
+        d.io.render.w.valid.poke(true); d.io.render.w.bits.last.poke(true); d.clock.step()
+        d.io.render.w.valid.poke(false); d.io.asset.aw.valid.poke(true); d.io.asset.aw.bits.addr.poke(0x4000)
+        for(p<-Seq(d.io.asset,d.io.render,d.io.asset,d.io.render)) {
+          d.io.axi.b.valid.poke(true); p.b.valid.expect(true)
+          (if(p eq d.io.render)d.io.asset else d.io.render).b.valid.expect(false)
+          d.clock.step(); d.io.axi.b.valid.poke(false); d.clock.step()
+        }
+        d.io.axi.aw.valid.expect(false); d.io.axi.b.ready.expect(false)
+        d.io.asset.aw.valid.poke(false)
+      }
+    }
     it("routes delayed Render and Asset B by committed W order, not the current AW owner") {
       simulate(new DdrQosArbiter(enableDiagnostics=true,enableWritePipeline=true)) { d =>
         init(d)

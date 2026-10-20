@@ -8,7 +8,9 @@ import chisel3.util._
   * transparent edge words and empty rows, preserving interior zero-strobe beats.
   */
 class CachedKeyStream(trimTransparentRows: Boolean = false, pipelineWrites: Boolean = false,
-  allowCopyPrefetch: Boolean = false) extends Module {
+  allowCopyPrefetch: Boolean = false, writeCredits: Int = 2) extends Module {
+  require(writeCredits == 2 || writeCredits == 4, "Small-blit write credits must be 2 or 4")
+  require(writeCredits == 2 || pipelineWrites, "Four write credits require write pipeline")
   require(!trimTransparentRows || !pipelineWrites, "Measure Key pipelining without row trimming")
   require(!allowCopyPrefetch || (pipelineWrites && !trimTransparentRows), "Copy prefetch requires untrimmed write pipeline")
   val io = IO(new Bundle {
@@ -35,7 +37,7 @@ class CachedKeyStream(trimTransparentRows: Boolean = false, pipelineWrites: Bool
   private val readFinished = RegInit(false.B)
   private val rowActive = RegInit(false.B)
   private val errorSeen = RegInit(false.B)
-  private val pendingRows = if(pipelineWrites) Some(RegInit(0.U(2.W))) else None
+  private val pendingRows = if(pipelineWrites) Some(RegInit(0.U(log2Ceil(writeCredits + 1).W))) else None
   private val fifo = Module(new Queue(UInt(32.W), 16))
   private val aligner = Module(new Rgb565WordAligner)
   private val in = io.command.bits
