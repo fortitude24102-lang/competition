@@ -33,7 +33,7 @@ class KeyWritePipelineSpec extends AnyFunSpec with StableChiselSim with Matchers
         d.io.axiB.valid.poke(false); d.io.done.expect(finalBurst)
         d.io.error.expect(bad && finalBurst); d.clock.step(); d.io.done.expect(false)
       }
-      // Removing a credit or using a two-bit pending count must fail this behavior.
+      // Removing a response credit must fail the fourth admission below.
       for(failed<- -1 to 4) {
         for(i<-0 until 4) { request(0x2000+i*0x100); burst(0x2000+i*0x100,1) }
         d.io.request.valid.poke(true); d.io.request.ready.expect(false)
