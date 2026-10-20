@@ -34,7 +34,9 @@ Interfaces: trailing `writeCredits:Int=2`, only2/4; CLI `--four-write-credits`. 
 Files: new generated verification directory / Efinity build; README.md and new evidence report.
 Consumes Task1 `--four-write-credits`; control BIT118491... and unchanged normal33aac.../probe1024 bd5489... BINs.
 
-- [ ] Generate fresh RTL with previous stable flags plus four-credit flag; one module/file. Compile isolated Efinity build, check final16 timing rows, resource and routed network CDC. Expected all positive, no resource overflow; otherwise no new-BIT loading.
-- [ ] Run same-BIN phase and1024 control/candidate/control probes; if viable run normal3600 challenge plus5s hold. Expected fresh identities/leases and under/error0; report negative frames too.
-- [ ] Restore selected normal six-tier MENU, release owner and stop JTAG; choose four only if measured benefit. Record hashes/results/limits; update README without changing historical sealed evidence.
-- [ ] Fresh whole-diff review once, address important findings by RED/GREEN, seal evidence and commit locally. No main push requested.
+- [x] Generate fresh RTL with previous stable flags plus four-credit flag; one module/file. Compile isolated Efinity build, check final16 timing rows, resource and routed network CDC. Expected all positive, no resource overflow; otherwise no new-BIT loading.
+- [x] Run same-BIN phase and1024 control/candidate/control probes; if viable run normal3600 challenge plus5s hold. Expected fresh identities/leases and under/error0; report negative frames too.
+- [x] Restore selected normal six-tier MENU, release owner and stop JTAG; choose four only if measured benefit. Record hashes/results/limits; update README without changing historical sealed evidence.
+- [x] Fresh whole-diff review once, address important findings by RED/GREEN, seal evidence and commit locally. No main push requested.
+
+Result:27 related tests pass;60 single-module HDL and final16 timing/CDC gates pass; Key≈20%/full diagnostic≈3.8% faster, ordinary1024work≈2.8% lower but FPS/late not consistently improved. Normal2194+275Alpha qualified3600/5s, no health errors. Fresh review0 findings; explicit4 retained/default2 fallback. Evidence docs/efinix_2d_gpu/evidence/four_write_credits_20261020/README.md and sealed ZIP SHA081975ee... . Local only, no Flash/main/release mutation.
