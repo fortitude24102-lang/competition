@@ -6,7 +6,9 @@ import chisel3.util._
 class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boolean = false,
   enableCopyBurstBuffer: Boolean = false, enableKeyRowTrim: Boolean = false,
   enableAlphaPipeline: Boolean = false, enableKeyWritePipeline: Boolean = false,
-  enableSmallCopyPrefetch: Boolean = false, writeCredits: Int = 2) extends Module {
+  enableSmallCopyPrefetch: Boolean = false, writeCredits: Int = 2,
+  enableAlphaRowPrefetch: Boolean = false) extends Module {
+  require(!enableAlphaRowPrefetch || enableAlphaPipeline, "Alpha row prefetch requires Alpha pixel pipeline")
   require(writeCredits == 2 || writeCredits == 4, "Small-blit write credits must be 2 or 4")
   require(writeCredits == 2 || enableKeyWritePipeline, "Four write credits require Key write pipeline")
   require(!enableKeyRowTrim || enableKeyPrefetch, "Key row trimming requires Key prefetch")
@@ -34,11 +36,14 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   private val reader = Module(new AxiReadEngine(0))
   private val backgroundReader = Module(new AxiReadEngine(1))
   private val textureCache = Module(new TextureCache)
-  private val aligner = Module(new PixelReadAligner)
+  private val flushAlphaPrefetch = WireDefault(false.B)
+  private val discardAlphaPrefetch = WireDefault(false.B)
+  private val failedAlphaPrefetch = WireDefault(false.B)
+  private val aligner = withReset(reset.asBool || flushAlphaPrefetch) { Module(new PixelReadAligner) }
   private val wordAligner = Module(new Rgb565WordAligner)
-  private val backgroundAligner = Module(new PixelReadAligner)
-  private val alphaForegroundBuffer = Module(new Queue(UInt(32.W), 33))
-  private val alphaBackgroundBuffer = Module(new Queue(UInt(32.W), 33))
+  private val backgroundAligner = withReset(reset.asBool || flushAlphaPrefetch) { Module(new PixelReadAligner) }
+  private val alphaForegroundBuffer = withReset(reset.asBool || flushAlphaPrefetch) { Module(new Queue(UInt(32.W), 33)) }
+  private val alphaBackgroundBuffer = withReset(reset.asBool || flushAlphaPrefetch) { Module(new Queue(UInt(32.W), 33)) }
   private val packer = Module(new PixelWritePacker)
   private val writer = Module(new AxiWriteEngine)
   private val keyWriter = if(enableKeyWritePipeline) Some(Module(new AxiWritePipeline(writeCredits))) else None
@@ -52,7 +57,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   private val keyStream = if (enableKeyPrefetch) Some(Module(new CachedKeyStream(enableKeyRowTrim,enableKeyWritePipeline,enableSmallCopyPrefetch,writeCredits))) else None
   private val readAddressArbiter = Module(new RRArbiter(new Axi4Address, 2))
 
-  private val idle :: startRect :: startWrite :: startAligner :: startRead :: startAlphaAligners :: startAlphaReads :: waitAlphaReads :: requestPixel :: waitPixel :: waitRow :: finish :: streamCopy :: streamKey :: Nil = Enum(14)
+  private val idle :: startRect :: startWrite :: startAligner :: startRead :: startAlphaAligners :: startAlphaReads :: waitAlphaReads :: requestPixel :: waitPixel :: waitRow :: finish :: streamCopy :: streamKey :: drainAlphaPrefetch :: Nil = Enum(15)
   private val state = RegInit(idle)
   private val commandReg = Reg(new GpuCommand)
   private val srcRowBase = Reg(UInt(32.W))
@@ -75,6 +80,9 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   private val dynamicWriteOutstanding = RegInit(false.B)
   private val completionError = RegInit(GpuError.None.U(8.W))
   private val useTextureCache = RegInit(false.B)
+  private val alphaRowPrefetch = RegInit(false.B)
+  private val alphaPrefetching = RegInit(false.B)
+  private val alphaTransferFailed = WireDefault(false.B)
   // A row failure may leave later rows unvisited. Retire only the address
   // generator after bus/pixel drain, so the following command can start.
   retireRect := state === finish
@@ -155,6 +163,10 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
     dynamicWriteOutstanding := false.B
     completionError := GpuError.None.U
     useTextureCache := incomingCacheHit
+    alphaRowPrefetch := enableAlphaRowPrefetch.B && incomingCommand.op === GpuOpcode.Alpha.U &&
+      incomingCommand.widthPixels =/= 0.U && incomingCommand.widthPixels <= 64.U &&
+      incomingCommand.heightPixels > 1.U && !incomingOverlap
+    alphaPrefetching := false.B
     state := Mux(selectKeyStream, streamKey, Mux(selectCopyStream, streamCopy, startRect))
   }
 
@@ -178,7 +190,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
     state := startWrite
   }
 
-  private val fixedWriteRequest = state === startWrite
+  private val fixedWriteRequest = state === startWrite && !failedAlphaPrefetch
   private val dynamicWriteRequest = isColorKey && !fastWordBlit &&
     packer.io.output.valid && !dynamicWriteOutstanding
   writer.io.request.valid := Mux(streamingKey, (!enableKeyWritePipeline).B && keyStream.map(_.io.writeRequest.valid).getOrElse(false.B),
@@ -191,6 +203,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
       Mux(dynamicWriteRequest, 1.U, Mux(isAlpha, alphaChunkBeats, rowBeats))))
   copyStream.io.writeRequest.ready := writer.io.request.ready && streamingCopy
   when(writer.io.request.fire && !streamingCopy && !streamingKey) {
+    alphaPrefetching := false.B
     when(dynamicWriteRequest) {
       dynamicWriteOutstanding := true.B
     }.otherwise {
@@ -209,7 +222,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   wordAligner.io.start.bits.destinationUpper := dstRowBase(1)
   wordAligner.io.start.bits.pixels := commandReg.widthPixels
   when(wordAligner.io.start.fire) { state := startRead }
-  private val startingAlphaPair = state === startAlphaAligners
+  private val startingAlphaPair = state === startAlphaAligners && !failedAlphaPrefetch
   aligner.io.start.valid := startingSourceRow || (startingAlphaPair && backgroundAligner.io.start.ready)
   aligner.io.start.bits.upperFirst := Mux(isAlpha, alphaSrcAddress(1), srcRowBase(1))
   aligner.io.start.bits.pixels := Mux(isAlpha, alphaChunkPixels, commandReg.widthPixels)
@@ -231,7 +244,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   }
 
   private val startingSourceRead = state === startRead
-  private val startingAlphaReads = state === startAlphaReads
+  private val startingAlphaReads = state === startAlphaReads && !failedAlphaPrefetch
   private val sourceReadAddress = Mux(isAlpha, alphaSrcAddress, srcRowBase)
   private val sourceReadBytes = Mux(isAlpha, alphaChunkPixels << 1, rowBytes)
   private val sourceReadReady = Mux(useTextureCache,
@@ -326,6 +339,15 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
         when(meta.chunkLast) {
           pixelLast := meta.last
           state := Mux(meta.rowLast, waitRow, startAlphaAligners)
+          when(alphaRowPrefetch && meta.rowLast && !meta.last && !alphaTransferFailed) {
+            // Same single-write engine; next-row reads hide the preceding final B.
+            srcRowBase := srcRowBase + commandReg.srcStride
+            dstRowBase := dstRowBase + commandReg.dstStride
+            alphaSrcAddress := srcRowBase + commandReg.srcStride
+            rowReadDone := false.B; rowReadError := false.B; backgroundReadError := false.B
+            alphaPrefetching := true.B
+            state := startAlphaAligners
+          }
         }
       }.otherwise {
         state := Mux(pixelRowLast, waitRow, Mux(isAlpha && pixelChunkLast, startAlphaAligners, requestPixel))
@@ -392,6 +414,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   )
   private val transferError = rowWriteError || writer.io.error || rowReadError || sourceError ||
     (isAlpha && (backgroundReadError || backgroundReader.io.error))
+  alphaTransferFailed := transferError
   when(state === waitRow && writeFinished && readFinished) {
     when(transferError) {
       completionError := GpuError.AxiResponse.U
@@ -413,6 +436,24 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
     }
   }
 
+  if(enableAlphaRowPrefetch) {
+    failedAlphaPrefetch := alphaPrefetching && transferError
+    val readingAhead = state === startAlphaAligners || state === startAlphaReads ||
+      state === waitAlphaReads || state === startWrite
+    when(readingAhead && failedAlphaPrefetch) {
+      completionError := GpuError.AxiResponse.U
+      state := drainAlphaPrefetch
+    }
+    // Never withdraw accepted read addresses or an unfinished previous write.
+    // Drop only lookahead data after its requests drain; reset abandoned aligner words.
+    discardAlphaPrefetch := state === drainAlphaPrefetch
+    flushAlphaPrefetch := state === finish && alphaPrefetching
+    when(state === drainAlphaPrefetch && sourceReadReady && backgroundReader.io.request.ready &&
+      writer.io.request.ready && !alphaForegroundBuffer.io.deq.valid && !alphaBackgroundBuffer.io.deq.valid) {
+      state := finish
+    }
+  }
+
   io.completion.valid := Mux(streamingKey, keyStream.map(_.io.completion.valid).getOrElse(false.B),
     Mux(streamingCopy, copyStream.io.completion.valid, state === finish))
   io.completion.bits.tag := Mux(streamingKey, keyStream.map(_.io.completion.bits.tag).getOrElse(0.U),
@@ -421,6 +462,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
     Mux(streamingCopy, copyStream.io.completion.bits.error, completionError))
   copyStream.io.completion.ready := io.completion.ready && streamingCopy
   when(io.completion.fire) {
+    alphaPrefetching := false.B
     state := idle
   }
 
@@ -490,14 +532,14 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
     sourceDataReady && useTextureCache)
   wordAligner.io.input.valid := fastWordBlit && !directWordBlit && sourceDataValid && !streamingKey
   wordAligner.io.input.bits := sourceDataBits.data
-  aligner.io.input.valid := Mux(isAlpha, alphaForegroundBuffer.io.deq.valid,
+  aligner.io.input.valid := Mux(isAlpha, alphaForegroundBuffer.io.deq.valid && !discardAlphaPrefetch,
     sourceDataValid && !fastWordBlit)
   aligner.io.input.bits := Mux(isAlpha, alphaForegroundBuffer.io.deq.bits, sourceDataBits.data)
-  alphaForegroundBuffer.io.deq.ready := isAlpha && aligner.io.input.ready
+  alphaForegroundBuffer.io.deq.ready := isAlpha && (aligner.io.input.ready || discardAlphaPrefetch)
   alphaBackgroundBuffer.io.enq.valid := backgroundReader.io.data.valid
   alphaBackgroundBuffer.io.enq.bits := backgroundReader.io.data.bits.data
   backgroundReader.io.data.ready := alphaBackgroundBuffer.io.enq.ready
-  backgroundAligner.io.input.valid := alphaBackgroundBuffer.io.deq.valid
+  backgroundAligner.io.input.valid := alphaBackgroundBuffer.io.deq.valid && !discardAlphaPrefetch
   backgroundAligner.io.input.bits := alphaBackgroundBuffer.io.deq.bits
-  alphaBackgroundBuffer.io.deq.ready := backgroundAligner.io.input.ready
+  alphaBackgroundBuffer.io.deq.ready := backgroundAligner.io.input.ready || discardAlphaPrefetch
 }

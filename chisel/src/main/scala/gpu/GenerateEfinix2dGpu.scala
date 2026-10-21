@@ -19,8 +19,9 @@ object GenerateEfinix2dGpu extends App {
   private val extendedArena = args.contains("--extended-list-arena")
   private val smallCopyPrefetch = args.contains("--small-copy-prefetch")
   private val writeCredits = if(args.contains("--four-write-credits")) 4 else 2
+  private val alphaRowPrefetch = args.contains("--alpha-row-prefetch")
   require(!extendedArena || lists, "Extended list arena requires frame lists")
   require(!keyTrim || keyPrefetch, "Key row trim requires Key prefetch")
-  ChiselStage.emitSystemVerilogFile(new Efinix2dGpuTop(!legacyCopy, instances,lists,keyPrefetch,stripes,burstBuffer,scanoutPipeline,keyTrim,transform,alphaPipeline,axiDiagnostics,keyWritePipeline,extendedArena,smallCopyPrefetch,writeCredits),
-    args.filterNot(a => Set("--legacy-copy", "--instances", "--frame-lists", "--key-prefetch", "--stripe-scratchpad", "--copy-burst-buffer", "--scanout-word-pipeline", "--key-row-trim", "--transform-blit", "--alpha-pipeline", "--axi-diagnostics", "--key-write-pipeline", "--extended-list-arena", "--small-copy-prefetch", "--four-write-credits")(a)))
+  ChiselStage.emitSystemVerilogFile(new Efinix2dGpuTop(!legacyCopy, instances,lists,keyPrefetch,stripes,burstBuffer,scanoutPipeline,keyTrim,transform,alphaPipeline,axiDiagnostics,keyWritePipeline,extendedArena,smallCopyPrefetch,writeCredits,alphaRowPrefetch),
+    args.filterNot(a => Set("--legacy-copy", "--instances", "--frame-lists", "--key-prefetch", "--stripe-scratchpad", "--copy-burst-buffer", "--scanout-word-pipeline", "--key-row-trim", "--transform-blit", "--alpha-pipeline", "--axi-diagnostics", "--key-write-pipeline", "--extended-list-arena", "--small-copy-prefetch", "--four-write-credits", "--alpha-row-prefetch")(a)))
 }

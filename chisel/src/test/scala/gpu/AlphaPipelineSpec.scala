@@ -9,17 +9,19 @@ import testutil.StableChiselSim
   * lost halfwords/chunk tails and accidental writes beyond the rectangle. */
 class AlphaPipelineSpec extends AnyFunSpec with StableChiselSim with Matchers {
   private case class Trace(cycles: Int, reads: Vector[(Int, Long, Int)],
-    writes: Vector[(Long, Int)], data: Vector[(BigInt, BigInt, Boolean)])
+    writes: Vector[(Long, Int)], data: Vector[(BigInt, BigInt, Boolean)], prefetchedRows:Int)
   private def run(enabled: Boolean, width: Int, phase: Int, stalls: Boolean,
-                  fault: Int = 0, cached: Boolean = false): Trace = {
+                  fault: Int = 0, cached: Boolean = false, rowPrefetch:Boolean=false,
+                  height:Int=2, bDelay:Int=0, sourceStride:Int=0, destinationStride:Int=0,
+                  recoverAlpha:Boolean=false, inPlace:Boolean=false): Trace = {
     var elapsed = 0
     var result = Option.empty[Trace]
-    simulate(new RenderEngine(enableAlphaPipeline = enabled)) { d =>
+    simulate(new RenderEngine(enableAlphaPipeline = enabled,enableAlphaRowPrefetch=rowPrefetch)) { d =>
       val mem = collection.mutable.Map.empty[Long, Int].withDefaultValue(0x5a)
       val src = GpuMemoryMap.DenseAssets.toLong + phase
-      val dst = GpuMemoryMap.FramebufferA.toLong + phase
-      val stride = width * 2 + 6
-      val height = 2
+      val dst = if(inPlace)src else GpuMemoryMap.FramebufferA.toLong + phase
+      val srcStride=if(sourceStride!=0)sourceStride else width*2+6
+      val dstStride=if(destinationStride!=0)destinationStride else width*2+6
       val fg = Seq(0xf800, 0x07e0, 0x001f, 0xffff, 0, 0x1234)
       val bg = Seq(0x001f, 0xf800, 0x07e0, 0, 0xffff, 0xabcd)
       // Literal independently hand-checked per-channel alpha=128 / 255 rounded.
@@ -29,8 +31,10 @@ class AlphaPipelineSpec extends AnyFunSpec with StableChiselSim with Matchers {
       def word(a: Long): Long = (0 until 4).foldLeft(0L)((v, b) => v | mem(a+b).toLong << (8*b))
       for (y <- 0 until height; x <- 0 until width) {
         val i = (y * width + x) % fg.size
-        put(src + y*stride + x*2, fg(i)); put(dst + y*stride + x*2, bg(i))
+        put(src + y*srcStride + x*2, fg(i))
+        if(!inPlace)put(dst + y*dstStride + x*2, bg(i))
       }
+      if(recoverAlpha)put(dst+0x2000,0x001f)
       case class Read(id: Int, var addr: Long, var beats: Int)
       val reads = collection.mutable.Queue.empty[Read]
       val arTrace = collection.mutable.ArrayBuffer.empty[(Int, Long, Int)]
@@ -41,6 +45,9 @@ class AlphaPipelineSpec extends AnyFunSpec with StableChiselSim with Matchers {
       var writeAddr = 0L
       var writeLeft = 0
       var bPending = false
+      var bDue = 0
+      var readBlockedUntil = 0
+      var prefetchedRows = 0
       var readFaultSent = false
       var bCount = 0
       var awCount = 0
@@ -53,17 +60,18 @@ class AlphaPipelineSpec extends AnyFunSpec with StableChiselSim with Matchers {
       d.io.renderGrant.poke(0); d.io.scanoutGrant.poke(0)
       d.io.textureCacheLoad.valid.poke(false); d.io.textureCacheInvalidate.poke(false)
       d.io.vblank.poke(false)
-      while (retired < 2 && elapsed < 2000) {
+      val commands=if(recoverAlpha)3 else 2
+      while (retired < commands && elapsed < 2000+height*bDelay*4) {
         // Alpha followed by Fill catches stale metadata/error propagation.
         val c = d.io.command.bits
         d.io.textureCacheLoad.valid.poke(cached && !loadSent)
         d.io.textureCacheLoad.bits.base.poke(src & ~3L)
-        d.io.textureCacheLoad.bits.bytes.poke(((height*stride+phase+3)/4)*4)
-        d.io.command.valid.poke(submitted < 2 && (!cached || d.io.textureCacheValid.peek().litToBoolean))
+        d.io.textureCacheLoad.bits.bytes.poke(((height*srcStride+(phase&3)+3)/4)*4)
+        d.io.command.valid.poke(submitted < commands && (!cached || d.io.textureCacheValid.peek().litToBoolean))
         c.poke(0.U.asTypeOf(new GpuCommand))
-        c.op.poke(if(submitted == 0) GpuOpcode.Alpha else GpuOpcode.Fill)
-        c.srcAddr.poke(src); c.dstAddr.poke(if(submitted == 0) dst else dst + 0x1000)
-        c.srcStride.poke(stride); c.dstStride.poke(stride)
+        c.op.poke(if(submitted == 1) GpuOpcode.Fill else GpuOpcode.Alpha)
+        c.srcAddr.poke(src); c.dstAddr.poke(if(submitted == 0) dst else dst+submitted*0x1000)
+        c.srcStride.poke(srcStride); c.dstStride.poke(dstStride)
         c.widthPixels.poke(if(submitted == 0) width else 1)
         c.heightPixels.poke(if(submitted == 0) height else 1)
         c.alpha.poke(128); c.color.poke(0x1357); c.tag.poke(submitted + 1)
@@ -71,16 +79,21 @@ class AlphaPipelineSpec extends AnyFunSpec with StableChiselSim with Matchers {
         d.io.axi.ar.ready.poke(ready) // Independent of AW/W: do not hide early reads.
         d.io.axi.aw.ready.poke(ready && writeLeft == 0 && !bPending)
         d.io.axi.w.ready.poke(ready)
-        val offerR = reads.nonEmpty && ready
+        val offerR = reads.nonEmpty && ready && elapsed>=readBlockedUntil
         d.io.axi.r.valid.poke(offerR)
         d.io.axi.r.bits.id.poke(reads.headOption.map(_.id).getOrElse(0))
         d.io.axi.r.bits.data.poke(reads.headOption.map(r=>word(r.addr)).getOrElse(0L))
         d.io.axi.r.bits.last.poke(reads.headOption.exists(_.beats == 1))
-        val badR = fault == 1 && !readFaultSent && reads.headOption.exists(_.id == 1)
+        val badR = !readFaultSent && reads.headOption.exists { r =>
+          (fault==1 && r.id==1) ||
+          (fault==5 && r.id==1 && r.addr>=((dst+dstStride)& ~3L)) ||
+          (fault==6 && r.id==0 && r.addr>=((src+srcStride)& ~3L))
+        }
         d.io.axi.r.bits.resp.poke(if(badR) 2 else 0)
-        d.io.axi.b.valid.poke(bPending && ready)
-        d.io.axi.b.bits.id.poke(0)
-        d.io.axi.b.bits.resp.poke(if(fault == 2 && bCount == 0) 2 else 0)
+        d.io.axi.b.valid.poke(bPending && ready && elapsed>=bDue)
+        d.io.axi.b.bits.id.poke(if(fault==4 && bCount==0)1 else 0)
+        d.io.axi.b.bits.resp.poke(if((fault == 2 || fault==3) && bCount == 0) 2 else 0)
+        if(bPending)d.io.axi.aw.valid.expect(false) // Still a single-write engine.
         def fires(p: chisel3.util.DecoupledIO[_]): Boolean = p.valid.peek().litToBoolean && p.ready.peek().litToBoolean
         val cf = fires(d.io.command); val done = fires(d.io.completion)
         val ar = fires(d.io.axi.ar); val rr = fires(d.io.axi.r)
@@ -93,9 +106,15 @@ class AlphaPipelineSpec extends AnyFunSpec with StableChiselSim with Matchers {
           d.io.axi.ar.bits.addr.peek().litValue.toLong, d.io.axi.ar.bits.len.peek().litValue.toInt + 1)) else None
         val nextWrite = if(aw) Some((d.io.axi.aw.bits.addr.peek().litValue.toLong,
           d.io.axi.aw.bits.len.peek().litValue.toInt + 1)) else None
+        nextRead.foreach { r =>
+          if(r.id==1 && (1 until height).exists(y=>r.addr==((dst+y*dstStride)& ~3L)) && bPending) {
+            prefetchedRows+=1
+            if(fault==3)readBlockedUntil=elapsed+80 // Bad previous B arrives before these R beats.
+          }
+        }
         if(width > 64 && d.io.axi.ar.valid.peek().litToBoolean) {
           val address = d.io.axi.ar.bits.addr.peek().litValue.toLong
-          for(y <- 0 until height; base <- Seq(src,dst)
+          for(y <- 0 until height; (base,stride) <- Seq((src,srcStride),(dst,dstStride))
               if address == ((base+y*stride+128) & ~3L)) {
             withClue(s"early next-chunk AR at $address: ") {
               d.io.perfPixels.peek().litValue.toInt should be >= (y*width+64)
@@ -124,27 +143,32 @@ class AlphaPipelineSpec extends AnyFunSpec with StableChiselSim with Matchers {
         if(rr) { if(badR) readFaultSent=true; val r=reads.front; r.addr+=4; r.beats-=1; if(r.beats==0) reads.dequeue() }
         nextRead.foreach(reads.enqueue(_))
         if(bb) { bPending=false; bCount+=1 }
-        if(ww) { wCount+=1; writeAddr+=4; writeLeft-=1; if(writeLeft==0) bPending=true }
+        if(ww) { wCount+=1; writeAddr+=4; writeLeft-=1; if(writeLeft==0){bPending=true;bDue=elapsed+bDelay} }
         nextWrite.foreach { case(a,n) => awCount+=1; writeAddr=a; writeLeft=n }
       }
       withClue(s"pipeline=$enabled width=$width phase=$phase fault=$fault cached=$cached reads=${reads.size} writeLeft=$writeLeft bPending=$bPending elapsed=$elapsed: ") {
-        retired shouldBe 2
+        retired shouldBe commands
       }
       if(fault == 0) for(y <- 0 until height; x <- 0 until width)
-        half(dst+y*stride+x*2) shouldBe expected((y*width+x)%expected.size)
+        half(dst+y*dstStride+x*2) shouldBe (if(inPlace)fg((y*width+x)%fg.size) else expected((y*width+x)%expected.size))
       for(y <- 0 until height) {
-        half(dst+y*stride-2) shouldBe 0x5a5a
-        for(x <- 0 until 3) half(dst+y*stride+width*2+x*2) shouldBe 0x5a5a
+        if(dstStride>width*2) {
+          half(dst+y*dstStride-2) shouldBe 0x5a5a
+          for(x <- 0 until math.min(3,(dstStride-width*2)/2)) half(dst+y*dstStride+width*2+x*2) shouldBe 0x5a5a
+        }
       }
       half(dst+0x1000) shouldBe 0x1357
-      d.io.perfPixels.expect((if(fault == 0) width*height else width) + 1)
-      if(cached) d.io.perfCacheBytes.expect(68) // 16x2, stride38, source+2: 36+32.
+      if(recoverAlpha)half(dst+0x2000) shouldBe 0x800f
+      if(fault==3 && rowPrefetch)readBlockedUntil should be > 0 // Exercise R still stalled when bad B retires.
+      if(fault!=0 && rowPrefetch)awCount shouldBe commands // No abandoned lookahead row is written.
+      d.io.perfPixels.expect((if(fault == 0) width*height else width) + commands-1)
+      if(cached && width==16 && height==2 && !recoverAlpha)d.io.perfCacheBytes.expect(68)
       if(width == 16 && phase == 0 && fault == 0 && !cached) {
         // Identical work and bus traffic for both sides of the cycle comparison.
         d.io.perfReadBytes.expect(136); d.io.perfWriteBytes.expect(66)
         awCount shouldBe 3; wCount shouldBe 18; bCount shouldBe 3
       }
-      result = Some(Trace(elapsed, arTrace.toVector, awTrace.toVector, wTrace.toVector))
+      result = Some(Trace(elapsed, arTrace.toVector, awTrace.toVector, wTrace.toVector,prefetchedRows))
     }
     result.get
   }
@@ -173,5 +197,29 @@ class AlphaPipelineSpec extends AnyFunSpec with StableChiselSim with Matchers {
   }
   it("drains read/write failures and retires the following Fill without stale metadata") {
     for(enabled <- Seq(false,true); fault <- Seq(1,2)) run(enabled,3,2,true,fault)
+  }
+  it("row prefetch overlaps delayed B with next-row reads and preserves the same pixels and traffic") {
+    val old=run(true,12,0,false,cached=true,height=12,bDelay=24,sourceStride=24,destinationStride=1920)
+    val next=run(true,12,0,false,cached=true,rowPrefetch=true,height=12,bDelay=24,sourceStride=24,destinationStride=1920)
+    old.prefetchedRows shouldBe 0; next.prefetchedRows should be > 0
+    next.reads.groupBy(_._1) shouldBe old.reads.groupBy(_._1)
+    next.writes shouldBe old.writes; next.data shouldBe old.data
+    next.cycles should be < old.cycles
+    info(s"ALPHA_ROW_PREFETCH,legacy=${old.cycles},prefetch=${next.cycles}")
+  }
+  it("row prefetch drains failed lookahead and leaves the following Alpha clean") {
+    for(fault<-Seq(1,2,3,4,5))run(true,3,2,true,fault,cached=true,rowPrefetch=true,bDelay=24,recoverAlpha=true)
+    run(true,3,2,true,6,rowPrefetch=true,bDelay=24,recoverAlpha=true)
+    run(true,3,4094,true,rowPrefetch=true,bDelay=24,recoverAlpha=true)
+    run(true,12,2,true,cached=true,rowPrefetch=true,height=4,bDelay=24,sourceStride=24,destinationStride=1920,recoverAlpha=true)
+  }
+  it("row prefetch keeps wide and in-place Alpha on the original row schedule") {
+    run(true,65,2,true,rowPrefetch=true,bDelay=24).prefetchedRows shouldBe 0
+    run(true,3,2,true,rowPrefetch=true,bDelay=24,inPlace=true).prefetchedRows shouldBe 0
+  }
+  it("row-distinct cached prefetch preserves odd tails in both halfword phases") {
+    // Width13 shifts the literal six-color pattern each row; reusing a cached row must fail.
+    for(phase<-Seq(0,2))run(true,13,phase,true,cached=true,rowPrefetch=true,height=4,
+      bDelay=24,sourceStride=32,destinationStride=1920,recoverAlpha=true)
   }
 }
