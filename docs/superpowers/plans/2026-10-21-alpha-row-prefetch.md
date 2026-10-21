@@ -26,12 +26,12 @@ Interfaces: trailing enableAlphaRowPrefetch:Boolean=false; --alpha-row-prefetch 
 - [x] Add tests for12x12/pitch1920 cached row0/2 with delayed B: golden bytes and same ordered traces, next-row read before B, finite-delay faster. Add odd/noncache/4KiB and read/B/BID faults with stalled future R plus subsequent Alpha. Add wide/in-place fallback check. Additional width13 row-distinct cached check covers both phases.
 - [x] Run `testOnly gpu.AlphaPipelineSpec -- -z "row prefetch"`; missing build option RED observed.
 - [x] Implement eligible row advance, lookahead/error state, suppression of future unaccepted AW and complete read/write drain/abandoned buffer flush. Default branch unchanged.
-- [x] Run `testOnly gpu.AlphaPipelineSpec gpu.KeyWritePipelineSpec` and selected SmallCopy cached transition; 12+1 pass, additional row-distinct1 passes; no pixel/tag/error mismatch, observed prefetch and lower finite-delay cycles. Commit tested code locally.
+- [x] Run `testOnly gpu.AlphaPipelineSpec gpu.KeyWritePipelineSpec` and selected SmallCopy cached transition; 12+1 pass, additional row-distinct1 and packed-edge1 pass (15 unique); no pixel/tag/error mismatch, observed prefetch and lower finite-delay cycles. Commit tested code locally.
 
 ### Task2: physical and board decision
 
 Generated RTL/builds fresh; README.md and new evidence report. Consumes Task1 flag atop stable four-credit options, unchanged normal/probe/AXI BINs.
 
 - [x] Generate one-module/file RTL and isolated Efinity compile; final16 timing allpositive, routed CDC/resource gates pass. Core setup/hold +0.264/+0.003ns; XLR52866/RAM179/DSP37. Thin hold margin is not robustness certification.
-- [ ] With board available, same-BIN phase and1024 A/B/A, golden checks and normal3600 challenge/5s hold if viable. Expected identity/health gates, record negative FPS results too.
+- [x] With board available, same-BIN phase and1024 A/B/A and golden checks pass. Normal challenge attempted with unchanged BIN:2322/2321/2320/2319 long confirmations rejected,900s collector deadline exit1; no qualified result/5s hold claimed. Negative HTTP/exit evidence retained.
 - [ ] Restore selected normalMENU/release owner/stop JTAG; retain only measured gain, document exact hashes and limitations. One fresh review, no repeated reviewer, then seal/local commit; no push.
