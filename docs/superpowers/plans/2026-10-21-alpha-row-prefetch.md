@@ -34,4 +34,4 @@ Generated RTL/builds fresh; README.md and new evidence report. Consumes Task1 fl
 
 - [x] Generate one-module/file RTL and isolated Efinity compile; final16 timing allpositive, routed CDC/resource gates pass. Core setup/hold +0.264/+0.003ns; XLR52866/RAM179/DSP37. Thin hold margin is not robustness certification.
 - [x] With board available, same-BIN phase and1024 A/B/A and golden checks pass. Normal challenge attempted with unchanged BIN:2322/2321/2320/2319 long confirmations rejected,900s collector deadline exit1; no qualified result/5s hold claimed. Negative HTTP/exit evidence retained.
-- [ ] Restore selected normalMENU/release owner/stop JTAG; retain only measured gain, document exact hashes and limitations. One fresh review, no repeated reviewer, then seal/local commit; no push.
+- [x] Restore selected normalMENU/release owner/stop JTAG; retain only measured GPUgain, document hashes/limitations and unsuccessful challenge. One fresh review Critical0/Important0, two deferred test-hardening items, no rereview.142-entry archive verified, local commits only; no push.
