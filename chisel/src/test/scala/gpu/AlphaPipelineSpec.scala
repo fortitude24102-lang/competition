@@ -222,4 +222,8 @@ class AlphaPipelineSpec extends AnyFunSpec with StableChiselSim with Matchers {
     for(phase<-Seq(0,2))run(true,13,phase,true,cached=true,rowPrefetch=true,height=4,
       bDelay=24,sourceStride=32,destinationStride=1920,recoverAlpha=true)
   }
+  it("packed odd rows share edge words without prefetching stale neighboring pixels") {
+    for(phase<-Seq(0,2))run(true,13,phase,true,cached=true,rowPrefetch=true,height=4,
+      bDelay=24,sourceStride=26,destinationStride=26,recoverAlpha=true)
+  }
 }
