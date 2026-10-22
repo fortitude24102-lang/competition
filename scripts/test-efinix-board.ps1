@@ -33,6 +33,26 @@ foreach($ip in $project.SelectNodes('//e:ip',$ns)) {
  if(!(Test-Path -LiteralPath $full)){throw "Missing project IP settings: $full"}
  $ip.SetAttribute('path',$full.Replace('\','/'))
 }
+# The RTL generator is the single feature switch. Reject half-enabled sources
+# before creating a downloadable candidate, and use Efinity's native macro.
+$tops=@($project.SelectNodes('//e:design_file',$ns) | Where-Object {[IO.Path]::GetFileName($_.name) -match '^Efinix2dGpuTop\.(sv|v)$'})
+if($tops.Count -ne 1){throw 'Expected exactly one selected Efinix2dGpuTop source'}
+$topText=Get-Content -Raw -LiteralPath $tops[0].name
+$widePins=@('io_fabricReset','io_legacyDdr_w_bits_data','io_wideDdr_w_bits_data')
+$pinCount=@($widePins | Where-Object {$topText -match ('\b'+$_+'\b')}).Count
+if($pinCount -ne 0 -and $pinCount -ne 3){throw 'Incomplete native DDR interface on selected GPU'}
+$wideEnabled=$pinCount -eq 3
+$manifestPath=Join-Path (Split-Path $tops[0].name) 'gpu-build.json'
+if(Test-Path -LiteralPath $manifestPath) {
+ $manifest=Get-Content -Raw -LiteralPath $manifestPath | ConvertFrom-Json
+ if($manifest.wideCopyDma -isnot [bool] -or $manifest.wideCopyDma -ne $wideEnabled){throw 'GPU build manifest and native DDR ports disagree'}
+} elseif($wideEnabled){throw 'Native DDR ports require generator build manifest'}
+if(@($project.SelectNodes('//e:defmacro[@name="GPU_WIDE_COPY_DMA"]',$ns)).Count){throw 'Do not set native DMA macro separately from selected GPU RTL'}
+if($wideEnabled) {
+ $macro=$project.CreateElement('efx','defmacro',$ns.LookupNamespace('e'))
+ $macro.SetAttribute('name','GPU_WIDE_COPY_DMA');$macro.SetAttribute('value','1')
+ [void]$project.SelectSingleNode('//e:synthesis',$ns).AppendChild($macro)
+}
 $include=$project.SelectSingleNode('//e:param[@name="include"]',$ns)
 $includePaths=$include.value.Split(';') | ForEach-Object {
  [IO.Path]::GetFullPath((Join-Path $board $_)).Replace('\','/')

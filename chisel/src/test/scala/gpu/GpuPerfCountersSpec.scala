@@ -6,6 +6,19 @@ import org.scalatest.matchers.should.Matchers
 import testutil.StableChiselSim
 
 class GpuPerfCountersSpec extends AnyFunSpec with StableChiselSim with Matchers {
+  it("sums simultaneous native128 and legacy32 handshakes without truncating eight pixels or twenty bytes") {
+    simulate(new GpuPerfCounters(enableWide=true)) { d=>
+      d.io.clear.poke(false);d.io.active.poke(true);d.io.stalled.poke(true)
+      d.io.underflow.poke(false);d.io.renderGrant.poke(0);d.io.scanoutGrant.poke(0)
+      d.io.pixelCount.poke(2);d.io.readBeat.poke(true);d.io.writeStrobe.poke(15)
+      d.io.wideReadBeat.get.poke(true);d.io.wideWriteStrobe.get.poke(65535)
+      d.clock.step();d.io.pixels.expect(10);d.io.readBytes.expect(20);d.io.writeBytes.expect(20)
+      d.io.cycles.expect(1);d.io.stalls.expect(1)
+      d.io.clear.poke(true);d.clock.step();d.io.pixels.expect(0);d.io.readBytes.expect(0);d.io.writeBytes.expect(0)
+      d.io.clear.poke(false);d.io.pixelCount.poke(0);d.io.readBeat.poke(false);d.io.writeStrobe.poke(0)
+      d.clock.step();d.io.pixels.expect(8);d.io.readBytes.expect(16);d.io.writeBytes.expect(16)
+    }
+  }
   it("counts active cycles, completed pixels, AXI bytes, stalls, underflows, and DDR grants") {
     simulate(new GpuPerfCounters) { dut =>
       dut.io.clear.poke(false)

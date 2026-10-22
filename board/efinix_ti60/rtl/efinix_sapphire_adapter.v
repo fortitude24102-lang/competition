@@ -329,6 +329,22 @@ assign gpu_stream_reset = !sys_rst | gpu_reset;
 
 assign sys_rst       = pll_locked & user_pll_locked;
 
+// The build script derives this macro from the selected generated GPU interface.
+// Legacy mode keeps the original SoC -> DDR direct wires without a mux stage.
+`ifdef GPU_WIDE_COPY_DMA
+  wire [AXI_ID_WIDTH-1:0] wide_awid, wide_bid, wide_arid, wide_rid;
+  wire [31:0] wide_awaddr, wide_araddr;
+  wire [7:0] wide_awlen, wide_arlen;
+  wire [2:0] wide_awsize, wide_arsize, wide_awprot, wide_arprot;
+  wire [1:0] wide_awburst, wide_arburst, wide_bresp, wide_rresp;
+  wire wide_awlock, wide_arlock;
+  wire [3:0] wide_awcache, wide_arcache, wide_awqos, wide_arqos;
+  wire wide_awvalid, wide_awready, wide_wvalid, wide_wready, wide_wlast;
+  wire wide_bvalid, wide_bready, wide_arvalid, wide_arready, wide_rvalid, wide_rready, wide_rlast;
+  wire [AXI_DATA_WIDTH-1:0] wide_wdata, wide_rdata;
+  wire [(AXI_DATA_WIDTH/8)-1:0] wide_wstrb;
+`endif
+
 //***************************************************************************
 ddr3_top #(.AXI_ID_WIDTH(AXI_ID_WIDTH)) u_ddr3_top
       (
@@ -381,6 +397,21 @@ ddr3_top #(.AXI_ID_WIDTH(AXI_ID_WIDTH)) u_ddr3_top
        .app_zq_ack                     (app_zq_ack),
 
 // Slave Interface Write Address Ports
+`ifdef GPU_WIDE_COPY_DMA
+       .s_axi_awid(wide_awid), .s_axi_awaddr(wide_awaddr[AXI_ADDR_WIDTH-1:0]),
+       .s_axi_awlen(wide_awlen), .s_axi_awsize(wide_awsize), .s_axi_awburst(wide_awburst),
+       .s_axi_awlock(wide_awlock), .s_axi_awcache(wide_awcache), .s_axi_awprot(wide_awprot),
+       .s_axi_awqos(wide_awqos), .s_axi_awvalid(wide_awvalid), .s_axi_awready(wide_awready),
+       .s_axi_wdata(wide_wdata), .s_axi_wstrb(wide_wstrb), .s_axi_wlast(wide_wlast),
+       .s_axi_wvalid(wide_wvalid), .s_axi_wready(wide_wready),
+       .s_axi_bid(wide_bid), .s_axi_bresp(wide_bresp), .s_axi_bvalid(wide_bvalid), .s_axi_bready(wide_bready),
+       .s_axi_arid(wide_arid), .s_axi_araddr(wide_araddr[AXI_ADDR_WIDTH-1:0]),
+       .s_axi_arlen(wide_arlen), .s_axi_arsize(wide_arsize), .s_axi_arburst(wide_arburst),
+       .s_axi_arlock(wide_arlock), .s_axi_arcache(wide_arcache), .s_axi_arprot(wide_arprot),
+       .s_axi_arqos(wide_arqos), .s_axi_arvalid(wide_arvalid), .s_axi_arready(wide_arready),
+       .s_axi_rid(wide_rid), .s_axi_rdata(wide_rdata), .s_axi_rresp(wide_rresp),
+       .s_axi_rvalid(wide_rvalid), .s_axi_rready(wide_rready), .s_axi_rlast(wide_rlast),
+`else
        .s_axi_awid                     (s_axi_awid        ),
        .s_axi_awaddr                   (s_axi_awaddr      ),
        .s_axi_awlen                    (s_axi_awlen       ),
@@ -422,6 +453,7 @@ ddr3_top #(.AXI_ID_WIDTH(AXI_ID_WIDTH)) u_ddr3_top
        .s_axi_rlast                    (s_axi_rlast       ),
        .s_axi_rvalid                   (s_axi_rvalid      ),
        .s_axi_rready                   (s_axi_rready      ),
+`endif
 //DEBUG       
        .wrlvl_dq_check                 (wrlvl_dq_check    ) ,
        .rd_level_dqs_check             (rd_level_dqs_check) ,
@@ -470,6 +502,46 @@ efinix_network_subsystem u_asset_network (
 Efinix2dGpuTop u_efinix_2d_gpu (
     .clock                     (user_clk),
     .reset                     (gpu_stream_reset),
+`ifdef GPU_WIDE_COPY_DMA
+    // COMMON DDR reset, not the GPU/CPU debug reset: preserve outstanding DDR.
+    .io_fabricReset(!ddr_rstn),
+    .io_legacyDdr_aw_valid(s_axi_awvalid), .io_legacyDdr_aw_ready(s_axi_awready),
+    .io_legacyDdr_aw_bits_addr({{(32-AXI_ADDR_WIDTH){1'b0}},s_axi_awaddr}),
+    .io_legacyDdr_aw_bits_id(s_axi_awid), .io_legacyDdr_aw_bits_len(s_axi_awlen),
+    .io_legacyDdr_aw_bits_size(s_axi_awsize), .io_legacyDdr_aw_bits_burst(s_axi_awburst),
+    .io_legacyDdr_aw_bits_lock(s_axi_awlock), .io_legacyDdr_aw_bits_cache(4'b0),
+    .io_legacyDdr_aw_bits_prot(3'b0), .io_legacyDdr_aw_bits_qos(4'b0), .io_legacyDdr_aw_bits_region(4'b0),
+    .io_legacyDdr_w_valid(s_axi_wvalid), .io_legacyDdr_w_ready(s_axi_wready),
+    .io_legacyDdr_w_bits_data(s_axi_wdata), .io_legacyDdr_w_bits_strb(s_axi_wstrb), .io_legacyDdr_w_bits_last(s_axi_wlast),
+    .io_legacyDdr_b_valid(s_axi_bvalid), .io_legacyDdr_b_ready(s_axi_bready),
+    .io_legacyDdr_b_bits_id(s_axi_bid), .io_legacyDdr_b_bits_resp(s_axi_bresp),
+    .io_legacyDdr_ar_valid(s_axi_arvalid), .io_legacyDdr_ar_ready(s_axi_arready),
+    .io_legacyDdr_ar_bits_addr({{(32-AXI_ADDR_WIDTH){1'b0}},s_axi_araddr}),
+    .io_legacyDdr_ar_bits_id(s_axi_arid), .io_legacyDdr_ar_bits_len(s_axi_arlen),
+    .io_legacyDdr_ar_bits_size(s_axi_arsize), .io_legacyDdr_ar_bits_burst(s_axi_arburst),
+    .io_legacyDdr_ar_bits_lock(s_axi_arlock), .io_legacyDdr_ar_bits_cache(4'b0),
+    .io_legacyDdr_ar_bits_prot(3'b0), .io_legacyDdr_ar_bits_qos(4'b0), .io_legacyDdr_ar_bits_region(4'b0),
+    .io_legacyDdr_r_valid(s_axi_rvalid), .io_legacyDdr_r_ready(s_axi_rready),
+    .io_legacyDdr_r_bits_id(s_axi_rid), .io_legacyDdr_r_bits_data(s_axi_rdata),
+    .io_legacyDdr_r_bits_resp(s_axi_rresp), .io_legacyDdr_r_bits_last(s_axi_rlast),
+    .io_wideDdr_aw_valid(wide_awvalid), .io_wideDdr_aw_ready(wide_awready),
+    .io_wideDdr_aw_bits_addr(wide_awaddr), .io_wideDdr_aw_bits_id(wide_awid),
+    .io_wideDdr_aw_bits_len(wide_awlen), .io_wideDdr_aw_bits_size(wide_awsize), .io_wideDdr_aw_bits_burst(wide_awburst),
+    .io_wideDdr_aw_bits_lock(wide_awlock), .io_wideDdr_aw_bits_cache(wide_awcache),
+    .io_wideDdr_aw_bits_prot(wide_awprot), .io_wideDdr_aw_bits_qos(wide_awqos), .io_wideDdr_aw_bits_region(),
+    .io_wideDdr_w_valid(wide_wvalid), .io_wideDdr_w_ready(wide_wready),
+    .io_wideDdr_w_bits_data(wide_wdata), .io_wideDdr_w_bits_strb(wide_wstrb), .io_wideDdr_w_bits_last(wide_wlast),
+    .io_wideDdr_b_valid(wide_bvalid), .io_wideDdr_b_ready(wide_bready),
+    .io_wideDdr_b_bits_id(wide_bid), .io_wideDdr_b_bits_resp(wide_bresp),
+    .io_wideDdr_ar_valid(wide_arvalid), .io_wideDdr_ar_ready(wide_arready),
+    .io_wideDdr_ar_bits_addr(wide_araddr), .io_wideDdr_ar_bits_id(wide_arid),
+    .io_wideDdr_ar_bits_len(wide_arlen), .io_wideDdr_ar_bits_size(wide_arsize), .io_wideDdr_ar_bits_burst(wide_arburst),
+    .io_wideDdr_ar_bits_lock(wide_arlock), .io_wideDdr_ar_bits_cache(wide_arcache),
+    .io_wideDdr_ar_bits_prot(wide_arprot), .io_wideDdr_ar_bits_qos(wide_arqos), .io_wideDdr_ar_bits_region(),
+    .io_wideDdr_r_valid(wide_rvalid), .io_wideDdr_r_ready(wide_rready),
+    .io_wideDdr_r_bits_id(wide_rid), .io_wideDdr_r_bits_data(wide_rdata),
+    .io_wideDdr_r_bits_resp(wide_rresp), .io_wideDdr_r_bits_last(wide_rlast),
+`endif
     .io_apb_paddr              (gpu_apb_paddr),
     .io_apb_psel               (gpu_apb_psel && !network_select),
     .io_apb_penable            (gpu_apb_penable),

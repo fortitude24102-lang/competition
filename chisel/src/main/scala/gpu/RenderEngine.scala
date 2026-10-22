@@ -15,7 +15,7 @@ class RenderEngine(enableCopyStream: Boolean = true, countFrontend: Boolean = fa
   enableKeyRowTrim: Boolean = false, enableTransformBlit: Boolean = false,
   enableAlphaPipeline: Boolean = false, enableKeyWritePipeline: Boolean = false,
   enableSmallCopyPrefetch: Boolean = false, writeCredits: Int = 2,
-  enableAlphaRowPrefetch: Boolean = false) extends Module {
+  enableAlphaRowPrefetch: Boolean = false, enableWideCopyDma: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val command = Flipped(Decoupled(new GpuCommand))
     val vblank = Input(Bool())
@@ -26,6 +26,8 @@ class RenderEngine(enableCopyStream: Boolean = true, countFrontend: Boolean = fa
     val textureCacheLoad = Flipped(Valid(new TextureCacheLoad))
     val textureCacheInvalidate = Input(Bool())
     val axi = new Axi4MasterPort
+    val fabricReset = if(enableWideCopyDma) Some(Input(Bool())) else None
+    val wideAxi = if(enableWideCopyDma) Some(new Axi128MasterPort) else None
     val completion = Decoupled(new GpuCompletion)
     val busy = Output(Bool())
     val queueLevel = Output(UInt(5.W))
@@ -55,17 +57,24 @@ class RenderEngine(enableCopyStream: Boolean = true, countFrontend: Boolean = fa
   private val blit = Module(new DenseBlitEngine(enableCopyStream, enableKeyPrefetch, enableCopyBurstBuffer, enableKeyRowTrim, enableAlphaPipeline,enableKeyWritePipeline,enableSmallCopyPrefetch,writeCredits,enableAlphaRowPrefetch))
   private val transform = if(enableTransformBlit) Some(Module(new TransformBlitEngine)) else None
   private val transformIdle = transform.map(_.io.command.ready).getOrElse(true.B)
+  private val wide = if(enableWideCopyDma) Some(withReset(io.fabricReset.get) { Module(new WideCopyDma) }) else None
+  private val wideIdle = wide.map(_.io.request.ready).getOrElse(true.B)
+  private val recovering = wide.map(_.io.recovering).getOrElse(false.B)
   private val sparse = Module(new SparseBlitEngine)
   private val swap = Module(new FrameSwapController)
   private val pixel = Module(new PixelPipeHarness)
-  private val perf = Module(new GpuPerfCounters)
-  private val completions = Module(new Arbiter(new GpuCompletion, if(enableTransformBlit) 5 else 4))
+  private val perf = Module(new GpuPerfCounters(enableWide=enableWideCopyDma))
+  private val completions = Module(new Arbiter(new GpuCompletion, 4+(if(enableTransformBlit)1 else 0)+(if(enableWideCopyDma)1 else 0)))
   private val completionGap = RegInit(false.B)
   private val headValidated = RegInit(false.B)
   private val headCommand = Reg(new GpuCommand)
   private val headError = Reg(UInt(8.W))
 
   queue.io.enq <> io.command
+  if(enableWideCopyDma) {
+    queue.io.enq.valid := io.command.valid && !recovering
+    io.command.ready := queue.io.enq.ready && !recovering
+  }
   validator.io.command := queue.io.deq.bits
   when(queue.io.deq.valid && !headValidated) {
     headCommand := queue.io.deq.bits
@@ -82,8 +91,14 @@ class RenderEngine(enableCopyStream: Boolean = true, countFrontend: Boolean = fa
   private val sparseOp = headCommand.op === GpuOpcode.Sparse.U
   private val transformOp = if(enableTransformBlit) headCommand.op === GpuOpcode.Transform.U else false.B
   private val rejected = headError =/= GpuError.None.U || !(dense || sparseOp || present || transformOp)
+  private val wideRowBytes = headCommand.widthPixels << 1
+  private val wideBytes = (headCommand.widthPixels * headCommand.heightPixels) << 1
+  private val wideEligible = enableWideCopyDma.B && headCommand.op===GpuOpcode.Copy.U &&
+    !headCommand.srcAddr(3,0).orR && !headCommand.dstAddr(3,0).orR &&
+    headCommand.srcStride===wideRowBytes && headCommand.dstStride===wideRowBytes &&
+    wideBytes>=4096.U && wideBytes<="hffffffff".U && !wideBytes(3,0).orR
 
-  private val engineIdle = blit.io.command.ready && sparse.io.command.ready && swap.io.present.ready && transformIdle
+  private val engineIdle = blit.io.command.ready && sparse.io.command.ready && swap.io.present.ready && transformIdle && wideIdle
   completions.io.in(0).valid := headValid && rejected && engineIdle && !completionGap
   completions.io.in(0).bits.tag := headCommand.tag
   completions.io.in(0).bits.error := Mux(
@@ -92,19 +107,27 @@ class RenderEngine(enableCopyStream: Boolean = true, countFrontend: Boolean = fa
     headError
   )
 
-  blit.io.command.valid := headValid && dense && headError === GpuError.None.U &&
-    sparse.io.command.ready && swap.io.present.ready && transformIdle && !completionGap
+  blit.io.command.valid := headValid && dense && !wideEligible && headError === GpuError.None.U &&
+    sparse.io.command.ready && swap.io.present.ready && transformIdle && wideIdle && !completionGap
   blit.io.command.bits := headCommand
   sparse.io.command.valid := headValid && sparseOp && headError === GpuError.None.U &&
-    blit.io.command.ready && swap.io.present.ready && transformIdle && !completionGap
+    blit.io.command.ready && swap.io.present.ready && transformIdle && wideIdle && !completionGap
   sparse.io.command.bits := headCommand
   swap.io.present.valid := headValid && present && headError === GpuError.None.U &&
-    blit.io.command.ready && sparse.io.command.ready && transformIdle && !completionGap
+    blit.io.command.ready && sparse.io.command.ready && transformIdle && wideIdle && !completionGap
   swap.io.present.bits := headCommand
   transform.foreach { t =>
     t.io.command.valid := headValid && transformOp && headError === GpuError.None.U &&
-      blit.io.command.ready && sparse.io.command.ready && swap.io.present.ready && !completionGap
+      blit.io.command.ready && sparse.io.command.ready && swap.io.present.ready && wideIdle && !completionGap
     t.io.command.bits := headCommand
+  }
+  wide.foreach { w=>
+    w.io.abort := reset.asBool
+    w.io.axi <> io.wideAxi.get
+    w.io.request.valid := headValid && wideEligible && !rejected &&
+      blit.io.command.ready && sparse.io.command.ready && swap.io.present.ready && transformIdle && !completionGap
+    w.io.request.bits.srcAddr := headCommand.srcAddr;w.io.request.bits.dstAddr := headCommand.dstAddr
+    w.io.request.bits.bytes := wideBytes;w.io.request.bits.tag := headCommand.tag
   }
   private val headReady = Mux(
     rejected,
@@ -129,6 +152,12 @@ class RenderEngine(enableCopyStream: Boolean = true, countFrontend: Boolean = fa
     completions.io.in(4).valid := t.io.completion.valid && !completionGap
     completions.io.in(4).bits := t.io.completion.bits
     t.io.completion.ready := completions.io.in(4).ready && !completionGap
+  }
+  wide.foreach { w=>
+    val index=if(enableTransformBlit)5 else 4
+    completions.io.in(index).valid := w.io.completion.valid && !completionGap
+    completions.io.in(index).bits := w.io.completion.bits
+    w.io.completion.ready := completions.io.in(index).ready && !completionGap && !reset.asBool
   }
   io.completion <> completions.io.out
   completionGap := io.completion.fire
@@ -191,7 +220,7 @@ class RenderEngine(enableCopyStream: Boolean = true, countFrontend: Boolean = fa
   }
 
   io.busy := !queue.io.empty || headValidated || !blit.io.command.ready || sparse.io.busy ||
-    swap.io.pending || io.completion.valid || !transformIdle
+    swap.io.pending || io.completion.valid || !transformIdle || !wideIdle
   private val axiStalled =
     (io.axi.aw.valid && !io.axi.aw.ready) ||
       (io.axi.w.valid && !io.axi.w.ready) ||
@@ -207,7 +236,15 @@ class RenderEngine(enableCopyStream: Boolean = true, countFrontend: Boolean = fa
     (blit.io.pixelResult.fire || sparse.io.pixelDone || transform.map(_.io.pixelDone).getOrElse(false.B)).asUInt)
   perf.io.readBeat := io.axi.r.fire || io.frontend.map(_.readBeat).getOrElse(false.B)
   perf.io.writeStrobe := Mux(io.axi.w.fire, io.axi.w.bits.strb, 0.U)
-  perf.io.stalled := (io.busy && (axiStalled || pixelStalled)) || io.frontend.map(_.stalled).getOrElse(false.B)
+  wide.foreach { w=>
+    perf.io.wideReadBeat.get := w.io.axi.r.fire
+    perf.io.wideWriteStrobe.get := Mux(w.io.axi.w.fire,w.io.axi.w.bits.strb,0.U)
+  }
+  private val wideStalled = wide.map(w=>
+    (w.io.axi.ar.valid && !w.io.axi.ar.ready) || (w.io.axi.r.valid && !w.io.axi.r.ready) ||
+    (w.io.axi.aw.valid && !w.io.axi.aw.ready) || (w.io.axi.w.valid && !w.io.axi.w.ready) ||
+    (w.io.axi.b.valid && !w.io.axi.b.ready)).getOrElse(false.B)
+  perf.io.stalled := (io.busy && (axiStalled || pixelStalled || wideStalled)) || io.frontend.map(_.stalled).getOrElse(false.B)
   perf.io.underflow := io.underflowPulse
   perf.io.renderGrant := io.renderGrant
   perf.io.scanoutGrant := io.scanoutGrant

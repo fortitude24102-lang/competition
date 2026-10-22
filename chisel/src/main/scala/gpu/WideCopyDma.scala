@@ -13,6 +13,7 @@ class WideCopyDma extends Module {
     val axi = new Axi128MasterPort
     val abort = Input(Bool())
     val busy = Output(Bool())
+    val recovering = Output(Bool())
   })
   private val free :: reading :: full :: committed :: Nil = Enum(4)
   private val state = RegInit(VecInit(Seq.fill(2)(free)))
@@ -50,6 +51,7 @@ class WideCopyDma extends Module {
   io.completion.bits.tag := tag
   io.completion.bits.error := error
   io.busy := active || done
+  io.recovering := io.abort || (aborted && active)
   when(io.completion.fire || io.abort) { done := false.B }
   when(io.abort && active) { aborted := true.B }
 

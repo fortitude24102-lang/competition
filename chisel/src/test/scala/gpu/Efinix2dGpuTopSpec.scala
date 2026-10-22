@@ -72,12 +72,49 @@ class Efinix2dGpuTopSpec extends AnyFunSpec with StableChiselSim with Matchers {
     dut.io.axi.ar.ready.poke(true.B)
     dut.io.axi.r.valid.poke(false.B)
     dut.io.axi.r.bits.poke(0.U.asTypeOf(new Axi4ReadData))
+    dut.io.legacyDdr.foreach { p=>
+      p.ar.valid.poke(false);p.ar.bits.poke(0.U.asTypeOf(new Axi128Address))
+      p.aw.valid.poke(false);p.aw.bits.poke(0.U.asTypeOf(new Axi128Address))
+      p.w.valid.poke(false);p.w.bits.poke(0.U.asTypeOf(new Axi128WriteData))
+      p.r.ready.poke(true);p.b.ready.poke(true)
+    }
+    dut.io.wideDdr.foreach { p=>
+      p.ar.ready.poke(true);p.aw.ready.poke(true);p.w.ready.poke(true)
+      p.r.valid.poke(false);p.r.bits.poke(0.U.asTypeOf(new Axi128ReadData))
+      p.b.valid.poke(false);p.b.bits.poke(0.U.asTypeOf(new Axi128WriteResponse))
+    }
+    dut.io.fabricReset.foreach(_.poke(true))
     dut.reset.poke(true.B)
     dut.clock.step(2)
     dut.reset.poke(false.B)
+    dut.io.fabricReset.foreach(_.poke(false))
   }
 
   describe("Efinix2dGpuTop") {
+    it("preserves official SoC DDR responses across GPU-only reset but clears them on common DDR reset") {
+      simulate(new Efinix2dGpuTop(enableWideCopyDma=true)) { d=>
+        initialize(d)
+        val old=d.io.legacyDdr.get;val bus=d.io.wideDdr.get
+        old.ar.valid.poke(true);old.ar.bits.addr.poke(0x2000000);old.ar.bits.id.poke(0x89)
+        old.ar.bits.len.poke(0);old.ar.bits.size.poke(4);old.ar.bits.burst.poke(1)
+        old.ar.ready.expect(true);d.clock.step();old.ar.valid.poke(false)
+        old.aw.valid.poke(true);old.aw.bits.addr.poke(0x2000100);old.aw.bits.id.poke(0xab)
+        old.aw.bits.len.poke(0);old.aw.bits.size.poke(4);old.aw.bits.burst.poke(1)
+        old.aw.ready.expect(true);d.clock.step();old.aw.valid.poke(false)
+        old.w.valid.poke(true);old.w.bits.data.poke(0x12345678);old.w.bits.strb.poke(65535);old.w.bits.last.poke(true)
+        old.w.ready.expect(true);d.clock.step();old.w.valid.poke(false)
+        d.reset.poke(true);d.clock.step(3) // fabric reset remains LOW
+        bus.r.valid.poke(true);bus.r.bits.id.poke(0x89);bus.r.bits.last.poke(true);bus.r.bits.data.poke(0xabcdef)
+        bus.b.valid.poke(true);bus.b.bits.id.poke(0xab)
+        old.r.valid.expect(true);old.r.bits.id.expect(0x89);old.r.bits.data.expect(0xabcdef)
+        old.b.valid.expect(true);old.b.bits.id.expect(0xab)
+        d.clock.step();bus.r.valid.poke(false);bus.b.valid.poke(false);d.reset.poke(false);d.clock.step()
+        old.ar.valid.poke(true);d.clock.step();old.ar.valid.poke(false)
+        d.io.fabricReset.get.poke(true);d.clock.step();d.io.fabricReset.get.poke(false)
+        bus.r.valid.poke(true);old.r.valid.expect(false);bus.r.ready.expect(false)
+        bus.r.valid.poke(false)
+      }
+    }
     it("refills through the high watermark while Render, Scanout and Asset share DDR") {
       simulate(new Efinix2dGpuTop) { dut =>
         initialize(dut)

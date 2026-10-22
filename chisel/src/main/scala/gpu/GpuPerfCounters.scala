@@ -4,13 +4,15 @@ import chisel3._
 import chisel3.util.PopCount
 
 /** Free-running render, DDR arbitration, and display-underflow counters. */
-class GpuPerfCounters(initialValue: BigInt = 0) extends Module {
+class GpuPerfCounters(initialValue: BigInt = 0, enableWide: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val clear = Input(Bool())
     val active = Input(Bool())
     val pixelCount = Input(UInt(2.W))
     val readBeat = Input(Bool())
     val writeStrobe = Input(UInt(4.W))
+    val wideReadBeat = if(enableWide) Some(Input(Bool())) else None
+    val wideWriteStrobe = if(enableWide) Some(Input(UInt(16.W))) else None
     val stalled = Input(Bool())
     val underflow = Input(Bool())
     val renderGrant = Input(UInt(2.W))
@@ -45,9 +47,14 @@ class GpuPerfCounters(initialValue: BigInt = 0) extends Module {
     scanoutGrants := 0.U
   }.otherwise {
     when(io.active) { cycles := cycles + 1.U }
-    when(io.pixelCount.orR) { pixels := pixels + io.pixelCount }
-    when(io.readBeat) { readBytes := readBytes + 4.U }
-    when(io.writeStrobe.orR) { writeBytes := writeBytes + PopCount(io.writeStrobe) }
+    val wideBytes = io.wideWriteStrobe.map(PopCount(_)).getOrElse(0.U(5.W))
+    val pixelIncrement = io.pixelCount +& (wideBytes >> 1)
+    val readIncrement = Mux(io.readBeat,4.U(5.W),0.U) +&
+      Mux(io.wideReadBeat.getOrElse(false.B),16.U(5.W),0.U)
+    val writeIncrement = PopCount(io.writeStrobe) +& wideBytes
+    when(pixelIncrement.orR) { pixels := pixels + pixelIncrement }
+    when(readIncrement.orR) { readBytes := readBytes + readIncrement }
+    when(writeIncrement.orR) { writeBytes := writeBytes + writeIncrement }
     when(io.stalled) { stalls := stalls + 1.U }
     when(io.underflow) { underflows := underflows + 1.U }
     when(io.renderGrant.orR) { renderGrants := renderGrants + io.renderGrant }

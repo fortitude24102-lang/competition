@@ -21,11 +21,17 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   enableTransformBlit: Boolean = false, enableAlphaPipeline: Boolean = false,
   enableAxiDiagnostics: Boolean = false, enableKeyWritePipeline: Boolean = false,
   enableExtendedListArena: Boolean = false, enableSmallCopyPrefetch: Boolean = false,
-  writeCredits: Int = 2, enableAlphaRowPrefetch: Boolean = false) extends Module {
+  writeCredits: Int = 2, enableAlphaRowPrefetch: Boolean = false,
+  enableWideCopyDma: Boolean = false) extends Module {
   require(!enableExtendedListArena || enableFrameLists, "Extended list arena requires frame lists")
+  require(!(enableStripeScratchpad && enableWideCopyDma),
+    "Wide Copy DMA cannot bypass the narrow-only stripe scratchpad")
   val io = IO(new Bundle {
     val apb = new ApbSlavePort
     val axi = new Axi4MasterPort
+    val fabricReset = if(enableWideCopyDma) Some(Input(Bool())) else None
+    val legacyDdr = if(enableWideCopyDma) Some(Flipped(new Axi128MasterPort)) else None
+    val wideDdr = if(enableWideCopyDma) Some(new Axi128MasterPort) else None
     val vblank = Input(Bool())
     val scanoutLevel = Input(UInt(12.W))
     val underflow_pulse_gpu = Input(Bool())
@@ -52,7 +58,7 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   private val assetRegs = Module(new AssetDmaRegs)
   private val assetWriter = Module(new AssetDmaWriter)
   private val render = Module(new RenderEngine(enableCopyStream,enableFrameLists,enableKeyPrefetch,enableCopyBurstBuffer,
-    enableKeyRowTrim,enableTransformBlit,enableAlphaPipeline,enableKeyWritePipeline,enableSmallCopyPrefetch,writeCredits,enableAlphaRowPrefetch))
+    enableKeyRowTrim,enableTransformBlit,enableAlphaPipeline,enableKeyWritePipeline,enableSmallCopyPrefetch,writeCredits,enableAlphaRowPrefetch,enableWideCopyDma))
   private val scanout = Module(new ScanoutDma(enableWordPipeline=enableScanoutWordPipeline))
   private val ddr = Module(new DdrQosArbiter(enableDiagnostics=enableAxiDiagnostics,
     enableWritePipeline=enableKeyWritePipeline,writeCredits=writeCredits))
@@ -238,6 +244,14 @@ class Efinix2dGpuTop(enableCopyStream: Boolean = true, enableInstances: Boolean 
   // An empty FIFO before the first frame is not a scanout emergency.
   ddr.io.adaptiveEnable := regs.io.qosAdaptiveEnable && scanoutEverEnabled
   io.axi <> ddr.io.axi
+  if(enableWideCopyDma) {
+    render.io.fabricReset.get := io.fabricReset.get
+    val fabric=withReset(io.fabricReset.get) { Module(new WideDdrMux) }
+    fabric.io.legacy <> io.legacyDdr.get
+    fabric.io.native <> render.io.wideAxi.get
+    io.wideDdr.get <> fabric.io.ddr
+    fabric.io.emergency := ddr.io.scanoutPriority || reset.asBool
+  }
 
   when(render.io.swapPending) { scanoutStarted := true.B }
   scanout.io.enable := scanoutStarted && !render.io.swapPending

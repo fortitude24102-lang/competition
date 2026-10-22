@@ -8,6 +8,7 @@ param(
  [switch]$LegacyValidation,
  [switch]$ShadowSubmit,
  [switch]$FullSubmit,
+ [switch]$WideCopyAligned,
  [ValidateSet(256,512)][int]$LiveTarget=512,
  [switch]$LiveControl,
  [switch]$LiveSplit,
@@ -15,6 +16,7 @@ param(
 )
 $ErrorActionPreference='Stop'
 if($Test -eq 'axi-phases' -and !$OutDirectory) {throw 'AXI phase diagnostic requires fresh OutDirectory'}
+if($WideCopyAligned -and ($Test -ne 'copy-stream' -or !$OutDirectory)){throw 'WideCopyAligned requires copy-stream and fresh OutDirectory'}
 if($Test -eq 'performance-trace' -and !$OutDirectory) {throw 'Performance trace requires fresh OutDirectory'}
 if($Test -eq 'live-phases' -and !$OutDirectory) {throw 'Live phase diagnostic requires fresh OutDirectory'}
 if(($LiveControl -or $LiveSplit) -and $Test -ne 'live-phases') {throw 'Live options require live-phases'}
@@ -109,6 +111,7 @@ try {
   'zoom' {'sw/efinix_gpu/tests/test_board_zoom.c'}
  }
  [string[]]$probeFlags=@()
+ if($WideCopyAligned){$probeFlags+=@('-DCOPY_BOARD_SOURCE_BASE=0x02400ff0u','-DCOPY_BOARD_DEST_BASE=0x02600fe0u')}
  if($InstanceExpandProbe) { $probeFlags=@('-DINSTANCE_EXPAND_PROBE=1') }
  if($ValidationCohort) {$probeFlags+='-DRENDER_VALIDATION_COHORT=1'}
  if($Test -eq 'qos-sweep') {$probeFlags+=@('-DRENDER_VALIDATION_COHORT=1','-DRENDER_QOS_SWEEP=1')}

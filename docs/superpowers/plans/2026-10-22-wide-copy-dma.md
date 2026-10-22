@@ -14,6 +14,7 @@
 
 - Existing isolated worktree and official SoC/DDR source remain unchanged. One emitted HDL module per file.
 - Default `enableWideCopyDma=false`, CLI `--wide-copy-dma`; flag off preserves direct DDR wiring.
+- Native DMA cannot be combined with the narrow-only StripeScratchpad; reject at elaboration (independent review fix, no change to the stripe-disabled candidate).
 - Copy only, >=4096 bytes, continuous RGB565, aligned16, length multiple16, disjoint validated DDR intervals. Ineligible commands fall back before new transactions.
 - SIZE4, INCR, <=64 beats, source and destination 4KiB split; two 1KiB banks, <=2 native reads/writes outstanding, complete bank before AW.
 - No owner switch with outstanding responses/address promises/unfinished W. Legacy credits16, native turn<=2; emergency protects display and cancels uncommitted native switch.
@@ -37,10 +38,10 @@
 
 **Interfaces:** `Axi128MasterPort` uses32-bit addresses,8-bit IDs,128-bit data/16-bit strobes and existing AXI attributes. `WideCopyRequest(srcAddr:UInt32,dstAddr:UInt32,bytes:UInt32,tag:UInt16)`. `WideCopyDma.io`: request Flipped Decoupled, completion Decoupled GpuCompletion, axi Axi128MasterPort, abort Input Bool, busy Output Bool. It is instantiated under common reset, not GPU reset. No optional functionality in this backend.
 
-- [ ] Write byte-accurate memory test with random channel stalls, delayed B, 4KiB offsets on both ends, bank reuse, stable VALID/data and no early completion. Assert SIZE4, INCR, <=64 beats and <=2 in flight, exact bytes+guards. Add finite protocol faults (R/B response, IDs, early/missing RLAST marker at expected count), abort at each channel promise and next request recovery.
-- [ ] Run `scripts/test-v3-gpu.ps1 -Suite gpu.WideCopyDmaSpec -LogPath <fresh>`; Expected RED missing new class. Record output.
-- [ ] Implement fixed two-bank SyncReadMem backend, independent read and write progress, stable pending addresses, bank held until B, error/abort drain; no general DMA library.
-- [ ] Same suite Expected PASS, all stated data/protocol assertions pass. Commit task and ledger actual command/result.
+- [x] Write byte-accurate memory test with random channel stalls, delayed B, 4KiB offsets on both ends, bank reuse, stable VALID/data and no early completion. Assert SIZE4, INCR, <=64 beats and <=2 in flight, exact bytes+guards. Add finite protocol faults (R/B response, IDs, early/missing RLAST marker at expected count), abort at each channel promise and next request recovery.
+- [x] Run `scripts/test-v3-gpu.ps1 -Suite gpu.WideCopyDmaSpec -LogPath <fresh>`; Expected RED missing new class. Record output.
+- [x] Implement fixed two-bank SyncReadMem backend, independent read and write progress, stable pending addresses, bank held until B, error/abort drain; no general DMA library.
+- [x] Same suite Expected PASS, all stated data/protocol assertions pass. Commit task and ledger actual command/result.
 
 ### Task 2: Fixed two-master DDR arbitration
 
@@ -48,10 +49,10 @@
 
 **Interfaces:** consumes Axi128 types; produces `WideDdrMux.io.legacy/native` Flipped Axi128MasterPort, `ddr` Axi128MasterPort, `emergency` Input Bool. Common reset only. No hidden ID tagging.
 
-- [ ] Write tests for same-ID masters, many mixed legacy IDs, read/write independent owners,16-credit saturation and simultaneous retire/accept, >=4 old writes, stalled addresses, W before AW, emergency cancellation/fairness, common reset.
-- [ ] Run focused suite Expected RED missing WideDdrMux.
-- [ ] Implement direction owner/count, address-promise locks, write-address/data outstanding count, native turn quota2, drain-and-switch only when other eligible. Keep legacy admission alive in emergency unless native already promised.
-- [ ] Focused suite Expected PASS. Commit and ledger actual evidence.
+- [x] Write tests for same-ID masters, many mixed legacy IDs, read/write independent owners,16-credit saturation and simultaneous retire/accept, >=4 old writes, stalled addresses, W before AW, emergency cancellation/fairness, common reset.
+- [x] Run focused suite Expected RED missing WideDdrMux.
+- [x] Implement direction owner/count, address-promise locks, write-address/data outstanding count, native turn quota2, drain-and-switch only when other eligible. Keep legacy admission alive in emergency unless native already promised.
+- [x] Focused suite Expected PASS. Commit and ledger actual evidence.
 
 ### Task 3: Command, metrics, reset and board integration
 

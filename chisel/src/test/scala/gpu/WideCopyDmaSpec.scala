@@ -18,7 +18,7 @@ class WideCopyDmaSpec extends AnyFunSpec with StableChiselSim with Matchers {
     d.clock.step()
   }
   private def run(d:WideCopyDma,src:Long,dst:Long,n:Int,tag:Int,
-    fault:Int=0,abortAt:String="",faultBeat:Int=3):Unit = {
+    fault:Int=0,abortAt:String="",faultBeat:Int=3,scenario:String=""):Unit = {
     val mem=mutable.Map.empty[Long,Int].withDefaultValue(0xa5)
     for(i<-0 until n)mem(src+i)=((i*37)^(i>>7)^0x39)&255
     val reads=mutable.Queue.empty[(Long,Int)]
@@ -28,6 +28,7 @@ class WideCopyDmaSpec extends AnyFunSpec with StableChiselSim with Matchers {
     var accepted=false;var done=false;var cycle=0;var aborted=false;var abortCycle= -1
     var heldAR:Option[Vector[BigInt]]=None;var heldAW:Option[Vector[BigInt]]=None;var heldW:Option[Vector[BigInt]]=None
     var peakR=0;var peakW=0;var overlapped=false
+    var sawFaultPrecondition=false
     while(!done && cycle<14000) {
       d.io.request.valid.poke(!accepted)
       d.io.request.bits.srcAddr.poke(src);d.io.request.bits.dstAddr.poke(dst)
@@ -35,7 +36,9 @@ class WideCopyDmaSpec extends AnyFunSpec with StableChiselSim with Matchers {
       d.io.axi.ar.ready.poke(cycle%7>=3)
       d.io.axi.aw.ready.poke(cycle%11>=5)
       d.io.axi.w.ready.poke(cycle%5!=1)
-      val rv=reads.nonEmpty && cycle%4!=0
+      val waitForWrite=scenario=="read-after-aw" && rBeats>=64 && aw==0
+      val waitForB=scenario=="b-during-r" && rBeats>=64 && bs==0
+      val rv=reads.nonEmpty && cycle%4!=0 && !waitForWrite && !waitForB
       d.io.axi.r.valid.poke(rv)
       val (ra,rn)=reads.headOption.getOrElse((0L,1))
       d.io.axi.r.bits.data.poke((0 until 16).foldLeft(BigInt(0))((v,b)=>v|(BigInt(mem(ra+ro*16+b))<<(b*8))))
@@ -68,6 +71,15 @@ class WideCopyDmaSpec extends AnyFunSpec with StableChiselSim with Matchers {
       stable(heldAW,d.io.axi.aw.valid,d.io.axi.aw.bits)
       stable(heldW,d.io.axi.w.valid,d.io.axi.w.bits)
       val rf=fire(d.io.axi.r.valid,d.io.axi.r.ready)
+      if(scenario=="read-after-aw" && rf && rBeats==faultBeat) {
+        assert(writes.nonEmpty && aw>bs,"R fault did not occur while a committed bank still owed W")
+        sawFaultPrecondition=true
+      }
+      if(scenario=="b-during-r" && bv && yes(d.io.axi.b.ready) && bs==0) {
+        assert(reads.nonEmpty && rBeats==64 && yes(d.io.axi.r.ready) && !rv,
+          "bad B did not occur with the other accepted read still stalled")
+        sawFaultPrecondition=true
+      }
       if(fire(d.io.request.valid,d.io.request.ready))accepted=true
       if(fire(d.io.axi.ar.valid,d.io.axi.ar.ready)) {
         val a=d.io.axi.ar.bits.addr.peek().litValue.longValue
@@ -87,7 +99,12 @@ class WideCopyDmaSpec extends AnyFunSpec with StableChiselSim with Matchers {
         assert(writes.nonEmpty);val(a,beats)=writes.head
         d.io.axi.w.bits.strb.expect(65535);d.io.axi.w.bits.last.expect(wo==beats-1)
         val data=d.io.axi.w.bits.data.peek().litValue
-        for(b<-0 until 16)mem(a+wo*16+b)=((data>>(8*b))&255).toInt
+        for(b<-0 until 16) {
+          val byte=((data>>(8*b))&255).toInt
+          // Required even on fault/abort: promised W must retain source bytes.
+          byte shouldBe mem(src+(a-dst)+wo*16+b)
+          mem(a+wo*16+b)=byte
+        }
         wo+=1;if(wo==beats){writes.dequeue();wo=0;replies.enqueue(cycle+170)}
         if(rv)overlapped=true
       }
@@ -113,6 +130,7 @@ class WideCopyDmaSpec extends AnyFunSpec with StableChiselSim with Matchers {
     }
     assert(done,s"timeout fault=$fault abort=$abortAt ar=$ar aw=$aw b=$bs")
     if(abortAt.nonEmpty)assert(aborted,s"abort trigger not reached: $abortAt")
+    if(scenario.nonEmpty){assert(sawFaultPrecondition);aw shouldBe 1}
     if(fault==0 && !aborted) {
       for(i<-0 until n)mem(dst+i) shouldBe mem(src+i)
       mem(dst-1) shouldBe 0xa5;mem(dst+n) shouldBe 0xa5
@@ -147,6 +165,15 @@ class WideCopyDmaSpec extends AnyFunSpec with StableChiselSim with Matchers {
         run(d,0x02400000L,0x02000000L,8192,60,abortAt=point)
         run(d,0x02400000L,0x02000000L,4096,61)
       }
+    }
+  }
+  it("preserves committed W bytes on a later R failure and a bad B with future R still stalled") {
+    simulate(new WideCopyDma) { d=>
+      init(d)
+      run(d,0x02400000L,0x02000000L,4096,201,fault=1,faultBeat=70,scenario="read-after-aw")
+      run(d,0x02400000L,0x02000000L,4096,202)
+      run(d,0x02400000L,0x02000000L,4096,203,fault=4,scenario="b-during-r")
+      run(d,0x02400000L,0x02000000L,4096,204)
     }
   }
 }

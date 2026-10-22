@@ -3,6 +3,12 @@
 #include "framebuffer.h"
 #include "bsp.h"
 #include "vexriscv.h"
+#ifndef COPY_BOARD_SOURCE_BASE
+#define COPY_BOARD_SOURCE_BASE 0x02400ff8u
+#endif
+#ifndef COPY_BOARD_DEST_BASE
+#define COPY_BOARD_DEST_BASE 0x02600ff4u
+#endif
 uint64_t gpu_platform_cycles(void) { return clint_getTime(BSP_CLINT); }
 void gpu_platform_sync(void) {
  __asm__ volatile("fence iorw,iorw" ::: "memory");
@@ -13,13 +19,14 @@ int main(void) {
  bsp_init(); gpu_device gpu;
  int e=gpu_init(&gpu,GPU_APB_BASE); if(e) return e;
  e=gpu_set_qos(&gpu,256,1536,1); if(e) return e;
+ bsp_printf("COPY_BOARD_CONFIG,src=%x,dst=%x\r\n",COPY_BOARD_SOURCE_BASE,COPY_BOARD_DEST_BASE);
  static const unsigned widths[]={960,514,3,8},heights[]={468,3,2,3},strides[]={1920,1028,6,24};
- volatile uint16_t *src=(volatile uint16_t *)0x02400ff8u;
+ volatile uint16_t *src=(volatile uint16_t *)COPY_BOARD_SOURCE_BASE;
  /* Fixture writes run BEFORE the first PRESENT enables scanout. Otherwise
   * CPU's bulk DDR writes confound the DMA-only underflow measurement. */
  for(unsigned i=0;i<960u*468u;i++) src[i]=(uint16_t)(i*73u);
  for(unsigned trial=0;trial<4;trial++) {
-  volatile uint16_t *dst=(volatile uint16_t *)(uintptr_t)(0x02600ff4u+trial*0x100000u);
+  volatile uint16_t *dst=(volatile uint16_t *)(uintptr_t)(COPY_BOARD_DEST_BASE+trial*0x100000u);
   unsigned words=strides[trial]/2u*heights[trial];
   for(unsigned i=0;i<words;i++) dst[i]=0xa55a;
   dst[-1]=dst[words]=0xa55a;
@@ -33,7 +40,7 @@ int main(void) {
  uint64_t warm=gpu_platform_cycles();
  while(gpu_platform_cycles()-warm<BSP_CLINT_HZ/20u) {}
  for(unsigned trial=0;trial<4;trial++) {
-  volatile uint16_t *dst=(volatile uint16_t *)(uintptr_t)(0x02600ff4u+trial*0x100000u);
+  volatile uint16_t *dst=(volatile uint16_t *)(uintptr_t)(COPY_BOARD_DEST_BASE+trial*0x100000u);
   unsigned words=strides[trial]/2u*heights[trial];
   gpu_platform_sync();
   gpu_perf_snapshot before,after;
