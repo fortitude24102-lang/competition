@@ -1,7 +1,12 @@
 [CmdletBinding()]
 param([string]$EfinityHome='D:/efinity',[string]$OutputDirectory='D:/efinity_builds/efinix_2d_gpu_day5',[ValidateSet('interface','map','compile')][string]$Flow='compile',
- [string]$GpuRtlDirectory='',[switch]$PrepareOnly)
+ [string]$GpuRtlDirectory='',[switch]$PrepareOnly,
+ [string]$ReferenceGpuRtlDirectory='',[string[]]$AllowedFeatureDifference=@('wideCopyDma'))
 $ErrorActionPreference='Stop'
+if($ReferenceGpuRtlDirectory) {
+ if(!$GpuRtlDirectory){throw 'Reference comparison requires selected candidate RTL'}
+ & (Join-Path $PSScriptRoot 'compare-gpu-build.ps1') -ReferenceGpuRtlDirectory $ReferenceGpuRtlDirectory -CandidateGpuRtlDirectory $GpuRtlDirectory -AllowedFeatureDifference $AllowedFeatureDifference
+}
 $board=Join-Path (Split-Path $PSScriptRoot -Parent) 'board/efinix_ti60'
 New-Item -ItemType Directory -Force $OutputDirectory | Out-Null
 [xml]$project=Get-Content (Join-Path $board 'efinix_2d_gpu.xml')
@@ -59,6 +64,7 @@ $includePaths=$include.value.Split(';') | ForEach-Object {
 }
 $include.SetAttribute('value',($includePaths -join ';'))
 $project.Save((Join-Path $OutputDirectory 'efinix_2d_gpu.xml'))
+if(Test-Path -LiteralPath $manifestPath) {Copy-Item -LiteralPath $manifestPath -Destination (Join-Path $OutputDirectory 'gpu-build.json')}
 Copy-Item (Join-Path $board 'efinix_2d_gpu.peri.xml') $OutputDirectory -Force
 Get-ChildItem (Join-Path $board 'vendor/sapphire_ddr3/par/ddr_demo_ti60/ip/soc') -Filter *.bin | Copy-Item -Destination $OutputDirectory -Force
 if($PrepareOnly) {Write-Output "PROJECT_PREPARED: $OutputDirectory"; return}

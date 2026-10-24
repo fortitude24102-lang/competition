@@ -1,6 +1,10 @@
 package gpu
 
 import circt.stage.ChiselStage
+import java.nio.charset.StandardCharsets.UTF_8
+import java.nio.file.{Files, Path}
+import java.security.MessageDigest
+import scala.jdk.CollectionConverters._
 
 object GenerateEfinix2dGpu extends App {
   // Build-time A/B switch; the old software register ABI is unchanged.
@@ -27,5 +31,32 @@ object GenerateEfinix2dGpu extends App {
     args.filterNot(a => Set("--legacy-copy", "--instances", "--frame-lists", "--key-prefetch", "--stripe-scratchpad", "--copy-burst-buffer", "--scanout-word-pipeline", "--key-row-trim", "--transform-blit", "--alpha-pipeline", "--axi-diagnostics", "--key-write-pipeline", "--extended-list-arena", "--small-copy-prefetch", "--four-write-credits", "--alpha-row-prefetch", "--wide-copy-dma")(a)))
   private val targetIndex=args.indexOf("--target-dir")
   private val target=if(targetIndex>=0)java.nio.file.Path.of(args(targetIndex+1)) else java.nio.file.Path.of(".")
-  java.nio.file.Files.writeString(target.resolve("gpu-build.json"),s"""{"wideCopyDma":$wideCopy}""")
+  private val features = Seq(
+    "copyStream" -> (!legacyCopy).toString, "instances" -> instances.toString,
+    "frameLists" -> lists.toString, "keyPrefetch" -> keyPrefetch.toString,
+    "stripeScratchpad" -> stripes.toString, "copyBurstBuffer" -> burstBuffer.toString,
+    "scanoutWordPipeline" -> scanoutPipeline.toString, "keyRowTrim" -> keyTrim.toString,
+    "transformBlit" -> transform.toString, "alphaPipeline" -> alphaPipeline.toString,
+    "axiDiagnostics" -> axiDiagnostics.toString, "keyWritePipeline" -> keyWritePipeline.toString,
+    "extendedListArena" -> extendedArena.toString, "smallCopyPrefetch" -> smallCopyPrefetch.toString,
+    "writeCredits" -> writeCredits.toString, "alphaRowPrefetch" -> alphaRowPrefetch.toString,
+    "wideCopyDma" -> wideCopy.toString)
+  private def hex(bytes: Array[Byte]): String = bytes.map("%02x".format(_)).mkString
+  private def fields(entries: Seq[(String, String)]): String =
+    entries.map { case (key, value) => s"\"$key\":$value" }.mkString("{", ",", "}")
+  private val sourceDigest = MessageDigest.getInstance("SHA-256")
+  private val sources = Files.walk(Path.of("src/main/scala/gpu"))
+  try sources.iterator.asScala.filter(p => p.toString.endsWith(".scala")).toSeq.sortBy(_.toString).foreach { p =>
+    sourceDigest.update(p.toString.replace('\\', '/').getBytes(UTF_8))
+    sourceDigest.update(0.toByte)
+    sourceDigest.update(Files.readAllBytes(p))
+  } finally sources.close()
+  private val rtlHashes = Files.readAllLines(target.resolve("filelist.f")).asScala.map(_.trim)
+    .filter(_.nonEmpty).sorted.map { name =>
+      name -> s"\"${hex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(target.resolve(name))))}\""
+    }.toSeq
+  Files.writeString(target.resolve("gpu-build.json"), fields(Seq(
+    "schemaVersion" -> "1", "wideCopyDma" -> wideCopy.toString,
+    "sourceSha256" -> s"\"${hex(sourceDigest.digest())}\"",
+    "features" -> fields(features), "rtlSha256" -> fields(rtlHashes))))
 }
