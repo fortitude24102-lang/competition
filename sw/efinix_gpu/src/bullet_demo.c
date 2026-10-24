@@ -218,6 +218,18 @@ int bullet_finish_window(bullet_state *s,bullet_state *start,int gpu_window) {
  return 0;
 }
 int bullet_shape_opaque(unsigned shape,unsigned x,unsigned y) {
+#if defined(V3_SHAPE_LUT) && V3_SHAPE_LUT
+ static const uint8_t masks[6][8]={
+  {0x00,0x3c,0x7e,0x7e,0x7e,0x7e,0x3c,0x00},
+  {0x18,0x3c,0x7e,0xff,0xff,0x7e,0x3c,0x18},
+  {0x18,0x18,0x3c,0x3c,0x3c,0x3c,0x18,0x18},
+  {0x18,0x18,0x18,0xff,0xff,0x18,0x18,0x18},
+  {0x99,0x5a,0x3c,0xff,0xff,0x3c,0x5a,0x99},
+  {0x00,0x3c,0x66,0x42,0x42,0x66,0x3c,0x00},
+ };
+ if(shape>=6 || x>=8 || y>=8)return 0;
+ return (masks[shape][y]>>x)&1u;
+#else
  if(x>=8 || y>=8) return 0;
  int dx=(int)x*2-7,dy=(int)y*2-7;
  if(dx<0) dx=-dx;
@@ -232,6 +244,7 @@ int bullet_shape_opaque(unsigned shape,unsigned x,unsigned y) {
   case 5:return r<=49 && r>=18; /* hollow ring */
   default:return 0;
  }
+#endif
 }
 static int sprite(bullet_stream *out,unsigned cap,uint32_t dst,uint32_t src,
  int x,int y,unsigned size,int alpha,int shape,int *visible) {

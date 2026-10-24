@@ -13,3 +13,8 @@ for test in gpu_instances gpu_instances_driver gpu_frame_list; do
   sw/efinix_gpu/src/gpu_instances.c sw/efinix_gpu/src/bullet_demo.c "${extra[@]}" -o "$out/test_$test"
  "$out/test_$test"
 done
+for lut in 0 1; do
+ gcc "${flags[@]}" -DV3_SHAPE_LUT="$lut" sw/efinix_gpu/tests/test_bullet_shape_lut.c \
+  sw/efinix_gpu/src/bullet_demo.c -o "$out/test_shape_$lut"
+ "$out/test_shape_$lut"
+done
