@@ -2,6 +2,7 @@
 import json
 import sys
 import threading
+import time
 from urllib.parse import urlsplit
 from urllib.request import ProxyHandler, Request, build_opener
 
@@ -32,9 +33,13 @@ def run():
     opener = build_opener(ProxyHandler({}))
     while not stopped.is_set():
         # HTTP failure aborts; the parent also rejects any changed control session.
-        with opener.open(request, timeout=.15) as response:
+        started = time.monotonic()
+        with opener.open(request, timeout=.20) as response:
             response.read()
-        stopped.wait(.07)
+        elapsed = time.monotonic() - started
+        if elapsed >= .23:  # Keep margin inside the unchanged 250 ms gateway/board lease.
+            raise TimeoutError('Heartbeat renewal budget exceeded')
+        stopped.wait(max(0, .07-elapsed))
     return 0
 
 

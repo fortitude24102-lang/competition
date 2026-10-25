@@ -16,16 +16,22 @@ class KeepaliveTest(unittest.TestCase):
         self.posts = []
         self.arrived = threading.Event()
         self.status = 200
+        self.delay = self.body_delay = 0
         owner = self
 
         class Handler(BaseHTTPRequestHandler):
             def do_POST(self):
                 body = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
                 owner.posts.append((time.monotonic(), self.path, body, self.headers['Origin']))
-                self.send_response(owner.status)
-                self.send_header('Content-Length', '2')
-                self.end_headers()
-                self.wfile.write(b'{}')
+                try:
+                    time.sleep(owner.delay)
+                    self.send_response(owner.status)
+                    self.send_header('Content-Length', '2')
+                    self.end_headers()
+                    time.sleep(owner.body_delay)
+                    self.wfile.write(b'{}')
+                except OSError:
+                    pass  # The timeout fixture deliberately closes its socket.
                 owner.arrived.set()
 
             def log_message(self, *args):
@@ -77,6 +83,27 @@ class KeepaliveTest(unittest.TestCase):
         self.status = 409
         self.start()
         self.assertEqual(self.child.wait(timeout=2), 1)
+        self.assertEqual(len(self.posts), 1)
+
+    def test_healthy_slow_reply_still_renews_inside_the_250ms_lease(self):
+        self.delay = .17
+        self.start()
+        deadline = time.monotonic() + 2
+        while len(self.posts) < 3 and self.child.poll() is None and time.monotonic() < deadline:
+            time.sleep(.01)
+        self.assertIsNone(self.child.poll(), 'healthy sub-lease response killed the heartbeat')
+        self.child.stdin.close()
+        self.assertEqual(self.child.wait(timeout=2), 0)
+        self.assertGreaterEqual(len(self.posts), 3)
+        self.assertLess(max(b[0]-a[0] for a, b in zip(self.posts, self.posts[1:])), .23)
+
+    def test_header_and_body_delays_cannot_extend_the_total_renewal_budget(self):
+        self.delay = self.body_delay = .14
+        self.start()
+        deadline = time.monotonic() + 2
+        while self.child.poll() is None and len(self.posts) < 2 and time.monotonic() < deadline:
+            time.sleep(.01)
+        self.assertEqual(self.child.poll(), 1, 'heartbeat continued after its lease budget')
         self.assertEqual(len(self.posts), 1)
 
     def test_remote_destination_is_rejected_before_any_request(self):
