@@ -90,6 +90,8 @@ int bullet_reset_player(bullet_state *s,unsigned count,uint32_t seed) {
  return reset(s,count,seed,1);
 }
 static int pixel_coordinate(int32_t q8);
+_Static_assert((-1>>8)==-1,"Logic Q8 floor requires arithmetic signed right shift");
+static int logic_coordinate(int32_t q8) { return q8>>8; }
 static void add_score(bullet_state *s,uint32_t points) {
  s->score=UINT32_MAX-s->score<points?UINT32_MAX:s->score+points;
 }
@@ -131,7 +133,7 @@ static int step(bullet_state *s,int manual,int player_x,int player_y,const bulle
   if(b->kind==3) {
    if(b->age==UINT16_MAX) continue;
    b->x+=b->vx; b->y+=b->vy; ++b->age;
-   int bx=pixel_coordinate(b->x)+4,by=pixel_coordinate(b->y)+4;
+   int bx=logic_coordinate(b->x)+4,by=logic_coordinate(b->y)+4;
    if(bx<0 || bx>=960 || by<72 || by>=540) { b->age=UINT16_MAX; continue; }
    for(unsigned enemy=0;enemy<3;enemy++) {
     if(s->interactive && !s->enemy_hp[enemy]) continue;
@@ -164,7 +166,7 @@ static int step(bullet_state *s,int manual,int player_x,int player_y,const bulle
    if(b->x<0) {b->x=0;b->vx=(int16_t)-b->vx;}
    if(b->x>952*256) {b->x=952*256;b->vx=(int16_t)-b->vx;}
   }
-  int bx=pixel_coordinate(b->x),by=pixel_coordinate(b->y);
+  int bx=logic_coordinate(b->x),by=logic_coordinate(b->y);
   /* Cheap broad phase, then at most 64 opacity texels for nearby bullets.
    * Hit core radius 3; graze radius 12. No all-pairs object collision. */
   if(bx<s->player_x-19 || bx>s->player_x+12 || by<s->player_y-19 || by>s->player_y+12) continue;
