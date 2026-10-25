@@ -66,6 +66,33 @@ int main(void) {
  }
  assert(gpu_instances_build(&state,GPU_FRAMEBUFFER_A,1,1,72,1,&compact)==GPU_DRIVER_FULL && !compact.count);
  assert(gpu_instances_build(&state,GPU_FRAMEBUFFER_A,1,1,540,10,&compact)==GPU_DRIVER_ARGUMENT && !compact.count);
+ /* Full rectangles and every edge/corner must keep the CPU reference's fields. */
+ static const int xs[]={-17,-16,-15,-13,-12,-11,-9,-8,-7,-1,0,1,
+  943,944,945,947,948,949,950,951,952,953,959,960};
+ static const int ys[]={55,56,57,59,60,61,63,64,65,71,72,73,
+  523,524,525,527,528,529,530,531,532,533,539,540};
+ for(unsigned shape=0;shape<BULLET_SHAPE_COUNT;shape++)
+ for(unsigned x=0;x<sizeof xs/sizeof xs[0];x++)
+ for(unsigned y=0;y<sizeof ys/sizeof ys[0];y++) {
+  assert(!bullet_reset(&state,1,7));
+  state.objects[0].shape=(uint8_t)shape;
+  state.objects[0].x=xs[x]*256;state.objects[0].y=ys[y]*256;
+  state.player_x=xs[x]+8;state.player_y=ys[y]+8;
+  assert(!bullet_build_frame(&state,GPU_FRAMEBUFFER_A,1,1,BULLET_MAX_COMMANDS,&reference));
+  assert(!bullet_clip_background_for_hud(&reference,72));
+  assert(!gpu_instances_build(&state,GPU_FRAMEBUFFER_A,1,1,72,BULLET_MAX_COMMANDS,&compact));
+  assert(reference.count==compact.count && reference.visible==compact.visible);
+  assert(reference.scene_pixels==compact.scene_pixels && reference.alpha_commands==compact.alpha_commands);
+  assert(reference.alpha_pixels==compact.alpha_pixels);
+  for(unsigned n=0;n<compact.count;n++) {
+   gpu_command actual;assert(!gpu_instance_expand(templates,compact.items+n,0,&actual));
+   same(&reference.commands[n],&actual);
+  }
+ }
+ /* Capacity failure on the full-rectangle path still invalidates the whole frame. */
+ assert(!bullet_reset(&state,1,7));state.objects[0].x=100*256;state.objects[0].y=100*256;
+ assert(gpu_instances_build(&state,GPU_FRAMEBUFFER_A,1,0,72,1,&compact)==GPU_DRIVER_FULL);
+ assert(!compact.count && !compact.visible && !compact.scene_pixels && !compact.alpha_commands && !compact.alpha_pixels);
  assert(gpu_instances_templates(1,templates)==12);
  gpu_instance bad={{2,GPU_FRAMEBUFFER_A,0xfffffffeu,0x00010001u}}; gpu_command command;
  assert(gpu_instance_expand(templates,&bad,1,&command)!=0);

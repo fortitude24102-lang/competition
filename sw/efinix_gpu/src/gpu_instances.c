@@ -131,7 +131,8 @@ static int append(instance_output *out,unsigned cap,unsigned id,uint32_t dst,
 }
 /* R7 clipping/opacity decisions are kept byte-equivalent by600tick tests.
  * No old gpu_command is constructed then converted on this GPU-only path. */
-static int sprite(instance_output *s,unsigned cap,uint32_t dst,unsigned id,
+/* -Os otherwise inlines this once-called function back into the hot sprite. */
+static __attribute__((noinline)) int clipped_sprite(instance_output *s,unsigned cap,uint32_t dst,unsigned id,
  int x,int y,unsigned size,unsigned alpha,int shape,int *visible) {
  *visible=0;
  if(x>=960 || x<=-(int)size || y>=540 || y<=72-(int)size) return 0;
@@ -148,6 +149,16 @@ static int sprite(instance_output *s,unsigned cap,uint32_t dst,unsigned id,
  int e=append(s,cap,id,dst+dy*GPU_FRAME_STRIDE+dx*2u,(sy*size+sx)*2u,w,h,alpha);
  if(!e) *visible=1;
  return e;
+}
+static int sprite(instance_output *s,unsigned cap,uint32_t dst,unsigned id,
+ int x,int y,unsigned size,unsigned alpha,int shape,int *visible) {
+ /* All callers use size8/12/16. Keep the common full rectangle out of clipping. */
+ if((unsigned)x<=960u-size && (unsigned)y-72u<=468u-size) {
+  int e=append(s,cap,id,dst+(unsigned)y*GPU_FRAME_STRIDE+(unsigned)x*2u,0,size,size,alpha);
+  *visible=!e;
+  return e;
+ }
+ return clipped_sprite(s,cap,dst,id,x,y,size,alpha,shape,visible);
 }
 _Static_assert((-1>>8)==-1,"GPU Q8 floor requires arithmetic signed right shift");
 static int coordinate(int32_t q8) { return q8>>8; }
