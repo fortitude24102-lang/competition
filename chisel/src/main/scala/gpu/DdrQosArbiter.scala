@@ -46,10 +46,11 @@ class DdrQosArbiter(maxRenderWait: Int = 8, enableDiagnostics: Boolean = false,
   private val scanoutPriority = RegInit(false.B)
   private val renderWait = RegInit(0.U(log2Ceil(maxRenderWait + 1).W))
   // Render can stall R while waiting for a new AW, which emergency QoS blocks.
-  // Reserve one complete maximum burst so that physical R can always drain
+  // Reserve the complete requested burst so that physical R can always drain
   // and release the read channel to Scanout, independently of Render's sink.
   private val renderResponses = Module(new Queue(new Axi4ReadData, 256, flow = true))
-  private val renderResponseSpace = renderResponses.io.count === 0.U
+  private val requestedRenderBeats = io.render.ar.bits.len +& 1.U
+  private val renderResponseSpace = (renderResponses.io.count +& requestedRenderBeats) <= 256.U
 
   when(!io.adaptiveEnable || io.scanoutLevel >= io.highWatermark) {
     scanoutPriority := false.B

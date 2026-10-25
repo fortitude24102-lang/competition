@@ -83,6 +83,121 @@ class DdrQosArbiterSpec extends AnyFunSpec with StableChiselSim with Matchers {
       }
     }
 
+    it("reserves residual response capacity for a complete Render burst and preserves Scanout progress") {
+      simulate(new DdrQosArbiter) { dut =>
+        dut.io.lowWatermark.poke(10)
+        dut.io.highWatermark.poke(20)
+        dut.io.adaptiveEnable.poke(true)
+        dut.io.scanoutLevel.poke(20)
+        for (port <- Seq(dut.io.render, dut.io.scanout, dut.io.asset)) {
+          port.ar.bits.poke(0.U.asTypeOf(new Axi4Address))
+          port.aw.bits.poke(0.U.asTypeOf(new Axi4Address))
+          port.w.bits.poke(0.U.asTypeOf(new Axi4WriteData))
+          port.ar.valid.poke(false)
+          port.aw.valid.poke(false)
+          port.w.valid.poke(false)
+          port.r.ready.poke(false)
+          port.b.ready.poke(true)
+        }
+        dut.io.axi.ar.ready.poke(true)
+        dut.io.axi.aw.ready.poke(true)
+        dut.io.axi.w.ready.poke(true)
+        dut.io.axi.r.valid.poke(false)
+        dut.io.axi.r.bits.poke(0.U.asTypeOf(new Axi4ReadData))
+        dut.io.axi.b.valid.poke(false)
+        dut.io.axi.b.bits.poke(0.U.asTypeOf(new Axi4WriteResponse))
+        def request(address: Int, length: Int, id: Int): Unit = {
+          dut.io.render.ar.bits.addr.poke(address)
+          dut.io.render.ar.bits.len.poke(length)
+          dut.io.render.ar.bits.id.poke(id)
+          dut.io.render.ar.bits.size.poke(Axi4.WordSize)
+          dut.io.render.ar.bits.burst.poke(Axi4.Incrementing)
+          dut.io.render.ar.valid.poke(true)
+          var waited = 0
+          while (!dut.io.render.ar.ready.peek().litToBoolean && waited < 16) {
+            dut.clock.step(); waited += 1
+          }
+          withClue("A complete burst fits without consuming the buffered response: ") {
+            waited should be < 16
+          }
+          dut.io.axi.ar.bits.addr.expect(address)
+          dut.io.axi.ar.bits.len.expect(length)
+          dut.clock.step()
+          dut.io.render.ar.valid.poke(false)
+        }
+        def response(data: Int, id: Int, last: Boolean, error: Int = 0): Unit = {
+          dut.io.axi.r.bits.data.poke(data)
+          dut.io.axi.r.bits.id.poke(id)
+          dut.io.axi.r.bits.resp.poke(error)
+          dut.io.axi.r.bits.last.poke(last)
+          dut.io.axi.r.valid.poke(true)
+          dut.io.axi.r.ready.expect(true)
+          dut.clock.step()
+          dut.io.axi.r.valid.poke(false)
+        }
+        request(0x1000, 0, 1)
+        response(0x10000, 1, true)
+        // One buffered beat plus 255 new beats exactly fills the existing 256 slots.
+        request(0x2000, 254, 2)
+        for (beat <- 0 until 255) response(0x20000 + beat, 2, beat == 254, if (beat == 17) 2 else 0)
+        dut.io.render.ar.bits.addr.poke(0x4000)
+        dut.io.render.ar.bits.len.poke(0)
+        dut.io.render.ar.bits.id.poke(3)
+        dut.io.render.ar.valid.poke(true)
+        dut.clock.step(4)
+        dut.io.axi.ar.valid.expect(false)
+        // A full Render sink must still release the physical channel to urgent Scanout.
+        dut.io.scanoutLevel.poke(0)
+        dut.io.scanout.ar.bits.addr.poke(0x3000)
+        dut.io.scanout.ar.bits.id.poke(13)
+        dut.io.scanout.ar.bits.size.poke(Axi4.WordSize)
+        dut.io.scanout.ar.bits.burst.poke(Axi4.Incrementing)
+        dut.io.scanout.ar.valid.poke(true)
+        dut.io.scanout.r.ready.poke(true)
+        dut.clock.step()
+        dut.io.axi.ar.valid.expect(true)
+        dut.io.axi.ar.bits.addr.expect(0x3000)
+        dut.clock.step()
+        dut.io.scanout.ar.valid.poke(false)
+        dut.io.axi.r.valid.poke(true)
+        dut.io.axi.r.bits.data.poke(0xabcdef)
+        dut.io.axi.r.bits.id.poke(13)
+        dut.io.axi.r.bits.resp.poke(3)
+        dut.io.axi.r.bits.last.poke(true)
+        dut.io.scanout.r.valid.expect(true)
+        dut.io.scanout.r.bits.data.expect(0xabcdef)
+        dut.io.scanout.r.bits.id.expect(13)
+        dut.io.scanout.r.bits.resp.expect(3)
+        dut.clock.step()
+        dut.io.axi.r.valid.poke(false)
+        dut.io.scanoutLevel.poke(20)
+        dut.io.render.r.valid.expect(true)
+        dut.io.render.r.bits.data.expect(0x10000)
+        dut.io.render.r.bits.id.expect(1)
+        dut.io.render.r.bits.last.expect(true)
+        dut.io.render.r.ready.poke(true)
+        dut.clock.step()
+        dut.io.render.r.ready.poke(false)
+        request(0x4000, 0, 3)
+        response(0xf00d, 3, true)
+        dut.io.render.r.ready.poke(true)
+        for (beat <- 0 until 255) {
+          dut.io.render.r.valid.expect(true)
+          dut.io.render.r.bits.data.expect(0x20000 + beat)
+          dut.io.render.r.bits.id.expect(2)
+          dut.io.render.r.bits.resp.expect(if (beat == 17) 2 else 0)
+          dut.io.render.r.bits.last.expect(beat == 254)
+          dut.clock.step()
+        }
+        dut.io.render.r.valid.expect(true)
+        dut.io.render.r.bits.data.expect(0xf00d)
+        dut.io.render.r.bits.id.expect(3)
+        dut.io.render.r.bits.last.expect(true)
+        dut.clock.step()
+        dut.io.render.r.valid.expect(false)
+      }
+    }
+
     it("cancels unpresented addresses at emergency entry but holds presented AXI VALID") {
       simulate(new DdrQosArbiter) { dut =>
         dut.io.lowWatermark.poke(10)
