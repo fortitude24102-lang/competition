@@ -3,6 +3,7 @@
 #include "gpu_instances.h"
 #include <assert.h>
 #include <stdio.h>
+#include <limits.h>
 static bullet_state state;
 static bullet_stream reference;
 static gpu_instance_stream compact;
@@ -44,6 +45,25 @@ int main(void) {
  assert(!gpu_instances_build(&state,GPU_FRAMEBUFFER_A,1,0,72,BULLET_MAX_COMMANDS,&compact));
  assert(compact.items[1].words[0]==2 && compact.items[1].words[1]==GPU_FRAMEBUFFER_A+72*1920);
  assert(compact.items[1].words[2]==36 && compact.items[1].words[3]==0x00060006);
+ /* Exercise the real GPU builder against the unchanged CPU floor/clipping path. */
+ static const int32_t fractions[]={INT32_MIN,INT32_MIN+1,-2049,-2048,-2047,
+  -513,-512,-511,-257,-256,-255,-1,0,1,255,256,257,
+  72*256-257,72*256-256,72*256-255,72*256-1,72*256,72*256+1,
+  72*256+255,72*256+256,72*256+257,540*256-1,540*256,540*256+1,
+  960*256-1,960*256,INT32_MAX};
+ for(unsigned axis=0;axis<2;axis++) for(unsigned i=0;i<sizeof fractions/sizeof fractions[0];i++) {
+  assert(!bullet_reset(&state,1,7));state.objects[0].shape=0;
+  state.objects[0].x=100*256;state.objects[0].y=100*256;
+  if(axis)state.objects[0].y=fractions[i];else state.objects[0].x=fractions[i];
+  assert(!bullet_build_frame(&state,GPU_FRAMEBUFFER_A,1,1,BULLET_MAX_COMMANDS,&reference));
+  assert(!bullet_clip_background_for_hud(&reference,72));
+  assert(!gpu_instances_build(&state,GPU_FRAMEBUFFER_A,1,1,72,BULLET_MAX_COMMANDS,&compact));
+  assert(reference.count==compact.count && reference.visible==compact.visible);
+  for(unsigned n=0;n<compact.count;n++) {
+   gpu_command actual;assert(!gpu_instance_expand(templates,compact.items+n,0,&actual));
+   same(&reference.commands[n],&actual);
+  }
+ }
  assert(gpu_instances_build(&state,GPU_FRAMEBUFFER_A,1,1,72,1,&compact)==GPU_DRIVER_FULL && !compact.count);
  assert(gpu_instances_build(&state,GPU_FRAMEBUFFER_A,1,1,540,10,&compact)==GPU_DRIVER_ARGUMENT && !compact.count);
  assert(gpu_instances_templates(1,templates)==12);

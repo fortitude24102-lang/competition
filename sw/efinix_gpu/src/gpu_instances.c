@@ -149,7 +149,8 @@ static int sprite(instance_output *s,unsigned cap,uint32_t dst,unsigned id,
  if(!e) *visible=1;
  return e;
 }
-static int coordinate(int32_t q8) { int x=q8/256;return q8<0 && q8%256?x-1:x; }
+_Static_assert((-1>>8)==-1,"GPU Q8 floor requires arithmetic signed right shift");
+static int coordinate(int32_t q8) { return q8>>8; }
 int gpu_instances_build_into(const bullet_state *s,uint32_t dst,int network,int glow,
  int manual,unsigned hud,unsigned cap,gpu_instance *items,gpu_instance_stats *out) {
  if(!out) return GPU_DRIVER_ARGUMENT;
