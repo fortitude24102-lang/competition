@@ -15,7 +15,8 @@ class RenderEngine(enableCopyStream: Boolean = true, countFrontend: Boolean = fa
   enableKeyRowTrim: Boolean = false, enableTransformBlit: Boolean = false,
   enableAlphaPipeline: Boolean = false, enableKeyWritePipeline: Boolean = false,
   enableSmallCopyPrefetch: Boolean = false, writeCredits: Int = 2,
-  enableAlphaRowPrefetch: Boolean = false, enableWideCopyDma: Boolean = false) extends Module {
+  enableAlphaRowPrefetch: Boolean = false, enableWideCopyDma: Boolean = false,
+  enableAlphaEarlyPrefetch: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val command = Flipped(Decoupled(new GpuCommand))
     val vblank = Input(Bool())
@@ -54,7 +55,7 @@ class RenderEngine(enableCopyStream: Boolean = true, countFrontend: Boolean = fa
 
   private val queue = Module(new CommandQueue)
   private val validator = Module(new CommandValidator(enableTransformBlit))
-  private val blit = Module(new DenseBlitEngine(enableCopyStream, enableKeyPrefetch, enableCopyBurstBuffer, enableKeyRowTrim, enableAlphaPipeline,enableKeyWritePipeline,enableSmallCopyPrefetch,writeCredits,enableAlphaRowPrefetch))
+  private val blit = Module(new DenseBlitEngine(enableCopyStream, enableKeyPrefetch, enableCopyBurstBuffer, enableKeyRowTrim, enableAlphaPipeline,enableKeyWritePipeline,enableSmallCopyPrefetch,writeCredits,enableAlphaRowPrefetch,enableAlphaEarlyPrefetch))
   private val transform = if(enableTransformBlit) Some(Module(new TransformBlitEngine)) else None
   private val transformIdle = transform.map(_.io.command.ready).getOrElse(true.B)
   private val wide = if(enableWideCopyDma) Some(withReset(io.fabricReset.get) { Module(new WideCopyDma) }) else None

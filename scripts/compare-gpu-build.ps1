@@ -5,7 +5,7 @@ $ErrorActionPreference='Stop'
 $featureNames=@('copyStream','instances','frameLists','keyPrefetch','stripeScratchpad',
  'copyBurstBuffer','scanoutWordPipeline','keyRowTrim','transformBlit','alphaPipeline',
  'axiDiagnostics','keyWritePipeline','extendedListArena','smallCopyPrefetch',
- 'writeCredits','alphaRowPrefetch','wideCopyDma')
+ 'writeCredits','alphaRowPrefetch','wideCopyDma','alphaEarlyPrefetch')
 if(@($AllowedFeatureDifference | Where-Object {$_ -notin $featureNames}).Count -or
  @($AllowedFeatureDifference | Select-Object -Unique).Count -ne $AllowedFeatureDifference.Count) {
  throw 'Unknown or duplicate permitted feature difference'
@@ -13,7 +13,7 @@ if(@($AllowedFeatureDifference | Where-Object {$_ -notin $featureNames}).Count -
 $manifests=@(foreach($directory in @($ReferenceGpuRtlDirectory,$CandidateGpuRtlDirectory)) {
  $root=(Resolve-Path -LiteralPath $directory).Path
  $m=Get-Content -Raw -LiteralPath (Join-Path $root 'gpu-build.json') | ConvertFrom-Json
- if($m.schemaVersion -ne 1 -or $m.sourceSha256 -notmatch '^[0-9a-f]{64}$') {
+ if($m.schemaVersion -ne 2 -or $m.sourceSha256 -notmatch '^[0-9a-f]{64}$') {
   throw "Complete generated configuration/source identity required: $root"
  }
  $keys=@($m.features.PSObject.Properties.Name)
@@ -29,6 +29,9 @@ $manifests=@(foreach($directory in @($ReferenceGpuRtlDirectory,$CandidateGpuRtlD
  }
  if($m.wideCopyDma -isnot [bool] -or $m.wideCopyDma -ne $m.features.wideCopyDma) {
   throw 'Native interface flag disagrees with effective features'
+ }
+ if($m.features.alphaEarlyPrefetch -and (!$m.features.alphaRowPrefetch -or !$m.features.alphaPipeline)) {
+  throw 'Early Alpha requires row prefetch and pixel pipeline'
  }
  $listed=@(Get-Content -LiteralPath (Join-Path $root 'filelist.f') | Where-Object {$_ -match '\S'} | ForEach-Object {$_.Trim()})
  $recorded=@($m.rtlSha256.PSObject.Properties.Name)

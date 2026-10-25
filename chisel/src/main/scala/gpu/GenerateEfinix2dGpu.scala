@@ -24,11 +24,12 @@ object GenerateEfinix2dGpu extends App {
   private val smallCopyPrefetch = args.contains("--small-copy-prefetch")
   private val writeCredits = if(args.contains("--four-write-credits")) 4 else 2
   private val alphaRowPrefetch = args.contains("--alpha-row-prefetch")
+  private val alphaEarlyPrefetch = args.contains("--alpha-early-prefetch")
   private val wideCopy = args.contains("--wide-copy-dma")
   require(!extendedArena || lists, "Extended list arena requires frame lists")
   require(!keyTrim || keyPrefetch, "Key row trim requires Key prefetch")
-  ChiselStage.emitSystemVerilogFile(new Efinix2dGpuTop(!legacyCopy, instances,lists,keyPrefetch,stripes,burstBuffer,scanoutPipeline,keyTrim,transform,alphaPipeline,axiDiagnostics,keyWritePipeline,extendedArena,smallCopyPrefetch,writeCredits,alphaRowPrefetch,wideCopy),
-    args.filterNot(a => Set("--legacy-copy", "--instances", "--frame-lists", "--key-prefetch", "--stripe-scratchpad", "--copy-burst-buffer", "--scanout-word-pipeline", "--key-row-trim", "--transform-blit", "--alpha-pipeline", "--axi-diagnostics", "--key-write-pipeline", "--extended-list-arena", "--small-copy-prefetch", "--four-write-credits", "--alpha-row-prefetch", "--wide-copy-dma")(a)))
+  ChiselStage.emitSystemVerilogFile(new Efinix2dGpuTop(!legacyCopy, instances,lists,keyPrefetch,stripes,burstBuffer,scanoutPipeline,keyTrim,transform,alphaPipeline,axiDiagnostics,keyWritePipeline,extendedArena,smallCopyPrefetch,writeCredits,alphaRowPrefetch,wideCopy,alphaEarlyPrefetch),
+    args.filterNot(a => Set("--legacy-copy", "--instances", "--frame-lists", "--key-prefetch", "--stripe-scratchpad", "--copy-burst-buffer", "--scanout-word-pipeline", "--key-row-trim", "--transform-blit", "--alpha-pipeline", "--axi-diagnostics", "--key-write-pipeline", "--extended-list-arena", "--small-copy-prefetch", "--four-write-credits", "--alpha-row-prefetch", "--wide-copy-dma", "--alpha-early-prefetch")(a)))
   private val targetIndex=args.indexOf("--target-dir")
   private val target=if(targetIndex>=0)java.nio.file.Path.of(args(targetIndex+1)) else java.nio.file.Path.of(".")
   private val features = Seq(
@@ -40,7 +41,7 @@ object GenerateEfinix2dGpu extends App {
     "axiDiagnostics" -> axiDiagnostics.toString, "keyWritePipeline" -> keyWritePipeline.toString,
     "extendedListArena" -> extendedArena.toString, "smallCopyPrefetch" -> smallCopyPrefetch.toString,
     "writeCredits" -> writeCredits.toString, "alphaRowPrefetch" -> alphaRowPrefetch.toString,
-    "wideCopyDma" -> wideCopy.toString)
+    "wideCopyDma" -> wideCopy.toString, "alphaEarlyPrefetch" -> alphaEarlyPrefetch.toString)
   private def hex(bytes: Array[Byte]): String = bytes.map("%02x".format(_)).mkString
   private def fields(entries: Seq[(String, String)]): String =
     entries.map { case (key, value) => s"\"$key\":$value" }.mkString("{", ",", "}")
@@ -56,7 +57,7 @@ object GenerateEfinix2dGpu extends App {
       name -> s"\"${hex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(target.resolve(name))))}\""
     }.toSeq
   Files.writeString(target.resolve("gpu-build.json"), fields(Seq(
-    "schemaVersion" -> "1", "wideCopyDma" -> wideCopy.toString,
+    "schemaVersion" -> "2", "wideCopyDma" -> wideCopy.toString,
     "sourceSha256" -> s"\"${hex(sourceDigest.digest())}\"",
     "features" -> fields(features), "rtlSha256" -> fields(rtlHashes))))
 }

@@ -7,8 +7,9 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   enableCopyBurstBuffer: Boolean = false, enableKeyRowTrim: Boolean = false,
   enableAlphaPipeline: Boolean = false, enableKeyWritePipeline: Boolean = false,
   enableSmallCopyPrefetch: Boolean = false, writeCredits: Int = 2,
-  enableAlphaRowPrefetch: Boolean = false) extends Module {
+  enableAlphaRowPrefetch: Boolean = false, enableAlphaEarlyPrefetch: Boolean = false) extends Module {
   require(!enableAlphaRowPrefetch || enableAlphaPipeline, "Alpha row prefetch requires Alpha pixel pipeline")
+  require(!enableAlphaEarlyPrefetch || enableAlphaRowPrefetch, "Early Alpha prefetch requires row prefetch")
   require(writeCredits == 2 || writeCredits == 4, "Small-blit write credits must be 2 or 4")
   require(writeCredits == 2 || enableKeyWritePipeline, "Four write credits require Key write pipeline")
   require(!enableKeyRowTrim || enableKeyPrefetch, "Key row trimming requires Key prefetch")
@@ -82,6 +83,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   private val useTextureCache = RegInit(false.B)
   private val alphaRowPrefetch = RegInit(false.B)
   private val alphaPrefetching = RegInit(false.B)
+  private val earlyRowIssued = if(enableAlphaEarlyPrefetch) Some(RegInit(false.B)) else None
   private val alphaTransferFailed = WireDefault(false.B)
   // A row failure may leave later rows unvisited. Retire only the address
   // generator after bus/pixel drain, so the following command can start.
@@ -167,6 +169,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
       incomingCommand.widthPixels =/= 0.U && incomingCommand.widthPixels <= 64.U &&
       incomingCommand.heightPixels > 1.U && !incomingOverlap
     alphaPrefetching := false.B
+    earlyRowIssued.foreach(_ := false.B)
     state := Mux(selectKeyStream, streamKey, Mux(selectCopyStream, streamCopy, startRect))
   }
 
@@ -203,7 +206,8 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
       Mux(dynamicWriteRequest, 1.U, Mux(isAlpha, alphaChunkBeats, rowBeats))))
   copyStream.io.writeRequest.ready := writer.io.request.ready && streamingCopy
   when(writer.io.request.fire && !streamingCopy && !streamingKey) {
-    alphaPrefetching := false.B
+    // Accepting the current write does not consume an early next-row read.
+    alphaPrefetching := earlyRowIssued.getOrElse(false.B)
     when(dynamicWriteRequest) {
       dynamicWriteOutstanding := true.B
     }.otherwise {
@@ -240,17 +244,28 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   when(startingAlphaPair && aligner.io.start.fire && backgroundAligner.io.start.fire) {
     alphaChunkDstAddress := rect.io.address.bits.address
     alphaChunkBeats := ((alphaChunkPixels << 1) + rect.io.address.bits.address(1, 0) + 3.U) >> 2
-    state := startAlphaReads
+    // An early pair is already in flight/buffered. Start its aligners once,
+    // then wait for its readers instead of requesting the same row again.
+    state := Mux(earlyRowIssued.getOrElse(false.B),waitAlphaReads,startAlphaReads)
+    earlyRowIssued.foreach(_ := false.B)
   }
 
   private val startingSourceRead = state === startRead
   private val startingAlphaReads = state === startAlphaReads && !failedAlphaPrefetch
-  private val sourceReadAddress = Mux(isAlpha, alphaSrcAddress, srcRowBase)
-  private val sourceReadBytes = Mux(isAlpha, alphaChunkPixels << 1, rowBytes)
   private val sourceReadReady = Mux(useTextureCache,
     textureCache.io.readRequest.ready, reader.io.request.ready)
+  // At width<=16, two complete halfword-phased rows need <=18 words in
+  // each existing33-word queue. Never speculate into overlapping logical rows.
+  private val earlyRowReads = enableAlphaEarlyPrefetch.B && alphaRowPrefetch &&
+    commandReg.widthPixels <= 16.U && commandReg.dstStride >= rowBytes &&
+    fastRowsLeft > 1.U && !earlyRowIssued.getOrElse(false.B) &&
+    (state === startWrite || state === requestPixel || state === waitPixel) &&
+    sourceReadReady && backgroundReader.io.request.ready && !alphaTransferFailed
+  private val sourceReadAddress = Mux(earlyRowReads,srcRowBase+commandReg.srcStride,
+    Mux(isAlpha, alphaSrcAddress, srcRowBase))
+  private val sourceReadBytes = Mux(earlyRowReads,rowBytes,Mux(isAlpha, alphaChunkPixels << 1, rowBytes))
   private val sourceReadValid = startingSourceRead ||
-    (startingAlphaReads && backgroundReader.io.request.ready)
+    (startingAlphaReads && backgroundReader.io.request.ready) || earlyRowReads
   reader.io.request.valid := Mux(streamingKey,
     keyStream.map(_.io.readRequest.valid).getOrElse(false.B) && !useTextureCache,
     Mux(streamingCopy, copyStream.io.readRequest.valid, sourceReadValid && !useTextureCache))
@@ -263,9 +278,9 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
     keyStream.map(_.io.readRequest.valid).getOrElse(false.B) && useTextureCache, sourceReadValid && useTextureCache)
   textureCache.io.readRequest.bits.address := Mux(streamingKey, keyReadRequest.address, sourceReadAddress)
   textureCache.io.readRequest.bits.bytes := Mux(streamingKey, keyReadRequest.bytes, sourceReadBytes)
-  backgroundReader.io.request.valid := startingAlphaReads && sourceReadReady
-  backgroundReader.io.request.bits.address := rect.io.address.bits.address
-  backgroundReader.io.request.bits.bytes := alphaChunkPixels << 1
+  backgroundReader.io.request.valid := (startingAlphaReads || earlyRowReads) && sourceReadReady
+  backgroundReader.io.request.bits.address := Mux(earlyRowReads,dstRowBase+commandReg.dstStride,rect.io.address.bits.address)
+  backgroundReader.io.request.bits.bytes := Mux(earlyRowReads,rowBytes,alphaChunkPixels << 1)
   private val sourceReadFire = sourceReadValid && sourceReadReady
   when(startingSourceRead && sourceReadFire) {
     rowReadDone := false.B
@@ -274,6 +289,10 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   }
   when(startingAlphaReads && sourceReadFire && backgroundReader.io.request.fire) {
     state := waitAlphaReads
+  }
+  when(earlyRowReads && sourceReadFire && backgroundReader.io.request.fire) {
+    earlyRowIssued.foreach(_ := true.B)
+    alphaPrefetching := true.B // Error drain/flush also owns this unconsumed row.
   }
   when(state === waitAlphaReads && sourceReadReady && backgroundReader.io.request.ready) {
     state := startWrite
@@ -346,6 +365,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
             alphaSrcAddress := srcRowBase + commandReg.srcStride
             rowReadDone := false.B; rowReadError := false.B; backgroundReadError := false.B
             alphaPrefetching := true.B
+            if(enableAlphaEarlyPrefetch) { fastRowsLeft := fastRowsLeft - 1.U }
             state := startAlphaAligners
           }
         }
@@ -423,6 +443,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
       state := finish
     }.otherwise {
       when(fastWordBlit) { fastRowsLeft := fastRowsLeft - 1.U }
+      if(enableAlphaEarlyPrefetch) { when(isAlpha) { fastRowsLeft := fastRowsLeft - 1.U } }
       srcRowBase := srcRowBase + commandReg.srcStride
       dstRowBase := dstRowBase + commandReg.dstStride
       rowReadDone := false.B
@@ -463,6 +484,7 @@ class DenseBlitEngine(enableCopyStream: Boolean = true, enableKeyPrefetch: Boole
   copyStream.io.completion.ready := io.completion.ready && streamingCopy
   when(io.completion.fire) {
     alphaPrefetching := false.B
+    earlyRowIssued.foreach(_ := false.B)
     state := idle
   }
 
