@@ -24,6 +24,10 @@ int pc_advance(pc_state *s,const game_input *in) {
  if(!s || !in || s->target<32 || s->target>s->maximum || s->maximum>PC_MAX_SPRITES ||
     ((in->held|in->pressed|in->released)&~V3_KEY_MASK))return GPU_DRIVER_ARGUMENT;
  ++s->tick;
+ /* Consecutive shape indices need one division per frame, not per sprite.
+  * Rebase on uint32 wrap: 2^32 is not a multiple of six. */
+ uint32_t shape_value=s->seed+s->tick/8u;
+ unsigned shape=shape_value%6u;
  for(unsigned i=0;i<s->target;i++) {
   pc_sprite *p=s->sprites+i;int dx=p->dx,dy=p->dy;
   if(!i && (in->held&(V3_KEY_LEFT|V3_KEY_RIGHT|V3_KEY_UP|V3_KEY_DOWN))) {
@@ -35,7 +39,9 @@ int pc_advance(pc_state *s,const game_input *in) {
   p->x=(int16_t)move(p->x,&dx,8,936);p->y=(int16_t)move(p->y,&dy,80,516);
   if(dx)p->dx=(int8_t)dx;
   if(dy)p->dy=(int8_t)dy;
-  p->shape=(uint8_t)((i+s->seed+s->tick/8u)%6u);
+  p->shape=(uint8_t)shape;
+  shape=shape==5u?0u:shape+1u;
+  if(!++shape_value)shape=0;
  }
  return 0;
 }

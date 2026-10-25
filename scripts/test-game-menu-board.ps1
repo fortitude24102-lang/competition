@@ -7,6 +7,7 @@ param(
  [switch]$LoadBit,
  [uint32]$ExpectedBuild=0x20261008,
  [switch]$PerformanceChallenge,
+ [ValidateRange(5,7200)][int]$QualifiedHoldSeconds=5,
  [ValidateSet(4,6)][int]$LevelCount=4,
  [string]$Python='python'
 )
@@ -34,13 +35,15 @@ $keepalive=$null;[uint32]$challengeSession=0
 function Start-GameKeepalive {
  if($script:keepalive -or !$script:acquired -or $script:held) {throw 'Keepalive requires the existing neutral collector owner'}
  $info=New-Object Diagnostics.ProcessStartInfo
- $info.FileName=(Get-Command $Python -CommandType Application -ErrorAction Stop).Source
+ $info.FileName=(Get-Command $Python -CommandType Application -ErrorAction Stop|Select-Object -First 1).Source
  $info.Arguments='-u "'+(Join-Path $PSScriptRoot 'control-keepalive.py')+'"'
  $info.UseShellExecute=$false;$info.CreateNoWindow=$true
  $info.RedirectStandardInput=$true;$info.RedirectStandardOutput=$true;$info.RedirectStandardError=$true
- $script:keepalive=New-Object Diagnostics.Process
- $script:keepalive.StartInfo=$info
- if(!$script:keepalive.Start()) {throw 'Keepalive process did not start'}
+ $child=New-Object Diagnostics.Process
+ $child.StartInfo=$info
+ try {if(!$child.Start()) {throw 'Keepalive process did not start'}}
+ catch {$child.Dispose();throw}
+ $script:keepalive=$child
  # Token goes through a private pipe, never process arguments or logs.
  $config=@{url=$GatewayUrl;body=@{token=$boot.token;client=$client;keys=0;action_sequence=$action;release=$false}}
  $script:keepalive.StandardInput.WriteLine(($config|ConvertTo-Json -Depth 3 -Compress))
@@ -174,7 +177,7 @@ try {
   Wait { !$state.stale -and $state.performance -and !$state.performance.stale -and $state.performance.stage -ge 4 } 900 'automatic search and full3600 verification'
   if($state.performance.stage -eq 6 -or !$state.performance.best -or $state.performance.frames -ne 3600) {throw 'Challenge did not produce a qualified full3600 result'}
   $verifiedBest=$state.performance.best
-  $stableUntil=$timer.Elapsed.TotalSeconds+5
+  $stableUntil=$timer.Elapsed.TotalSeconds+$QualifiedHoldSeconds
   while($timer.Elapsed.TotalSeconds -lt $stableUntil) {
    Tick
    if(!$state.stale -and $state.performance -and !$state.performance.stale -and
@@ -183,6 +186,7 @@ try {
   Assert-QualifiedPerformance $state $challengeSession $verifiedBest
   $state|ConvertTo-Json -Depth 8 | Out-File "$outPath/performance-final.json" -Encoding utf8
   "PASS real performance: best=$($state.performance.best),stage=$($state.performance.stage),frames=$($state.performance.frames)"
+  "PASS qualified hold seconds=$QualifiedHoldSeconds"
   $challengeSession=0
   Game 'menu' 0
   Wait { !$state.performance } 2 'old challenge result cleared on MENU'

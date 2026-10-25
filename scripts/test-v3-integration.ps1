@@ -57,6 +57,8 @@ try {
  Check 'independent collector heartbeat'
  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-game-menu-board-cache.ps1
  Check 'challenge collector freshness and cleanup'
+ & powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-game-menu-board-keepalive.ps1
+ Check 'actual collector child launch and failed-launch cleanup'
  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/tests/test-game-probe-identity.ps1
  Check 'terminal cohort identity guard'
  }

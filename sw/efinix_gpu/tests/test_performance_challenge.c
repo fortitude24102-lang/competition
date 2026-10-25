@@ -4,6 +4,24 @@
 #include <string.h>
 static pc_state state;
 static gpu_instance descriptors[4097];
+static void shape_wrap(void) {
+ const uint32_t seeds[]={0,1,7,UINT32_MAX,UINT32_MAX-PC_MAX_SPRITES+1u,UINT32_MAX-6u};
+ const uint32_t ticks[]={0,7,8,31,UINT32_MAX-1u,UINT32_MAX};
+ for(unsigned a=0;a<sizeof(seeds)/sizeof(seeds[0]);a++)
+ for(unsigned b=0;b<sizeof(ticks)/sizeof(ticks[0]);b++) {
+  assert(!pc_init(&state,PC_MAX_SPRITES,seeds[a]));
+  state.target=PC_MAX_SPRITES;state.tick=ticks[b];
+  for(unsigned i=0;i<state.target;i++)state.sprites[i]=(pc_sprite){100,100,1,1,5,0xa5};
+  assert(!pc_advance(&state,&(game_input){0}));
+  assert(state.tick==ticks[b]+1u);
+  for(unsigned i=0;i<state.target;i++) {
+   uint32_t value=i+seeds[a]+state.tick/8u; /* Original uint32 wrap then modulo. */
+   const pc_sprite *p=state.sprites+i;
+   assert(p->shape==value%6u);
+   assert(p->x==101 && p->y==101 && p->dx==1 && p->dy==1 && p->pad==0xa5);
+  }
+ }
+}
 static void frame(int pass) {
  assert(pc_record(&state,100000000,pass?1500000:1700000,pass?1663900:3327800,0,0,state.target,(state.target+7)/8)>=0);
 }
@@ -13,6 +31,7 @@ static void trial(int pass) {
  assert(state.generation!=generation || state.stage>=PC_DONE);
 }
 int main(void) {
+ shape_wrap();
  assert(!pc_init(&state,1819,7));
  for(unsigned i=0;i<5;i++)trial(1);
  assert(state.target==1819);
