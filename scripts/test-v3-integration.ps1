@@ -1,4 +1,4 @@
-param([string]$IcarusRoot='C:/iverilog',[switch]$SoftwareOnly,[switch]$RtlOnly,[switch]$ReplayCrcNibble)
+param([string]$IcarusRoot='C:/iverilog',[switch]$SoftwareOnly,[switch]$RtlOnly,[switch]$ReplayCrcNibble,[switch]$ShapeLut)
 $ErrorActionPreference='Stop'
 Push-Location (Split-Path $PSScriptRoot -Parent)
 try {
@@ -8,6 +8,7 @@ try {
  $flags=@('-std=c11','-O2','-Wall','-Wextra','-Werror','-fsanitize=undefined',
   '-ffunction-sections','-fdata-sections','-Wl,--gc-sections','-Isw/efinix_gpu/include')
  if($ReplayCrcNibble) {$flags+='-DREPLAY_CRC_NIBBLE=1'}
+ if($ShapeLut) {$flags+='-DV3_SHAPE_LUT=1'}
  $cases=@(
   @{name='net_control';modules=@('net_control','asset_protocol');extra=@('-DNC_TEST_BACKEND')},
   @{name='input_state';modules=@('input_state')},

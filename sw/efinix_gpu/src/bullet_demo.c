@@ -1,5 +1,8 @@
 #include "bullet_demo.h"
 #include <string.h>
+#if defined(V3_SHAPE_LUT) && V3_SHAPE_LUT
+#include "bullet_contact_masks.h"
+#endif
 /* Q8 direction table: no floating-point/trigonometry in the RV32 frame loop. */
 static const int16_t directions[16][2]={
  {256,0},{237,98},{181,181},{98,237},{0,256},{-98,237},{-181,181},{-237,98},
@@ -121,7 +124,9 @@ static int step(bullet_state *s,int manual,int player_x,int player_y,const bulle
  int protected=s->invulnerable!=0;
  if(protected) --s->invulnerable;
  if(!(s->round_tick%30u)) add_score(s,1);
- for(unsigned i=0;i<s->count;i++) {
+ /* Same 240+i%120 lifetime, without one RV32 division per active object.
+  * The for update also runs on inactive/friendly/respawn continue paths. */
+ for(unsigned i=0,lifetime=240;i<s->count;i++,lifetime=lifetime==359?240:lifetime+1) {
   bullet_object *b=&s->objects[i];
   if(b->kind==3) {
    if(b->age==UINT16_MAX) continue;
@@ -146,7 +151,7 @@ static int step(bullet_state *s,int manual,int player_x,int player_y,const bulle
   }
   if(s->interactive && b->age==UINT16_MAX) continue;
   if(b->x<=-8*256 || b->x>=960*256 || b->y<64*256 || b->y>=540*256 ||
-     b->age>=240u+i%120u) { spawn(s,i,0); continue; }
+     b->age>=lifetime) { spawn(s,i,0); continue; }
   if(s->interactive) switch(b->path) {
    case 2:b->vx=(int16_t)(((int)(i%5u)-2)*96+directions[(b->age/4u)&15u][0]/2);break;
    case 3: {unsigned angle=(i/3u+b->age/12u)&15u;
@@ -163,6 +168,13 @@ static int step(bullet_state *s,int manual,int player_x,int player_y,const bulle
   /* Cheap broad phase, then at most 64 opacity texels for nearby bullets.
    * Hit core radius 3; graze radius 12. No all-pairs object collision. */
   if(bx<s->player_x-19 || bx>s->player_x+12 || by<s->player_y-19 || by>s->player_y+12) continue;
+#if defined(V3_SHAPE_LUT) && V3_SHAPE_LUT
+  /* Exact precomputed texel/disk overlap; broad phase bounds both indices.
+   * Same convolution idea as pygame bitmasks, generated from our own shapes. */
+  unsigned cx=(unsigned)(bx-s->player_x+19),cy=(unsigned)(by-s->player_y+19);
+  int hit=(int)((bullet_contact_masks[b->shape][0][cy]>>cx)&1u);
+  int near=(int)((bullet_contact_masks[b->shape][1][cy]>>cx)&1u);
+#else
   int hit=0,near=0;
   for(unsigned y=0;y<8 && !hit;y++) for(unsigned x=0;x<8;x++) {
    if(!bullet_shape_opaque(b->shape,x,y)) continue;
@@ -171,6 +183,7 @@ static int step(bullet_state *s,int manual,int player_x,int player_y,const bulle
    if(r<=144) near=1;
    if(r<=9) { hit=1; break; }
   }
+#endif
   if(hit) {
    if(!protected) {
     --s->hp; protected=1;
