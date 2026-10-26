@@ -113,19 +113,21 @@ class WideCopyDma extends Module {
     !failed && !aborted && !io.abort) {
     state(writeBank) := committed;writeDone(writeBank) := false.B
     wBank := writeBank;awPending := true.B;writeBank := !writeBank
+    fetchIndex := 0.U;sendIndex := 0.U
   }
   io.axi.aw.valid := awPending
   io.axi.aw.bits := 0.U.asTypeOf(new Axi128Address)
   io.axi.aw.bits.addr := destinations(wBank);io.axi.aw.bits.len := beats(wBank)-1.U
   io.axi.aw.bits.size := 4.U;io.axi.aw.bits.burst := 1.U
   when(io.axi.aw.fire) {
-    awPending := false.B;wActive := true.B;fetchIndex := 0.U;sendIndex := 0.U
+    awPending := false.B;wActive := true.B
   }
 
   // Two-word elastic read pipeline absorbs synchronous RAM latency under W stalls.
+  // Prefetch the committed bank during AW arbitration; external W still waits for AW.
   private val words = Module(new Queue(UInt(128.W),2,pipe=true))
   private val memoryPending = RegInit(false.B)
-  private val fetch = wActive && fetchIndex < beats(wBank) &&
+  private val fetch = (awPending || wActive) && fetchIndex < beats(wBank) &&
     ((words.io.count +& memoryPending.asUInt) < 2.U || words.io.deq.fire)
   private val data = memory.read(Cat(wBank,fetchIndex(5,0)),fetch)
   memoryPending := fetch

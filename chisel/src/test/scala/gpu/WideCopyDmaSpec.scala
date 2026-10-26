@@ -147,6 +147,58 @@ class WideCopyDmaSpec extends AnyFunSpec with StableChiselSim with Matchers {
       run(d,0x02400000L,0x02000800L,16384,2)
     }
   }
+  it("hides bank-read latency behind committed AW without sending W before acceptance") {
+    simulate(new WideCopyDma) { d =>
+      init(d)
+      def yes(b:Bool)=b.peek().litToBoolean
+      def waitFor(b:Bool):Unit = {
+        var n=0
+        while(!yes(b) && n<32){d.clock.step();n+=1}
+        assert(n<32,"transaction stalled")
+      }
+      val latencies=mutable.ArrayBuffer.empty[(Int,Int,Int)]
+      for(beats<-Seq(1,64);awStall<-Seq(0,8)) {
+        val word=BigInt("fedcba98765432100123456789abcdef",16)
+        d.io.request.valid.poke(true)
+        d.io.request.bits.srcAddr.poke(0x02400000)
+        d.io.request.bits.dstAddr.poke(0x02000000)
+        d.io.request.bits.bytes.poke(beats*16);d.io.request.bits.tag.poke(beats+awStall)
+        waitFor(d.io.request.ready);d.clock.step();d.io.request.valid.poke(false)
+        d.io.axi.ar.ready.poke(true);waitFor(d.io.axi.ar.valid)
+        d.io.axi.ar.bits.len.expect(beats-1);d.clock.step();d.io.axi.ar.ready.poke(false)
+        d.io.axi.r.valid.poke(true)
+        for(i<-0 until beats) {
+          d.io.axi.r.bits.data.poke(word+i);d.io.axi.r.bits.last.poke(i==beats-1)
+          waitFor(d.io.axi.r.ready);d.clock.step()
+        }
+        d.io.axi.r.valid.poke(false);waitFor(d.io.axi.aw.valid)
+        for(_<-0 until awStall) {
+          d.io.axi.aw.valid.expect(true);d.io.axi.aw.bits.addr.expect(0x02000000)
+          d.io.axi.w.valid.expect(false);d.clock.step()
+        }
+        d.io.axi.w.valid.expect(false)
+        d.io.axi.aw.ready.poke(true);d.clock.step();d.io.axi.aw.ready.poke(false)
+        var latency=1
+        while(!yes(d.io.axi.w.valid) && latency<8){d.clock.step();latency+=1}
+        latencies+=((beats,awStall,latency))
+        d.io.axi.w.ready.poke(true)
+        for(i<-0 until beats) {
+          d.io.axi.w.valid.expect(true);d.io.axi.w.bits.data.expect(word+i)
+          d.io.axi.w.bits.strb.expect(65535);d.io.axi.w.bits.last.expect(i==beats-1)
+          d.clock.step()
+        }
+        d.io.axi.w.ready.poke(false);d.io.axi.w.valid.expect(false)
+        d.clock.step(3);d.io.completion.valid.expect(false)
+        d.io.axi.b.valid.poke(true);waitFor(d.io.axi.b.ready);d.clock.step()
+        d.io.axi.b.valid.poke(false);waitFor(d.io.completion.valid)
+        d.io.completion.bits.error.expect(GpuError.None);d.io.completion.bits.tag.expect(beats+awStall)
+        d.io.completion.ready.poke(true);d.clock.step();d.io.completion.ready.poke(false)
+        waitFor(d.io.request.ready)
+      }
+      println(s"COPY_FIRST_W_LATENCY,$latencies")
+      latencies.foreach { case(_,stall,latency) => latency should be <= (if(stall==0)2 else 1) }
+    }
+  }
   it("drains response/ID/last faults and accepts a clean successor without replay") {
     simulate(new WideCopyDma) { d=>
       init(d)
