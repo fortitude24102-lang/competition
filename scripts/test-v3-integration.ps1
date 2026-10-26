@@ -55,6 +55,8 @@ try {
  Check 'real UDP/HTTP gateway contracts'
  & python sw/efinix_gpu/tests/test_control_keepalive.py
  Check 'independent collector heartbeat'
+ & python sw/efinix_gpu/tests/test_v3_detail_counters.py
+ Check 'complete diagnostic endpoints and GPU traffic scope'
  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-game-menu-board-cache.ps1
  Check 'challenge collector freshness and cleanup'
  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-game-menu-board-keepalive.ps1

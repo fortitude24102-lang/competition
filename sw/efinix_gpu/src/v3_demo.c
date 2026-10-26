@@ -106,6 +106,17 @@ _Static_assert(V3_STATE_ADDRESS+sizeof(v3_runtime)<=V3_COPY_AHEAD_WORD,"probe co
 static uint32_t work_samples[PERF_WINDOW_FRAMES];
 static uint32_t us(uint64_t ticks) {return (uint32_t)(ticks/(BSP_CLINT_HZ/1000000u));}
 static uint32_t now_ms(void) {return (uint32_t)(gpu_platform_cycles()/(BSP_CLINT_HZ/1000u));}
+#if V3_DETAIL_PROBE
+/* Dump latched endpoints outside the measured window; counters describe GPU
+ * interface traffic, not DDR PHY transfers after upsizing or controller padding. */
+static void detail_counters(const char *phase,const gpu_perf_snapshot *s) {
+ bsp_printf("V3_COUNTERS,phase=%s,cycles_lo=%x,cycles_hi=%x,pixels_lo=%x,pixels_hi=%x,read_lo=%x,read_hi=%x,write_lo=%x,write_hi=%x,stalls_lo=%x,stalls_hi=%x,cache_lo=%x,cache_hi=%x,render_grants_lo=%x,render_grants_hi=%x,scanout_grants_lo=%x,scanout_grants_hi=%x\r\n",
+  phase,(uint32_t)s->cycles,(uint32_t)(s->cycles>>32),(uint32_t)s->pixels,(uint32_t)(s->pixels>>32),
+  (uint32_t)s->read_bytes,(uint32_t)(s->read_bytes>>32),(uint32_t)s->write_bytes,(uint32_t)(s->write_bytes>>32),
+  (uint32_t)s->stalls,(uint32_t)(s->stalls>>32),(uint32_t)s->cache_bytes,(uint32_t)(s->cache_bytes>>32),
+  (uint32_t)s->render_grants,(uint32_t)(s->render_grants>>32),(uint32_t)s->scanout_grants,(uint32_t)(s->scanout_grants>>32));
+}
+#endif
 int v3_build_gpu_scene(const bullet_state *state,uint32_t dst,int network,int list_available,
  gpu_instance *items,bullet_stream *scene,int *using_list) {
  if(!state || !scene || !using_list || (list_available!=0 && list_available!=1))return GPU_DRIVER_ARGUMENT;
@@ -318,6 +329,9 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  gpu_perf_snapshot probe_initial;
  e=gpu_read_perf_snapshot(gpu,&probe_initial);if(e)return 1;
  probe_underflows=probe_initial.underflows;
+ #if V3_DETAIL_PROBE
+ detail_counters("begin",&probe_initial);
+ #endif
  bsp_printf("V3_PROBE_START,warm=30,samples=%d,log_windows=1\r\n",V3_PROBE_FRAMES);
 #endif
  bsp_printf("V3_READY,build=%x,epoch=%x,network=%d,state=%x,mode=%s,count=%d\r\n",V3_BUILD_ID,V3_RESOURCE_EPOCH,network,V3_STATE_ADDRESS,runtime->menu_enabled?"MENU":"LIVE",runtime->menu_enabled?0:V3_START_COUNT);
@@ -630,6 +644,7 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
     runtime->seal_cursor.offset,runtime->recording.crc32);
    #endif
    #if V3_DETAIL_PROBE
+   detail_counters("end",&probe_after);
    bsp_printf("V3_WORST,tick=%d,steps=%d,logic_us=%d,build_us=%d,scene_us=%d,hud_us=%d,other_us=%d,busy_us=%d,work_us=%d,wall_us=%d,hp=%d,seal_event=%d,hp_before=%d,death_wait_before=%d,round_tick=%d\r\n",
     detail_worst.tick,detail_worst.steps,detail_worst.logic_us,detail_worst.build_us,
     detail_worst.scene_us,detail_worst.hud_us,detail_worst.other_us,detail_worst.busy_us,
