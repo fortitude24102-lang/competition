@@ -1,0 +1,1614 @@
+{
+  "payloads": [
+    {
+      "path": "README.md",
+      "bytes": 5366,
+      "sha256": "3f1ac4c71ed41bb005a33a52e54b74920f6720d6d415cc2b814e3acaa115fd41"
+    },
+    {
+      "path": "control/efinix_2d_gpu.bit",
+      "bytes": 2727990,
+      "sha256": "ef240664097d115b1e2fbc60f336a9190d4e8a2941a760642627e3563fcebcb1"
+    },
+    {
+      "path": "performance_bounds_20261026.md",
+      "bytes": 3553,
+      "sha256": "42e931717fe8e355da15cf473eb650666bdcdaaa0dd0dc16d9f7d484f778463d"
+    },
+    {
+      "path": "physical-inputs/000-efinix_2d_gpu.peri.xml",
+      "bytes": 73683,
+      "sha256": "10adbdcf3192d6c26a9419aaab926d1bdcd34c2553c13c32a7f4b0bb45a60466"
+    },
+    {
+      "path": "physical-inputs/001-efinix_2d_gpu.sdc",
+      "bytes": 40463,
+      "sha256": "dd05850ebd5d1768798291e0398c198f1575999a77ae8d214033f077fa181221"
+    },
+    {
+      "path": "physical-inputs/002-efinix_2d_gpu.xml",
+      "bytes": 20530,
+      "sha256": "7cba4048ed5ee7c2543f95b66991ffdbe19e75da8d4bad808b2c5c1177c9d012"
+    },
+    {
+      "path": "physical-inputs/003-board_top.v",
+      "bytes": 11884,
+      "sha256": "e4142c05bc0c5212fa351c6df212b9b0b00b1a0ef97e18b7449308bc579756f3"
+    },
+    {
+      "path": "physical-inputs/004-display_line_buffer.v",
+      "bytes": 2380,
+      "sha256": "0b9cebcc2f148cbb7b1ce24055bacce7711007ce2e6f00424fa00c4fc981fa3f"
+    },
+    {
+      "path": "physical-inputs/005-display_scale2x_1080p.v",
+      "bytes": 2015,
+      "sha256": "03882cb78a04d08f9a58eb02ad98cffcbc0aa6ac4520d57e2cf14a13c436802b"
+    },
+    {
+      "path": "physical-inputs/006-hdmi_subsystem.v",
+      "bytes": 5134,
+      "sha256": "5e1a77c839b6b71f514568bca6e49a8251a4fcd12e2d28dbb12edbb3aaff345a"
+    },
+    {
+      "path": "physical-inputs/007-hdmi_tx_adapter.v",
+      "bytes": 1175,
+      "sha256": "a3f7b9d0494a21455a8c33f888c11394956a4a1d365a137f0a3039fd5b3e470a"
+    },
+    {
+      "path": "physical-inputs/008-pixel_async_fifo.v",
+      "bytes": 2401,
+      "sha256": "13fce523b727f68ee5cf91d2e02b93ee6e0ca6e54a48defc1597a079fdaad61a"
+    },
+    {
+      "path": "physical-inputs/009-rgb565_to_rgb888.v",
+      "bytes": 271,
+      "sha256": "6a722bc09c203ae04ac3c6cad5eed8160e42a277eefca799a73e687506f2e4ff"
+    },
+    {
+      "path": "physical-inputs/010-underflow_pulse_cdc.v",
+      "bytes": 5592,
+      "sha256": "0ab206c19028717528f7017badc3a484b67f813993f96ebaf3f3fd40c63e407a"
+    },
+    {
+      "path": "physical-inputs/011-vblank_pulse_sync.v",
+      "bytes": 1214,
+      "sha256": "51c935f9aea33118dfb38d36511ada6b956cd0e94d747ccf402c5457a1c681b1"
+    },
+    {
+      "path": "physical-inputs/012-efinix_ge_phy.v",
+      "bytes": 1622,
+      "sha256": "628e5762749059dca0c0aab7e5e835006ecd3697171d87d962dc24b0a2ecee74"
+    },
+    {
+      "path": "physical-inputs/013-efinix_sapphire_adapter.v",
+      "bytes": 41897,
+      "sha256": "de804b911a37fc094db064301f1d575a1a1de95e2ecdc44d03910df999e703a9"
+    },
+    {
+      "path": "physical-inputs/014-efinix_user_keys_gpio.v",
+      "bytes": 717,
+      "sha256": "012189ea2b66a33c241c7a49150d9afcb6da92d231c994307a7b99efd462c3de"
+    },
+    {
+      "path": "physical-inputs/015-asset_stream_guard.v",
+      "bytes": 4165,
+      "sha256": "04aea24d9871e969a1e84f246951d3001714fe5777411cd51008770eac4f6975"
+    },
+    {
+      "path": "physical-inputs/016-asset_udp_rx.v",
+      "bytes": 7500,
+      "sha256": "a1bd5aae4e336f8a5bc3dca607c1f3efb8f91d80789e38309d20b87df9a66118"
+    },
+    {
+      "path": "physical-inputs/017-control_udp_rx.v",
+      "bytes": 2686,
+      "sha256": "8c2713148b7cdcbf0f9d9412ee0bed07c83105219bf860678c583db2d6a54c4e"
+    },
+    {
+      "path": "physical-inputs/018-efinix_asset_network.v",
+      "bytes": 8128,
+      "sha256": "dc15413b8e10b3a777fcb26f7d9e30a43e3fd3a60bfa05c4633b615578fd842d"
+    },
+    {
+      "path": "physical-inputs/019-efinix_asset_network_shared.v",
+      "bytes": 10379,
+      "sha256": "332b0f8932d1c4f49f234e63970ee256dd0b72591c37ce9931fa363aeb3b4636"
+    },
+    {
+      "path": "physical-inputs/020-efinix_ge_mac_wrapper.v",
+      "bytes": 5339,
+      "sha256": "b40a749f8ee8964c84cb894db9d8d77912f4e65e67e7326549ae9c9aa1ee45ed"
+    },
+    {
+      "path": "physical-inputs/021-efinix_network_subsystem.v",
+      "bytes": 4434,
+      "sha256": "e122448568bdd415e3214377a7874185acbe96e9a521744ba587f519f1904ad2"
+    },
+    {
+      "path": "physical-inputs/022-net_async_mailbox.v",
+      "bytes": 2360,
+      "sha256": "8050ce6283669d8513444d0e7074774ac96c611bea186704fb6efae377013096"
+    },
+    {
+      "path": "physical-inputs/023-net_control_bridge.v",
+      "bytes": 6813,
+      "sha256": "d23e0e647d3ae0dfb3e1c57a578bca6f0f23247404687aa9b82b02726806562c"
+    },
+    {
+      "path": "physical-inputs/024-udp_payload_router.v",
+      "bytes": 2583,
+      "sha256": "8d73784381c235e45d6b2bafd7f0772bde087dde0e7fcb4453916cf4e370c542"
+    },
+    {
+      "path": "physical-inputs/025-udp_tx_arbiter.v",
+      "bytes": 2094,
+      "sha256": "b03ce7b82fe160a464096194a7ca632c8c89119872497a1759c1c7deb4eb36f7"
+    },
+    {
+      "path": "physical-inputs/026-arp_cache.v",
+      "bytes": 1465,
+      "sha256": "dabf78b06efed2abb047a176744eefa96ddf32668cd65a6b85cbb9d39579c397"
+    },
+    {
+      "path": "physical-inputs/027-crc.v",
+      "bytes": 3864,
+      "sha256": "d7ff723f89f9543182a6252ecd1a27222703d49c7a797b25a9df91fe363e451b"
+    },
+    {
+      "path": "physical-inputs/028-dpram.v",
+      "bytes": 636,
+      "sha256": "18e18a86df996c1fbc80c81453c3fc2a7e745cbd9ba2d9dbb243eaa880950ab9"
+    },
+    {
+      "path": "physical-inputs/029-icmp_reply.v",
+      "bytes": 15854,
+      "sha256": "b6bb3180d6563ce1b3b7781de5cd415b0df097ffa22c05f1af39923668c98d2b"
+    },
+    {
+      "path": "physical-inputs/030-mac_top.v",
+      "bytes": 7014,
+      "sha256": "64eabbea0940ec0a6a5385a236f3efccb188174173e8782e9eae067377f5cd37"
+    },
+    {
+      "path": "physical-inputs/031-arp_rx.v",
+      "bytes": 7034,
+      "sha256": "d523d840d4d6d52d4d24158f4bba4451dbb1d572e3f39c623711ead518089797"
+    },
+    {
+      "path": "physical-inputs/032-ip_rx.v",
+      "bytes": 10182,
+      "sha256": "d8898b81532042dc384d61f7ee3d7f1ebee9ed0229e6660ffbc9d43f88825e8f"
+    },
+    {
+      "path": "physical-inputs/033-mac_rx.v",
+      "bytes": 12476,
+      "sha256": "c73a54544e47b7b07334b750ebead64185922e53d6e3fd644f989e51c5c32ba4"
+    },
+    {
+      "path": "physical-inputs/034-mac_rx_top.v",
+      "bytes": 6621,
+      "sha256": "c5f2119776a0dc50113828221b2a5f9bed49f498443b42fd6ba50b731390a4f7"
+    },
+    {
+      "path": "physical-inputs/035-udp_rx.v",
+      "bytes": 10998,
+      "sha256": "c3818074c17c16aff1b9cc0f0013bd3c2e4b4e511b0efcf76282367f1a9a089d"
+    },
+    {
+      "path": "physical-inputs/036-arp_tx.v",
+      "bytes": 9259,
+      "sha256": "969c9d560bdd38cf133575ffa45eaaf41c6835444abb3ee908d71f3153d3bf91"
+    },
+    {
+      "path": "physical-inputs/037-ip_tx.v",
+      "bytes": 11302,
+      "sha256": "d8d60d7b302c607a201ee3d37eae1a4e2f6392082c082ce85b666b8ecf7235ee"
+    },
+    {
+      "path": "physical-inputs/038-ip_tx_mode.v",
+      "bytes": 3575,
+      "sha256": "b02e6dbc25ff1dbb519aacf77eac0f37c6f3da5e8516b81b4c23c9cadfea8a43"
+    },
+    {
+      "path": "physical-inputs/039-mac_tx.v",
+      "bytes": 6650,
+      "sha256": "5ae87ee473e4aa2b0ed9bf9c0ea903a1d9b3f3ab9d512f298a3da7ff10fb632a"
+    },
+    {
+      "path": "physical-inputs/040-mac_tx_mode.v",
+      "bytes": 2975,
+      "sha256": "bb3944f34e59a2315d8fd13085432bd434a86bbd58adaa70f2aab708ba43898f"
+    },
+    {
+      "path": "physical-inputs/041-mac_tx_top.v",
+      "bytes": 9516,
+      "sha256": "6e9364b6b81d42076733cc346c13d4daa45237544819061458cde25dff9f246e"
+    },
+    {
+      "path": "physical-inputs/042-udp_tx.v",
+      "bytes": 13489,
+      "sha256": "72ad4133cb5b2ec425d6dd0d9eb58b211112ae5bb98165fc80a64023f3542bff"
+    },
+    {
+      "path": "physical-inputs/043-util_gmii_to_rgmii.v",
+      "bytes": 2953,
+      "sha256": "2cf824363dda89d0e9e77555651dfc7206993ee5589aaf222772f1f4cfd39c66"
+    },
+    {
+      "path": "physical-inputs/044-dvi_encoder.v",
+      "bytes": 1340,
+      "sha256": "fd82889ac3b607a68c960170893d1afd78dcc7bcc194695e6b0fb3f2ab7822d3"
+    },
+    {
+      "path": "physical-inputs/045-encode.v",
+      "bytes": 7630,
+      "sha256": "1ce86cfe0d112c5de3c022366e4e8a060f27dfc3b303e6429cb93f386fbedc6a"
+    },
+    {
+      "path": "physical-inputs/046-reset.v",
+      "bytes": 1992,
+      "sha256": "7e647cc7114161ee1795cf0f1302b1213a0b2c8dce9fe59164163c34f552a809"
+    },
+    {
+      "path": "physical-inputs/047-EfxSapphireSoc.v_toplevel_system_ramA_logic_ram_symbol0.bin",
+      "bytes": 9216,
+      "sha256": "ccb798c235648abcb737f367124e43bee548462a77e5b56130966bbab1c309cf"
+    },
+    {
+      "path": "physical-inputs/048-EfxSapphireSoc.v_toplevel_system_ramA_logic_ram_symbol1.bin",
+      "bytes": 9216,
+      "sha256": "27b918b1b0a96e2364d95144b2a02b9308ec8e42d1e9f536c9cec426c64f5752"
+    },
+    {
+      "path": "physical-inputs/049-EfxSapphireSoc.v_toplevel_system_ramA_logic_ram_symbol2.bin",
+      "bytes": 9216,
+      "sha256": "9a97796e49bb8614cf04336194766a79f5a0fdc800f8338d0d0a95d00da87f9c"
+    },
+    {
+      "path": "physical-inputs/050-EfxSapphireSoc.v_toplevel_system_ramA_logic_ram_symbol3.bin",
+      "bytes": 9216,
+      "sha256": "fae1132a00c5ef4e50af277408272e2634b7d7d36ef132bc7817cee3160039a6"
+    },
+    {
+      "path": "physical-inputs/051-settings.json",
+      "bytes": 5724,
+      "sha256": "9a5f26b9f09d77f7e9e76be6e604118733106d4a038a92b25b3bdf63ded31b34"
+    },
+    {
+      "path": "physical-inputs/052-soc.v",
+      "bytes": 1644027,
+      "sha256": "a158178a32e67cf78f9c829502a8b274d60fd37b075d956a3172e7e9243b69e7"
+    },
+    {
+      "path": "physical-inputs/053-Axi_Mux.v",
+      "bytes": 130959,
+      "sha256": "2510da6a22db6f79fffc5faa5deda6020855c71a86872cee142d315e002d28e0"
+    },
+    {
+      "path": "physical-inputs/054-Interrupt.v",
+      "bytes": 1619,
+      "sha256": "658221537a1b74348adfcb499590b7905a19be544925f04bdb32f19e39c8fb69"
+    },
+    {
+      "path": "physical-inputs/055-simple_dual_port_ram.v",
+      "bytes": 1565,
+      "sha256": "ecb40539c1a25bcf4917c6d492767d90886316f286b4f26ecb63f008c721ca2a"
+    },
+    {
+      "path": "physical-inputs/056-axi4_bus_ctl.v",
+      "bytes": 187598,
+      "sha256": "f4145b3920b2666396a5161122bef7ba1b1bdb56aba8504e0c08214ae8237c0e"
+    },
+    {
+      "path": "physical-inputs/057-efx_fifo_wrapper.v",
+      "bytes": 54025,
+      "sha256": "040558d9dafd6d7f4c6610b8cd8040cdedc3f95b58a6f31f32dbd7429182eb98"
+    },
+    {
+      "path": "physical-inputs/058-ddr3_parameter.vh",
+      "bytes": 994,
+      "sha256": "abe0c6f3207c30d5468c82cdcf73726ea03fab515274be62dd4bc3c031f52f48"
+    },
+    {
+      "path": "physical-inputs/059-ddr3_top.v",
+      "bytes": 58209,
+      "sha256": "5fd49b04f9c289133b923fcc33296b032f2ad9253af688b013df1967e496dd4a"
+    },
+    {
+      "path": "physical-inputs/060-lb2_axi_clk.v",
+      "bytes": 16295,
+      "sha256": "093c020259988cbcc2b250a17b6a785c31f5bd98a4df6e356e64a79b1ec6f982"
+    },
+    {
+      "path": "physical-inputs/061-local_bus_ctl.v",
+      "bytes": 16841,
+      "sha256": "a3a97a8c5c3da29318df090d84f5292a5bc8d5abb9e051f80478b568056e4cf3"
+    },
+    {
+      "path": "physical-inputs/062-memory_bus_ctl.v",
+      "bytes": 337789,
+      "sha256": "cb7b2498d9612b6978d09a059ed6fddc909700986bbc099c62f00980f7b5c55d"
+    },
+    {
+      "path": "physical-inputs/063-ddr_calibration_ini.v",
+      "bytes": 97258,
+      "sha256": "64b819a7e4f7d0966203cf47aaef55b29eecc6d76a9db36b372719e2adf9410a"
+    },
+    {
+      "path": "physical-inputs/064-ddr_mpr_rdlvl.v",
+      "bytes": 17792,
+      "sha256": "db1922363adece86e57dd87e3b828c63e832997bf4687517abdd78ebf1de6367"
+    },
+    {
+      "path": "physical-inputs/065-ddr_phy_if.v",
+      "bytes": 55918,
+      "sha256": "91ba41274e4d2b25d336661be8444b5e2fc2ccd7b0bef383bd1dff1b9b152c31"
+    },
+    {
+      "path": "physical-inputs/066-ddr_phy_rdlvl_dqs.v",
+      "bytes": 24650,
+      "sha256": "45fc0f1ac4b12d9f993a5bfd335f31a6e929f55a01c60e79641e733f09d2f8a6"
+    },
+    {
+      "path": "physical-inputs/067-ddr_phy_wrcal.v",
+      "bytes": 57540,
+      "sha256": "4cd5f5c5f1c0aa4a6d4caae1df15ae97863240cb680f0a956782c9e762fd3abb"
+    },
+    {
+      "path": "physical-inputs/068-ddr_phy_wrlvl.v",
+      "bytes": 27304,
+      "sha256": "1c84a0d63071372202d1c33e28c79532da6cf087c2d0ec8e80b6185673a34e0c"
+    },
+    {
+      "path": "physical-inputs/069-phy_ctl.v",
+      "bytes": 44157,
+      "sha256": "d59329e8844f20eadcea6f78a7d360e4d509e9b05a1497f8c293ea1c0e90e4b5"
+    },
+    {
+      "path": "physical-inputs/070-PrbsAnyGenerator.v",
+      "bytes": 2833,
+      "sha256": "5a0421c745236c1acfa876d9beffd662690baa49baa08c8f7b90e1bb0cd37c60"
+    },
+    {
+      "path": "physical-inputs/071-addr_gen.v",
+      "bytes": 10749,
+      "sha256": "91029bec7f2b0a8eff57805732cdabca60cd2fe77bcf2f16f3b4388c5471edb3"
+    },
+    {
+      "path": "physical-inputs/072-axi4_m_gen.v",
+      "bytes": 29566,
+      "sha256": "16daded0790e415c6a6f1353b97e82ad68553149a9201962f742e68119753b1e"
+    },
+    {
+      "path": "physical-inputs/073-axi4_onlym_gen.v",
+      "bytes": 11288,
+      "sha256": "64e867802b53dfd5fa9a34aa7b3e3c89858a3020954a63befbad4db9cf65e045"
+    },
+    {
+      "path": "physical-inputs/074-check.v",
+      "bytes": 14356,
+      "sha256": "f05c279b17b9b634e4a4a4b664cd30442983248ae15993cae03cc0c8d244c09d"
+    },
+    {
+      "path": "physical-inputs/075-bit1_delaym.v",
+      "bytes": 2580,
+      "sha256": "b23b263afff2030a91f55581de231be546775b3739c1953e5769671eecbd42b5"
+    },
+    {
+      "path": "physical-inputs/076-divider.v",
+      "bytes": 15764,
+      "sha256": "f7353321eeac4578d116859cb311944cb06f23e20e59219248514cd480a96aac"
+    },
+    {
+      "path": "physical-inputs/077-data_gen.v",
+      "bytes": 7729,
+      "sha256": "47cc71f62a4ad1a8fd10e2388263ac22d9482d2583fc50783931dd4386885b61"
+    },
+    {
+      "path": "physical-inputs/078-ddrtest_statistic.v",
+      "bytes": 45465,
+      "sha256": "e004a83dd0a58be3f828c18d5d0fd8d53fb1bf3d22b177b3902653d05099e0f9"
+    },
+    {
+      "path": "physical-inputs/079-len_gen.v",
+      "bytes": 8748,
+      "sha256": "59c23a6f0384d78587677fe2a0ec070b1eabd11e4d5853cbe063d2cbb64db290"
+    },
+    {
+      "path": "physical-inputs/080-memory_test.v",
+      "bytes": 35739,
+      "sha256": "1b905e911fc0453cb3496916c092ec4f808fc235c3dba28be9f124712f75e2e4"
+    },
+    {
+      "path": "physical-inputs/081-rd_drive.v",
+      "bytes": 5693,
+      "sha256": "5d178d49417179c6db321449c8a3779cb7d1c46248ea6064f690abf56d48b709"
+    },
+    {
+      "path": "physical-inputs/082-test_seq.v",
+      "bytes": 9634,
+      "sha256": "7e48b7a363b54c071c3b6f17335276502f324bfc4d81b2d0ae685e21320c6f25"
+    },
+    {
+      "path": "physical-inputs/083-wr_drive.v",
+      "bytes": 15024,
+      "sha256": "138a910d48312c78c5825d3f5942bb8f5687ad0e2513e972efcdf6acc1c77e83"
+    },
+    {
+      "path": "physical-inputs/084-Arbiter6_GpuCompletion.sv",
+      "bytes": 4098,
+      "sha256": "6b0599c45fecc342fe3deea1a3ebd27d3588201437d82e346245bf3986e920b2"
+    },
+    {
+      "path": "physical-inputs/085-AssetDmaRegs.sv",
+      "bytes": 33514,
+      "sha256": "7e1746aaf0b90aa56130ed23d159e1a59d6985c385db576c2a2dd328f4ee6242"
+    },
+    {
+      "path": "physical-inputs/086-AssetDmaWriter.sv",
+      "bytes": 30218,
+      "sha256": "21bc348d3b59c0f27d76858749eda65a3abadd459f659f1c7322aa057577a02f"
+    },
+    {
+      "path": "physical-inputs/087-AxiDiagnosticRegs.sv",
+      "bytes": 17959,
+      "sha256": "0c31a59688fc3af5f913416cf584b9b68722d59b40cf15625d5023d74d6beee6"
+    },
+    {
+      "path": "physical-inputs/088-AxiReadEngine.sv",
+      "bytes": 13607,
+      "sha256": "456341643469d9f3f02fe9f7f9052045014010cf9660928326160ec22f16c6e6"
+    },
+    {
+      "path": "physical-inputs/089-AxiReadEngine_1.sv",
+      "bytes": 14338,
+      "sha256": "e33ba6c1d16b9895a22647012d7f761ad8d924ff446900acfd93a2441c74a353"
+    },
+    {
+      "path": "physical-inputs/090-AxiReadEngine_2.sv",
+      "bytes": 13609,
+      "sha256": "b9a32282928ee8ee5ab9716054ec11a12b04c9c2973a31673f54fbf940069411"
+    },
+    {
+      "path": "physical-inputs/091-AxiWriteEngine.sv",
+      "bytes": 13436,
+      "sha256": "5c315e2a12eb043e61941484e168ea2787f6ac48d2f06a0c88e056713de1e40b"
+    },
+    {
+      "path": "physical-inputs/092-AxiWritePipeline.sv",
+      "bytes": 14987,
+      "sha256": "3028b9aeeaa0d2699b0d861bbe921ca562581bcef96ce389c83f750ff467ff97"
+    },
+    {
+      "path": "physical-inputs/093-CachedKeyStream.sv",
+      "bytes": 24687,
+      "sha256": "4126066fc4f9f8e4061a495e41c8fffa48cb082c892d8256f87ab78e24fa4fb2"
+    },
+    {
+      "path": "physical-inputs/094-CommandQueue.sv",
+      "bytes": 9575,
+      "sha256": "337d8c99ed34109aee0681cb0217167b1dfb4a1810a2f2c30b75fa37c9ca00a5"
+    },
+    {
+      "path": "physical-inputs/095-CommandValidator.sv",
+      "bytes": 4995,
+      "sha256": "046d87f54d46346e7664654d874219c76e2bf485dea0a45ee3a00d0ca86f5a8b"
+    },
+    {
+      "path": "physical-inputs/096-CommandValidator_1.sv",
+      "bytes": 6092,
+      "sha256": "c3a1cac56bf90e9d5640219e264fbf353f865cba38ac2210348b8302601411ea"
+    },
+    {
+      "path": "physical-inputs/097-CopyStreamEngine.sv",
+      "bytes": 15861,
+      "sha256": "1e1c7fa8f72e9f1b57239544e65eaf000bc04316e0d501a957c6d640cfcecea2"
+    },
+    {
+      "path": "physical-inputs/098-DdrQosArbiter.sv",
+      "bytes": 35320,
+      "sha256": "982cc7db587e10901bead4a105181abebc3243ce76cdfea1e54ef413c558c8f6"
+    },
+    {
+      "path": "physical-inputs/099-DenseBlitEngine.sv",
+      "bytes": 106001,
+      "sha256": "95dd6a2244360669848530faf4ffeeda80bdaf9339a425afa9e7056cfb9c6d9e"
+    },
+    {
+      "path": "physical-inputs/100-Efinix2dGpuTop.sv",
+      "bytes": 89019,
+      "sha256": "ac52ff444d98e5d5fcdf746e85e30649e36b418829b9f555c2117bd0818902bc"
+    },
+    {
+      "path": "physical-inputs/101-FrameListBatch.sv",
+      "bytes": 21727,
+      "sha256": "0f44dc48412cfe819c747a96058827988fe3115955ea2ff773bcf1e821b974b6"
+    },
+    {
+      "path": "physical-inputs/102-FrameListReader.sv",
+      "bytes": 19916,
+      "sha256": "27bf01c36e71783876fc74d82fffeae3b7fc6b60610028106ba5c889a3c6345b"
+    },
+    {
+      "path": "physical-inputs/103-FrameSwapController.sv",
+      "bytes": 8451,
+      "sha256": "39ded6ce39e42f8ad09f5293ffdb6a2af94bcf60b9d13815bc3ff834edbf5f55"
+    },
+    {
+      "path": "physical-inputs/104-GpuApbRegs.sv",
+      "bytes": 47039,
+      "sha256": "4258825d8acee6321d16eb57d98e179c4a7f1b38837329027bb9e6714307aea9"
+    },
+    {
+      "path": "physical-inputs/105-GpuPerfCounters.sv",
+      "bytes": 11401,
+      "sha256": "64561febc7c76c16cfcbe113cc31b2cf6c208e5506d2df70890440c7e6686809"
+    },
+    {
+      "path": "physical-inputs/106-InstanceStream.sv",
+      "bytes": 37343,
+      "sha256": "63598adb57ef20a93f5cdd8204a925cbdd8f90552253a2b2816f21dcfd3585dc"
+    },
+    {
+      "path": "physical-inputs/107-PixelPipeHarness.sv",
+      "bytes": 1946,
+      "sha256": "42b4b65b5675c81ddd7bf30d5f22c93f9063bbac3edb85e99a0ff1e3746fa9bf"
+    },
+    {
+      "path": "physical-inputs/108-PixelReadAligner.sv",
+      "bytes": 8820,
+      "sha256": "8e733c927ee2f9cefaecc8b4a604a6081a92ea19ba36606082a58dee68cf502d"
+    },
+    {
+      "path": "physical-inputs/109-PixelReadAligner_2.sv",
+      "bytes": 8846,
+      "sha256": "2cccbcb5b5885afe72e2899a8b0fbfb414a7e8546674fb1d650cf012ae2c0b73"
+    },
+    {
+      "path": "physical-inputs/110-PixelWritePacker.sv",
+      "bytes": 12134,
+      "sha256": "b6fbc76e87c93e2d0c09203332e46e6eb62d3c3dc64453a07a1161da5631d394"
+    },
+    {
+      "path": "physical-inputs/111-Queue16_GpuCommand.sv",
+      "bytes": 11434,
+      "sha256": "5dd88ed22ca9e8570d962b75c1dbf13fa044c915dd9160faa6463c7cdb9bf50b"
+    },
+    {
+      "path": "physical-inputs/112-Queue16_UInt32.sv",
+      "bytes": 6746,
+      "sha256": "1cbb1698252101e3f09b6f3dd656b705a92892a05b34288d2fe0940e508f805e"
+    },
+    {
+      "path": "physical-inputs/113-Queue256_Axi4ReadData.sv",
+      "bytes": 8685,
+      "sha256": "5e864b6d59c4e399d0aeec7df323a43ed01f5eaa8e813e70b259ea34486186db"
+    },
+    {
+      "path": "physical-inputs/114-Queue2_AxiReadBeat.sv",
+      "bytes": 7470,
+      "sha256": "4415c569cab37233be004b8f2252573fa5bc384d0ea7d29a775e31e4cbe5c4cf"
+    },
+    {
+      "path": "physical-inputs/115-Queue2_DenseBlitEngine_Anon.sv",
+      "bytes": 7972,
+      "sha256": "5556096e65d49e816ea96839cd128afa6194d93dc324f27b11b70f3662decd03"
+    },
+    {
+      "path": "physical-inputs/116-Queue2_UInt128.sv",
+      "bytes": 7043,
+      "sha256": "3d973e60f9745f68d930fd913751ec289b05dbfcefb5212698faba1f821dad12"
+    },
+    {
+      "path": "physical-inputs/117-Queue2_UInt8.sv",
+      "bytes": 6698,
+      "sha256": "dfa0df89941194f76e4a60559f621cfed0bb38cbee40b46e0c77de8d81e02b94"
+    },
+    {
+      "path": "physical-inputs/118-Queue33_UInt32.sv",
+      "bytes": 6607,
+      "sha256": "e1d81f59e9d0637123a66fa323829e75334ce1c4383d4acdc9eac59e7d186807"
+    },
+    {
+      "path": "physical-inputs/119-Queue4_Bool.sv",
+      "bytes": 6732,
+      "sha256": "8be711311e9f5c67cadc1cb43e97bbcafedae8c879e3c94c17ceaa6c312b0f3c"
+    },
+    {
+      "path": "physical-inputs/120-RRArbiter2_Axi4Address.sv",
+      "bytes": 5896,
+      "sha256": "20aef8f3dffd4827aeb5df8caa20781ca26158629dbf9003a31f796beee0c061"
+    },
+    {
+      "path": "physical-inputs/121-RectAddressGen.sv",
+      "bytes": 10220,
+      "sha256": "c0d4fc0805071eaf854c4fd05ed1d7e37b36a37a281fbec3b9a57d3efec93451"
+    },
+    {
+      "path": "physical-inputs/122-RenderEngine.sv",
+      "bytes": 63872,
+      "sha256": "891325d3aef7edd44471e88e50a0071136c95096aea22ef6ae65ae123cee627d"
+    },
+    {
+      "path": "physical-inputs/123-Rgb565WordAligner.sv",
+      "bytes": 12011,
+      "sha256": "b0276c41ad7833b25fd6c41e4eb16585816d53e91a96fc9ca67c18cbaf1fa4a7"
+    },
+    {
+      "path": "physical-inputs/124-ScanoutDma.sv",
+      "bytes": 13309,
+      "sha256": "bf970557f899befb63a4018a401df6220af226123f5230960f1fc7558f088073"
+    },
+    {
+      "path": "physical-inputs/125-SparseBlitEngine.sv",
+      "bytes": 26018,
+      "sha256": "68e6671351f31be2f698e608563c4a987b7060a53debca0c2b2c8c0440ea9274"
+    },
+    {
+      "path": "physical-inputs/126-SparseDecoder.sv",
+      "bytes": 16940,
+      "sha256": "610208c5ae6854fee0ea07b973da68243ee021d15c842a388658fa979dfa087e"
+    },
+    {
+      "path": "physical-inputs/127-TextureCache.sv",
+      "bytes": 20457,
+      "sha256": "c0723a849174d07e960b7e5886bf5f2242d615f56fac6c250dd8d5bdd4205af9"
+    },
+    {
+      "path": "physical-inputs/128-TransformBlitEngine.sv",
+      "bytes": 28675,
+      "sha256": "7e15d9dcfcdacf732df3e6baff8f4ad9ac3e023e950311664985b8be29730090"
+    },
+    {
+      "path": "physical-inputs/129-WideCopyDma.sv",
+      "bytes": 36287,
+      "sha256": "d33446b1f33b0efc4ce1a0170a2e0fcb90fe26d863366d00ba0f19425c4b08b2"
+    },
+    {
+      "path": "physical-inputs/130-WideDdrMux.sv",
+      "bytes": 30158,
+      "sha256": "68dd6e817ec0c1904b058ad92dbf0ec3a4392364af3ab1fda5a9a6749030d150"
+    },
+    {
+      "path": "physical-inputs/131-buffer_1024x128.sv",
+      "bytes": 4954,
+      "sha256": "5274bcb616e87caeab89e31fe9b8dec13c6cd2bbc344238103bfe0a52f98ffe9"
+    },
+    {
+      "path": "physical-inputs/132-gpu_pixel_alpha_blend.v",
+      "bytes": 1297,
+      "sha256": "5e35d3a5233f25400fe1bebe8fc8df79a4af665e719c3be51348c9dd7748c050"
+    },
+    {
+      "path": "physical-inputs/133-gpu_pixel_color_key.v",
+      "bytes": 372,
+      "sha256": "f1117f1bf0be1a43b9b4ca1818b420a00ddb3068a5be3b75e3152bb770148266"
+    },
+    {
+      "path": "physical-inputs/134-gpu_pixel_contract.vh",
+      "bytes": 193,
+      "sha256": "8a440cca7d34c4f9352befccdbfcf661bd3b786e2d76eced4337198df455654a"
+    },
+    {
+      "path": "physical-inputs/135-gpu_pixel_copy.v",
+      "bytes": 186,
+      "sha256": "8c5f3c87ebd9d476ef6de926c47d50a111b832c396a716d2d8ac43264a97eeba"
+    },
+    {
+      "path": "physical-inputs/136-gpu_pixel_fill.v",
+      "bytes": 186,
+      "sha256": "2018d87a9402ac4a77de5b5a376ca16902bc0b5460d5f76a052909347279f76a"
+    },
+    {
+      "path": "physical-inputs/137-gpu_pixel_pipe.v",
+      "bytes": 1951,
+      "sha256": "98f124b6a370abd39844f56d0c0743988989ce5e8fd24f532eb1f7d3efe540eb"
+    },
+    {
+      "path": "physical-inputs/138-memory_1024x32.sv",
+      "bytes": 4164,
+      "sha256": "38b727759b92647c9912eebd3ad8111a0248c8931dc5f05b8f56c85df22561e2"
+    },
+    {
+      "path": "physical-inputs/139-memory_128x128.sv",
+      "bytes": 4242,
+      "sha256": "fb68ea8505710cf418725eb4df9b36976f637395ca87b5c1e27fece336178c1e"
+    },
+    {
+      "path": "physical-inputs/140-ram_16x268.sv",
+      "bytes": 3348,
+      "sha256": "a106e83b0d78a942dafcdf5e3c15d607dd1cce6f736a230b4a1baa6e3c60d8b8"
+    },
+    {
+      "path": "physical-inputs/141-ram_16x32.sv",
+      "bytes": 3237,
+      "sha256": "135e3476059f9411cf9938971a7e5fe7b4c7dc0c167df898d8a337833ef13474"
+    },
+    {
+      "path": "physical-inputs/142-ram_256x39.sv",
+      "bytes": 3342,
+      "sha256": "fb6d26d5543961afbb02b4f58f86026f9dc7a604d658acf665fb0294bab1c763"
+    },
+    {
+      "path": "physical-inputs/143-ram_2x128.sv",
+      "bytes": 3340,
+      "sha256": "48a4f30f2e10d6ec09873a17af44fe18e9d3b72a18380f9e9cb6ebf493e40a2c"
+    },
+    {
+      "path": "physical-inputs/144-ram_2x33.sv",
+      "bytes": 3334,
+      "sha256": "2981540b784ff13933ee148f37476acc070b643691ff3d326249418e63965c6b"
+    },
+    {
+      "path": "physical-inputs/145-ram_2x35.sv",
+      "bytes": 3334,
+      "sha256": "d70398db5b4081468ab222fa6143bdb64b672e49c00ccbeb5df27af5cd1f955e"
+    },
+    {
+      "path": "physical-inputs/146-ram_2x8.sv",
+      "bytes": 3226,
+      "sha256": "b3e970eb47193b8e55225f6db827a80be07b157764eff00101a98aec90a52595"
+    },
+    {
+      "path": "physical-inputs/147-ram_33x32.sv",
+      "bytes": 3232,
+      "sha256": "f95901b732bb1814416eb54e8a7907bb5c5894fa3e1bdbf33853de8d70ecf4f4"
+    },
+    {
+      "path": "physical-inputs/148-ram_4x1.sv",
+      "bytes": 3220,
+      "sha256": "c92cba5c2f36bca6861534e7f81a8da1fbabfe4e30b40f4f71f9e38e81e8cf7f"
+    },
+    {
+      "path": "physical-inputs/149-strobeBuffer_256x4.sv",
+      "bytes": 3243,
+      "sha256": "2276b93d29d72794a1c49fc8ea83b27d2a03e0f3253083535024a841e855a46e"
+    },
+    {
+      "path": "physical-inputs/150-templates_16x224.sv",
+      "bytes": 4497,
+      "sha256": "3c6aa7315304cbc52f69ddc04e355a0545703ee41a48e7e75dd43e89909525f8"
+    },
+    {
+      "path": "physical-inputs/151-WideCopyDma_Verification_Assert.sv",
+      "bytes": 1480,
+      "sha256": "eca8ee8530ef6cb009e579a659902a45df6bb1627c4926917c6a2bce12c16ee0"
+    },
+    {
+      "path": "physical-inputs/152-WideDdrMux_Verification_Assert.sv",
+      "bytes": 3595,
+      "sha256": "1693df1f5979a49ebf6757da55eecfb70c3d358455fec508100606da1b5de73a"
+    },
+    {
+      "path": "physical-inputs/153-wordBuffer_256x32.sv",
+      "bytes": 3247,
+      "sha256": "81936cb762637c238c5c6610eed811d52355cbf7b90cc5838abb4d4f58f1546f"
+    },
+    {
+      "path": "physical-inputs/154-Arbiter6_GpuCompletion.sv",
+      "bytes": 4098,
+      "sha256": "6b0599c45fecc342fe3deea1a3ebd27d3588201437d82e346245bf3986e920b2"
+    },
+    {
+      "path": "physical-inputs/155-AssetDmaRegs.sv",
+      "bytes": 33514,
+      "sha256": "7e1746aaf0b90aa56130ed23d159e1a59d6985c385db576c2a2dd328f4ee6242"
+    },
+    {
+      "path": "physical-inputs/156-AssetDmaWriter.sv",
+      "bytes": 30218,
+      "sha256": "21bc348d3b59c0f27d76858749eda65a3abadd459f659f1c7322aa057577a02f"
+    },
+    {
+      "path": "physical-inputs/157-AxiDiagnosticRegs.sv",
+      "bytes": 17959,
+      "sha256": "0c31a59688fc3af5f913416cf584b9b68722d59b40cf15625d5023d74d6beee6"
+    },
+    {
+      "path": "physical-inputs/158-AxiReadEngine.sv",
+      "bytes": 13607,
+      "sha256": "456341643469d9f3f02fe9f7f9052045014010cf9660928326160ec22f16c6e6"
+    },
+    {
+      "path": "physical-inputs/159-AxiReadEngine_1.sv",
+      "bytes": 14338,
+      "sha256": "e33ba6c1d16b9895a22647012d7f761ad8d924ff446900acfd93a2441c74a353"
+    },
+    {
+      "path": "physical-inputs/160-AxiReadEngine_2.sv",
+      "bytes": 13609,
+      "sha256": "b9a32282928ee8ee5ab9716054ec11a12b04c9c2973a31673f54fbf940069411"
+    },
+    {
+      "path": "physical-inputs/161-AxiWriteEngine.sv",
+      "bytes": 13436,
+      "sha256": "5c315e2a12eb043e61941484e168ea2787f6ac48d2f06a0c88e056713de1e40b"
+    },
+    {
+      "path": "physical-inputs/162-AxiWritePipeline.sv",
+      "bytes": 14987,
+      "sha256": "3028b9aeeaa0d2699b0d861bbe921ca562581bcef96ce389c83f750ff467ff97"
+    },
+    {
+      "path": "physical-inputs/163-CachedKeyStream.sv",
+      "bytes": 24687,
+      "sha256": "4126066fc4f9f8e4061a495e41c8fffa48cb082c892d8256f87ab78e24fa4fb2"
+    },
+    {
+      "path": "physical-inputs/164-CommandQueue.sv",
+      "bytes": 9575,
+      "sha256": "337d8c99ed34109aee0681cb0217167b1dfb4a1810a2f2c30b75fa37c9ca00a5"
+    },
+    {
+      "path": "physical-inputs/165-CommandValidator.sv",
+      "bytes": 4995,
+      "sha256": "046d87f54d46346e7664654d874219c76e2bf485dea0a45ee3a00d0ca86f5a8b"
+    },
+    {
+      "path": "physical-inputs/166-CommandValidator_1.sv",
+      "bytes": 6092,
+      "sha256": "c3a1cac56bf90e9d5640219e264fbf353f865cba38ac2210348b8302601411ea"
+    },
+    {
+      "path": "physical-inputs/167-CopyStreamEngine.sv",
+      "bytes": 15861,
+      "sha256": "1e1c7fa8f72e9f1b57239544e65eaf000bc04316e0d501a957c6d640cfcecea2"
+    },
+    {
+      "path": "physical-inputs/168-DdrQosArbiter.sv",
+      "bytes": 35526,
+      "sha256": "082f90f8a076ad5c16f7c73678c4822772447b72131a282517136700502e020b"
+    },
+    {
+      "path": "physical-inputs/169-DenseBlitEngine.sv",
+      "bytes": 106001,
+      "sha256": "95dd6a2244360669848530faf4ffeeda80bdaf9339a425afa9e7056cfb9c6d9e"
+    },
+    {
+      "path": "physical-inputs/170-Efinix2dGpuTop.sv",
+      "bytes": 89019,
+      "sha256": "ac52ff444d98e5d5fcdf746e85e30649e36b418829b9f555c2117bd0818902bc"
+    },
+    {
+      "path": "physical-inputs/171-FrameListBatch.sv",
+      "bytes": 21727,
+      "sha256": "0f44dc48412cfe819c747a96058827988fe3115955ea2ff773bcf1e821b974b6"
+    },
+    {
+      "path": "physical-inputs/172-FrameListReader.sv",
+      "bytes": 19916,
+      "sha256": "27bf01c36e71783876fc74d82fffeae3b7fc6b60610028106ba5c889a3c6345b"
+    },
+    {
+      "path": "physical-inputs/173-FrameSwapController.sv",
+      "bytes": 8451,
+      "sha256": "39ded6ce39e42f8ad09f5293ffdb6a2af94bcf60b9d13815bc3ff834edbf5f55"
+    },
+    {
+      "path": "physical-inputs/174-GpuApbRegs.sv",
+      "bytes": 47039,
+      "sha256": "4258825d8acee6321d16eb57d98e179c4a7f1b38837329027bb9e6714307aea9"
+    },
+    {
+      "path": "physical-inputs/175-GpuPerfCounters.sv",
+      "bytes": 11401,
+      "sha256": "64561febc7c76c16cfcbe113cc31b2cf6c208e5506d2df70890440c7e6686809"
+    },
+    {
+      "path": "physical-inputs/176-InstanceStream.sv",
+      "bytes": 37343,
+      "sha256": "63598adb57ef20a93f5cdd8204a925cbdd8f90552253a2b2816f21dcfd3585dc"
+    },
+    {
+      "path": "physical-inputs/177-PixelPipeHarness.sv",
+      "bytes": 1946,
+      "sha256": "42b4b65b5675c81ddd7bf30d5f22c93f9063bbac3edb85e99a0ff1e3746fa9bf"
+    },
+    {
+      "path": "physical-inputs/178-PixelReadAligner.sv",
+      "bytes": 8820,
+      "sha256": "8e733c927ee2f9cefaecc8b4a604a6081a92ea19ba36606082a58dee68cf502d"
+    },
+    {
+      "path": "physical-inputs/179-PixelReadAligner_2.sv",
+      "bytes": 8846,
+      "sha256": "2cccbcb5b5885afe72e2899a8b0fbfb414a7e8546674fb1d650cf012ae2c0b73"
+    },
+    {
+      "path": "physical-inputs/180-PixelWritePacker.sv",
+      "bytes": 12134,
+      "sha256": "b6fbc76e87c93e2d0c09203332e46e6eb62d3c3dc64453a07a1161da5631d394"
+    },
+    {
+      "path": "physical-inputs/181-Queue16_GpuCommand.sv",
+      "bytes": 11434,
+      "sha256": "5dd88ed22ca9e8570d962b75c1dbf13fa044c915dd9160faa6463c7cdb9bf50b"
+    },
+    {
+      "path": "physical-inputs/182-Queue16_UInt32.sv",
+      "bytes": 6746,
+      "sha256": "1cbb1698252101e3f09b6f3dd656b705a92892a05b34288d2fe0940e508f805e"
+    },
+    {
+      "path": "physical-inputs/183-Queue256_Axi4ReadData.sv",
+      "bytes": 8685,
+      "sha256": "5e864b6d59c4e399d0aeec7df323a43ed01f5eaa8e813e70b259ea34486186db"
+    },
+    {
+      "path": "physical-inputs/184-Queue2_AxiReadBeat.sv",
+      "bytes": 7470,
+      "sha256": "4415c569cab37233be004b8f2252573fa5bc384d0ea7d29a775e31e4cbe5c4cf"
+    },
+    {
+      "path": "physical-inputs/185-Queue2_DenseBlitEngine_Anon.sv",
+      "bytes": 7972,
+      "sha256": "5556096e65d49e816ea96839cd128afa6194d93dc324f27b11b70f3662decd03"
+    },
+    {
+      "path": "physical-inputs/186-Queue2_UInt128.sv",
+      "bytes": 7043,
+      "sha256": "3d973e60f9745f68d930fd913751ec289b05dbfcefb5212698faba1f821dad12"
+    },
+    {
+      "path": "physical-inputs/187-Queue2_UInt8.sv",
+      "bytes": 6698,
+      "sha256": "dfa0df89941194f76e4a60559f621cfed0bb38cbee40b46e0c77de8d81e02b94"
+    },
+    {
+      "path": "physical-inputs/188-Queue33_UInt32.sv",
+      "bytes": 6607,
+      "sha256": "e1d81f59e9d0637123a66fa323829e75334ce1c4383d4acdc9eac59e7d186807"
+    },
+    {
+      "path": "physical-inputs/189-Queue4_Bool.sv",
+      "bytes": 6732,
+      "sha256": "8be711311e9f5c67cadc1cb43e97bbcafedae8c879e3c94c17ceaa6c312b0f3c"
+    },
+    {
+      "path": "physical-inputs/190-RRArbiter2_Axi4Address.sv",
+      "bytes": 5896,
+      "sha256": "20aef8f3dffd4827aeb5df8caa20781ca26158629dbf9003a31f796beee0c061"
+    },
+    {
+      "path": "physical-inputs/191-RectAddressGen.sv",
+      "bytes": 10220,
+      "sha256": "c0d4fc0805071eaf854c4fd05ed1d7e37b36a37a281fbec3b9a57d3efec93451"
+    },
+    {
+      "path": "physical-inputs/192-RenderEngine.sv",
+      "bytes": 63872,
+      "sha256": "891325d3aef7edd44471e88e50a0071136c95096aea22ef6ae65ae123cee627d"
+    },
+    {
+      "path": "physical-inputs/193-Rgb565WordAligner.sv",
+      "bytes": 12011,
+      "sha256": "b0276c41ad7833b25fd6c41e4eb16585816d53e91a96fc9ca67c18cbaf1fa4a7"
+    },
+    {
+      "path": "physical-inputs/194-ScanoutDma.sv",
+      "bytes": 13309,
+      "sha256": "bf970557f899befb63a4018a401df6220af226123f5230960f1fc7558f088073"
+    },
+    {
+      "path": "physical-inputs/195-SparseBlitEngine.sv",
+      "bytes": 26018,
+      "sha256": "68e6671351f31be2f698e608563c4a987b7060a53debca0c2b2c8c0440ea9274"
+    },
+    {
+      "path": "physical-inputs/196-SparseDecoder.sv",
+      "bytes": 16940,
+      "sha256": "610208c5ae6854fee0ea07b973da68243ee021d15c842a388658fa979dfa087e"
+    },
+    {
+      "path": "physical-inputs/197-TextureCache.sv",
+      "bytes": 20457,
+      "sha256": "c0723a849174d07e960b7e5886bf5f2242d615f56fac6c250dd8d5bdd4205af9"
+    },
+    {
+      "path": "physical-inputs/198-TransformBlitEngine.sv",
+      "bytes": 28675,
+      "sha256": "7e15d9dcfcdacf732df3e6baff8f4ad9ac3e023e950311664985b8be29730090"
+    },
+    {
+      "path": "physical-inputs/199-WideCopyDma.sv",
+      "bytes": 36287,
+      "sha256": "d33446b1f33b0efc4ce1a0170a2e0fcb90fe26d863366d00ba0f19425c4b08b2"
+    },
+    {
+      "path": "physical-inputs/200-WideDdrMux.sv",
+      "bytes": 30158,
+      "sha256": "68dd6e817ec0c1904b058ad92dbf0ec3a4392364af3ab1fda5a9a6749030d150"
+    },
+    {
+      "path": "physical-inputs/201-buffer_1024x128.sv",
+      "bytes": 4954,
+      "sha256": "5274bcb616e87caeab89e31fe9b8dec13c6cd2bbc344238103bfe0a52f98ffe9"
+    },
+    {
+      "path": "physical-inputs/202-gpu_pixel_alpha_blend.v",
+      "bytes": 1297,
+      "sha256": "5e35d3a5233f25400fe1bebe8fc8df79a4af665e719c3be51348c9dd7748c050"
+    },
+    {
+      "path": "physical-inputs/203-gpu_pixel_color_key.v",
+      "bytes": 372,
+      "sha256": "f1117f1bf0be1a43b9b4ca1818b420a00ddb3068a5be3b75e3152bb770148266"
+    },
+    {
+      "path": "physical-inputs/204-gpu_pixel_contract.vh",
+      "bytes": 193,
+      "sha256": "8a440cca7d34c4f9352befccdbfcf661bd3b786e2d76eced4337198df455654a"
+    },
+    {
+      "path": "physical-inputs/205-gpu_pixel_copy.v",
+      "bytes": 186,
+      "sha256": "8c5f3c87ebd9d476ef6de926c47d50a111b832c396a716d2d8ac43264a97eeba"
+    },
+    {
+      "path": "physical-inputs/206-gpu_pixel_fill.v",
+      "bytes": 186,
+      "sha256": "2018d87a9402ac4a77de5b5a376ca16902bc0b5460d5f76a052909347279f76a"
+    },
+    {
+      "path": "physical-inputs/207-gpu_pixel_pipe.v",
+      "bytes": 1951,
+      "sha256": "98f124b6a370abd39844f56d0c0743988989ce5e8fd24f532eb1f7d3efe540eb"
+    },
+    {
+      "path": "physical-inputs/208-memory_1024x32.sv",
+      "bytes": 4164,
+      "sha256": "38b727759b92647c9912eebd3ad8111a0248c8931dc5f05b8f56c85df22561e2"
+    },
+    {
+      "path": "physical-inputs/209-memory_128x128.sv",
+      "bytes": 4242,
+      "sha256": "fb68ea8505710cf418725eb4df9b36976f637395ca87b5c1e27fece336178c1e"
+    },
+    {
+      "path": "physical-inputs/210-ram_16x268.sv",
+      "bytes": 3348,
+      "sha256": "a106e83b0d78a942dafcdf5e3c15d607dd1cce6f736a230b4a1baa6e3c60d8b8"
+    },
+    {
+      "path": "physical-inputs/211-ram_16x32.sv",
+      "bytes": 3237,
+      "sha256": "135e3476059f9411cf9938971a7e5fe7b4c7dc0c167df898d8a337833ef13474"
+    },
+    {
+      "path": "physical-inputs/212-ram_256x39.sv",
+      "bytes": 3342,
+      "sha256": "fb6d26d5543961afbb02b4f58f86026f9dc7a604d658acf665fb0294bab1c763"
+    },
+    {
+      "path": "physical-inputs/213-ram_2x128.sv",
+      "bytes": 3340,
+      "sha256": "48a4f30f2e10d6ec09873a17af44fe18e9d3b72a18380f9e9cb6ebf493e40a2c"
+    },
+    {
+      "path": "physical-inputs/214-ram_2x33.sv",
+      "bytes": 3334,
+      "sha256": "2981540b784ff13933ee148f37476acc070b643691ff3d326249418e63965c6b"
+    },
+    {
+      "path": "physical-inputs/215-ram_2x35.sv",
+      "bytes": 3334,
+      "sha256": "d70398db5b4081468ab222fa6143bdb64b672e49c00ccbeb5df27af5cd1f955e"
+    },
+    {
+      "path": "physical-inputs/216-ram_2x8.sv",
+      "bytes": 3226,
+      "sha256": "b3e970eb47193b8e55225f6db827a80be07b157764eff00101a98aec90a52595"
+    },
+    {
+      "path": "physical-inputs/217-ram_33x32.sv",
+      "bytes": 3232,
+      "sha256": "f95901b732bb1814416eb54e8a7907bb5c5894fa3e1bdbf33853de8d70ecf4f4"
+    },
+    {
+      "path": "physical-inputs/218-ram_4x1.sv",
+      "bytes": 3220,
+      "sha256": "c92cba5c2f36bca6861534e7f81a8da1fbabfe4e30b40f4f71f9e38e81e8cf7f"
+    },
+    {
+      "path": "physical-inputs/219-strobeBuffer_256x4.sv",
+      "bytes": 3243,
+      "sha256": "2276b93d29d72794a1c49fc8ea83b27d2a03e0f3253083535024a841e855a46e"
+    },
+    {
+      "path": "physical-inputs/220-templates_16x224.sv",
+      "bytes": 4497,
+      "sha256": "3c6aa7315304cbc52f69ddc04e355a0545703ee41a48e7e75dd43e89909525f8"
+    },
+    {
+      "path": "physical-inputs/221-WideCopyDma_Verification_Assert.sv",
+      "bytes": 1480,
+      "sha256": "eca8ee8530ef6cb009e579a659902a45df6bb1627c4926917c6a2bce12c16ee0"
+    },
+    {
+      "path": "physical-inputs/222-WideDdrMux_Verification_Assert.sv",
+      "bytes": 3595,
+      "sha256": "1693df1f5979a49ebf6757da55eecfb70c3d358455fec508100606da1b5de73a"
+    },
+    {
+      "path": "physical-inputs/223-wordBuffer_256x32.sv",
+      "bytes": 3247,
+      "sha256": "81936cb762637c238c5c6610eed811d52355cbf7b90cc5838abb4d4f58f1546f"
+    },
+    {
+      "path": "physical-inputs/224-EfxSapphireSoc.v_toplevel_system_ramA_logic_ram_symbol0.bin",
+      "bytes": 9216,
+      "sha256": "ccb798c235648abcb737f367124e43bee548462a77e5b56130966bbab1c309cf"
+    },
+    {
+      "path": "physical-inputs/225-EfxSapphireSoc.v_toplevel_system_ramA_logic_ram_symbol1.bin",
+      "bytes": 9216,
+      "sha256": "27b918b1b0a96e2364d95144b2a02b9308ec8e42d1e9f536c9cec426c64f5752"
+    },
+    {
+      "path": "physical-inputs/226-EfxSapphireSoc.v_toplevel_system_ramA_logic_ram_symbol2.bin",
+      "bytes": 9216,
+      "sha256": "9a97796e49bb8614cf04336194766a79f5a0fdc800f8338d0d0a95d00da87f9c"
+    },
+    {
+      "path": "physical-inputs/227-EfxSapphireSoc.v_toplevel_system_ramA_logic_ram_symbol3.bin",
+      "bytes": 9216,
+      "sha256": "fae1132a00c5ef4e50af277408272e2634b7d7d36ef132bc7817cee3160039a6"
+    },
+    {
+      "path": "physical-inputs/228-efinix_2d_gpu.peri.xml",
+      "bytes": 73683,
+      "sha256": "10adbdcf3192d6c26a9419aaab926d1bdcd34c2553c13c32a7f4b0bb45a60466"
+    },
+    {
+      "path": "physical-inputs/229-efinix_2d_gpu.xml",
+      "bytes": 35522,
+      "sha256": "eb7c763e1250cbeb75e0435903b43827fddd3ff69565f33249e3e0de7b4275b0"
+    },
+    {
+      "path": "physical-inputs/230-gpu-build.json",
+      "bytes": 6742,
+      "sha256": "d347d920b21215f21ae77a75e6e344749bfaf749eca224bfb754496665b642c2"
+    },
+    {
+      "path": "physical-inputs/231-EfxSapphireSoc.v_toplevel_system_ramA_logic_ram_symbol0.bin",
+      "bytes": 9216,
+      "sha256": "ccb798c235648abcb737f367124e43bee548462a77e5b56130966bbab1c309cf"
+    },
+    {
+      "path": "physical-inputs/232-EfxSapphireSoc.v_toplevel_system_ramA_logic_ram_symbol1.bin",
+      "bytes": 9216,
+      "sha256": "27b918b1b0a96e2364d95144b2a02b9308ec8e42d1e9f536c9cec426c64f5752"
+    },
+    {
+      "path": "physical-inputs/233-EfxSapphireSoc.v_toplevel_system_ramA_logic_ram_symbol2.bin",
+      "bytes": 9216,
+      "sha256": "9a97796e49bb8614cf04336194766a79f5a0fdc800f8338d0d0a95d00da87f9c"
+    },
+    {
+      "path": "physical-inputs/234-EfxSapphireSoc.v_toplevel_system_ramA_logic_ram_symbol3.bin",
+      "bytes": 9216,
+      "sha256": "fae1132a00c5ef4e50af277408272e2634b7d7d36ef132bc7817cee3160039a6"
+    },
+    {
+      "path": "physical-inputs/235-efinix_2d_gpu.peri.xml",
+      "bytes": 73683,
+      "sha256": "10adbdcf3192d6c26a9419aaab926d1bdcd34c2553c13c32a7f4b0bb45a60466"
+    },
+    {
+      "path": "physical-inputs/236-efinix_2d_gpu.xml",
+      "bytes": 35102,
+      "sha256": "14b1e37bf44df673dfc0262869cff49e6d61a07675156223727c7ab0c0235830"
+    },
+    {
+      "path": "physical-inputs/237-gpu-build.json",
+      "bytes": 6742,
+      "sha256": "03aca893a474d3e534b57489ca2dca9bd4137a1113ab210f427298df0626bb4d"
+    },
+    {
+      "path": "physical/outflow/efinix_2d_gpu.bit",
+      "bytes": 2723673,
+      "sha256": "6a8d19ddd10f2ac9fbef59d874113206aebfa63fe90268f571830c2e24928442"
+    },
+    {
+      "path": "physical/outflow/efinix_2d_gpu.hier_util.rpt",
+      "bytes": 132564,
+      "sha256": "e642f91b082e70b92bcf98d59559b06826a83b6f0ddd6d156a10117e3ca5de2f"
+    },
+    {
+      "path": "physical/outflow/efinix_2d_gpu.hold_fixing.rpt",
+      "bytes": 211,
+      "sha256": "200c335ea1bec776c8c446dead4b49b8a76408b4916c12eb075c67581ec688fd"
+    },
+    {
+      "path": "physical/outflow/efinix_2d_gpu.map.v",
+      "bytes": 67682552,
+      "sha256": "a8ac803e6ed96caab32b871dd661414a3925a323629b18c2d000eedcd1305b00"
+    },
+    {
+      "path": "physical/outflow/efinix_2d_gpu.res.csv",
+      "bytes": 77906,
+      "sha256": "629c33330125f3805c7b4afdfc65df54a86c8adbc70da732afcd86b181db6644"
+    },
+    {
+      "path": "physical/outflow/efinix_2d_gpu.timing.rpt",
+      "bytes": 953018,
+      "sha256": "9fe68ed39ea92e9c5df98be1d469ca3cbb6e5d92906f21bce76be9e696e91f9c"
+    },
+    {
+      "path": "physical/outflow/net-mailbox-ack.rpt",
+      "bytes": 1143,
+      "sha256": "56bb31ce52f286b4326ebdd9f919c6fda32df9614a9bb715245936ebb1a1538b"
+    },
+    {
+      "path": "physical/outflow/net-mailbox-applied.sdc",
+      "bytes": 213464,
+      "sha256": "c66a9069b8dace153364c93e8b590603d295180e9ce0f7d99d5468e2c5125a2e"
+    },
+    {
+      "path": "physical/outflow/net-mailbox-data.rpt",
+      "bytes": 225607,
+      "sha256": "e12cb43c46ed8625d0f37cfc658c7a9f94619c055708de292d696c9e00c4f941"
+    },
+    {
+      "path": "physical/outflow/net-mailbox-request.rpt",
+      "bytes": 1101,
+      "sha256": "dd9141a52efc9b5dfe4eac68e2b8dc15f6222e57659d5725c42fe4fe8a771277"
+    },
+    {
+      "path": "prior-alpha-phases/candidate-b1-axi-phases-uart.log",
+      "bytes": 8892,
+      "sha256": "bf835de32ba0067ac1b0e3986733582477eba055e7495b39eef3d6202bf3c9c9"
+    },
+    {
+      "path": "prior-alpha-phases/control-a1-axi-phases-uart.log",
+      "bytes": 8882,
+      "sha256": "37021b8acb073c06a3c1973441279a349234c9adbccb2469475471307fef573b"
+    },
+    {
+      "path": "prior-alpha-phases/control-a2-axi-phases-uart.log",
+      "bytes": 8885,
+      "sha256": "0ab0e42ffd4e2eba58293d958e775c4c1574c318fe5c29a5273dd27fbad2f878"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/AssetDmaRegs.scala",
+      "bytes": 9951,
+      "sha256": "93b35844a1ffaaaece6b4265b2c4baff4f76852c58f492876cb4780a1908e45f"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/AssetDmaWriter.scala",
+      "bytes": 6291,
+      "sha256": "672298f9a91d0d5578904b49c7ce13797b1d67d6c2d20ba8429264946f4c11ee"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/Axi128.scala",
+      "bytes": 1138,
+      "sha256": "1587b00be96e52633567686a8fafca3d053483e998b0c7faf50ece28eaa66a83"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/Axi4.scala",
+      "bytes": 969,
+      "sha256": "85a1765b521277e29ad31b26d149f09e2bb45892d1ebb8e79da24f649f70ae78"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/AxiDiagnosticRegs.scala",
+      "bytes": 1598,
+      "sha256": "d22bfc0c088954eb018f06ed989b5f8784ddd5695f3568d14eac441a5ba8e309"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/AxiReadEngine.scala",
+      "bytes": 3421,
+      "sha256": "080cf4d283d79c5983839d6bd2e07410c91f2d38b9caa2ff3bf09b21fb1635cc"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/AxiWriteEngine.scala",
+      "bytes": 3076,
+      "sha256": "f9afc0ba941b88816164fe13786274a00d66576ea7b9e7f3eec8836647281cb1"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/AxiWritePipeline.scala",
+      "bytes": 3373,
+      "sha256": "4f7a163dec68d0b22c374b1dee83a77aca6dac7a8d4045b0c788510cefffbda9"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/CachedKeyStream.scala",
+      "bytes": 8519,
+      "sha256": "234a7b1c0dcdd19ae88e202e1dcb6a63ebdb0ae2bce7d8dffa3aef26479d336b"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/CommandQueue.scala",
+      "bytes": 940,
+      "sha256": "e2418b40e15499896b11ceed32982bb52a3eb1e8a23418201dba7df1eebdae1a"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/CommandValidator.scala",
+      "bytes": 4169,
+      "sha256": "7569a1dfbca61dd9edeaf11bd0edb55559343d5b3ab94c4cb3ecc91d50767a2a"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/CopyStreamEngine.scala",
+      "bytes": 3863,
+      "sha256": "ddcf669157c821ab4206a17f2868992b2637b8dba28490b12a2be43170af5d17"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/DdrQosArbiter.scala",
+      "bytes": 10732,
+      "sha256": "bcdf566cd3d3aeba1841c6efb20d2fd27aabbda745d43e78ae071a61e2ee4700"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/DenseBlitEngine.scala",
+      "bytes": 33320,
+      "sha256": "94561587c242a5809ec6135d47de5d9f22a957110784a52155dd4e7cff635b9f"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/Efinix2dGpuTop.scala",
+      "bytes": 13853,
+      "sha256": "bef4e373d70c8561113bbc0a7486084679a1d5e21d0f6eb8c39b5aaf93ea291c"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/FrameListBatch.scala",
+      "bytes": 4738,
+      "sha256": "a0ae3671911d6295e72ddd8d6d1bf5b0ed49a4e88c71bc89f85084f376b1d463"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/FrameListReader.scala",
+      "bytes": 3790,
+      "sha256": "8075c64032602f394d0deddf369e87b3793e7a9ef9cf86d7dbca95a83cd9d37a"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/FrameSwapController.scala",
+      "bytes": 1504,
+      "sha256": "1d84ea9a45db8f0830c7e0436ce626c9ecf65db76ce10421aaaad4f8306d60cf"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/GenerateEfinix2dGpu.scala",
+      "bytes": 4533,
+      "sha256": "adb895bb9868a1e80105a14617f562bcff323e3830c5293e8fd1dee96fba35a5"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/GpuApbRegs.scala",
+      "bytes": 11253,
+      "sha256": "fd724ecafa8caa36e3204e51135e16f8b552fe57ccc5b5d3c42fc5b6a5b9402a"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/GpuMemoryMap.scala",
+      "bytes": 3132,
+      "sha256": "b7548f78f96639dece33f6fdd02f916f2ab0b8623cc1566a5a84189f9b8c6aaf"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/GpuPerfCounters.scala",
+      "bytes": 2801,
+      "sha256": "db371ecc1a370b3bb0c56286065334e744ff25ac8efeb9ee10a8e44ab6fcd737"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/GpuTypes.scala",
+      "bytes": 1443,
+      "sha256": "8375e593b2546a3c5843790eb90ab446203d687e2c46e03f24fc1e039f75b9e8"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/InstanceStream.scala",
+      "bytes": 7556,
+      "sha256": "995ab41d18ecaacc8008f2c36abe8ed6726f0379e37bb952d96b6230f076819f"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/PixelPipeExt.scala",
+      "bytes": 1905,
+      "sha256": "de6437223ca4a653c553e6c601dc87f44fdbcc6297ee448a2ba290e190182666"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/PixelReadAligner.scala",
+      "bytes": 2014,
+      "sha256": "18ec8403b1baca5108f89436e8d5960014778238aebcb002f6512b016feb8a27"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/PixelWritePacker.scala",
+      "bytes": 2809,
+      "sha256": "6c67d2cf4fad4f4ebc057cd28e8497a26421e1d9f0f63a06b14f053957eccfac"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/RectAddressGen.scala",
+      "bytes": 2007,
+      "sha256": "aa52ae172bcf52a7c91fed096ee9d280d355186a93611c55c354b22baf45c4fd"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/RenderEngine.scala",
+      "bytes": 14428,
+      "sha256": "e975d799134a3faee08bc5284ee55eeb206d0e7ff2f9c7dfbfa0a2e5dcf4e309"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/Rgb565WordAligner.scala",
+      "bytes": 2955,
+      "sha256": "f012a882a1d4a3cb9977d4343dc303815f43e8d2e1c81bc480593a9b2285cf0e"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/ScanoutDma.scala",
+      "bytes": 3874,
+      "sha256": "43617fc69ed9d3baa55cbc0b7dc47b63c403b219db40d5548937f9abdedd0d35"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/SparseBlitEngine.scala",
+      "bytes": 5751,
+      "sha256": "9ecd5f04bdba8a4570fb44ceff035f248bddfa3365229eb9a92f2498581529c6"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/SparseDecoder.scala",
+      "bytes": 3506,
+      "sha256": "1c18853fd749d97a03b6bb9499237727bc2bb7ab25d4319288f68cda71de223a"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/StripeScratchpad.scala",
+      "bytes": 3675,
+      "sha256": "b98ba6850df3ce80d19fd8603856386db069d2ed05632f1ed5fc08dc1b4da9ec"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/TextureCache.scala",
+      "bytes": 5353,
+      "sha256": "82e9faa42645bce628174846593284019e0fcbd6e7751c73db9d534a4afa3a7d"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/TransformBlitEngine.scala",
+      "bytes": 5001,
+      "sha256": "9b2846afba7d9e180b110a9319ff10b73d95c3ccd29867e22c060912a49dbe23"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/WideCopyDma.scala",
+      "bytes": 7466,
+      "sha256": "bf041c020344b6ede264575bb413f0c930ed219cac8a27326ab831fa9d0d045f"
+    },
+    {
+      "path": "source/chisel/src/main/scala/gpu/WideDdrMux.scala",
+      "bytes": 5342,
+      "sha256": "e1be5801a26ca413e8d1bdcfe44abdea6a59df1608c742923a72b264c47560e1"
+    },
+    {
+      "path": "source/chisel/src/test/scala/gpu/DdrQosArbiterSpec.scala",
+      "bytes": 32866,
+      "sha256": "37c20b0d7176b9fab9fcd83d060dac674604efc0a46535b7872d07cd16bd8a19"
+    },
+    {
+      "path": "verification/analyze-existing-phases.py",
+      "bytes": 4070,
+      "sha256": "abcf9cd43264fd9ead8cb7f3c8b833a0a6ffc70970b409ed38042666061b937c"
+    },
+    {
+      "path": "verification/build-physical-r1-before-input-audit.ps1",
+      "bytes": 2954,
+      "sha256": "b432751ba37d3b78483a5de8099c13d071847405bb56994312bacbf8a0f86aa7"
+    },
+    {
+      "path": "verification/build-physical-r1.ps1",
+      "bytes": 3644,
+      "sha256": "7ef53a7e34859e70823bfd23e5e5a37f8853e33b0cc9eb7da73f2292013f7b43"
+    },
+    {
+      "path": "verification/cdc-candidate-r1.log",
+      "bytes": 24510,
+      "sha256": "bca13e97f5a471bdd91532b7aa2e0b0870335ac9b26eeb99440e719bd8f1ad76"
+    },
+    {
+      "path": "verification/compile-candidate-r1.log",
+      "bytes": 1667,
+      "sha256": "d026e76a4a8e44b0a2496ab00dab6f677a63706325ca656c0fb29944c8ea09a1"
+    },
+    {
+      "path": "verification/control-DdrQosArbiter.scala",
+      "bytes": 10637,
+      "sha256": "84d69e46c3f623f48f0a2c550ea3aaf5476bda7d905fbe3b5d6b6015e05e1a57"
+    },
+    {
+      "path": "verification/existing-phase-analysis.json",
+      "bytes": 6053,
+      "sha256": "0b985ce15eb777f811690238db98cc32e1e92195bc566b7721a34d25674d9a47"
+    },
+    {
+      "path": "verification/green-attempt1-invalid-test-id.log",
+      "bytes": 3381,
+      "sha256": "a5a72ef339c6163c878436fd75a88c93949af412abc303c7df407c54560ff925"
+    },
+    {
+      "path": "verification/green-corrected-all-r2.log",
+      "bytes": 2273,
+      "sha256": "52c5f2171a45886b558dbc383a10e10467c8a022f0a96db1909a16b1934bf109"
+    },
+    {
+      "path": "verification/input-guard-tests-r1.log",
+      "bytes": 203,
+      "sha256": "1998f35a8b7f720257224a403410f0dc8cdf9aab856475311f2de998aaf71813"
+    },
+    {
+      "path": "verification/integrated-and-generate-r1.log",
+      "bytes": 3290,
+      "sha256": "c746d9c5b824eb9e4bab568925a0d275d17840000cad26adad5c2ae68b2e7163"
+    },
+    {
+      "path": "verification/physical-exec-r1.log",
+      "bytes": 1158,
+      "sha256": "4a2a4dcabd037bf87387bef9cda6833e1df86c3a45c504471dffcfd4b2560651"
+    },
+    {
+      "path": "verification/physical-input-archive-map.json",
+      "bytes": 75356,
+      "sha256": "fbbd98b365ec8030fcae1458043347fb70645b6a478ce222bd7a5734552ba7a6"
+    },
+    {
+      "path": "verification/physical-inputs-freeze-r1.log",
+      "bytes": 239,
+      "sha256": "074b6e2e7e7ce05af68dfa9bfec84c64dd8f15604e2fb5e17a501bb8353d8e23"
+    },
+    {
+      "path": "verification/physical-inputs-post-audit-r1.log",
+      "bytes": 239,
+      "sha256": "074b6e2e7e7ce05af68dfa9bfec84c64dd8f15604e2fb5e17a501bb8353d8e23"
+    },
+    {
+      "path": "verification/physical-inputs-r1.json",
+      "bytes": 50927,
+      "sha256": "c590ae14557c47d14811c0250103f5c7ada0ba06fb67cbab693fe75830bb2463"
+    },
+    {
+      "path": "verification/physical-result-before-input-audit-r1.json",
+      "bytes": 214,
+      "sha256": "b9b4b9cdc8403a4c5c0e3c513c1ab4adc3e969d170248faa506367e0508f5436"
+    },
+    {
+      "path": "verification/physical-result-r1.json",
+      "bytes": 475,
+      "sha256": "cba7fdd24c87b226216b21290a43dc1ced89f6b5ba8e127dd14e9cded0cb99b9"
+    },
+    {
+      "path": "verification/red.log",
+      "bytes": 1798,
+      "sha256": "5757078771315421983a87272c0e1f0320e384a060bad62f3c2ba534263913e7"
+    },
+    {
+      "path": "verification/resource-cdc-candidate-r1.log",
+      "bytes": 461,
+      "sha256": "ad51d35c291f7553274086915d1a61fd7bd8b4eb2de0b0cacb0b2a73a134eddd"
+    },
+    {
+      "path": "verification/seal-offline.py",
+      "bytes": 4896,
+      "sha256": "26f6fed201dd15fc98f352e54c04dd6d8baaaee9b613938bbdfb2fd5456b4204"
+    },
+    {
+      "path": "verification/source-change-verification.json",
+      "bytes": 1078,
+      "sha256": "7aa79f34a9564a5f0c9adf5e8447ff0ced438fa047975273a1cdd00234191332"
+    },
+    {
+      "path": "verification/test-all.sh",
+      "bytes": 962,
+      "sha256": "ae9d1c2127c223af539f284bc822f51ec80b383df1867e764e104010adb14dbb"
+    },
+    {
+      "path": "verification/test-integrated-and-generate.sh",
+      "bytes": 1422,
+      "sha256": "74502f2d66864eee2ccd7ba9288559c3a8e05a73e5e6d08d185212f4ba71afcf"
+    },
+    {
+      "path": "verification/test-physical-input-guard.py",
+      "bytes": 1765,
+      "sha256": "0e56110570fa44f4935bcaa18b3c87b03e5cfd364c19e239dc919740dd1b1e87"
+    },
+    {
+      "path": "verification/test-red.sh",
+      "bytes": 1006,
+      "sha256": "91b0b8ea5e12abc933ce5593852b9dbebedcddc9750dedd860de3e0f55fdbe69"
+    },
+    {
+      "path": "verification/verify-physical-inputs.py",
+      "bytes": 5132,
+      "sha256": "2d3d7947febb42cae47148f6655104f37e65b840413d49ee98153df109e180ca"
+    },
+    {
+      "path": "verification/verify-source-change.py",
+      "bytes": 3705,
+      "sha256": "f7691cea25e620b11234d36172803e17e8730d38d6832b83f50df77a7071bc04"
+    }
+  ],
+  "physical_inputs": 238,
+  "physical_qualified": true,
+  "full_input_audit": "post-build",
+  "board_tested": false,
+  "hardware_implementation_commit": "6f28220"
+}
