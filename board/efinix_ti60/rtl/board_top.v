@@ -41,6 +41,7 @@ parameter                       AXI_DATA_WIDTH     = `AXI_DATA_WIDTH
    input                              system_uart_0_io_rxd,   
    input  [3:0]                       soc_gpio_IN,
    input  [1:0]                       user_keys_n,
+   input  [4:0]                       nav_keys_n,
    output [3:0]                       soc_gpio_OUT,
    output [3:0]                       soc_gpio_OE,
     // debug core ports
@@ -150,6 +151,7 @@ efinix_user_keys_gpio user_keys_gpio (
  .sapphire_gpio_IN(sapphire_gpio_IN)
 );
 efinix_sapphire_adapter sapphire (
+ .nav_keys_n(nav_keys_n),
  .ge_clk(rxc), .ge_reset(ge_reset),
  .gmii_rx_valid(gmii_rx_valid), .gmii_rx_data(gmii_rx_data),
  .gmii_tx_valid(gmii_tx_valid), .gmii_tx_data(gmii_tx_data),

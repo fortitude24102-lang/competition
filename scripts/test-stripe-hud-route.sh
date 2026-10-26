@@ -12,6 +12,6 @@ gcc -std=c11 -O2 -Wall -Wextra -Werror -fsanitize=undefined -DGPU_TEST_BACKEND \
  -DV3_FRAME_LIST=1 -DV3_STRIPE_RENDER=1 -DV3_HUD_LIST=1 -ffunction-sections -Wl,--gc-sections \
  -Isw/efinix_gpu/include -Isw/efinix_gpu/tests/include -Isw/efinix_gpu/assets/v2 \
  sw/efinix_gpu/tests/test_stripe_hud_route.c \
- sw/efinix_gpu/src/{v3_demo,v3_runtime,bullet_demo,interactive_game,replay_input,input_state,gpu_instances,perf_demo,golden_renderer,rgb565,hud,game_menu,hud_cache}.c \
+ sw/efinix_gpu/src/{v3_demo,v3_runtime,bullet_demo,interactive_game,replay_input,input_state,local_keys,gpu_instances,perf_demo,golden_renderer,rgb565,hud,game_menu,hud_cache}.c \
  "${args[@]}" -o "$out/test_stripe_hud_route"
 "$out/test_stripe_hud_route"

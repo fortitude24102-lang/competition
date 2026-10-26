@@ -12,6 +12,7 @@ try {
  $cases=@(
   @{name='net_control';modules=@('net_control','asset_protocol');extra=@('-DNC_TEST_BACKEND')},
   @{name='input_state';modules=@('input_state')},
+  @{name='local_keys';modules=@('local_keys','v3_runtime','bullet_demo','interactive_game','replay_input','input_state')},
   @{name='r7_frozen';modules=@('bullet_demo')},
   @{name='interactive_game';modules=@('bullet_demo','interactive_game')},
   @{name='enemy_campaign';modules=@('bullet_demo','interactive_game','replay_input')},

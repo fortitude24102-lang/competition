@@ -4,6 +4,7 @@
 #include "hud.h"
 #include "benchmark.h"
 #include "game_menu.h"
+#include "local_keys.h"
 #include "v3_frame_stats.h"
 #include "render_phase_health.h"
 #include "bsp.h"
@@ -312,6 +313,10 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  perf_window window={0};v3_scene_metrics results={0};game_menu_cache menu_cache={0};
  menu_cache.performance=runtime->perf_enabled;
  menu_cache.levels=BULLET_MAX_OBJECTS>=1024?6:4;
+#if !V3_PROBE_FRAMES
+ local_keys local_control={0};
+ bsp_printf("LOCAL_KEYS,present=%d,debounce_ms=20\r\n",!!(*(volatile uint32_t *)(gpu->base+GPU_REG_STATUS)&GPU_STATUS_LOCAL_KEYS_PRESENT));
+#endif
  uint32_t last_report=0,under_delta=0,miss_delta=0,last_drops=0,last_rejected=0;
  uint64_t previous_present=gpu_platform_cycles(),previous_logic=previous_present;
  gpu_perf_snapshot initial;
@@ -340,7 +345,6 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   gpu_perf_snapshot before,after;
   e=gpu_read_perf_snapshot(gpu,&before);if(e) break;
   e=nc_poll(&control,now_ms(),&raw);if(e<0) break;
-  input_update(&input,&raw);
   #if V3_PERFORMANCE_CHALLENGE
   e=v3_runtime_control(runtime,&raw);if(e<0)break;
   #endif
@@ -348,6 +352,17 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   e=nc_take_game(&control,&command);if(e<0)break;
   if(e) {e=v3_apply_game_command(runtime,&control,&command);if(e<0) {(void)nc_try_publish(&control,0,now_ms());break;}}
   (void)nc_try_publish(&control,0,now_ms()); /* ACK before render, never wait. */
+#if V3_PROBE_FRAMES
+  input_update(&input,&raw);
+#else
+  /* Select input after commands: entering a challenge must use its network owner. */
+  int local=0;
+  if(runtime->phase==V3_PHASE_PERFORMANCE)local_control.was_menu=local_control.armed=0;
+  else local=local_keys_update(&local_control,*(volatile uint32_t *)(gpu->base+GPU_REG_STATUS),now_ms(),runtime,&input);
+  if(local<0){e=local;break;}
+  if(!local)input_update(&input,&raw);
+  menu_cache.selected_level=local_control.selected;
+#endif
   uint64_t logic=gpu_platform_cycles();
 #if V3_COPY_AHEAD
   gpu_command background;uint16_t background_tag=0;int background_issued=0;

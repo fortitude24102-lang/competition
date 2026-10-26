@@ -27,6 +27,8 @@ set_output_delay -clock ge0_tx_clk -reference_pin [get_ports {ge0_tx_clk~CLKOUT~
 set_output_delay -clock ge0_tx_clk -reference_pin [get_ports {ge0_tx_clk~CLKOUT~1~207}] -min -0.140 [get_ports {txd_lo_o[3] txd_hi_o[3]}]
 create_clock -period 40.00                          [get_ports {clk_25m}]
 create_clock -period 10.00                           core_clk
+# Mechanical contacts are asynchronous only up to their first synchronizer.
+set_false_path -from [get_ports {nav_keys_n*}] -to [get_cells {*nav_keys*meta_n*}]
 create_clock -period 2.50                           sdram_clk
 create_clock -period 2.50                           rx_cal_clk
 create_clock -period 2.50                           tx_cal_clk

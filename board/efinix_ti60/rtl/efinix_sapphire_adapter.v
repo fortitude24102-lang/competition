@@ -60,6 +60,7 @@ parameter                       AXI_DATA_WIDTH     = `AXI_DATA_WIDTH
    output  wire                       system_uart_0_io_txd,
    input                              system_uart_0_io_rxd,   
    input  [3:0]                       soc_gpio_IN,
+   input  [4:0]                       nav_keys_n,
    output [3:0]                       soc_gpio_OUT,
    output [3:0]                       soc_gpio_OE,
     // debug core ports
@@ -474,7 +475,12 @@ ddr3_top #(.AXI_ID_WIDTH(AXI_ID_WIDTH)) u_ddr3_top
 wire network_select = gpu_apb_paddr[15:8] == 8'h02 || gpu_apb_paddr[15:8] == 8'h03;
 wire [31:0] core_prdata, network_prdata;
 wire core_pready, core_pslverror, network_pready, network_pslverror;
-assign gpu_apb_prdata = network_select ? network_prdata : core_prdata;
+wire [31:0] local_prdata;
+efinix_nav_keys nav_keys (
+ .clk(user_clk), .reset(gpu_stream_reset), .keys_n(nav_keys_n),
+ .address(gpu_apb_paddr[15:0]), .core_data(core_prdata), .data(local_prdata)
+);
+assign gpu_apb_prdata = network_select ? network_prdata : local_prdata;
 assign gpu_apb_pready = network_select ? network_pready : core_pready;
 assign gpu_apb_pslverror = network_select ? network_pslverror : core_pslverror;
 wire asset_meta_valid, asset_meta_ready, asset_payload_valid, asset_payload_ready;

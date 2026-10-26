@@ -383,7 +383,23 @@
         <efxpt:comp_gpio name="user_keys_n[1]" gpio_def="GPIOR_21" mode="input" bus_name="user_keys_n" io_standard="3.3 V LVCMOS">
             <efxpt:input_config name="user_keys_n[1]" name_ddio_lo="" conn_type="normal" is_register="false" clock_name="" is_clock_inverted="false" pull_option="none" is_schmitt_trigger="false" ddio_type="none" is_bus_hold="false" delay="0" is_serial="false" is_dyn_delay="false" fastclk_name="" pullup_ena_name="user_keys_n_PULL_UP_ENA[1]" dyn_delay_en_name="user_keys_n_DLY_ENA[1]" dyn_delay_reset_name="user_keys_n_DLY_RST[1]" dyn_delay_ctrl_name="user_keys_n_DLY_CTRL[1]" clkmux_buf_name=""/>
         </efxpt:comp_gpio>
+        <efxpt:comp_gpio name="nav_keys_n[0]" gpio_def="GPIOL_11" mode="input" bus_name="nav_keys_n" io_standard="3.3 V LVCMOS">
+            <efxpt:input_config name="nav_keys_n[0]" name_ddio_lo="" conn_type="normal" is_register="false" clock_name="" is_clock_inverted="false" pull_option="weak pullup" is_schmitt_trigger="true" ddio_type="none" is_bus_hold="false" delay="0" is_serial="false" is_dyn_delay="false" fastclk_name="" pullup_ena_name="nav_keys_n_PULL_UP_ENA[0]" dyn_delay_en_name="nav_keys_n_DLY_ENA[0]" dyn_delay_reset_name="nav_keys_n_DLY_RST[0]" dyn_delay_ctrl_name="nav_keys_n_DLY_CTRL[0]" clkmux_buf_name=""/>
+        </efxpt:comp_gpio>
+        <efxpt:comp_gpio name="nav_keys_n[1]" gpio_def="GPIOL_09" mode="input" bus_name="nav_keys_n" io_standard="3.3 V LVCMOS">
+            <efxpt:input_config name="nav_keys_n[1]" name_ddio_lo="" conn_type="normal" is_register="false" clock_name="" is_clock_inverted="false" pull_option="weak pullup" is_schmitt_trigger="true" ddio_type="none" is_bus_hold="false" delay="0" is_serial="false" is_dyn_delay="false" fastclk_name="" pullup_ena_name="nav_keys_n_PULL_UP_ENA[1]" dyn_delay_en_name="nav_keys_n_DLY_ENA[1]" dyn_delay_reset_name="nav_keys_n_DLY_RST[1]" dyn_delay_ctrl_name="nav_keys_n_DLY_CTRL[1]" clkmux_buf_name=""/>
+        </efxpt:comp_gpio>
+        <efxpt:comp_gpio name="nav_keys_n[2]" gpio_def="GPIOL_04" mode="input" bus_name="nav_keys_n" io_standard="3.3 V LVCMOS">
+            <efxpt:input_config name="nav_keys_n[2]" name_ddio_lo="" conn_type="normal" is_register="false" clock_name="" is_clock_inverted="false" pull_option="weak pullup" is_schmitt_trigger="true" ddio_type="none" is_bus_hold="false" delay="0" is_serial="false" is_dyn_delay="false" fastclk_name="" pullup_ena_name="nav_keys_n_PULL_UP_ENA[2]" dyn_delay_en_name="nav_keys_n_DLY_ENA[2]" dyn_delay_reset_name="nav_keys_n_DLY_RST[2]" dyn_delay_ctrl_name="nav_keys_n_DLY_CTRL[2]" clkmux_buf_name=""/>
+        </efxpt:comp_gpio>
+        <efxpt:comp_gpio name="nav_keys_n[3]" gpio_def="GPIOL_10" mode="input" bus_name="nav_keys_n" io_standard="3.3 V LVCMOS">
+            <efxpt:input_config name="nav_keys_n[3]" name_ddio_lo="" conn_type="normal" is_register="false" clock_name="" is_clock_inverted="false" pull_option="weak pullup" is_schmitt_trigger="true" ddio_type="none" is_bus_hold="false" delay="0" is_serial="false" is_dyn_delay="false" fastclk_name="" pullup_ena_name="nav_keys_n_PULL_UP_ENA[3]" dyn_delay_en_name="nav_keys_n_DLY_ENA[3]" dyn_delay_reset_name="nav_keys_n_DLY_RST[3]" dyn_delay_ctrl_name="nav_keys_n_DLY_CTRL[3]" clkmux_buf_name=""/>
+        </efxpt:comp_gpio>
+        <efxpt:comp_gpio name="nav_keys_n[4]" gpio_def="GPIOL_06" mode="input" bus_name="nav_keys_n" io_standard="3.3 V LVCMOS">
+            <efxpt:input_config name="nav_keys_n[4]" name_ddio_lo="" conn_type="normal" is_register="false" clock_name="" is_clock_inverted="false" pull_option="weak pullup" is_schmitt_trigger="true" ddio_type="none" is_bus_hold="false" delay="0" is_serial="false" is_dyn_delay="false" fastclk_name="" pullup_ena_name="nav_keys_n_PULL_UP_ENA[4]" dyn_delay_en_name="nav_keys_n_DLY_ENA[4]" dyn_delay_reset_name="nav_keys_n_DLY_RST[4]" dyn_delay_ctrl_name="nav_keys_n_DLY_CTRL[4]" clkmux_buf_name=""/>
+        </efxpt:comp_gpio>
         <efxpt:global_unused_config state="input with weak pullup"/>
+        <efxpt:bus name="nav_keys_n" mode="input" msb="4" lsb="0"/>
         <efxpt:bus name="ddr_addr" mode="output" msb="15" lsb="0"/>
         <efxpt:bus name="ddr_ba" mode="output" msb="2" lsb="0"/>
         <efxpt:bus name="ddr_cke" mode="output" msb="0" lsb="0"/>

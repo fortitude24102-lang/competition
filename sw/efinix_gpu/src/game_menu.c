@@ -23,7 +23,8 @@ int game_menu_draw(gpu_device *gpu,game_menu_cache *c,unsigned index,uint32_t ds
  _Static_assert(HUD_MAX_COMMANDS>=256,"menu scratch capacity");
  uint8_t bit=(uint8_t)(1u<<index),ready=(uint8_t)(network!=0);
  unsigned levels=c->levels==6?6u:4u;
- int full=!(c->valid_mask&bit) || c->generation[index]!=generation || c->destination[index]!=dst || c->drawn_levels[index]!=levels;
+ unsigned selected=c->selected_level<=levels?c->selected_level:0;
+ int full=!(c->valid_mask&bit) || c->generation[index]!=generation || c->destination[index]!=dst || c->drawn_levels[index]!=levels || c->drawn_selection[index]!=selected;
  s->count=0;
  if(!full && c->network[index]==ready)return 0;
  c->valid_mask&=(uint8_t)~bit;
@@ -34,10 +35,10 @@ int game_menu_draw(gpu_device *gpu,game_menu_cache *c,unsigned index,uint32_t ds
   const char *labels[]={"LEVEL 1 - 64 SPRITES","LEVEL 2 - 128 SPRITES","LEVEL 3 - 256 SPRITES","LEVEL 4 - 512 SPRITES","LEVEL 5 - 786 SPRITES","LEVEL 6 - 1024 SPRITES"};
   for(unsigned i=0;i<levels;i++) {
    unsigned y=levels==6?ys[i]:old_ys[i],h=levels==6?80u:104u;
-   fill(s,dst,xs[i],y,368,h,0x07e0);
+   fill(s,dst,xs[i],y,368,h,selected==i+1u?0xffe0:0x07e0);
    fill(s,dst,xs[i]+2,y+2,364,h-4,0);
    text(s,dst,xs[i]+16,y+(levels==6?14u:20u),labels[i],0);
-   text(s,dst,xs[i]+16,y+(levels==6?46u:56u),"SELECT ON WEB",1);
+   text(s,dst,xs[i]+16,y+(levels==6?46u:56u),selected?"MID TO START":"SELECT ON WEB",1);
   }
   if(c->performance) {
    fill(s,dst,96,412,768,48,0x07e0);
@@ -46,10 +47,10 @@ int game_menu_draw(gpu_device *gpu,game_menu_cache *c,unsigned index,uint32_t ds
   } else text(s,dst,96,436,"SELECT A LEVEL ON THE WEB PAGE",0);
  }
  fill(s,dst,96,480,600,18,0);
- text(s,dst,96,480,ready?"WEB CONTROL READY":"WAITING FOR WEB CONTROL",ready);
+ text(s,dst,96,480,selected?"STICK SELECT - MID START":ready?"WEB CONTROL READY":"WAITING FOR WEB CONTROL",selected || ready);
  uint16_t tag=0;
  for(unsigned i=0;i<s->count;i++) {int e=gpu_submit(gpu,&s->commands[i],polls,&tag);if(e)return e;}
  int e=gpu_wait_tag(gpu,tag,polls);if(e)return e;
- c->destination[index]=dst;c->generation[index]=generation;c->network[index]=ready;c->drawn_levels[index]=(uint8_t)levels;c->valid_mask|=bit;
+ c->destination[index]=dst;c->generation[index]=generation;c->network[index]=ready;c->drawn_levels[index]=(uint8_t)levels;c->drawn_selection[index]=(uint8_t)selected;c->valid_mask|=bit;
  return 0;
 }

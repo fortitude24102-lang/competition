@@ -63,6 +63,9 @@ int __wrap_network_asset_fetch(uintptr_t a,uint32_t hz,uint32_t session,uint32_t
  (void)a;(void)hz;(void)session;(void)id;(void)dst;(void)bytes;(void)crc;(void)r;return -1;
 }
 int main(void) {
+ void *mmio=mmap((void *)GPU_APB_BASE,4096,PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED_NOREPLACE,-1,0);
+ assert(mmio==(void *)GPU_APB_BASE);
+ *(uint32_t *)((uintptr_t)mmio+GPU_REG_STATUS)=GPU_STATUS_LOCAL_KEYS_PRESENT;
  void *p=mmap((void *)0x02d00000,0x80000,PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED_NOREPLACE,-1,0);
  assert(p==(void *)0x02d00000);
  for(won=0;won<2;won++) {
@@ -74,5 +77,6 @@ int main(void) {
   fprintf(stderr,"ROUTE,won=%u,seen=%u,bank=%x,gpu_calls=%u\n",won,seen,bank_seen,gpu_render_count);
   assert(seen==1 && (bank_seen==GPU_FRAME_LIST_BANK_A || bank_seen==GPU_FRAME_LIST_BANK_B));
  }
- assert(!munmap(p,0x80000));puts("STRIPE_HUD_ROUTE,PASS,real_V3_MENU_and_WIN,original_bank_only");
+ assert(!munmap(p,0x80000));assert(!munmap(mmio,4096));
+ puts("STRIPE_HUD_ROUTE,PASS,real_V3_MENU_and_WIN,original_bank_only");
 }

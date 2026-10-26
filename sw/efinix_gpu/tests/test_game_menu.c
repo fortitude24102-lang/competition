@@ -80,5 +80,20 @@ int main(void) {
  count=0;six_levels=1;c.levels=6;
  assert(!game_menu_draw(&d,&c,0,GPU_FRAMEBUFFER_A,3,1,&scratch,1000));check_frame(GPU_FRAMEBUFFER_A);
  count=0;assert(!game_menu_draw(&d,&c,1,GPU_FRAMEBUFFER_B,3,1,&scratch,1000));check_frame(GPU_FRAMEBUFFER_B);
+ for(unsigned bank=0;bank<2;bank++) {
+  count=0;c.selected_level=4;
+  uint32_t dst=bank?GPU_FRAMEBUFFER_B:GPU_FRAMEBUFFER_A;
+  assert(!game_menu_draw(&d,&c,bank,dst,3,1,&scratch,1000));check_frame(dst);
+  unsigned yellow=0;
+  for(unsigned i=0;i<count;i++) if(commands[i].op==GPU_OP_FILL && commands[i].color==0xffe0) {
+   assert(commands[i].dst_addr==dst+232u*GPU_FRAME_STRIDE+496u*2 && commands[i].width_pixels==368);++yellow;
+  }
+  assert(yellow==1 && c.drawn_selection[bank]==4);
+  unsigned drawn=count;
+  assert(!game_menu_draw(&d,&c,bank,dst,3,1,&scratch,1000) && count==drawn);
+ }
+ count=0;fail_at=1;c.selected_level=1;
+ assert(game_menu_draw(&d,&c,0,GPU_FRAMEBUFFER_A,3,1,&scratch,1000)<0);
+ assert(!(c.valid_mask&1) && c.drawn_selection[0]==4); /* Failed redraw cannot advance cache. */
  puts("PASS real GPU menu MMIO geometry/glyph labels, two buffers, static zero-submit, dirty hint and failure invalidation");
 }
