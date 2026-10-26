@@ -102,8 +102,10 @@ static int step(bullet_state *s,int manual,int player_x,int player_y,const bulle
   return GPU_DRIVER_ARGUMENT;
  if(manual && (player_x<8 || player_x>952 || player_y<80 || player_y>532))
   return GPU_DRIVER_ARGUMENT;
- for(unsigned i=0;i<s->count;i++) if(s->objects[i].kind>(manual?3:2) ||
-  s->objects[i].shape>=BULLET_SHAPE_COUNT || (s->interactive && s->objects[i].path>=BULLET_PATH_COUNT)) return GPU_DRIVER_ARGUMENT;
+ /* Legacy mode accepts every uint8 path; compute limits once for the full validation pass. */
+ unsigned max_kind=manual?3u:2u,max_path=s->interactive?BULLET_PATH_COUNT:256u;
+ for(unsigned i=0;i<s->count;i++) if(s->objects[i].kind>max_kind ||
+  s->objects[i].shape>=BULLET_SHAPE_COUNT || s->objects[i].path>=max_path) return GPU_DRIVER_ARGUMENT;
  ++s->tick;
  if(manual && s->won) return 0;
  if(!s->hp) {
