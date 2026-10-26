@@ -37,3 +37,5 @@ Full读字节还能拆为：898560背景＋1171×16描述符＋40192 Alpha背景
 900样本DetailProbe另完成30预热＋900采样，原输入封存与完整端点/STOP通过。GPU接口每帧平均read958569.944、write有效1000553.944、cache168391.931字节；加必要完整显示后的60Hz有效流量下界约179.755MB/s，不能当实际PHY利用率。
 
 该窗口cycles平均12.695ms包含swap.pending的PRESENT等待，不能称为纯渲染计算占用。RenderEngine.busy和GpuPerfCounters.active的源码语义已核对；最坏帧pre-PRESENT busy5.007ms与整个计数窗口含义不同。原600样本配置因630总帧不足以完成9836字/256字每帧的规范封存而拒绝，失败保留，仅延长诊断采样至900，没有放宽封存/健康检查。详见[板测补充](evidence/read_capacity_admission_20261026/BOARD.md)。
+
+后续Copy预取4d8378d在E0控制上独立完成20项相关测试及硬件A/B/A＋重复：8778→8774→8778→8774us，14400帧零失败。均值约0.04557%的改善很小，候选最大work更高，固定BACKGROUND混合窗口也未一致改善；不推广单次Copy差值。实际XLR少177、RAM/DSP不变，当前新de149efd＋6000d155正常六档MENU通过并选作后续组合，其自身长验证尚缺。详见[Copy预取记录](evidence/wide_copy_prefetch_20261026/README.md)。
