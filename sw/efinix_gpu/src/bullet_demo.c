@@ -155,8 +155,11 @@ static int step(bullet_state *s,int manual,int player_x,int player_y,const bulle
   if(b->x<=-8*256 || b->x>=960*256 || b->y<64*256 || b->y>=540*256 ||
      b->age>=lifetime) { spawn(s,i,0); continue; }
   if(s->interactive) switch(b->path) {
-   case 2:b->vx=(int16_t)(((int)(i%5u)-2)*96+directions[(b->age/4u)&15u][0]/2);break;
-   case 3: {unsigned angle=(i/3u+b->age/12u)&15u;
+   /* Validated i<1024 and age<360 make the reciprocal products exact.
+    * Keep signed halves truncating toward zero, including negative odd values. */
+   case 2: {int wobble=directions[(b->age/4u)&15u][0];
+    b->vx=(int16_t)(((int)(i-5u*((i*205u)>>10))-2)*96+((wobble+(wobble<0))>>1));break;}
+   case 3: {unsigned angle=(((i*683u)>>11)+((b->age*683u)>>13))&15u;
     b->vx=(int16_t)(directions[angle][0]*2);b->vy=(int16_t)(directions[angle][1]*2);break;}
    case 4:if(!(b->age%8u) && b->vy<896) b->vy+=32;break;
    default:break;
