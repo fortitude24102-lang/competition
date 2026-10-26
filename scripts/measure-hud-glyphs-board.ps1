@@ -43,7 +43,7 @@ try {
    Write-Output $chunk
    $tail+=$chunk
    if($tail -match 'GLYPH_BOARD_FAIL|V2 comparison stopped|HUD_DMA_FAIL|STRIPE_BOARD_FAIL|SPRITE_PHASE_FAIL|DASHBOARD_METRICS_FAIL|TRANSFORM_BOARD_FAIL|KEY_TRIM_BOARD_FAIL|ZOOM_STOP') { throw 'Board firmware reported failure' }
-   if($tail -match $StopPattern) { Write-Output "CAPTURE_COMPLETE: $logPath"; return }
+   if($tail.Substring(0,$tail.LastIndexOf("`n")+1) -match $StopPattern) { Write-Output "CAPTURE_COMPLETE: $logPath"; return }
    if($tail.Length -gt 8192) { $tail=$tail.Substring($tail.Length-4096) }
   }
   Start-Sleep -Milliseconds 20

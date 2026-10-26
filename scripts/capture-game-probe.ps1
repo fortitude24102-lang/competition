@@ -40,7 +40,7 @@ try {
   if($chunk) {
    [IO.File]::AppendAllText($logPath,$chunk);Write-Output $chunk;$tail+=$chunk
    if($tail -match 'V3_FAIL|V3_PROBE_HEALTH_FAIL|V2 comparison stopped'){throw 'Board health failed'}
-   if($tail -match 'V3_PROBE_STOP,result=0') {
+   if($tail -match '(?m)^V3_PROBE_STOP,result=0\r?\n') {
     Assert-ProbeIdentity $tail $LogicCopy $SealWords $HudList $requireHudIdentity $HudDirect $requireDirectIdentity
     return
    }

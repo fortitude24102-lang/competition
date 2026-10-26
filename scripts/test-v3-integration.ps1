@@ -63,6 +63,8 @@ try {
  Check 'actual collector child launch and failed-launch cleanup'
  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/tests/test-game-probe-identity.ps1
  Check 'terminal cohort identity guard'
+ & powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-board-stop-framing.ps1
+ Check 'newline-complete board capture STOP records'
  }
  if(!$SoftwareOnly) {
   $net=@(Get-ChildItem board/efinix_ti60/rtl/net/*.v | ForEach-Object FullName)
