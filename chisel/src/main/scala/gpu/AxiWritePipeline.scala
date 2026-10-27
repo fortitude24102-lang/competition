@@ -31,7 +31,8 @@ class AxiWritePipeline(writeCredits: Int = 2) extends Module {
   responses.io.deq.ready := io.axiB.valid
   io.axiB.ready := responses.io.deq.valid
   private val badResponse = io.axiB.fire && responseError
-  io.request.ready := state === idle && responses.io.enq.ready && !haltNewRequests && !badResponse &&
+  private val finishingWrite = io.axiW.fire && burstLeft === 1.U && remaining === 1.U
+  io.request.ready := (state === idle || finishingWrite) && responses.io.enq.ready && !haltNewRequests && !badResponse &&
     (io.request.bits.beats =/= 0.U || responses.io.count === 0.U)
   private val toBoundary = (4096.U(13.W) - address(11, 0)) >> 2
   private val capped = Mux(remaining > 256.U, 256.U, remaining)
@@ -47,15 +48,16 @@ class AxiWritePipeline(writeCredits: Int = 2) extends Module {
   io.axiW.bits.data := io.data.bits.data; io.axiW.bits.strb := io.data.bits.strb
   io.axiW.bits.last := burstLeft === 1.U
   io.data.ready := state === sendData && io.axiW.ready
-  when(io.request.fire) {
-    address := Cat(io.request.bits.address(31, 2), 0.U(2.W)); remaining := io.request.bits.beats
-    when(io.request.bits.beats === 0.U) { done := true.B }.otherwise { state := sendAddress }
-  }
   when(io.axiAw.fire) { burstLeft := burst(8, 0); state := sendData }
   when(io.axiW.fire) {
     address := address + 4.U; remaining := remaining - 1.U
     burstLeft := burstLeft - 1.U
     when(burstLeft === 1.U) { state := Mux(remaining === 1.U, idle, sendAddress) }
+  }
+  // A new row may share the old final W; its initialization must win.
+  when(io.request.fire) {
+    address := Cat(io.request.bits.address(31, 2), 0.U(2.W)); remaining := io.request.bits.beats
+    when(io.request.bits.beats === 0.U) { done := true.B }.otherwise { state := sendAddress }
   }
   when(io.axiB.fire) {
     when(responses.io.deq.bits) {

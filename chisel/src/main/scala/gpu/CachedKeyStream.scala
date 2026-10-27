@@ -69,13 +69,17 @@ class CachedKeyStream(trimTransparentRows: Boolean = false, pipelineWrites: Bool
   fifo.io.enq.valid := state === active && io.readData.valid
   fifo.io.enq.bits := io.readData.bits.data
   io.readData.ready := state === active && fifo.io.enq.ready
+  private val rowDone = WireDefault(io.writeDone)
+  private val rowHandoff = if(pipelineWrites) rowActive && rowDone else false.B
+  private val launchDestination = Mux(rowHandoff, destination + command.dstStride, destination)
   private val failing = errorSeen || (io.readDone && io.readError) || (io.writeDone && io.writeError)
   // Credit a COMPLETE row before AW. A later cache error can never starve promised W.
-  private val launch = state === active && !rowActive && !failing && rowsLeft =/= 0.U &&
+  private val launch = state === active && (!rowActive || rowHandoff) && !failing &&
+    Mux(rowHandoff, rowsLeft > 1.U, rowsLeft =/= 0.U) &&
     fifo.io.count >= (command.widthPixels >> 1) && aligner.io.start.ready
-  private val rowBeats = ((command.widthPixels << 1) + destination(1, 0) + 3.U) >> 2
+  private val rowBeats = ((command.widthPixels << 1) + launchDestination(1, 0) + 3.U) >> 2
   aligner.io.start.bits.sourceUpper := false.B
-  aligner.io.start.bits.destinationUpper := destination(1)
+  aligner.io.start.bits.destinationUpper := launchDestination(1)
   aligner.io.start.bits.pixels := command.widthPixels
   aligner.io.input.valid := rowActive && wordsLeft =/= 0.U && fifo.io.deq.valid
   aligner.io.input.bits := fifo.io.deq.bits
@@ -85,11 +89,11 @@ class CachedKeyStream(trimTransparentRows: Boolean = false, pipelineWrites: Bool
   private val keyStrobe = Cat(
     Fill(2, aligner.io.output.bits.lanes(1) && (command.op === GpuOpcode.Copy.U || aligner.io.output.bits.data(31, 16) =/= command.colorKey)),
     Fill(2, aligner.io.output.bits.lanes(0) && (command.op === GpuOpcode.Copy.U || aligner.io.output.bits.data(15, 0) =/= command.colorKey)))
-  private val rowDone = WireDefault(io.writeDone)
   if(pipelineWrites) {
     val outputLeft = RegInit(0.U(4.W))
-    when(io.writeRequest.fire) { outputLeft := rowBeats }
     when(io.writeData.fire) { outputLeft := outputLeft - 1.U }
+    // The next row replaces the retiring row's final beat count.
+    when(io.writeRequest.fire) { outputLeft := rowBeats }
     rowDone := io.writeData.fire && outputLeft === 1.U
     when(state === active && (io.writeRequest.fire =/= io.writeDone)) {
       val rows = pendingRows.get
@@ -143,7 +147,7 @@ class CachedKeyStream(trimTransparentRows: Boolean = false, pipelineWrites: Bool
     }
   } else {
     io.writeRequest.valid := launch
-    io.writeRequest.bits.address := destination & "hfffffffc".U
+    io.writeRequest.bits.address := launchDestination & "hfffffffc".U
     io.writeRequest.bits.beats := rowBeats
     aligner.io.start.valid := launch && io.writeRequest.ready
     when(io.writeRequest.fire) { rowActive := true.B; wordsLeft := command.widthPixels >> 1 }
@@ -157,7 +161,7 @@ class CachedKeyStream(trimTransparentRows: Boolean = false, pipelineWrites: Bool
     when(io.readDone) { readFinished := true.B }
     errorSeen := failing
     when(rowDone) {
-      rowActive := false.B; rowsLeft := rowsLeft - 1.U
+      rowActive := io.writeRequest.fire; rowsLeft := rowsLeft - 1.U
       destination := destination + command.dstStride
     }
     when(readFinished && !rowActive && !fifo.io.deq.valid && pendingRows.getOrElse(0.U) === 0.U &&

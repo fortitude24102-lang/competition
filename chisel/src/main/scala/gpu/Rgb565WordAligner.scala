@@ -32,7 +32,7 @@ class Rgb565WordAligner extends Module {
   private val inputPixels = Mux(sourceUpper || inputLeft === 1.U, 1.U(2.W), 2.U(2.W))
   private val outputPixels = Mux(destinationUpper || outputLeft === 1.U, 1.U(2.W), 2.U(2.W))
 
-  io.start.ready := !active
+  io.start.ready := !active || (io.output.fire && outputLeft === outputPixels)
   io.input.ready := active && inputLeft =/= 0.U && bufferedPixels <= 2.U
   io.output.valid := active && bufferedPixels >= outputPixels
   io.output.bits.pixels := outputPixels
@@ -40,15 +40,6 @@ class Rgb565WordAligner extends Module {
   io.output.bits.data := Mux(destinationUpper, Cat(buffer(15, 0), 0.U(16.W)),
     Mux(outputPixels === 1.U, Cat(0.U(16.W), buffer(15, 0)), buffer(31, 0)))
 
-  when(io.start.fire) {
-    active := io.start.bits.pixels =/= 0.U
-    buffer := 0.U
-    bufferedPixels := 0.U
-    inputLeft := io.start.bits.pixels
-    outputLeft := io.start.bits.pixels
-    sourceUpper := io.start.bits.sourceUpper
-    destinationUpper := io.start.bits.destinationUpper
-  }
   private val consumed = Mux(io.output.fire, outputPixels, 0.U)
   private val carriedPixels = bufferedPixels - consumed
   private val carried = Mux(!io.output.fire, buffer,
@@ -70,5 +61,15 @@ class Rgb565WordAligner extends Module {
     outputLeft := outputLeft - outputPixels
     destinationUpper := false.B
     when(outputLeft === outputPixels) { active := false.B }
+  }
+  // Clear the previous reservoir after its final output is accepted.
+  when(io.start.fire) {
+    active := io.start.bits.pixels =/= 0.U
+    buffer := 0.U
+    bufferedPixels := 0.U
+    inputLeft := io.start.bits.pixels
+    outputLeft := io.start.bits.pixels
+    sourceUpper := io.start.bits.sourceUpper
+    destinationUpper := io.start.bits.destinationUpper
   }
 }
