@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const file = path.join(__dirname, '../tools/control_gateway/web/dashboard.js');
 assert.ok(fs.existsSync(file), 'browser keyboard controller missing');
 const {ControlPump, KeyboardState, SnapshotBuffer, TelemetryFreshness, formatValue, gameView,
-  benchmarkMetrics,kernelMetrics,liveMetricRows,modeText} = require(file);
+  benchmarkMetrics,kernelMetrics,liveMetricRows,modeText,splitMetrics,SplitResults} = require(file);
 
 class Clock {
   constructor() { this.now = 0; this.tasks = []; }
@@ -24,6 +24,27 @@ class Clock {
 }
 
 async function main() {
+  {
+  const words=Array(27).fill(0);words[0]=0x20261027;words[21]=0x4902;words[3]=256;
+  words[2]=15000;words[5]=6006;words[6]=466;
+  const view={stale:false,age_ms:0,telemetry:{session:7,words}};
+  assert.deepEqual(splitMetrics(view,false),{target:256,elapsed_ms:15000,cpu:4.66,gpu:60.06});
+  assert.equal(splitMetrics(view,true),null);
+  assert.equal(splitMetrics({...view,simulated:true},false),null);
+  words[21]|=1<<16;assert.equal(splitMetrics(view,false),null);words[21]&=~(1<<16);
+  const scores=new SplitResults();scores.observe(view,false);assert.equal(scores.rows.size,1);
+  words[3]=512;words[2]=10;scores.observe(view,false);assert.equal(scores.rows.size,1);
+  words[2]=15000;words[6]=240;scores.observe(view,false);assert.equal(scores.rows.size,2);
+  words[3]=256;words[2]=1;scores.observe(view,false);assert.equal(scores.rows.size,0);
+  words[2]=15000;scores.observe(view,true);assert.equal(scores.rows.size,0);
+  scores.observe(view,false);assert.equal(scores.rows.size,1);
+  const menu=words.slice();menu[21]=0x4d00;
+  scores.observe({...view,telemetry:{...view.telemetry,words:menu}},false);
+  words[3]=512;words[2]=50;scores.observe(view,false);assert.equal(scores.rows.size,0,'MENU then missed 256 cannot retain an old 256 row');
+  words[3]=256;words[2]=15000;scores.observe(view,false);assert.equal(scores.rows.size,1);
+  scores.observe(null,true);words[3]=512;words[2]=10;scores.observe(view,false);
+  assert.equal(scores.rows.size,0,'Disconnect then first 512 cannot mix runs');
+  }
   assert.equal(typeof kernelMetrics,'function','measurement-firmware accounting is missing');
   const measured={target:512,alpha:64,frames:600,wall_us:10000000,work_us:7200000,max_work_us:12500,
     logic_us:300000,build_us:200000,render_call_us:6600000,present_us:2800000,
@@ -80,6 +101,10 @@ async function main() {
   assert.equal(gameView({stale:false,age_ms:0,telemetry:{words:menuWords}}).canPerformance,true);
   menuWords[21]=0x3801;
   assert.equal(gameView({stale:false,age_ms:0,telemetry:{words:menuWords}}).phase,'performance');
+  const splitWords=menuWords.slice();splitWords[0]=0x20261027;splitWords[21]=0x4902;
+  assert.equal(gameView({stale:false,age_ms:0,telemetry:{words:splitWords}}).phase,'split');
+  assert.equal(gameView({stale:false,age_ms:0,telemetry:{words:splitWords}}).canStart,false);
+  assert.ok(modeText({telemetry:{words:splitWords}}).includes('同屏对比'));
   menuWords[21]=0x0d00;
   for(const [level,count] of [[1,64],[2,128],[3,256],[4,512],[5,786],[6,1024]]) {
     const words=menuWords.slice();words[21]=0x4801;words[3]=count;

@@ -12,6 +12,7 @@ typedef struct { uint64_t wall_ticks,render_ticks; unsigned frames; } perf_windo
 int perf_build_frame(uint32_t dst,unsigned sprites,unsigned frame,int network,perf_stream *out);
 void perf_init_local_assets(void);
 int perf_render_cpu(const gpu_command *commands,unsigned count);
+int perf_render_cpu_surface(const gpu_command *commands,unsigned count,uint32_t base);
 int perf_render_gpu(gpu_device *device,const gpu_command *commands,unsigned count,uint32_t polls);
 int perf_render_gpu_damage(gpu_device *device,gpu_damage_state *damage,
  const gpu_command *commands,unsigned count,uint32_t epoch,

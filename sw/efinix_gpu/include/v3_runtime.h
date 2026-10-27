@@ -2,7 +2,7 @@
 #define V3_RUNTIME_H
 #include "replay_input.h"
 enum v3_mode { V3_MODE_LIVE, V3_MODE_CPU, V3_MODE_GPU };
-enum { V3_PHASE_MENU=0,V3_PHASE_PLAY=1,V3_PHASE_PERFORMANCE=2 };
+enum { V3_PHASE_MENU=0,V3_PHASE_PLAY=1,V3_PHASE_PERFORMANCE=2,V3_PHASE_SPLIT_COMPARE=3 };
 enum { V3_MENU_BOOT=0,V3_MENU_DEATH=1,V3_MENU_REQUEST=2 };
 /* Large objects are caller-owned DDR/BSS, never the Sapphire 4 KiB stack. */
 typedef struct {
@@ -17,12 +17,14 @@ typedef struct {
  uint8_t mode,compare_pending;
  uint8_t phase,level,menu_reason,menu_enabled,await_neutral;
  uint8_t perf_enabled;
+ uint8_t split_enabled;
  uint8_t reset_initial_valid; /* recording.initial is exactly game_reset, not a mid-game replay origin. */
  uint32_t scene_generation,neutral_session,neutral_sequence;
 } v3_runtime;
 int v3_runtime_init(v3_runtime *,unsigned count,uint32_t seed,uint32_t epoch);
 unsigned v3_level_count(unsigned level);
 int v3_runtime_menu_init(v3_runtime *,uint32_t seed,uint32_t epoch);
+int v3_runtime_start_comparison(v3_runtime *);
 int v3_runtime_game_command(v3_runtime *,unsigned opcode,unsigned level,uint32_t session,uint32_t sequence);
 int v3_runtime_control(v3_runtime *,const nc_input *);
 int v3_runtime_advance(v3_runtime *,const game_input *,uint32_t elapsed_us);

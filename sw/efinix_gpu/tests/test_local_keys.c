@@ -45,5 +45,13 @@ int main(void) {
  assert(keys.selected==(BULLET_MAX_OBJECTS>=1024?5:3));
  poll(8,688);poll(8,709);assert(keys.selected==(BULLET_MAX_OBJECTS>=1024?6:4));
  poll(2,710);poll(2,731);assert(keys.selected==(BULLET_MAX_OBJECTS>=1024?6:4));
+ runtime.split_enabled=1;
+ poll(0,732);poll(0,753);poll(2,754);poll(2,775);
+ assert(keys.selected==(BULLET_MAX_OBJECTS>=1024?7:5));
+ poll(0,776);poll(0,797);poll(16,798);poll(16,819);
+ assert(runtime.phase==V3_PHASE_SPLIT_COMPARE);
+ assert(!v3_runtime_game_command(&runtime,V3_GAME_MENU,0,1,2));
+ assert(!v3_runtime_game_command(&runtime,V3_GAME_START,3,1,3));
+ assert(v3_runtime_start_comparison(&runtime)==1 && runtime.phase==V3_PHASE_PLAY && runtime.game.count==256);
  puts("PASS local keys: debounce, neutral latch, menu selection/start, movement/fire and performance isolation");
 }

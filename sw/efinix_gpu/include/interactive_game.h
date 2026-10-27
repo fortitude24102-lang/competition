@@ -20,4 +20,5 @@ int game_build(const bullet_state *state,uint32_t dst,int network,int glow,
  * A zero-initialized clock is ready. At most four ticks per call. */
 int game_advance(game_clock *clock,bullet_state *state,const game_input *input,
                  uint32_t elapsed_us);
+int game_advance_cached(game_clock *,bullet_state *,const game_input *,uint32_t elapsed_us,const bullet_state *initial);
 #endif

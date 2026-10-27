@@ -158,7 +158,8 @@
 
   function gameView(view) {
     const flags=view?.telemetry?.words[21]||0,supported=!!(flags&(1<<11));
-    const phase=supported?(flags&(1<<10)?'menu':flags&(1<<13)?'performance':'play'):'unknown';
+    const split=view?.telemetry?.words[0]===0x20261027 && (flags&0x102)===0x102;
+    const phase=supported?(flags&(1<<10)?'menu':split?'split':flags&(1<<13)?'performance':'play'):'unknown';
     const maxLevel=flags&(1<<14)?6:4,index=LEVEL_COUNTS.indexOf(view?.telemetry?.words[3]);
     const pending=['pending','await_snapshot'].includes(view?.game?.state);
     const ready=supported && !view.stale && (view.age_ms==null || view.age_ms<500) && !pending;
@@ -166,9 +167,29 @@
       canStart:ready && phase==='menu',canMenu:ready,pending,canPerformance:ready && phase==='menu' && !!(flags&(1<<12))};
   }
 
+  function splitMetrics(view,stale) {
+    const w=view?.telemetry?.words;
+    if(stale || view?.stale || view?.simulated || view?.age_ms>=500 || gameView(view).phase!=='split' ||
+       (w[21]&0x30000) || ![256,512].includes(w[3]) || w[2]>15000 ||
+       ![w[2],w[5],w[6]].every(v=>Number.isInteger(v) && v>=0)) return null;
+    return {target:w[3],elapsed_ms:w[2],cpu:w[6]/100,gpu:w[5]/100};
+  }
+  class SplitResults {
+    constructor(){this.rows=new Map();this.last=null;}
+    observe(view,stale) {
+      const m=splitMetrics(view,stale);if(!m){this.last=null;return;}
+      const session=view.telemetry.session;
+      if(!this.last || session!==this.last.session ||
+         (m.target===256 && this.last.target===512) ||
+         (m.target===this.last.target && m.elapsed_ms<this.last.elapsed_ms))this.rows.clear();
+      this.last={...m,session};
+      if(m.elapsed_ms===15000)this.rows.set(m.target,m);
+    }
+  }
+
   function modeText(view) {
     const flags=view?.telemetry?.words[21]||0,phase=gameView(view).phase;
-    const label=phase==='menu'?'难度选择菜单':phase==='performance'?'性能挑战':
+    const label=phase==='menu'?'难度选择菜单':phase==='split'?'CPU / GPU 同屏对比':phase==='performance'?'性能挑战':
       flags&2?'CPU/GPU比较回放':flags&4?'资源加载':flags&1?'GPU互动游戏':'等待板端场景';
     return [label,...[[8,'本地备用素材'],[16,'控制已握手'],[32,'CPU旧对照已过期'],[512,'恢复状态']]
       .filter(([bit])=>flags&bit).map(([,text])=>text)].join(' · ');
@@ -176,12 +197,24 @@
 
   async function boot() {
     const $=id=>document.getElementById(id);
-    const banner=$('banner'), control=$('control-status'), keys=new KeyboardState(), samples=new SnapshotBuffer();
+    const banner=$('banner'), control=$('control-status'), keys=new KeyboardState(), samples=new SnapshotBuffer(), splitScores=new SplitResults();
     // Archived evidence loads independently: a disconnected board must not erase the comparison.
     fetch('/benchmarks.json',{cache:'no-store'}).then(response=>{
       if(!response.ok) throw new Error('历史实测文件未加载');
       return response.json();
     }).then(data=>{
+      const final=data.final_release;
+      if(final && final.rows.length===2 && final.rows.every(r=>r.window_ms===15000 && r.gpu_frames>0 && r.cpu_frames>0)) {
+        $('release-date').textContent=final.recorded_on+' 最终版 · 已保存的实板成绩，非实时';
+        for(const r of final.rows) {
+          const tr=document.createElement('tr');
+          for(const value of [r.target,(r.cpu_fps_x100/100).toFixed(2),(r.gpu_fps_x100/100).toFixed(2),r.cpu_frames+' / '+r.gpu_frames]) {
+            const td=document.createElement('td');td.textContent=value;tr.append(td);
+          }
+          $('release-scores').append(tr);
+        }
+        $('release-identity').textContent='BIT '+final.bit_sha256+'\nBIN '+final.firmware_sha256+'\n证据 '+final.evidence;
+      }
       const m=benchmarkMetrics(data);
       $('work-gain').textContent=m.work_reduction_percent.toFixed(1)+'%';
       $('pixel-gain').textContent=m.pixel_gain_percent.toFixed(1)+'%';
@@ -243,7 +276,7 @@
       $('comparison-values').hidden=false;
     }).catch(()=>{$('comparison-source').textContent='历史实测未加载或不一致，不显示旧值／猜测值；实时控制不受影响。';});
     const client=Array.from(crypto.getRandomValues(new Uint8Array(16)),v=>v.toString(16).padStart(2,'0')).join('');
-    let token, simulated=false,choice=null,gameSending=false,requestId=0,restartUntil=0;
+    let token, simulated=false,choice=null,gameSending=false,requestId=0,restartUntil=0,splitRequest=null;
     try {
       const response=await fetch('/api/bootstrap',{cache:'no-store'});
       if(!response.ok) throw new Error('Gateway unavailable');
@@ -254,6 +287,7 @@
       onError:error=>{keys.clear();control.textContent=error.message; $('acquire').disabled=false;}});
     function clear() {
       choice=null;
+      splitRequest=null;
       keys.clear();
       $('keys').textContent='0x00';
       if(pump.active || pump.inflight) pump.clear();
@@ -276,6 +310,11 @@
     for(let level=1;level<=LEVEL_COUNTS.length;level++) $('level-'+level).addEventListener('click',()=>choose('start',level));
     $('reselect').addEventListener('click',()=>choose('menu',0));
     $('performance-start').addEventListener('click',()=>choose('performance',0));
+    $('split-start').addEventListener('click',()=>{
+      if(document.hidden || !document.hasFocus() || splitRequest || choice || gameSending) return;
+      keys.clear();splitRequest={deadline:performance.now()+3000,sent:false};
+      if(!pump.active){pump.acquire();$('acquire').disabled=true;}
+    });
     document.addEventListener('keydown',event=>{
       if(!pump.active || event.repeat || event.ctrlKey || event.metaKey || event.altKey || !MAP[event.code]) return;
       const gv=lastView?gameView(lastView):null;
@@ -332,6 +371,7 @@
         lastPhase=gv.phase;lastGameState=view.game?.state;
       }
       freshness.observe(view,performance.now());
+      splitScores.observe(view,freshness.view(performance.now()).stale);
       const t=view.telemetry;
       if(t && samples.add(t,new Date().toISOString())) {
         history.push({...t.display});if(history.length>120)history.shift();draw();
@@ -343,10 +383,11 @@
       $('packet-drops').textContent=String(view.dropped_packets);
       if(pump.active) control.textContent=view.acknowledged ? 'This tab controls the board' : 'Waiting for board ACK…';
     };
-    events.onerror=()=>{streamFailed=true;freshness.disconnect(); clear();};
+    events.onerror=()=>{streamFailed=true;freshness.disconnect();splitScores.observe(null,true); clear();};
     setInterval(()=>{
       const ages=freshness.view(performance.now());
       const stale=!lastView || lastView.stale || ages.stale || streamFailed;
+      if(stale)splitScores.observe(null,true);
       const metrics=liveMetricRows(lastView,stale),valid=new Map(metrics);
       if(stale)$('mode').textContent='当前没有新鲜板端状态';
       $('history-panel').hidden=!history.some(row=>row.gpu_full_frame_fps_x100!=null || row.cpu_full_frame_fps_x100!=null);
@@ -362,6 +403,29 @@
       $('gpu-fps').textContent=formatValue(gpu,'gpu_full_frame_fps_x100');
       $('cpu-fps').textContent=formatValue(cpu,'cpu_full_frame_fps_x100');
       const gv=gameView(lastView || {stale:true});
+      const splitLive=splitMetrics(lastView,stale);
+      $('split-live').hidden=!splitLive || splitLive.elapsed_ms===15000;
+      if(splitLive) {
+        $('split-cpu').textContent=splitLive.cpu.toFixed(2);
+        $('split-gpu').textContent=splitLive.gpu.toFixed(2);
+        $('split-progress').value=splitLive.elapsed_ms;
+      }
+      for(const target of [256,512]) {
+        const score=splitScores.rows.get(target);
+        $('split-score-'+target).textContent=score?'CPU '+score.cpu.toFixed(2)+' / GPU '+score.gpu.toFixed(2)+' FPS':'尚未收到完整成绩';
+      }
+      const splitCapable=lastView?.telemetry?.words[0]===0x20261027;
+      $('split-start').disabled=stale || !splitCapable || !gv.canStart || !!choice || gameSending || !!splitRequest;
+      $('split-status').textContent=gv.phase==='split'?(stale?'同屏状态已过期，等待开发板…':
+        '正在 HDMI 独立刷新 · '+lastView.telemetry.words[3]+' 档 · '+(lastView.telemetry.words[2]/1000).toFixed(1)+' / 15.0 秒'+
+        (lastView.telemetry.words[3]===512 && lastView.telemetry.words[2]===15000?' · 已完成，成绩保留':'')):
+        !splitCapable?'等待支持同屏对比的开发板':gv.phase==='menu'?'就绪：左 CPU，右 GPU；两档各 15 秒。':'请先点击“一键重选难度”返回菜单。';
+      if(splitRequest && gv.phase==='split')splitRequest=null;
+      if(splitRequest && performance.now()>=splitRequest.deadline){splitRequest=null;keys.clear();if(pump.active)pump.update(0,keys.action);}
+      if(splitRequest && !splitRequest.sent && !stale && gv.canStart && lastView.acknowledged && pump.active){
+        splitRequest.sent=true;keys.press('KeyC');pump.update(keys.mask,keys.action);
+        setTimeout(()=>{keys.clear();if(pump.active)pump.update(0,keys.action);},150);
+      }
       $('difficulty-options').hidden=['play','performance'].includes(gv.phase);
       $('performance-start').disabled=!gv.canPerformance || stale || !!choice || gameSending;
       const perf=lastView?.performance;
@@ -403,7 +467,7 @@
     },100);
   }
 
-  const api={ControlPump,KeyboardState,SnapshotBuffer,TelemetryFreshness,formatValue,gameView,benchmarkMetrics,kernelMetrics,liveMetricRows,modeText};
+  const api={ControlPump,KeyboardState,SnapshotBuffer,TelemetryFreshness,formatValue,gameView,benchmarkMetrics,kernelMetrics,liveMetricRows,modeText,splitMetrics,SplitResults};
   if(typeof module!=='undefined' && module.exports) module.exports=api;
   if(typeof document!=='undefined') document.addEventListener('DOMContentLoaded',boot);
   root.AetherGXDashboard=api;

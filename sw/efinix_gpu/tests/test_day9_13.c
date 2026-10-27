@@ -43,7 +43,8 @@ static uint8_t *map_address(uint32_t address, size_t bytes) {
 }
 
 uint32_t gpu_io_read(uintptr_t address) {
-    if (present_pending && fake_vblank_countdown && --fake_vblank_countdown == 0)
+    /* Count completion observations, independent of driver's ERROR reads. */
+    if (address-GPU_APB_BASE==GPU_REG_LAST_DONE && present_pending && fake_vblank_countdown && --fake_vblank_countdown == 0)
         fake_vblank();
     return regs[(address - GPU_APB_BASE) / 4];
 }
@@ -121,7 +122,7 @@ int main(void) {
     framebuffer_pair buffers;
     framebuffer_init(&buffers);
     assert(buffers.front == GPU_FRAMEBUFFER_A && buffers.back == GPU_FRAMEBUFFER_B);
-    fake_vblank_countdown=4;
+    fake_vblank_countdown=2;
     assert(framebuffer_present(&device, &buffers, 2) == 0);
     assert(buffers.front == GPU_FRAMEBUFFER_B && buffers.back == GPU_FRAMEBUFFER_A);
     assert(regs[GPU_REG_FRONT_BUFFER / 4] == GPU_FRAMEBUFFER_B);

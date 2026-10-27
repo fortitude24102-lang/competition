@@ -3,9 +3,38 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AetherGX · 性能对照与游戏控制</title><link rel="stylesheet" href="/styles.css"><script defer src="/dashboard.js"></script></head>
 <body><main>
-<header><p class="eyebrow">AETHERGX · V3</p><h1>看得见的性能进步</h1><p>官方 Sapphire RISC-V 运行游戏与调度，FPGA 负责渲染；PC 只提供资源、输入与数据展示。</p>
-<nav aria-label="页面导航"><a href="#comparison">优化前后</a><a href="#live">实时数据</a><a href="#game">游戏控制</a></nav></header>
-<section id="comparison" class="panel comparison"><div class="section-title"><h2>优化前后 · 已存档实板对照</h2><span class="badge">历史测量 / 非实时跑分</span></div>
+<header><p class="eyebrow">AETHERGX · FINAL 2026.10.27</p><h1>CPU 与 GPU，现场同屏对比</h1><p>官方 Sapphire RISC-V 运行游戏与调度，FPGA 负责渲染；PC 只提供资源、输入与数据展示。</p>
+<nav aria-label="页面导航"><a href="#game">游戏与同屏展示</a><a href="#live">实时数据</a><a href="#release">最终实测</a><a href="#comparison">历史优化</a></nav></header>
+<section id="game" class="panel"><h2>选择游戏难度</h2><p id="game-status" role="status">等待开发板菜单状态…</p>
+<div id="difficulty-options" class="difficulty-grid">
+<button id="level-1" disabled>难度一<span>64 Sprite 请求档位</span></button>
+<button id="level-2" disabled>难度二<span>128 Sprite 请求档位</span></button>
+<button id="level-3" disabled>难度三<span>256 Sprite 请求档位</span></button>
+<button id="level-4" disabled>难度四<span>512 Sprite 请求档位</span></button>
+<button id="level-5" disabled>难度五<span>786 Sprite 请求档位</span></button>
+<button id="level-6" disabled>难度六<span>1024 Sprite 请求档位</span></button>
+</div><p id="current-difficulty"></p><button id="reselect" class="secondary" disabled>一键重选难度</button>
+<p class="muted">请求档位不等于每帧可见数量；高档位不承诺60 FPS。重选仅结束本局，不重启开发板。</p>
+<h3>独立展示 · CPU / GPU 同屏对比</h3><button id="split-start" disabled>开始同屏展示 · 256 / 512</button><p id="split-status" role="status">等待开发板菜单；六档游戏保持独立。</p>
+<div id="split-live" hidden><div class="cards split-cards"><article><h2>左侧 CPU · 实时 FPS</h2><p id="split-cpu" class="large">—</p><span>实际显示的新 CPU 图像</span></article><article><h2>右侧 GPU · 实时 FPS</h2><p id="split-gpu" class="large">—</p><span>实际完成的场景显示</span></article></div><label>当前档位进度 <progress id="split-progress" max="15000" value="0"></progress></label></div>
+<div class="table-scroll"><table><caption>本页本轮已完成成绩 · 保留值，非当前实时帧率</caption><tbody><tr><th>256 档</th><td id="split-score-256">尚未收到完整成绩</td></tr><tr><th>512 档</th><td id="split-score-512">尚未收到完整成绩</td></tr></tbody></table></div>
+<p class="muted">HDMI 左侧 CPU、右侧 GPU，以相同的 480×270 视区和素材独立刷新。256、512 两档各同时运行 15 秒，统计各自实际更新到屏幕的帧数与帧率；GPU 不等待 CPU 绘完一帧。完成后保留成绩，点击“一键重选难度”退出；原有六档游戏保持原来的画面和流程。</p></section>
+<section id="live" aria-labelledby="live-title"><h2 id="live-title">当前开发板 · 实时数据</h2>
+<div id="banner" class="warning" role="status">连接本地网关中；历史对照不依赖开发板在线。</div>
+<section class="cards" aria-label="有效实时快照">
+<article id="gpu-card" hidden><h2>GPU整帧FPS</h2><p id="gpu-fps" class="large">—</p><span id="gpu-age"></span></article>
+<article id="cpu-card" hidden><h2>CPU基础渲染FPS</h2><p id="cpu-fps" class="large">—</p><span id="cpu-age"></span></article>
+<article id="sprites-card" hidden><h2>可见 / 请求Sprite</h2><p id="sprites" class="large">—</p><span>同一完整快照</span></article>
+</section>
+<p class="muted">CPU对照仅在板端完成比较并报告有效结果后出现；CPU基础绘图未优化。缺少有效标志的参数直接隐藏，原始CSV仍保留全部字段。</p>
+<section id="history-panel" class="panel" hidden><h2>已报告的帧率历史</h2><p class="muted">GPU绿色 / CPU金色，最近120条快照；不推算未上报的帧率。断连时曲线变暗，不作为当前成绩。</p><canvas id="chart" width="960" height="240" aria-label="已报告的GPU与CPU帧率"></canvas></section>
+<section class="panel"><div class="section-title"><h2>有效快照参数</h2><button id="export" class="secondary">导出原始CSV</button></div>
+<p id="live-empty" class="muted">当前没有新鲜板端数据；未显示失效或猜测参数。</p><p id="mode">等待板端状态</p>
+<details><summary>展开有效字段与诊断</summary><p>网关丢弃包：<span id="packet-drops">0</span>。CSV保留最多600条快照的所有原始字和有效标志。</p>
+<div class="table-scroll"><table><thead><tr><th>字段 / 板端单位</th><th>值</th></tr></thead><tbody id="metrics"></tbody></table></div></details></section>
+</section>
+<section id="release" class="panel comparison"><div class="section-title"><h2>最终版本 · 15 秒实板记录</h2><span class="badge">保存成绩 / 非实时</span></div><p id="release-date" class="muted">正在加载已保存的实测记录…</p><div class="table-scroll"><table><thead><tr><th>请求档位</th><th>CPU FPS</th><th>GPU FPS</th><th>CPU / GPU 帧数</th></tr></thead><tbody id="release-scores"></tbody></table></div><p class="muted">左 CPU / 右 GPU，均为 480×270。各自独立更新，同屏协作运行 15 秒；同一颗软核也负责 GPU 命令调度，因此这是同屏展示成绩，不能当作两个渲染器各自独占系统的吞吐。GPU 受约 60 Hz 显示刷新率限制。原生 960×540 六档游戏另行统计。</p><details><summary>查看最终版本身份</summary><pre id="release-identity"></pre><a href="/benchmarks.json" download>下载实测数字与来源</a></details></section>
+<details class="panel"><summary>历史优化记录 · 2026-10-16 / 17（展开查看）</summary><section id="comparison" class="panel comparison"><div class="section-title"><h2>优化前后 · 已存档实板对照</h2><span class="badge">历史测量 / 非实时跑分</span></div>
 <p id="comparison-source" role="status">正在读取带来源的历史实测…</p>
 <div id="comparison-values" hidden>
 <div class="cards summary-cards">
@@ -32,30 +61,7 @@
 <p>软核已测工作占比＝板端计时的逻辑更新＋命令构建时间，除以同一测量期墙钟时间；这是可归属到CPU的已测部分，不是完整CPU占用率。驱动渲染调用含提交和忙等，PRESENT也含同步忙等；裸机总CPU仍可能一直执行。FPS增加时此比例可能上升，不能据此声称CPU被优化。</p>
 <p>像素为硬件处理计数，包含透明色像素，不等于最终非透明输出。DDR数据为GPU侧有效字节，读取含列表描述符；利用率按单向400MB/s计算，不代表DDR物理总利用率。GPU busy包含PRESENT等待，不用它冒充算术单元忙碌率。</p>
 <p>固定本地素材和全活动负载，顺序执行逻辑、构建、整帧列表和PRESENT，未启用CopyAhead，不含HUD与网口管理；没有改变CPU基础渲染。600帧专项结果不能替代普通游戏实测或3600帧＋保持阶段的性能挑战。</p></div></section>
-<section id="live" aria-labelledby="live-title"><h2 id="live-title">当前开发板 · 实时数据</h2>
-<div id="banner" class="warning" role="status">连接本地网关中；历史对照不依赖开发板在线。</div>
-<section class="cards" aria-label="有效实时快照">
-<article id="gpu-card" hidden><h2>GPU整帧FPS</h2><p id="gpu-fps" class="large">—</p><span id="gpu-age"></span></article>
-<article id="cpu-card" hidden><h2>CPU基础渲染FPS</h2><p id="cpu-fps" class="large">—</p><span id="cpu-age"></span></article>
-<article id="sprites-card" hidden><h2>可见 / 请求Sprite</h2><p id="sprites" class="large">—</p><span>同一完整快照</span></article>
-</section>
-<p class="muted">CPU对照仅在板端完成比较并报告有效结果后出现；CPU基础绘图未优化。缺少有效标志的参数直接隐藏，原始CSV仍保留全部字段。</p>
-<section id="history-panel" class="panel" hidden><h2>已报告的帧率历史</h2><p class="muted">GPU绿色 / CPU金色，最近120条快照；不推算未上报的帧率。断连时曲线变暗，不作为当前成绩。</p><canvas id="chart" width="960" height="240" aria-label="已报告的GPU与CPU帧率"></canvas></section>
-<section class="panel"><div class="section-title"><h2>有效快照参数</h2><button id="export" class="secondary">导出原始CSV</button></div>
-<p id="live-empty" class="muted">当前没有新鲜板端数据；未显示失效或猜测参数。</p><p id="mode">等待板端状态</p>
-<details><summary>展开有效字段与诊断</summary><p>网关丢弃包：<span id="packet-drops">0</span>。CSV保留最多600条快照的所有原始字和有效标志。</p>
-<div class="table-scroll"><table><thead><tr><th>字段 / 板端单位</th><th>值</th></tr></thead><tbody id="metrics"></tbody></table></div></details></section>
-</section>
-<section id="game" class="panel"><h2>选择游戏难度</h2><p id="game-status" role="status">等待开发板菜单状态…</p>
-<div id="difficulty-options" class="difficulty-grid">
-<button id="level-1" disabled>难度一<span>64 Sprite 请求档位</span></button>
-<button id="level-2" disabled>难度二<span>128 Sprite 请求档位</span></button>
-<button id="level-3" disabled>难度三<span>256 Sprite 请求档位</span></button>
-<button id="level-4" disabled>难度四<span>512 Sprite 请求档位</span></button>
-<button id="level-5" disabled>难度五<span>786 Sprite 请求档位</span></button>
-<button id="level-6" disabled>难度六<span>1024 Sprite 请求档位</span></button>
-</div><p id="current-difficulty"></p><button id="reselect" class="secondary" disabled>一键重选难度</button>
-<p class="muted">请求档位不等于每帧可见数量；高档位不承诺60 FPS。重选仅结束本局，不重启开发板。</p></section>
+</details>
 <section class="panel"><h2>60 FPS 性能挑战</h2><button id="performance-start" disabled>开始性能挑战</button><p id="performance-result" role="status">等待开发板能力状态…</p>
 <p class="muted">Sapphire 搜索最多全活动 Sprite：全部使用硬件 Color Key，每8个另绘制1个硬件 Alpha 光晕（光晕不重复计数）。每档预热60帧、采样600帧，最高候选复核3600帧；逐帧预算、原始平均FPS、下溢和错误共同判定。固定16×16飞机、8×8元素、12×12光晕，960×540；不是所有画面通用极限。</p></section>
 <section class="panel"><h2>Keyboard control</h2><div class="buttons"><button id="acquire">Acquire control in this tab</button><button id="release" class="secondary">Release & clear keys</button><span id="keys">0x00</span></div>

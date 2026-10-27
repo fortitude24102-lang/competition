@@ -124,8 +124,12 @@ int main(void) {
  /* Disjoint from every network destination, including a partially loaded scene. */
 #if BULLET_DEMO_DEFAULT
  /* Network preparation regenerates disjoint local assets on every failure. */
+ #if !(V3_INTERACTIVE && V3_FRAME_LIST)
+ /* The interactive-only branch below never runs the AUTO fallback. Avoid
+  * retaining its unused large game-state BSS in the128KiB Sapphire RAM. */
  e=bullet_reset(&bullets,tiers[0],7); if(e) return 1;
  window_start=bullets;
+ #endif
 #else
  perf_init_local_assets();
 #endif

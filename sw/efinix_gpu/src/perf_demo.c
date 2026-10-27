@@ -37,11 +37,11 @@ int perf_build_frame(uint32_t dst,unsigned sprites,unsigned frame,int network,pe
  return 0;
 }
 
-int perf_render_cpu(const gpu_command *commands,unsigned count) {
+static int render_cpu(const gpu_command *commands,unsigned count,uint32_t surface_base) {
  if(!commands || !count) return GPU_DRIVER_ARGUMENT;
  for(unsigned i=0;i<count;i++) {
   const gpu_command *c=&commands[i];
-  uint32_t base=c->dst_addr>=GPU_FRAMEBUFFER_B?GPU_FRAMEBUFFER_B:GPU_FRAMEBUFFER_A;
+  uint32_t base=surface_base?surface_base:c->dst_addr>=GPU_FRAMEBUFFER_B?GPU_FRAMEBUFFER_B:GPU_FRAMEBUFFER_A;
   if(c->dst_addr<base || c->dst_addr-base>=GPU_FRAME_BYTES ||
      c->dst_stride!=GPU_FRAME_STRIDE || (c->dst_addr&1u)) return GPU_DRIVER_ARGUMENT;
   unsigned offset=c->dst_addr-base;
@@ -64,6 +64,16 @@ int perf_render_cpu(const gpu_command *commands,unsigned count) {
   if(e) return e;
  }
  return 0;
+}
+
+int perf_render_cpu(const gpu_command *commands,unsigned count) {
+ return render_cpu(commands,count,0);
+}
+
+int perf_render_cpu_surface(const gpu_command *commands,unsigned count,uint32_t base) {
+ if((base&1u) || base<GPU_FRAMEBUFFER_A ||
+    (uint64_t)base+GPU_FRAME_BYTES>GPU_DDR_END_EXCLUSIVE)return GPU_DRIVER_ARGUMENT;
+ return render_cpu(commands,count,base);
 }
 
 int perf_render_gpu(gpu_device *d,const gpu_command *commands,unsigned count,uint32_t polls) {

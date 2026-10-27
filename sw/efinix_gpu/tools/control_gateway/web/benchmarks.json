@@ -16,61 +16,246 @@
     "report": "docs/efinix_2d_gpu/gpu_memory_overlap_20261016.md"
   },
   "versions": {
-    "before": {"name": "优化前 · Key预取", "bit_sha256": "7898424a3bb6e1a26528ecbd83e474f6673252e976bf18d4967e5f3191bf66c1"},
-    "after": {"name": "优化后 · Scanout换字", "bit_sha256": "705f1642db8dffc3bfd1ab5cb208e7645351eba141ec7f652d5ecc1ae43beb09"}
+    "before": {
+      "name": "优化前 · Key预取",
+      "bit_sha256": "7898424a3bb6e1a26528ecbd83e474f6673252e976bf18d4967e5f3191bf66c1"
+    },
+    "after": {
+      "name": "优化后 · Scanout换字",
+      "bit_sha256": "705f1642db8dffc3bfd1ab5cb208e7645351eba141ec7f652d5ecc1ae43beb09"
+    }
   },
   "game": {
     "firmware_sha256": "dc82fae7902e1fd238a572db28e49b947535d75f876c892562b2d8c736504a0b",
     "before": {
       "source": "measurements/ordinary512-baseline.log",
-      "target": 512, "frames": 3600, "fps_x10": 601,
-      "work_mean_us": 11527, "work_max_us": 15208, "wall_max_us": 16639,
-      "work_miss": 0, "late_present": 0, "under": 0, "errors": 0,
-      "visible_min": 499, "visible_max": 504, "alpha_min": 66, "alpha_max": 67
+      "target": 512,
+      "frames": 3600,
+      "fps_x10": 601,
+      "work_mean_us": 11527,
+      "work_max_us": 15208,
+      "wall_max_us": 16639,
+      "work_miss": 0,
+      "late_present": 0,
+      "under": 0,
+      "errors": 0,
+      "visible_min": 499,
+      "visible_max": 504,
+      "alpha_min": 66,
+      "alpha_max": 67
     },
     "after": {
       "source": "measurements/ordinary512-scanout.log",
-      "target": 512, "frames": 3600, "fps_x10": 601,
-      "work_mean_us": 9618, "work_max_us": 13191, "wall_max_us": 16639,
-      "work_miss": 0, "late_present": 0, "under": 0, "errors": 0,
-      "visible_min": 499, "visible_max": 504, "alpha_min": 66, "alpha_max": 67
+      "target": 512,
+      "frames": 3600,
+      "fps_x10": 601,
+      "work_mean_us": 9618,
+      "work_max_us": 13191,
+      "wall_max_us": 16639,
+      "work_miss": 0,
+      "late_present": 0,
+      "under": 0,
+      "errors": 0,
+      "visible_min": 499,
+      "visible_max": 504,
+      "alpha_min": 66,
+      "alpha_max": 67
     },
     "return": {
       "source": "measurements/ordinary512-return.log",
-      "target": 512, "frames": 3600, "fps_x10": 601,
-      "work_mean_us": 11528, "work_max_us": 15760, "wall_max_us": 16639,
-      "work_miss": 0, "late_present": 0, "under": 0, "errors": 0,
-      "visible_min": 499, "visible_max": 504, "alpha_min": 66, "alpha_max": 67
+      "target": 512,
+      "frames": 3600,
+      "fps_x10": 601,
+      "work_mean_us": 11528,
+      "work_max_us": 15760,
+      "wall_max_us": 16639,
+      "work_miss": 0,
+      "late_present": 0,
+      "under": 0,
+      "errors": 0,
+      "visible_min": 499,
+      "visible_max": 504,
+      "alpha_min": 66,
+      "alpha_max": 67
     }
   },
   "copy": {
     "firmware_sha256": "de1ee35403d31b00c273a2b51458ed0c045e11be6c10033eaef446c0cd6f488f",
     "before": {
       "source": "measurements/copy-oracle-baseline.log",
-      "width": 960, "height": 468, "stride": 1920, "us": 7520,
-      "rd": 898560, "wr": 898560, "under": 0, "failed": 0, "mismatch": 0
+      "width": 960,
+      "height": 468,
+      "stride": 1920,
+      "us": 7520,
+      "rd": 898560,
+      "wr": 898560,
+      "under": 0,
+      "failed": 0,
+      "mismatch": 0
     },
     "after": {
       "source": "measurements/scanout-copy-oracle.log",
-      "width": 960, "height": 468, "stride": 1920, "us": 5766,
-      "rd": 898560, "wr": 898560, "under": 0, "failed": 0, "mismatch": 0
+      "width": 960,
+      "height": 468,
+      "stride": 1920,
+      "us": 5766,
+      "rd": 898560,
+      "wr": 898560,
+      "under": 0,
+      "failed": 0,
+      "mismatch": 0
     }
   },
   "kernel": {
     "recorded_on": "2026-10-17",
     "firmware_sha256": "d8b18ca4f494cb4795b2e773936b190f4329bd632f3f2cfa06a6aa9b35bbdfe4",
-    "evidence": {"archive": "docs/efinix_2d_gpu/evidence/dashboard_comparison_20261017/raw-evidence.zip", "sha256": "49710dddf234678c129a45db8bbbe8fa0a1db9818e315c556bb1c1b100dab4f3"},
+    "evidence": {
+      "archive": "docs/efinix_2d_gpu/evidence/dashboard_comparison_20261017/raw-evidence.zip",
+      "sha256": "49710dddf234678c129a45db8bbbe8fa0a1db9818e315c556bb1c1b100dab4f3"
+    },
     "before": [
-      {"source":"kernel-before-r3.log","target":512,"alpha":64,"frames":600,"wall_us":9983193,"work_us":7169101,"max_work_us":12109,"logic_us":298514,"build_us":188528,"render_call_us":6661588,"present_us":2814091,"gpu_busy_us":9453610,"pixels":294873600,"rd":556339200,"wr":569117656,"cache":50611200,"under":0,"error":0,"work_miss":0,"state_crc":"c053d2fd","list_crc":"f1b95ef1"},
-      {"source":"kernel-before-r3.log","target":1536,"alpha":192,"frames":600,"wall_us":19966386,"work_us":12896188,"max_work_us":21852,"logic_us":918263,"build_us":1159497,"render_call_us":10797950,"present_us":7070197,"gpu_busy_us":17841764,"pixels":345254400,"rd":590755200,"wr":628919200,"cache":151372800,"under":0,"error":0,"work_miss":600,"state_crc":"edee7f41","list_crc":"0cee5cd7"}
+      {
+        "source": "kernel-before-r3.log",
+        "target": 512,
+        "alpha": 64,
+        "frames": 600,
+        "wall_us": 9983193,
+        "work_us": 7169101,
+        "max_work_us": 12109,
+        "logic_us": 298514,
+        "build_us": 188528,
+        "render_call_us": 6661588,
+        "present_us": 2814091,
+        "gpu_busy_us": 9453610,
+        "pixels": 294873600,
+        "rd": 556339200,
+        "wr": 569117656,
+        "cache": 50611200,
+        "under": 0,
+        "error": 0,
+        "work_miss": 0,
+        "state_crc": "c053d2fd",
+        "list_crc": "f1b95ef1"
+      },
+      {
+        "source": "kernel-before-r3.log",
+        "target": 1536,
+        "alpha": 192,
+        "frames": 600,
+        "wall_us": 19966386,
+        "work_us": 12896188,
+        "max_work_us": 21852,
+        "logic_us": 918263,
+        "build_us": 1159497,
+        "render_call_us": 10797950,
+        "present_us": 7070197,
+        "gpu_busy_us": 17841764,
+        "pixels": 345254400,
+        "rd": 590755200,
+        "wr": 628919200,
+        "cache": 151372800,
+        "under": 0,
+        "error": 0,
+        "work_miss": 600,
+        "state_crc": "edee7f41",
+        "list_crc": "0cee5cd7"
+      }
     ],
     "after": [
-      {"source":"kernel-after-r3.log","target":512,"alpha":64,"frames":600,"wall_us":9983193,"work_us":5570205,"max_work_us":9384,"logic_us":294006,"build_us":188512,"render_call_us":5071358,"present_us":4412987,"gpu_busy_us":9468655,"pixels":294873600,"rd":556339200,"wr":569117656,"cache":50611200,"under":0,"error":0,"work_miss":0,"state_crc":"c053d2fd","list_crc":"f1b95ef1"},
-      {"source":"kernel-after-r3.log","target":1536,"alpha":192,"frames":600,"wall_us":19966386,"work_us":10299501,"max_work_us":17353,"logic_us":908639,"build_us":957157,"render_call_us":8417374,"present_us":9666885,"gpu_busy_us":18062242,"pixels":345254400,"rd":590755200,"wr":628919200,"cache":151372800,"under":0,"error":0,"work_miss":600,"state_crc":"edee7f41","list_crc":"0cee5cd7"}
+      {
+        "source": "kernel-after-r3.log",
+        "target": 512,
+        "alpha": 64,
+        "frames": 600,
+        "wall_us": 9983193,
+        "work_us": 5570205,
+        "max_work_us": 9384,
+        "logic_us": 294006,
+        "build_us": 188512,
+        "render_call_us": 5071358,
+        "present_us": 4412987,
+        "gpu_busy_us": 9468655,
+        "pixels": 294873600,
+        "rd": 556339200,
+        "wr": 569117656,
+        "cache": 50611200,
+        "under": 0,
+        "error": 0,
+        "work_miss": 0,
+        "state_crc": "c053d2fd",
+        "list_crc": "f1b95ef1"
+      },
+      {
+        "source": "kernel-after-r3.log",
+        "target": 1536,
+        "alpha": 192,
+        "frames": 600,
+        "wall_us": 19966386,
+        "work_us": 10299501,
+        "max_work_us": 17353,
+        "logic_us": 908639,
+        "build_us": 957157,
+        "render_call_us": 8417374,
+        "present_us": 9666885,
+        "gpu_busy_us": 18062242,
+        "pixels": 345254400,
+        "rd": 590755200,
+        "wr": 628919200,
+        "cache": 151372800,
+        "under": 0,
+        "error": 0,
+        "work_miss": 600,
+        "state_crc": "edee7f41",
+        "list_crc": "0cee5cd7"
+      }
     ],
     "return": [
-      {"source":"kernel-return-r3.log","target":512,"alpha":64,"frames":600,"wall_us":9983193,"work_us":7169530,"max_work_us":12109,"logic_us":298514,"build_us":188525,"render_call_us":6662015,"present_us":2813662,"gpu_busy_us":9453618,"pixels":294873600,"rd":556339200,"wr":569117656,"cache":50611200,"under":0,"error":0,"work_miss":0,"state_crc":"c053d2fd","list_crc":"f1b95ef1"},
-      {"source":"kernel-return-r3.log","target":1536,"alpha":192,"frames":600,"wall_us":19966386,"work_us":12895848,"max_work_us":21837,"logic_us":918155,"build_us":1159705,"render_call_us":10797511,"present_us":7070537,"gpu_busy_us":17841842,"pixels":345254400,"rd":590755200,"wr":628919200,"cache":151372800,"under":0,"error":0,"work_miss":600,"state_crc":"edee7f41","list_crc":"0cee5cd7"}
+      {
+        "source": "kernel-return-r3.log",
+        "target": 512,
+        "alpha": 64,
+        "frames": 600,
+        "wall_us": 9983193,
+        "work_us": 7169530,
+        "max_work_us": 12109,
+        "logic_us": 298514,
+        "build_us": 188525,
+        "render_call_us": 6662015,
+        "present_us": 2813662,
+        "gpu_busy_us": 9453618,
+        "pixels": 294873600,
+        "rd": 556339200,
+        "wr": 569117656,
+        "cache": 50611200,
+        "under": 0,
+        "error": 0,
+        "work_miss": 0,
+        "state_crc": "c053d2fd",
+        "list_crc": "f1b95ef1"
+      },
+      {
+        "source": "kernel-return-r3.log",
+        "target": 1536,
+        "alpha": 192,
+        "frames": 600,
+        "wall_us": 19966386,
+        "work_us": 12895848,
+        "max_work_us": 21837,
+        "logic_us": 918155,
+        "build_us": 1159705,
+        "render_call_us": 10797511,
+        "present_us": 7070537,
+        "gpu_busy_us": 17841842,
+        "pixels": 345254400,
+        "rd": 590755200,
+        "wr": 628919200,
+        "cache": 151372800,
+        "under": 0,
+        "error": 0,
+        "work_miss": 600,
+        "state_crc": "edee7f41",
+        "list_crc": "0cee5cd7"
+      }
     ]
   },
   "limits": [
@@ -79,5 +264,47 @@
     "新BIT的1572和1568档均迟到作废，没有新的有效60FPS极限。",
     "RISC-V总占用率未独立采集；专项固件测量逻辑与构建的已知工作占比。帧工作时间包含GPU等待，不能冒充CPU使用率。",
     "Copy带宽利用率为GPU侧32bit@100MHz AXI单向有效载荷/400MB/s，不是DDR芯片总利用率，不含显示、CPU或资源DMA。"
-  ]
+  ],
+  "final_release": {
+    "recorded_on": "2026-10-27",
+    "firmware_build_id": "0x20261027",
+    "viewport": "480x270 per renderer",
+    "window_ms": 15000,
+    "scope": "independent cooperative displayed-frame FPS; not isolated renderer throughput",
+    "bit_sha256": "c9c55d8a022e9fa226aa6168185743af67c1a83470bc7f1709c89bbd1f09e94f",
+    "firmware_sha256": "5cff130805e8f00cf918ee07be3a8c69c5e260eb4e66a740b5e8c5b5a8068029",
+    "evidence": "docs/efinix_2d_gpu/evidence/split_comparison_20261027/",
+    "rows": [
+      {
+        "target": 256,
+        "window_ms": 15000,
+        "cpu_frames": 69,
+        "gpu_frames": 901,
+        "cpu_fps_x100": 460,
+        "gpu_fps_x100": 6006,
+        "gpu_render_us": 3099,
+        "cache_bytes": 9746664,
+        "logic_us": 363,
+        "build_us": 1837,
+        "left_copy_us": 265,
+        "scope": "displayed-480x270"
+      },
+      {
+        "target": 512,
+        "window_ms": 15000,
+        "cpu_frames": 35,
+        "gpu_frames": 901,
+        "cpu_fps_x100": 233,
+        "gpu_fps_x100": 6006,
+        "gpu_render_us": 4535,
+        "cache_bytes": 19149824,
+        "logic_us": 657,
+        "build_us": 3541,
+        "left_copy_us": 136,
+        "scope": "displayed-480x270"
+      }
+    ],
+    "errors": 0,
+    "underflows": 0
+  }
 }

@@ -7,6 +7,7 @@
 #include "perf_demo.h"
 #include "game_menu.h"
 #include "network_assets.h"
+#include "split_compare.h"
 #include <assert.h>
 #include <setjmp.h>
 #include <stdarg.h>
@@ -18,6 +19,13 @@ static unsigned won,seen,bank_seen,gpu_render_count;
 static bullet_stream scene;
 static hud_command_stream hud;
 static hud_raster_cache cache;
+int __wrap_gpu_texture_cache_load(gpu_device *d,uint32_t a,uint32_t b,uint32_t p){(void)d;(void)a;(void)b;(void)p;assert(!"unexpected comparison cache restore in original MENU/WIN route");return GPU_DRIVER_ARGUMENT;}
+int __wrap_split_compare_init(split_compare_state *s){(void)s;assert(!"unexpected comparison entry from MENU/WIN");return GPU_DRIVER_ARGUMENT;}
+int __wrap_split_compare_step(split_compare_state *s,gpu_device *d,framebuffer_pair *fb,int n,
+ bullet_stream *b,hud_command_stream *h,uint32_t hz,uint32_t polls,int (*service)(void *),void *context) {
+ (void)s;(void)d;(void)fb;(void)n;(void)b;(void)h;(void)hz;(void)polls;(void)service;(void)context;
+ assert(!"unexpected comparison render from MENU/WIN");return GPU_DRIVER_ARGUMENT;
+}
 void bsp_printf(const char *format,...) {va_list args;va_start(args,format);vfprintf(stderr,format,args);va_end(args);}
 uint64_t gpu_platform_cycles(void) {static uint64_t ticks;return ticks+=1000;}
 void gpu_platform_sync(void) {}

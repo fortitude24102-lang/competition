@@ -92,8 +92,15 @@ int main(void) {
   unsigned drawn=count;
   assert(!game_menu_draw(&d,&c,bank,dst,3,1,&scratch,1000) && count==drawn);
  }
+ count=0;c.comparison=1;c.selected_level=7;
+ assert(!game_menu_draw(&d,&c,0,GPU_FRAMEBUFFER_A,3,1,&scratch,1000));check_frame(GPU_FRAMEBUFFER_A);
+ unsigned exhibit=0;
+ for(unsigned i=0;i<count;i++)if(commands[i].op==GPU_OP_FILL && commands[i].color==0xffe0) {
+  assert(commands[i].dst_addr==GPU_FRAMEBUFFER_A+464u*GPU_FRAME_STRIDE+192 && commands[i].width_pixels==768);exhibit++;
+ }
+ assert(exhibit==1);
  count=0;fail_at=1;c.selected_level=1;
  assert(game_menu_draw(&d,&c,0,GPU_FRAMEBUFFER_A,3,1,&scratch,1000)<0);
- assert(!(c.valid_mask&1) && c.drawn_selection[0]==4); /* Failed redraw cannot advance cache. */
+ assert(!(c.valid_mask&1) && c.drawn_selection[0]==7); /* Failed redraw cannot advance cache. */
  puts("PASS real GPU menu MMIO geometry/glyph labels, two buffers, static zero-submit, dirty hint and failure invalidation");
 }

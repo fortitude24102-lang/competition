@@ -108,6 +108,10 @@ class ProtocolTest(unittest.TestCase):
         self.assertEqual(p.decode(wire(128, words=words)).words[21], 0x007f4fff)
         words[21]|=1<<15
         with self.assertRaises(ValueError):p.decode(wire(128,words=words))
+        words[21]=(1<<23)|(1<<24)
+        with self.assertRaises(ValueError):p.decode(wire(128,words=words))
+        words[21]|=1<<25
+        with self.assertRaises(ValueError):p.decode(wire(128,words=words))
 
     def test_deliverable_exists(self):
         self.assertIsNotNone(importlib.util.find_spec('protocol'), 'fixed packet codec missing')

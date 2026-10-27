@@ -23,8 +23,8 @@ int game_menu_draw(gpu_device *gpu,game_menu_cache *c,unsigned index,uint32_t ds
  _Static_assert(HUD_MAX_COMMANDS>=256,"menu scratch capacity");
  uint8_t bit=(uint8_t)(1u<<index),ready=(uint8_t)(network!=0);
  unsigned levels=c->levels==6?6u:4u;
- unsigned selected=c->selected_level<=levels?c->selected_level:0;
- int full=!(c->valid_mask&bit) || c->generation[index]!=generation || c->destination[index]!=dst || c->drawn_levels[index]!=levels || c->drawn_selection[index]!=selected;
+ unsigned selected=c->selected_level<=levels+(c->comparison!=0)?c->selected_level:0;
+ int full=!(c->valid_mask&bit) || c->generation[index]!=generation || c->destination[index]!=dst || c->drawn_levels[index]!=levels || c->drawn_selection[index]!=selected || c->drawn_comparison[index]!=!!c->comparison;
  s->count=0;
  if(!full && c->network[index]==ready)return 0;
  c->valid_mask&=(uint8_t)~bit;
@@ -45,12 +45,18 @@ int game_menu_draw(gpu_device *gpu,game_menu_cache *c,unsigned index,uint32_t ds
    fill(s,dst,98,414,764,44,0);
    text(s,dst,108,426,"PERFORMANCE - 60 FPS SPRITE LIMIT",1);
   } else text(s,dst,96,436,"SELECT A LEVEL ON THE WEB PAGE",0);
+  if(c->comparison) {
+   fill(s,dst,96,464,768,40,selected==levels+1u?0xffe0:0x07e0);
+   fill(s,dst,98,466,764,36,0);
+   text(s,dst,108,476,"CPU GPU SAME SCREEN - 15 SECONDS EACH",1);
+  }
  }
- fill(s,dst,96,480,600,18,0);
- text(s,dst,96,480,selected?"STICK SELECT - MID START":ready?"WEB CONTROL READY":"WAITING FOR WEB CONTROL",selected || ready);
+ unsigned hint_y=c->comparison?516u:480u;
+ fill(s,dst,96,hint_y,600,18,0);
+ text(s,dst,96,hint_y,selected?"STICK SELECT - MID START":ready?"WEB CONTROL READY":"WAITING FOR WEB CONTROL",selected || ready);
  uint16_t tag=0;
  for(unsigned i=0;i<s->count;i++) {int e=gpu_submit(gpu,&s->commands[i],polls,&tag);if(e)return e;}
  int e=gpu_wait_tag(gpu,tag,polls);if(e)return e;
- c->destination[index]=dst;c->generation[index]=generation;c->network[index]=ready;c->drawn_levels[index]=(uint8_t)levels;c->drawn_selection[index]=(uint8_t)selected;c->valid_mask|=bit;
+ c->destination[index]=dst;c->generation[index]=generation;c->network[index]=ready;c->drawn_levels[index]=(uint8_t)levels;c->drawn_selection[index]=(uint8_t)selected;c->drawn_comparison[index]=(uint8_t)!!c->comparison;c->valid_mask|=bit;
  return 0;
 }

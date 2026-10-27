@@ -1,0 +1,48 @@
+{
+  "firmware_sha256": "5cff130805e8f00cf918ee07be3a8c69c5e260eb4e66a740b5e8c5b5a8068029",
+  "bit_sha256": "c9c55d8a022e9fa226aa6168185743af67c1a83470bc7f1709c89bbd1f09e94f",
+  "firmware_path": "D:\\ZYNQ\\smallproject\\.worktrees\\pango-riscv-cpu\\generated\\verification\\v3\\split-compare-20261027\\normal-web-final-r1\\gpu_demo.bin",
+  "bit_path": "D:\\efinity_builds\\key_row_handoff_20261026_r1\\outflow\\efinix_2d_gpu.bit",
+  "window_ms": 15000,
+  "viewport": "480x270 per renderer",
+  "scope": "independent cooperative displayed-frame FPS; not isolated renderer throughput",
+  "rows": [
+    {
+      "target": 256,
+      "window_ms": 15000,
+      "cpu_frames": 69,
+      "gpu_frames": 901,
+      "cpu_fps_x100": 460,
+      "gpu_fps_x100": 6006,
+      "gpu_render_us": 3099,
+      "cache_bytes": 9746664,
+      "logic_us": 363,
+      "build_us": 1837,
+      "left_copy_us": 265,
+      "scope": "displayed-480x270"
+    },
+    {
+      "target": 512,
+      "window_ms": 15000,
+      "cpu_frames": 35,
+      "gpu_frames": 901,
+      "cpu_fps_x100": 233,
+      "gpu_fps_x100": 6006,
+      "gpu_render_us": 4535,
+      "cache_bytes": 19149824,
+      "logic_us": 657,
+      "build_us": 3541,
+      "left_copy_us": 136,
+      "scope": "displayed-480x270"
+    }
+  ],
+  "cancel_ms": 248,
+  "original_six_games_after_display": true,
+  "health_errors": 0,
+  "underflows": 0,
+  "final_fresh_released_menu": true,
+  "protected_user_files_unchanged": 3,
+  "root_readme_update": "user-authorized; original content preserved in README.history.md",
+  "further_hardware_optimization": "stopped",
+  "source_files": 36
+}

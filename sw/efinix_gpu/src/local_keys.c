@@ -16,12 +16,16 @@ int local_keys_update(local_keys *s,uint32_t status,uint32_t now,v3_runtime *r,g
  s->was_menu=(uint8_t)menu;
  unsigned levels=BULLET_MAX_OBJECTS>=1024?6u:4u;
  if(menu && s->armed) {
-  if((pressed&1u) && s->selected>2)s->selected-=2;
-  if((pressed&2u) && s->selected+2u<=levels)s->selected+=2;
+  if((pressed&1u) && s->selected>2)s->selected=(uint8_t)(s->selected>levels?levels:s->selected-2u);
+  if(pressed&2u) {
+   if(s->selected+2u<=levels)s->selected+=2;
+   else if(r->split_enabled)s->selected=(uint8_t)(levels+1u);
+  }
   if((pressed&4u) && !(s->selected&1u))--s->selected;
   if((pressed&8u) && (s->selected&1u) && s->selected<levels)++s->selected;
   if(pressed&16u) {
-   int e=v3_runtime_game_command(r,V3_GAME_START,s->selected,UINT32_C(0x4c4f434c),s->sequence);
+   int e=s->selected>levels?v3_runtime_start_comparison(r):
+    v3_runtime_game_command(r,V3_GAME_START,s->selected,UINT32_C(0x4c4f434c),s->sequence);
    if(e)return e;
    s->armed=0;
   }

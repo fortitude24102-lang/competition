@@ -10,6 +10,10 @@ try {
  if($ReplayCrcNibble) {$flags+='-DREPLAY_CRC_NIBBLE=1'}
  if($ShapeLut) {$flags+='-DV3_SHAPE_LUT=1'}
  $cases=@(
+  @{name='split_timed';modules=@('split_compare')},
+  @{name='completion_progress';modules=@('gpu');extra=@('-DGPU_TEST_BACKEND')},
+  @{name='game_clock_cached';modules=@('interactive_game','bullet_demo')},
+  @{name='split_view';modules=@('split_view','perf_demo','interactive_game','bullet_demo','gpu_instances','golden_renderer','rgb565');extra=@('-DGPU_TEST_BACKEND','-Isw/efinix_gpu/assets/v2')},
   @{name='net_control';modules=@('net_control','asset_protocol');extra=@('-DNC_TEST_BACKEND')},
   @{name='input_state';modules=@('input_state')},
   @{name='local_keys';modules=@('local_keys','v3_runtime','bullet_demo','interactive_game','replay_input','input_state')},

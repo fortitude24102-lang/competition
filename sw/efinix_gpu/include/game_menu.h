@@ -6,6 +6,7 @@ typedef struct {
  uint8_t valid_mask,network[2],performance;
  uint8_t levels,drawn_levels[2]; /* 0/4: legacy layout, 6: expanded layout. */
  uint8_t selected_level,drawn_selection[2]; /* 0: web controls, otherwise local card. */
+ uint8_t comparison,drawn_comparison[2];
 } game_menu_cache;
 void game_menu_invalidate(game_menu_cache *cache);
 int game_menu_draw(gpu_device *gpu,game_menu_cache *cache,unsigned buffer_index,

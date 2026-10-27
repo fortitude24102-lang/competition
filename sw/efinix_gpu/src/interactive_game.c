@@ -41,7 +41,7 @@ int game_build(const bullet_state *s,uint32_t dst,int network,int glow,unsigned 
 static void lost_time(game_clock *c,uint32_t us) {
  c->discarded_wall_us=UINT32_MAX-c->discarded_wall_us<us?UINT32_MAX:c->discarded_wall_us+us;
 }
-int game_advance(game_clock *c,bullet_state *s,const game_input *in,uint32_t elapsed_us) {
+int game_advance_cached(game_clock *c,bullet_state *s,const game_input *in,uint32_t elapsed_us,const bullet_state *initial) {
  if(!c || !s || !in || c->accumulator_x60>4000000u) return GPU_DRIVER_ARGUMENT;
  c->slow=0; c->compare_requested=0;
  if(elapsed_us>250000u) { lost_time(c,elapsed_us-250000u); elapsed_us=250000u; c->slow=1; }
@@ -51,7 +51,7 @@ int game_advance(game_clock *c,bullet_state *s,const game_input *in,uint32_t ela
  game_input tick_input=*in;
  tick_input.pressed=c->pending_pressed; tick_input.released=c->pending_released;
  while(c->accumulator_x60>=1000000u && n<GAME_MAX_CATCHUP) {
-  int e=game_update(s,&tick_input);
+  int e=game_update_cached(s,&tick_input,initial);
   if(e<0) return e;
   c->accumulator_x60-=1000000u; ++c->total_steps; ++n;
   c->pending_pressed=c->pending_released=0;
@@ -64,4 +64,7 @@ int game_advance(game_clock *c,bullet_state *s,const game_input *in,uint32_t ela
   c->accumulator_x60=4000000u;
  }
  return (int)n;
+}
+int game_advance(game_clock *c,bullet_state *s,const game_input *in,uint32_t elapsed_us) {
+ return game_advance_cached(c,s,in,elapsed_us,NULL);
 }

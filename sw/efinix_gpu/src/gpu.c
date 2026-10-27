@@ -65,15 +65,12 @@ static inline __attribute__((always_inline)) int validate(const gpu_command *c) 
 }
 
 static int refresh(gpu_device *d) {
- uint16_t done=0,confirm=0;
- uint8_t error=0;
- for(unsigned attempt=0;attempt<3;attempt++) {
-  done=(uint16_t)(rd(d,GPU_REG_LAST_DONE)&GPU_LAST_DONE_MASK);
-  error=(uint8_t)(rd(d,GPU_REG_ERROR)&GPU_ERROR_MASK);
-  confirm=(uint16_t)(rd(d,GPU_REG_LAST_DONE)&GPU_LAST_DONE_MASK);
-  if(done==confirm) break;
-  if(attempt==2) return GPU_DRIVER_TAG;
- }
+ /* DONE is an atomic APB word; ERROR is sticky and sampled AFTER it. A
+  * later completion may conservatively expose a later error, but cannot
+  * hide an error in the retired prefix. Requiring two identical DONE reads
+  * falsely rejects fast cached commands that keep completing between reads. */
+ uint16_t done=(uint16_t)(rd(d,GPU_REG_LAST_DONE)&GPU_LAST_DONE_MASK);
+ uint8_t error=(uint8_t)(rd(d,GPU_REG_ERROR)&GPU_ERROR_MASK);
  uint16_t advance=(uint16_t)(done-d->last_done);
  if(advance) {
   /* RTL keeps the first nonzero error sticky, so an in-order LAST_DONE jump

@@ -9,6 +9,7 @@
 #include "render_phase_health.h"
 #include "bsp.h"
 #include "network_assets.h"
+#include "split_compare.h"
 #ifndef V3_STRIPE_RENDER
 #define V3_STRIPE_RENDER 0
 #endif
@@ -52,7 +53,9 @@ static void invalidate_physical_hud(void) {
 #error "Performance challenge requires FrameList"
 #endif
 #endif
-#if V3_STRIPE_RENDER
+#if V3_FRAME_LIST && !V3_PROBE_FRAMES && !V3_STRIPE_RENDER
+#define V3_BUILD_ID 0x20261027u
+#elif V3_STRIPE_RENDER
 #define V3_BUILD_ID 0x20261016u
 #elif V3_HUD_LIST || V3_HUD_DIRECT
 #define V3_BUILD_ID 0x20261015u
@@ -207,6 +210,20 @@ int v3_apply_game_command(v3_runtime *r,nc_device *d,const nc_game_command *cmd)
  int ack=nc_complete_game(d,cmd,e<0?2u:e?1u:0u);
  return ack<0?ack:e<0?e:0;
 }
+#if V3_FRAME_LIST && !V3_PROBE_FRAMES
+typedef struct {nc_device *control;v3_runtime *runtime;nc_input *raw;nc_telemetry *telemetry;uint32_t last;} split_control;
+static int service_split_control(void *context) {
+ split_control *c=context;uint32_t now=now_ms();
+ if(now-c->last<20)return 0;
+ c->last=now;int e=nc_poll(c->control,now,c->raw);if(e<0)return e;
+ nc_game_command cmd;e=nc_take_game(c->control,&cmd);if(e<0)return e;
+ if(e){e=v3_apply_game_command(c->runtime,c->control,&cmd);if(e<0)return e;}
+ nc_telemetry *t=c->runtime->phase==V3_PHASE_SPLIT_COMPARE?c->telemetry:0;
+ if(t){t->input_age_ms=c->raw->age_ms;t->status_flags&=~V3_STATUS_CONTROL_CONNECTED;if(c->raw->connected)t->status_flags|=V3_STATUS_CONTROL_CONNECTED;}
+ e=nc_try_publish(c->control,t,now);if(e<0)return e;
+ return c->runtime->phase!=V3_PHASE_SPLIT_COMPARE;
+}
+#endif
 int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  bullet_stream *scene,hud_command_stream *overlay,hud_raster_cache *hud_cache) {
  v3_runtime *runtime=(v3_runtime *)(uintptr_t)V3_STATE_ADDRESS;
@@ -255,6 +272,9 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  e=v3_runtime_menu_init(runtime,7,V3_RESOURCE_EPOCH);
 #endif
  if(e) return 1;
+#if V3_FRAME_LIST && !V3_PROBE_FRAMES
+ runtime->split_enabled=(uint8_t)list_enabled;
+#endif
 #if V3_PERFORMANCE_CHALLENGE
  pc_state *challenge=(pc_state *)(uintptr_t)PC_STATE_ADDRESS;
  uint32_t challenge_scene=UINT32_MAX,challenge_generation=0;
@@ -313,8 +333,16 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
  perf_window window={0};v3_scene_metrics results={0};game_menu_cache menu_cache={0};
  menu_cache.performance=runtime->perf_enabled;
  menu_cache.levels=BULLET_MAX_OBJECTS>=1024?6:4;
+ menu_cache.comparison=runtime->split_enabled;
 #if !V3_PROBE_FRAMES
  local_keys local_control={0};
+ #if V3_FRAME_LIST
+ game_input comparison_input={0};
+ split_compare_state *comparison=(split_compare_state *)(uintptr_t)SPLIT_STATE_ADDRESS;
+ split_control comparison_control={.control=&control,.runtime=runtime,.raw=&raw,.telemetry=&telemetry};
+ uint32_t comparison_generation=UINT32_MAX,comparison_pause_until=0;
+ uint64_t comparison_cache_start=0;
+ #endif
  bsp_printf("LOCAL_KEYS,present=%d,debounce_ms=20\r\n",!!(*(volatile uint32_t *)(gpu->base+GPU_REG_STATUS)&GPU_STATUS_LOCAL_KEYS_PRESENT));
 #endif
  uint32_t last_report=0,under_delta=0,miss_delta=0,last_drops=0,last_rejected=0;
@@ -362,6 +390,68 @@ int v3_demo_run(gpu_device *gpu,framebuffer_pair *buffers,int network,
   if(local<0){e=local;break;}
   if(!local)input_update(&input,&raw);
   menu_cache.selected_level=local_control.selected;
+#endif
+#if V3_FRAME_LIST && !V3_PROBE_FRAMES
+  if(runtime->phase!=V3_PHASE_SPLIT_COMPARE && comparison_generation!=UINT32_MAX && comparison->prepared) {
+   e=gpu_texture_cache_load(gpu,network?BULLET_ATLAS_ADDR:BULLET_LOCAL_ATLAS,BULLET_ATLAS_BYTES,V3_POLLS);if(e)break;
+   comparison->prepared=0;
+  }
+  input_update(&comparison_input,&raw);
+  if(runtime->phase==V3_PHASE_MENU && (comparison_input.pressed&V3_KEY_COMPARE)) {
+   e=v3_runtime_start_comparison(runtime);if(e<0)break;
+  }
+  if(runtime->phase==V3_PHASE_SPLIT_COMPARE && comparison_generation!=runtime->scene_generation) {
+   e=split_compare_init(comparison);if(e)break;
+   comparison_generation=runtime->scene_generation;
+   comparison_pause_until=0;
+   comparison_cache_start=before.cache_bytes;
+   telemetry=(nc_telemetry){.firmware_build_id=V3_BUILD_ID,.resource_epoch=V3_RESOURCE_EPOCH,
+    .requested_sprites=256,.status_flags=V3_STATUS_COMPARE_REPLAY|V3_STATUS_PAUSED|
+     V3_STATUS_GAME_MENU_CAPABLE|V3_STATUS_SIX_LEVELS|V3_STATUS_INVALID_COUNTS|V3_VALID_ERRORS|V3_VALID_INPUT_NETWORK};
+   hud_cache->valid=0;game_menu_invalidate(&menu_cache);results=(v3_scene_metrics){0};
+   #if V3_HUD_DIRECT
+   invalidate_physical_hud();
+   #endif
+   bsp_printf("SPLIT_COMPARE_START,targets=256-512,seconds=15,view=480x270,independent=1,timing=displayed-frames\r\n");
+  }
+  if(runtime->phase==V3_PHASE_SPLIT_COMPARE) {
+   unsigned before_complete=comparison->completed[0]|((unsigned)comparison->completed[1]<<1);
+   e=0;
+   /* Hold the completed 256 score for one telemetry interval plus margin,
+    * outside either timed window, so a browser can retain both final rows. */
+   if((int32_t)(now_ms()-comparison_pause_until)>=0)
+    e=split_compare_step(comparison,gpu,buffers,network,scene,overlay,BSP_CLINT_HZ,V3_POLLS,service_split_control,&comparison_control);
+   if(e<0){bsp_printf("SPLIT_FAILURE,stage=%d,result=%d,last=%d,next=%d,outstanding=%d,hw_done=%d,status=%x\r\n",comparison->stage,e,gpu->last_done,gpu->next_tag,gpu->outstanding,*(volatile uint32_t *)(gpu->base+GPU_REG_LAST_DONE),*(volatile uint32_t *)(gpu->base+GPU_REG_STATUS));break;}
+   if(e>0){previous_logic=previous_present=gpu_platform_cycles();previous_mode=UINT8_MAX;continue;}
+   unsigned tier=comparison->tier,n=(unsigned)(comparison->elapsed_ticks[tier]*1000u/BSP_CLINT_HZ);
+   gpu_perf_snapshot health;e=gpu_read_perf_snapshot(gpu,&health);if(e)break;
+   if(health.underflows!=before.underflows || gpu->hardware_error){e=GPU_DRIVER_HARDWARE;break;}
+   for(unsigned i=0;i<2;i++)if(comparison->completed[i] && !(before_complete&(1u<<i))) {
+    if(!i)comparison_pause_until=now_ms()+300u;
+    bsp_printf("SPLIT_COMPARE_RESULT,target=%d,window_ms=15000,cpu_frames=%d,gpu_frames=%d,cpu_fps_x100=%d,gpu_fps_x100=%d,gpu_render_us=%d,cache_bytes=%d,logic_us=%d,build_us=%d,left_copy_us=%d,scope=displayed-480x270\r\n",
+     i?512:256,comparison->cpu_frames[i],comparison->gpu_frames[i],
+     comparison->cpu_frames[i]*100u/15u,comparison->gpu_frames[i]*100u/15u,
+     comparison->gpu_frames[i]?us(comparison->gpu_ticks[i]/comparison->gpu_frames[i]):0,
+     (uint32_t)(health.cache_bytes-comparison_cache_start),
+     comparison->gpu_frames[i]?us(comparison->logic_ticks[i]/comparison->gpu_frames[i]):0,
+     comparison->gpu_frames[i]?us(comparison->build_ticks[i]/comparison->gpu_frames[i]):0,
+     comparison->gpu_frames[i]?us(comparison->copy_ticks[i]/comparison->gpu_frames[i]):0);
+    comparison_cache_start=health.cache_bytes;
+   }
+   telemetry=(nc_telemetry){.firmware_build_id=V3_BUILD_ID,.resource_epoch=V3_RESOURCE_EPOCH,
+    .simulation_tick=n,.requested_sprites=tier?512:256,.visible_sprites=scene->visible,
+    /* Mode-scoped displayed viewport FPS. Native full-frame validity bits
+     * remain clear; only the dedicated split panel reads these raw words. */
+    .gpu_full_frame_fps_x100=n?comparison->gpu_frames[tier]*100000u/n:0,
+    .cpu_full_frame_fps_x100=n?comparison->cpu_frames[tier]*100000u/n:0,
+    .scanout_underflow_delta=(uint32_t)(health.underflows-sampled_underflows),.gpu_error_delta=gpu->hardware_error,
+    .input_age_ms=raw.age_ms,.status_flags=V3_STATUS_COMPARE_REPLAY|V3_STATUS_PAUSED|
+     V3_STATUS_GAME_MENU_CAPABLE|V3_STATUS_SIX_LEVELS|V3_STATUS_INVALID_COUNTS|V3_VALID_ERRORS|V3_VALID_INPUT_NETWORK};
+   if(raw.connected)telemetry.status_flags|=V3_STATUS_CONTROL_CONNECTED;
+   e=nc_try_publish(&control,&telemetry,now_ms());if(e<0)break;
+   previous_logic=previous_present=gpu_platform_cycles();previous_mode=UINT8_MAX;
+   continue;
+  }
 #endif
   uint64_t logic=gpu_platform_cycles();
 #if V3_COPY_AHEAD

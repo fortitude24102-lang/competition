@@ -81,6 +81,23 @@ int main(void) {
  uint32_t crc=golden_crc32((void *)(uintptr_t)GPU_FRAMEBUFFER_A,GPU_FRAME_BYTES);
  assert(crc==UINT32_C(0x8e341090));
  assert(crc==golden_crc32((void *)(uintptr_t)GPU_FRAMEBUFFER_B,GPU_FRAME_BYTES));
+ const uint32_t offscreen=GPU_FRAMEBUFFER_A+0x01000000u;
+ void *off=mmap((void *)(uintptr_t)offscreen,GPU_FRAME_BYTES,PROT_READ|PROT_WRITE,
+  MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED_NOREPLACE,-1,0);assert(off==(void *)(uintptr_t)offscreen);
+ again=scene;for(unsigned i=0;i<again.count;i++)again.commands[i].dst_addr+=offscreen-GPU_FRAMEBUFFER_A;
+ assert(perf_render_cpu(again.commands,again.count)==GPU_DRIVER_ARGUMENT);
+ assert(perf_render_cpu_surface(again.commands,again.count,offscreen+1)==GPU_DRIVER_ARGUMENT);
+ assert(perf_render_cpu_surface(again.commands,again.count,GPU_DDR_END_EXCLUSIVE-2)==GPU_DRIVER_ARGUMENT);
+ assert(!perf_render_cpu_surface(again.commands,again.count,offscreen));
+ assert(!memcmp(off,(void *)(uintptr_t)GPU_FRAMEBUFFER_A,GPU_FRAME_BYTES));
+ memset(off,0x55,GPU_FRAME_BYTES);
+ for(unsigned i=0;i<again.count;i++)for(unsigned y=0;y<again.commands[i].height_pixels;y+=32) {
+  gpu_command part=again.commands[i];part.dst_addr+=y*part.dst_stride;part.src_addr+=y*part.src_stride;
+  part.height_pixels=(uint16_t)(part.height_pixels-y>32?32:part.height_pixels-y);
+  assert(!perf_render_cpu_surface(&part,1,offscreen));
+ }
+ assert(!memcmp(off,(void *)(uintptr_t)GPU_FRAMEBUFFER_A,GPU_FRAME_BYTES));
+ assert(!munmap(off,GPU_FRAME_BYTES));
  printf("local scene CRC=%08x\n",crc);
  assert(!perf_build_frame(GPU_FRAMEBUFFER_A,32,8,0,&again));
  assert(scene.commands[1].dst_addr!=again.commands[1].dst_addr);

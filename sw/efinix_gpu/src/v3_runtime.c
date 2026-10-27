@@ -60,6 +60,12 @@ int v3_runtime_game_command(v3_runtime *r,unsigned op,unsigned level,uint32_t se
  }
  r->level=(uint8_t)level;return restart_game(r,session,sequence);
 }
+int v3_runtime_start_comparison(v3_runtime *r) {
+ if(!r)return GPU_DRIVER_ARGUMENT;
+ if(!r->menu_enabled || !r->split_enabled || r->phase!=V3_PHASE_MENU)return 1;
+ r->phase=V3_PHASE_SPLIT_COMPARE;r->mode=V3_MODE_LIVE;r->compare_pending=0;
+ ++r->scene_generation;return 0;
+}
 int v3_runtime_control(v3_runtime *r,const nc_input *in) {
  if(!r || !in)return GPU_DRIVER_ARGUMENT;
  if(r->phase==V3_PHASE_PERFORMANCE && (!in->connected || in->session!=r->neutral_session)) {
