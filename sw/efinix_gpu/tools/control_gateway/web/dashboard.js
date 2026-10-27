@@ -248,6 +248,14 @@
         '\n512探针BIN '+data.game.firmware_sha256+'\nCopy探针BIN '+data.copy.firmware_sha256+
         '\n仓库证据 '+data.evidence.archive;
       if(data.kernel) {
+        const reference=['before','after','return'].map(name=>data.kernel[name].find(s=>s.target===512));
+        if(reference.some(s=>!s || s.frames!==600 || s.alpha!==64) ||
+           ['pixels','rd','wr','cache','state_crc','list_crc'].some(key=>reference.some(s=>s[key]!==reference[0][key])))
+          throw new Error('Mismatched reference workload');
+        const ref=reference.map(kernelMetrics)[1];
+        $('overview-ddr').textContent=ref.total_mb_s.toFixed(2);
+        $('overview-risc').textContent=ref.cpu_known_percent.toFixed(2)+'%';
+        $('reference-context').textContent='已保存专项实测 · '+data.kernel.recorded_on+' · 512 全活动精灵 + 64 Alpha · 600 帧。DDR 与 RISC 数值来自该记录，不是当前实时数据。';
         function showKernel() {
           const target=Number($('kernel-target').value),records=['before','after','return'].map(name=>data.kernel[name].find(s=>s.target===target));
           if(records.some(s=>!s || s.frames!==600 || s.alpha!==Math.ceil(target/8)) ||
@@ -274,7 +282,11 @@
         $('kernel-source').textContent=data.kernel.recorded_on+' 新增实板测量 · 测量BIN SHA256 '+data.kernel.firmware_sha256;
       }
       $('comparison-values').hidden=false;
-    }).catch(()=>{$('comparison-source').textContent='历史实测未加载或不一致，不显示旧值／猜测值；实时控制不受影响。';});
+    }).catch(()=>{
+      $('comparison-source').textContent='历史实测未加载或不一致，不显示旧值／猜测值；实时控制不受影响。';
+      $('reference-context').textContent='专项实测未加载或不一致；当前实时控制不受影响。';
+      $('overview-ddr').textContent='—';$('overview-risc').textContent='—';
+    });
     const client=Array.from(crypto.getRandomValues(new Uint8Array(16)),v=>v.toString(16).padStart(2,'0')).join('');
     let token, simulated=false,choice=null,gameSending=false,requestId=0,restartUntil=0,splitRequest=null;
     try {
@@ -291,12 +303,12 @@
       keys.clear();
       $('keys').textContent='0x00';
       if(pump.active || pump.inflight) pump.clear();
-      control.textContent='Control released; keys cleared'; $('acquire').disabled=false;
+      control.textContent='控制权已释放，按键已清除。'; $('acquire').disabled=false;
     }
     $('acquire').addEventListener('click',()=>{
       if(document.hidden || !document.hasFocus()) return;
       keys.clear(); pump.acquire(); $('acquire').disabled=true;
-      control.textContent='Waiting for board ACK…';
+      control.textContent='等待开发板确认…';
     });
     $('release').addEventListener('click',clear);
     function choose(opcode,level) {
@@ -309,6 +321,8 @@
     }
     for(let level=1;level<=LEVEL_COUNTS.length;level++) $('level-'+level).addEventListener('click',()=>choose('start',level));
     $('reselect').addEventListener('click',()=>choose('menu',0));
+    $('split-menu').addEventListener('click',()=>choose('menu',0));
+    $('performance-menu').addEventListener('click',()=>choose('menu',0));
     $('performance-start').addEventListener('click',()=>choose('performance',0));
     $('split-start').addEventListener('click',()=>{
       if(document.hidden || !document.hasFocus() || splitRequest || choice || gameSending) return;
@@ -381,7 +395,7 @@
         $('mode').textContent=modeText(view);
       }
       $('packet-drops').textContent=String(view.dropped_packets);
-      if(pump.active) control.textContent=view.acknowledged ? 'This tab controls the board' : 'Waiting for board ACK…';
+      if(pump.active) control.textContent=view.acknowledged ? '当前页面已获取控制权' : '等待开发板确认…';
     };
     events.onerror=()=>{streamFailed=true;freshness.disconnect();splitScores.observe(null,true); clear();};
     setInterval(()=>{
@@ -404,6 +418,13 @@
       $('cpu-fps').textContent=formatValue(cpu,'cpu_full_frame_fps_x100');
       const gv=gameView(lastView || {stale:true});
       const splitLive=splitMetrics(lastView,stale);
+      const liveFps=splitLive && splitLive.elapsed_ms<15000?splitLive.gpu:gpu===undefined?null:gpu/100;
+      $('overview-fps').textContent=liveFps===null?'—':liveFps.toFixed(2);
+      $('overview-fps-note').textContent=liveFps===null?'等待游戏或同屏展示':
+        (simulated?'模拟 · ':'实时 · ')+(splitLive?'480 × 270 视区':'960 × 540 整帧')+' · FPS';
+      const scene=!stale && ['play','performance','split'].includes(gv.phase) && lastView?.telemetry?.raw;
+      $('overview-sprites').textContent=scene?scene.visible_sprites+' / '+scene.requested_sprites:'—';
+      $('overview-sprites-note').textContent=scene?(simulated?'模拟 · ':'实时 · ')+'可见 / 请求数量':'可见 / 请求数量';
       $('split-live').hidden=!splitLive || splitLive.elapsed_ms===15000;
       if(splitLive) {
         $('split-cpu').textContent=splitLive.cpu.toFixed(2);
@@ -435,6 +456,8 @@
         ' · 活动 '+perf.target+' · 窗口 '+perf.frames+' 帧 · 已复核最佳 '+perf.best;
       $('current-difficulty').textContent=gv.level?'当前难度 '+gv.level+' · '+LEVEL_COUNTS[gv.level-1]+' Sprite 请求档位':'';
       $('reselect').disabled=!gv.canMenu || stale || !!choice || gameSending;
+      $('split-menu').disabled=$('reselect').disabled;
+      $('performance-menu').disabled=$('reselect').disabled;
       for(let level=1;level<=LEVEL_COUNTS.length;level++) $('level-'+level).disabled=!gv.canStart || level>gv.maxLevel || stale || !!choice || gameSending;
       if(choice && performance.now()>=choice.deadline) {choice=null;$('game-status').textContent='请求超时，状态未知；等待真实板端状态。';}
       if(choice && !gameSending && !stale && lastView.acknowledged && pump.active && gv.supported) {

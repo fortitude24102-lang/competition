@@ -1,26 +1,20 @@
 <!doctype html>
 <html lang="zh-CN">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AetherGX · 性能对照与游戏控制</title><link rel="stylesheet" href="/styles.css"><script defer src="/dashboard.js"></script></head>
-<body><main>
-<header><p class="eyebrow">AETHERGX · FINAL 2026.10.27</p><h1>CPU 与 GPU，现场同屏对比</h1><p>官方 Sapphire RISC-V 运行游戏与调度，FPGA 负责渲染；PC 只提供资源、输入与数据展示。</p>
-<nav aria-label="页面导航"><a href="#game">游戏与同屏展示</a><a href="#live">实时数据</a><a href="#release">最终实测</a><a href="#comparison">历史优化</a></nav></header>
-<section id="game" class="panel"><h2>选择游戏难度</h2><p id="game-status" role="status">等待开发板菜单状态…</p>
-<div id="difficulty-options" class="difficulty-grid">
-<button id="level-1" disabled>难度一<span>64 Sprite 请求档位</span></button>
-<button id="level-2" disabled>难度二<span>128 Sprite 请求档位</span></button>
-<button id="level-3" disabled>难度三<span>256 Sprite 请求档位</span></button>
-<button id="level-4" disabled>难度四<span>512 Sprite 请求档位</span></button>
-<button id="level-5" disabled>难度五<span>786 Sprite 请求档位</span></button>
-<button id="level-6" disabled>难度六<span>1024 Sprite 请求档位</span></button>
-</div><p id="current-difficulty"></p><button id="reselect" class="secondary" disabled>一键重选难度</button>
-<p class="muted">请求档位不等于每帧可见数量；高档位不承诺60 FPS。重选仅结束本局，不重启开发板。</p>
-<h3>独立展示 · CPU / GPU 同屏对比</h3><button id="split-start" disabled>开始同屏展示 · 256 / 512</button><p id="split-status" role="status">等待开发板菜单；六档游戏保持独立。</p>
-<div id="split-live" hidden><div class="cards split-cards"><article><h2>左侧 CPU · 实时 FPS</h2><p id="split-cpu" class="large">—</p><span>实际显示的新 CPU 图像</span></article><article><h2>右侧 GPU · 实时 FPS</h2><p id="split-gpu" class="large">—</p><span>实际完成的场景显示</span></article></div><label>当前档位进度 <progress id="split-progress" max="15000" value="0"></progress></label></div>
-<div class="table-scroll"><table><caption>本页本轮已完成成绩 · 保留值，非当前实时帧率</caption><tbody><tr><th>256 档</th><td id="split-score-256">尚未收到完整成绩</td></tr><tr><th>512 档</th><td id="split-score-512">尚未收到完整成绩</td></tr></tbody></table></div>
-<p class="muted">HDMI 左侧 CPU、右侧 GPU，以相同的 480×270 视区和素材独立刷新。256、512 两档各同时运行 15 秒，统计各自实际更新到屏幕的帧数与帧率；GPU 不等待 CPU 绘完一帧。完成后保留成绩，点击“一键重选难度”退出；原有六档游戏保持原来的画面和流程。</p></section>
-<section id="live" aria-labelledby="live-title"><h2 id="live-title">当前开发板 · 实时数据</h2>
-<div id="banner" class="warning" role="status">连接本地网关中；历史对照不依赖开发板在线。</div>
+<title>AetherGX-2D渲染加速异构平台</title><link rel="stylesheet" href="/styles.css"><script defer src="/dashboard.js"></script></head>
+<body id="top"><main>
+<header class="hero">
+<div class="topbar"><a class="brand" href="#top" aria-label="AetherGX 首页"><span class="brand-mark">A</span><span>Aether<span class="brand-x">GX</span><small>HETEROGENEOUS PLATFORM</small></span></a><nav aria-label="页面导航"><a href="#live">平台指标</a><a href="#modules">交互演示</a><a href="#release">实测记录</a></nav><span class="platform-tag">TI60F225 · FPGA</span></div>
+<div class="hero-content"><div><p class="eyebrow">HARDWARE-ACCELERATED 2D GRAPHICS</p><h1>AetherGX-2D渲染加速异构平台</h1><p class="hero-subtitle">让画面渲染交给硬件，让交互与逻辑留在板端。</p><p class="hero-description">基于 RISC-V 与 FPGA 的实时二维图形平台，从游戏交互到渲染对比，呈现软硬件协同的实际效果。</p><div class="hero-actions"><a class="primary-link" href="#modules">开始体验 <span>↗</span></a><a class="text-link" href="#live">查看平台指标 →</a></div></div>
+<div class="architecture" aria-label="平台组成：RISC-V 负责逻辑调度，2D GPU 负责硬件渲染，HDMI 输出画面"><p>PLATFORM ARCHITECTURE <span> / 01</span></p><div class="architecture-flow"><div><small>01 / CONTROL</small><strong>RISC-V</strong><span>逻辑 · 调度</span></div><b>→</b><div class="flow-active"><small>02 / RENDER</small><strong>2D GPU</strong><span>硬件加速</span></div><b>→</b><div><small>03 / DISPLAY</small><strong>HDMI</strong><span>960 × 540</span></div></div><div class="architecture-foot"><span><i></i> REAL HARDWARE</span><span>FPGA + SAPPHIRE SOC</span></div></div></div></header>
+<section id="live" aria-labelledby="live-title"><div class="section-heading"><div><p class="eyebrow">PLATFORM TELEMETRY</p><h2 id="live-title">平台性能，一目了然</h2></div><span>实时状态 + 已保存的专项实测</span></div>
+<div id="banner" class="warning" role="status">连接本地网关中；历史对照不依赖开发板在线。</div><div class="feature-metrics" aria-label="平台关键指标">
+<article><div class="metric-label">GPU 帧率 <span class="tag-live">LIVE</span></div><p class="metric-value" id="overview-fps">—</p><p class="metric-note" id="overview-fps-note">等待游戏或同屏展示</p></article>
+<article><div class="metric-label">场景精灵 <span class="tag-live">LIVE</span></div><p class="metric-value" id="overview-sprites">—</p><p class="metric-note" id="overview-sprites-note">可见 / 请求数量</p></article>
+<article><div class="metric-label">GPU 侧 DDR 吞吐 <span class="tag-record">实测记录</span></div><p class="metric-value" id="overview-ddr">—</p><p class="metric-note">MB/s · GPU 读写有效载荷</p></article>
+<article><div class="metric-label">RISC 核已测工作占比 <span class="tag-record">实测记录</span></div><p class="metric-value" id="overview-risc">—</p><p class="metric-note">逻辑 + 命令构建；总占用率未采集</p></article></div>
+<p id="reference-context" class="reference-note">专项实测正在加载；记录不代表当前实时状态。</p>
+<details class="panel diagnostics"><summary>展开实时快照与诊断</summary>
 <section class="cards" aria-label="有效实时快照">
 <article id="gpu-card" hidden><h2>GPU整帧FPS</h2><p id="gpu-fps" class="large">—</p><span id="gpu-age"></span></article>
 <article id="cpu-card" hidden><h2>CPU基础渲染FPS</h2><p id="cpu-fps" class="large">—</p><span id="cpu-age"></span></article>
@@ -32,7 +26,22 @@
 <p id="live-empty" class="muted">当前没有新鲜板端数据；未显示失效或猜测参数。</p><p id="mode">等待板端状态</p>
 <details><summary>展开有效字段与诊断</summary><p>网关丢弃包：<span id="packet-drops">0</span>。CSV保留最多600条快照的所有原始字和有效标志。</p>
 <div class="table-scroll"><table><thead><tr><th>字段 / 板端单位</th><th>值</th></tr></thead><tbody id="metrics"></tbody></table></div></details></section>
-</section>
+</details></section>
+<section id="modules" class="experience"><div class="section-heading"><div><p class="eyebrow">EXPLORE THE PLATFORM</p><h2>三种方式，体验异构渲染</h2></div><span>LIVE INTERACTION / 交互演示</span></div><div class="module-grid"><section id="game" class="panel module"><p class="module-index">01 / PLAY</p><h2>游戏档位选择</h2><p class="module-intro">选择负载，体验板端实时游戏。</p><p id="game-status" role="status">等待开发板菜单状态…</p>
+<div id="difficulty-options" class="difficulty-grid">
+<button id="level-1" disabled>难度一<span>64 Sprite 请求档位</span></button>
+<button id="level-2" disabled>难度二<span>128 Sprite 请求档位</span></button>
+<button id="level-3" disabled>难度三<span>256 Sprite 请求档位</span></button>
+<button id="level-4" disabled>难度四<span>512 Sprite 请求档位</span></button>
+<button id="level-5" disabled>难度五<span>786 Sprite 请求档位</span></button>
+<button id="level-6" disabled>难度六<span>1024 Sprite 请求档位</span></button>
+</div><p id="current-difficulty"></p><button id="reselect" class="secondary" disabled>一键重选难度</button>
+<p class="muted">请求档位不等于每帧可见数量；高档位不承诺60 FPS。重选仅结束本局，不重启开发板。</p>
+</section><section id="split" class="panel module"><p class="module-index">02 / COMPARE</p><h2>CPU / GPU 同屏对比</h2><p class="module-intro">同一画面，左右同屏呈现。</p><button id="split-start" disabled>开始同屏展示 · 256 / 512</button><p id="split-status" role="status">等待开发板菜单；六档游戏保持独立。</p>
+<div id="split-live" hidden><div class="cards split-cards"><article><h2>左侧 CPU · 实时 FPS</h2><p id="split-cpu" class="large">—</p><span>实际显示的新 CPU 图像</span></article><article><h2>右侧 GPU · 实时 FPS</h2><p id="split-gpu" class="large">—</p><span>实际完成的场景显示</span></article></div><label>当前档位进度 <progress id="split-progress" max="15000" value="0"></progress></label></div>
+<div class="table-scroll"><table><caption>本页本轮已完成成绩 · 保留值，非当前实时帧率</caption><tbody><tr><th>256 档</th><td id="split-score-256">尚未收到完整成绩</td></tr><tr><th>512 档</th><td id="split-score-512">尚未收到完整成绩</td></tr></tbody></table></div>
+<button id="split-menu" class="secondary" disabled>返回难度菜单</button><p class="muted">HDMI 左侧 CPU、右侧 GPU，以相同的 480×270 视区和素材独立刷新。256、512 两档各同时运行 15 秒，统计各自实际更新到屏幕的帧数与帧率；GPU 不等待 CPU 绘完一帧。完成后保留成绩，点击“一键重选难度”退出；原有六档游戏保持原来的画面和流程。</p></section><section id="performance" class="panel module"><p class="module-index">03 / MEASURE</p><h2>性能测试</h2><p class="module-intro">探索实时渲染的负载表现。</p><button id="performance-start" disabled>开始性能挑战</button><p id="performance-result" role="status">等待开发板能力状态…</p>
+<button id="performance-menu" class="secondary" disabled>返回难度菜单</button><p class="muted">Sapphire 搜索最多全活动 Sprite：全部使用硬件 Color Key，每8个另绘制1个硬件 Alpha 光晕（光晕不重复计数）。每档预热60帧、采样600帧，最高候选复核3600帧；逐帧预算、原始平均FPS、下溢和错误共同判定。固定16×16飞机、8×8元素、12×12光晕，960×540；不是所有画面通用极限。</p></section></div></section>
 <section id="release" class="panel comparison"><div class="section-title"><h2>最终版本 · 15 秒实板记录</h2><span class="badge">保存成绩 / 非实时</span></div><p id="release-date" class="muted">正在加载已保存的实测记录…</p><div class="table-scroll"><table><thead><tr><th>请求档位</th><th>CPU FPS</th><th>GPU FPS</th><th>CPU / GPU 帧数</th></tr></thead><tbody id="release-scores"></tbody></table></div><p class="muted">左 CPU / 右 GPU，均为 480×270。各自独立更新，同屏协作运行 15 秒；同一颗软核也负责 GPU 命令调度，因此这是同屏展示成绩，不能当作两个渲染器各自独占系统的吞吐。GPU 受约 60 Hz 显示刷新率限制。原生 960×540 六档游戏另行统计。</p><details><summary>查看最终版本身份</summary><pre id="release-identity"></pre><a href="/benchmarks.json" download>下载实测数字与来源</a></details></section>
 <details class="panel"><summary>历史优化记录 · 2026-10-16 / 17（展开查看）</summary><section id="comparison" class="panel comparison"><div class="section-title"><h2>优化前后 · 已存档实板对照</h2><span class="badge">历史测量 / 非实时跑分</span></div>
 <p id="comparison-source" role="status">正在读取带来源的历史实测…</p>
@@ -62,11 +71,10 @@
 <p>像素为硬件处理计数，包含透明色像素，不等于最终非透明输出。DDR数据为GPU侧有效字节，读取含列表描述符；利用率按单向400MB/s计算，不代表DDR物理总利用率。GPU busy包含PRESENT等待，不用它冒充算术单元忙碌率。</p>
 <p>固定本地素材和全活动负载，顺序执行逻辑、构建、整帧列表和PRESENT，未启用CopyAhead，不含HUD与网口管理；没有改变CPU基础渲染。600帧专项结果不能替代普通游戏实测或3600帧＋保持阶段的性能挑战。</p></div></section>
 </details>
-<section class="panel"><h2>60 FPS 性能挑战</h2><button id="performance-start" disabled>开始性能挑战</button><p id="performance-result" role="status">等待开发板能力状态…</p>
-<p class="muted">Sapphire 搜索最多全活动 Sprite：全部使用硬件 Color Key，每8个另绘制1个硬件 Alpha 光晕（光晕不重复计数）。每档预热60帧、采样600帧，最高候选复核3600帧；逐帧预算、原始平均FPS、下溢和错误共同判定。固定16×16飞机、8×8元素、12×12光晕，960×540；不是所有画面通用极限。</p></section>
-<section class="panel"><h2>Keyboard control</h2><div class="buttons"><button id="acquire">Acquire control in this tab</button><button id="release" class="secondary">Release & clear keys</button><span id="keys">0x00</span></div>
-<p id="control-status" role="status">Control is released. One tab can own control at a time.</p>
-<p class="key-guide">Arrows / WASD: move · Space / Z: shoot · Shift: slow · R: restart · C: request comparison replay</p>
-<p class="muted">Leaving this tab releases control. Reacquire explicitly when returning. A missing browser heartbeat clears keys after 250 ms.</p></section>
+
+<section class="panel control-panel"><h2>键盘控制</h2><div class="buttons"><button id="acquire">获取控制权</button><button id="release" class="secondary">释放控制权</button><span id="keys">0x00</span></div>
+<p id="control-status" role="status">控制权尚未获取；同一时间仅允许一个页面控制。</p>
+<p class="key-guide">方向键 / WASD：移动 · 空格 / Z：射击 · Shift：减速 · R：重开 · C：比较回放</p>
+<p class="muted">离开页面会释放控制权；返回后可重新获取。连接中断时，按键状态会自动清除。</p></section>
 <footer>Management UDP 8090 · Resource service UDP 8080 remains independent · HTTP is local to this PC</footer>
 </main></body></html>

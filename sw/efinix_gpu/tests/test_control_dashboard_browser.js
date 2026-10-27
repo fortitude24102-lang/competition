@@ -48,6 +48,12 @@ async function main() {
     });
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
     await page.goto(url);await page.waitForFunction(()=>document.querySelector('#banner').textContent.includes('SIMULATED'));
+    assert.equal(await page.locator('h1').innerText(),'AetherGX-2D渲染加速异构平台');
+    assert.deepEqual(await page.locator('#modules .module > h2').allTextContents(),['游戏档位选择','CPU / GPU 同屏对比','性能测试']);
+    await page.waitForFunction(()=>document.querySelector('#overview-ddr').textContent!=='—');
+    assert.equal(await page.locator('#overview-ddr').textContent(),'112.74');
+    assert.equal(await page.locator('#overview-risc').textContent(),'4.83%');
+    assert.match(await page.locator('#reference-context').textContent(),/不是当前实时数据/);
     // Clicking a level acquires zero-key control itself; no Acquire button required.
     await page.locator('#level-1').click();
     await until(async()=>(await(await fetch(url+'/api/status')).json()).acknowledged).catch(async error=>{
@@ -122,6 +128,7 @@ async function main() {
     assert.ok(await page.locator('#cpu-card').isHidden(),'CPU card appears only after a valid comparison');
     assert.ok(await page.locator('#metric-render_read_bytes').locator('..').isHidden(),'unmeasured traffic is not a fabricated zero');
     await page.waitForFunction(()=>document.querySelector('#work-gain').textContent==='16.6%');
+    await page.locator('details:has(> #comparison) > summary').click();
     assert.equal(await page.locator('#pixel-gain').textContent(),'30.4%');
     assert.equal(await page.locator('#copy-bandwidth').textContent(),'311.68 MB/s');
     assert.ok((await page.locator('#comparison-game').innerText()).includes('69.2%'));
@@ -135,6 +142,7 @@ async function main() {
     assert.ok((await page.locator('#comparison-kernel').innerText()).includes('9.284 ms'));
     assert.ok((await page.locator('#comparison-kernel').innerText()).includes('4.83%'));
     assert.ok(!(await page.locator('main').innerText()).includes('Unavailable'),'no permanently unavailable metric placeholders');
+    await page.locator('.diagnostics > summary').click();
     const downloadPromise=page.waitForEvent('download');await page.locator('#export').click();
     const download=await downloadPromise;await download.saveAs(path.join(root,'generated/verification/v3/gateway/browser-raw.csv'));
     assert.ok(fs.readFileSync(path.join(root,'generated/verification/v3/gateway/browser-raw.csv'),'utf8').includes('render_read_bytes'),
@@ -151,19 +159,24 @@ async function main() {
     await preview.addInitScript(()=>{window.EventSource=class {constructor(){window.testStream=this;}};});
     await preview.goto(url);
     await preview.waitForFunction(()=>window.testStream);
+    await preview.locator('.diagnostics > summary').click();
     const snapshot=await(await fetch(url+'/api/status')).json();
     snapshot.stale=false;snapshot.age_ms=0;
     Object.assign(snapshot.telemetry.raw,{gpu_full_frame_fps_x100:6010,visible_sprites:504,requested_sprites:512,
-      pre_present_us:9618,gpu_busy_us:7000,render_read_bytes:12345,status_flags:0x710001});
+      pre_present_us:9618,gpu_busy_us:7000,render_read_bytes:12345,status_flags:0x714801});
     Object.assign(snapshot.telemetry.display,{gpu_full_frame_fps_x100:6010,pre_present_us:9618,gpu_busy_us:7000,
-      render_read_bytes:null,status_flags:0x710001});
-    snapshot.telemetry.words[5]=6010;snapshot.telemetry.words[21]=0x710001;
+      render_read_bytes:null,status_flags:0x714801});
+    snapshot.telemetry.words[3]=512;snapshot.telemetry.words[5]=6010;snapshot.telemetry.words[21]=0x714801;
     await preview.evaluate(v=>window.testStream.onmessage({data:JSON.stringify(v)}),snapshot);
     await until(async()=>await preview.locator('#gpu-card').isVisible());
     assert.equal(await preview.locator('#gpu-fps').textContent(),'60.10');
+    assert.equal(await preview.locator('#overview-fps').textContent(),'60.10');
+    assert.equal(await preview.locator('#overview-sprites').textContent(),'504 / 512');
     assert.ok(await preview.locator('#metric-render_read_bytes').locator('..').isHidden());
     await until(async()=>await preview.locator('#gpu-card').isHidden());
     assert.ok(await preview.locator('#live-empty').isVisible(),'stale live metrics are removed');
+    assert.equal(await preview.locator('#overview-fps').textContent(),'—');
+    assert.equal(await preview.locator('#overview-sprites').textContent(),'—');
     assert.ok((await preview.locator('#mode').textContent()).includes('没有新鲜'),'stale mode is not shown as a current state');
     assert.equal(await preview.locator('#work-gain').textContent(),'16.6%','SSE loss must not erase historical results');
     assert.deepEqual(errors,[]);

@@ -24,19 +24,24 @@ async function until(test,seconds){const end=Date.now()+seconds*1000;while(Date.
   }
   await page.locator('#split-start').click({timeout:10000});
   await until(s=>!s.stale && split(s) && s.telemetry.raw.simulation_tick>=2,15);
-  const cancel=Date.now();await page.locator('#reselect').click({timeout:3000});
+  const cancel=Date.now();await page.locator('#split-menu').click({timeout:3000});
   await until(s=>!s.stale && s.game?.opcode==='menu' && s.game.state==='applied' && !!(s.telemetry.raw.status_flags&1024),3);
   const cancelMs=Date.now()-cancel;assert(cancelMs<2500);
   console.log('PASS cancellation during slow CPU rendering,ms='+cancelMs);
   if(process.argv[3]==='--smoke') {
-   assert.equal(await page.locator('#game #split-start').count(),1);
+   assert.equal(await page.locator('#split #split-start').count(),1);
    assert.equal(await page.locator('#difficulty-options button').count(),6);
+   await page.locator('#level-1').click({timeout:3000});
+   await until(s=>!s.stale && s.game?.state==='applied' && s.telemetry.raw.requested_sprites===64 && s.telemetry.raw.simulation_tick>=65,5);
+   await page.waitForFunction(()=>document.querySelector('#overview-fps').textContent!=='—' && document.querySelector('#overview-sprites').textContent!=='—');
+   await page.locator('#performance-menu').click({timeout:3000});
+   await until(s=>!s.stale && s.game?.state==='applied' && !!(s.telemetry.raw.status_flags&1024),3);
    const final=await state();assert(!final.stale && !!(final.telemetry.raw.status_flags&1024));
    assert(final.telemetry.raw.scanout_underflow_delta===0 && final.telemetry.raw.gpu_error_delta===0);
    assert.deepEqual(errors,[]);await page.locator('#split-start').scrollIntoViewIfNeeded();
    await page.screenshot({path:out+'/browser-final.png',fullPage:true});
     fs.writeFileSync(out+'/result.json',JSON.stringify({passed:true,scope:'separate menu entry and cancellation; timed run verified separately',cancel_ms:cancelMs,final},null,2));
-   console.log('PASS separate exhibition in difficulty section,six original game buttons,MENU exit,health0');return;
+   console.log('PASS separate exhibition and game modules, live FPS/sprites, both MENU buttons,health0');return;
   }
   await page.locator('#split-start').click({timeout:5000});
   await until(s=>!s.stale && split(s),10);
