@@ -1,9 +1,0 @@
-PASS preview512: tick=180 visible=512 commands=585 CRC=25d53afc
-PASS effects512: tick=180 alpha_commands=68 alpha_pixels=9732 hp=2 score=86 grazes=8
-PASS scenario: shield hp=2 protection=60 CRC=3b4c5822
-PASS scenario: game_over hp=0 protection=0 CRC=d53f8eb7
-PASS HUD cache: legible 5x7 glyphs, 4px gutters, bounded layout, exact pixels, text invalidation, A/B copy, DDR canary
-PASS GPU HUD glyphs and logo: exact raster, one changed digit=504B/one Copy, cache hit=zero commands, warning priority, CPU/GPU switch, A/B copy, partial failure recovery, canaries
-DAMAGE_ACCEPTANCE,PASS,mixed_cadence14,zero_miss,work,under,error,incomplete
-DAMAGE_SUITE,PASS,C_suites=8,golden_frames=18000,UBSan
-[PASS] Damage software only; board/RTL NOT RUN.

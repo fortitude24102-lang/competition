@@ -1,4 +1,0 @@
-INSTANCE_BUILD,PASS,frames=12000,field_equivalence,clip,capacity,overflow,header,tagwrap
-INSTANCE_DRIVER,PASS,capability,fallback,tagwrap,transport,bounded_full,partial_fault_no_replay,busy
-test_gpu_frame_list: sw/efinix_gpu/tests/test_gpu_frame_list.c:58: compare: Assertion `c.op==r->op && c.src_addr==r->src_addr && c.dst_addr==r->dst_addr' failed.
-scripts/test-v3-instances.sh: line 8: 267493 Aborted                 (core dumped) "$out/test_$test"

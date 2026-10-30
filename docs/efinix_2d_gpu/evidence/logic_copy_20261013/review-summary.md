@@ -1,7 +1,0 @@
-# Independent read-only source review
-
-Reviewer: /root/logic_copy_seal_review; range ea434b6..7e75e75. No mutations, board access or rerun long suites. Critical0,Important0. Minor: capture-game-probe.ps1 off-cohort banner unchecked could accept explicit words256 for requested0. Executor regraded by future experiment attribution, fixed c867640 using actual guard RED→GREEN and integrated test into final suite; no re-review.
-
-Source assessment: early Copy original immutable background/back; drain on LIVE→CPU/death MENU; explicit MENU precedes launch; failure cannot render/PRESENT/replay partial. Logical time before launch, reuse tag/list skip; WIN Fill unchanged. Normal selectors not read/defaultflags0. Incremental scan matches canonical20+9count+600 fields,256bound; initial/keys frozen at600, physics continues; reset cursor on init/restart/epoch/menu/replay restore; full original replay_begin verification retained.
-
-Declined independent judgments: real FPGA queue/DDR/cache/display/timeout; supplied performance/CRC/cohort provenance; stable60/endurance/restart cause; final normalMENU/control/lease/exit/hashes; fresh tests/link/stack; proposed HUD batch absent. Executor dispositions and evidence are in execution-ledger.md and report. Final original assessment was opt-in candidate, no basis to claim stable60/full hardware qualification. Later raw-state diagnostics and identity guard extension were executor-tested, not a second independent review.

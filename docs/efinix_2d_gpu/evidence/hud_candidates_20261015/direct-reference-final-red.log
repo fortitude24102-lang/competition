@@ -1,1 +1,0 @@
-test_hud_direct_final_reference: sw/efinix_gpu/tests/test_hud_direct.c:89: main: Assertion `commands==before+1 && full_copies==0' failed.

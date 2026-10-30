@@ -1,6 +1,0 @@
-PASS mapped mailbox CDC coverage: 1488 data pairs and two request/two acknowledge pairs; routed delay verification remains separate.
-PASS routed data CDC: 1488 paths, maximum 1.113 ns
-PASS routed request CDC: 2 paths, maximum 0.729 ns
-PASS routed ack CDC: 2 paths, maximum 0.907 ns
-PASS final setup/hold: all 16 clock relationships nonnegative
-PASS network resource gate: parser XLR=785, RAM=1, ParserOnly=False. Timing and board qualification are separate.

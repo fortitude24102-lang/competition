@@ -1,2 +1,0 @@
-test_frame_list_driver: sw/efinix_gpu/tests/test_gpu_frame_list_driver.c:58: main: Assertion `gpu_frame_list_init(&replacement,&d,1)==GPU_DRIVER_HARDWARE' failed.
-scripts/test-frame-list-driver.sh: line 11: 239064 Aborted                 (core dumped) "$out/test_frame_list_driver"

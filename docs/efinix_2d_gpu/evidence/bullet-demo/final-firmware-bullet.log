@@ -1,3 +1,0 @@
-   text	   data	    bss	    dec	    hex	filename
-  19856	      0	  72344	  92200	  16828	generated/verification/bullet-demo/firmware-bullet/gpu_demo.elf
-PASS bullet RV32 firmware build only; not board executed; release/ untouched

@@ -1,2 +1,0 @@
-PASS seal budget: same620 live states, no overflow, complete600 keys, delayed safe compare, restart/epoch reset
-PASS V3 runtime menu/levels/neutral/death/abort and per-tick recording, 600-tick two-backend replay

@@ -1,1 +1,0 @@
-test_reference: sw/efinix_gpu/tests/test_hud_gpu_list.c:109: main: Assertion `starts==old_starts+1 && legacy==old_legacy' failed.

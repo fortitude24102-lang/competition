@@ -1,5 +1,0 @@
-sw/efinix_gpu/tests/test_v3_runtime.c: In function ‘test_performance_phase’:
-sw/efinix_gpu/tests/test_v3_runtime.c:10:10: error: ‘v3_runtime’ has no member named ‘perf_enabled’; did you mean ‘menu_enabled’?
-   10 |  runtime.perf_enabled=1;expected=runtime.game;
-      |          ^~~~~~~~~~~~
-      |          menu_enabled

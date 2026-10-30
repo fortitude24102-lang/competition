@@ -1,2 +1,0 @@
-D:/efinity/risc_v_gcc/toolchain/bin/../lib/gcc/riscv-none-elf/13.4.0/../../../../riscv-none-elf/bin/ld.exe: warning: generated/verification/v3/frame-list-integration/oracle-r2/test.elf has a LOAD segment with RWX permissions
-Built generated/verification/v3/frame-list-integration/oracle-r2/test.bin; load at 0x1000 via JTAG. Does not program hardware.

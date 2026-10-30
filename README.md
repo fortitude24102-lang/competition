@@ -1,66 +1,75 @@
-# AetherGX · Ti60F225 二维图像渲染加速器
+# AetherGX · FPGA 二维图形加速平台
 
-**2026-10-27 最终演示版。** 官方 Sapphire RISC-V 在板上执行资源选择、CRC 校验、游戏逻辑和 GPU 命令调度，Chisel GPU 完成二维渲染；PC 提供资源、输入转发和网页数据展示。目标平台为 Ti60F225 Demo V4，核心 100 MHz，HDMI 960×540 RGB565。
+AetherGX 在易灵思 Ti60F225 FPGA 上构建 RISC-V CPU 与自研二维 GPU 协同系统，完成游戏逻辑、批量图形命令、DDR3 图像搬运和 HDMI 显示。电脑通过以太网提供素材、控制和可视化网页；游戏逻辑与渲染执行在板端。
 
-## 直接开始
+## 最新演示与性能
 
-- 本机网页：[AetherGX-2D渲染加速异构平台](http://127.0.0.1:8765/)。这是连接板卡电脑上的本地地址；GitHub 保存工程与交付文件，不能代替本地网关连接硬件。
-- [最终 BIT / BIN / HEX 与校验值](release/final-20261027/README.md)。只用 JTAG 加载 BIT 和 RAM 固件，未写 Flash；原有 V1/V2 发布包保留。
-- [网页、输入与网络使用说明](docs/efinix_2d_gpu/v3_control_usage.md)，[游戏玩法](docs/efinix_2d_gpu/v3_game_usage.md)。
+2026-10-30 演示版 CPU/GPU 时钟为 **125 MHz**，DDR3 时钟为 **500 MHz**，渲染分辨率为 **960×540 RGB565**，经 HDMI 输出约 60 Hz 的 1080p 图像。[BIT、固件与实测记录](release/overclock-125-20261030/)配套使用。
 
-板卡 IP `192.168.1.3`，电脑直连网卡 `192.168.1.2`。资源服务 UDP `8080`，管理服务 UDP `8090`，浏览器 HTTP `127.0.0.1:8765`。资源服务与管理网关需要各自保持运行；现有本机会话已启动。
+| 实板性能挑战 | 结果 |
+|---|---:|
+| 每帧动态精灵 | 3640 个 |
+| 额外 Alpha 光晕 | 455 个 |
+| 帧率 | 60.10 FPS |
+| 验证帧数 | 3600 帧 |
+| 超预算、迟到、新增显示下溢、GPU 错误 | 均为 0 |
 
-```powershell
-# 工程根目录；Python 路径按本机安装位置填写。
-powershell -File scripts/run-bullet-asset-server.ps1 -PcAddress 192.168.1.2
-powershell -File scripts/run-control-gateway.ps1 -BoardIp 192.168.1.3 -UdpBind 192.168.1.2 -Python D:/efinity/python311/bin/python.exe
+3640 是当前测试程序的容量上限，不代表芯片的绝对极限。125 MHz 超频版静态时序核心 setup WNS 为 **−0.811 ns**，DDR 接收时钟域为 **−0.047 ns**；上述结果为一次板级测试，不能代表全部条件下稳定运行。原 100 MHz 版本保留在 [release/final-20261027](release/final-20261027/)。
+
+## 系统架构
+
+```mermaid
+flowchart LR
+ PC[电脑：素材服务 / 控制网页 / 遥测] <-->|以太网 UDP| NET[网络接收与控制]
+ subgraph FPGA[Ti60F225 FPGA]
+ NET --> CPU[Sapphire RISC-V CPU\n游戏逻辑 / 资源校验 / 命令调度]
+ CPU -->|APB 控制 / 批量列表| GPU[Chisel 2D GPU\n命令解析 / 纹理缓存 / 像素流水]
+ GPU <-->|AXI / DMA| DDR[(DDR3 帧缓冲与素材)]
+ DDR --> SCAN[扫描输出 / 双缓冲 / 2× 缩放]
+ SCAN --> HDMI[HDMI 1080p]
+ CPU --> NET
+ end
 ```
 
-## 两种独立展示
+- **CPU 与软件**：板端运行游戏、碰撞与输入逻辑，加载并校验素材，组织 FrameList，管理显示和遥测。
+- **GPU**：实现 Fill、Copy、Color Key、Alpha 混合等操作，结合纹理缓存、批量命令、预取和流水交接减少逐对象调度与访存开销。
+- **存储与显示**：DDR3 保存素材和双帧缓冲；DMA 和共享仲裁连接 CPU、GPU 与显示扫描，HDMI 输出经两倍缩放。
+- **网络与网页**：资源通过 UDP 传入，网页提供游戏操作、性能挑战与实时状态展示。网页指标区分实时遥测与历史专项结果。
 
-原生游戏保留 **64 / 128 / 256 / 512 / 786 / 1024** 六档，画面与游戏流程保持原样。档位是请求数量，不等于每帧可见数量，也不是全活动 60 FPS 极限。五向键可操作板端菜单，浏览器也可选择难度、控制和返回菜单。
+## 研发历程
 
-菜单另有 **CPU / GPU 同屏展示**：左 CPU、右 GPU，原场景按比例缩为相同的 **480×270**；256、512 档各运行 **15 秒**，双方独立刷新，不再限制 300 帧。网页点击“开始同屏展示”，或者在 HDMI 菜单移到第七张展示卡后按 MID。完成后保留成绩，网页“一键重选难度”退出。
+1. 搭建基于官方 Sapphire SoC、DDR3 和 HDMI 的板级基础，建立 CPU 绘制与 GPU 图形命令链路。
+2. 完成颜色键、Alpha、纹理缓存与 DMA，接入真实素材和弹幕游戏，形成 CPU/GPU 对照。
+3. 引入 FrameList 批量提交、CopyAhead、预取与写流水，降低命令和访存开销，扩展游戏档位与性能挑战。
+4. 接入网页控制、网络遥测及 CPU/GPU 同屏展示，完善实板验证与可视化交互。
+5. 在保留 100 MHz 版本的基础上测试超频，形成 125 MHz 实板演示版。
 
-| 请求档位 | CPU 新显示帧数 | GPU 场景显示帧数 | CPU FPS | GPU FPS |
-|---|---:|---:|---:|---:|
-| 256 | 69 | 901 | 4.60 | 60.06 |
-| 512 | 35 | 901 | 2.33 | 60.06 |
+## 项目特点
 
-以上为最终交付 BIN 的一次实板记录，每档 15 秒，新增下溢/硬件错误均 0。统计各自真正显示的新图像；GPU 受约 60 Hz 显示刷新率限制。CPU 同时承担游戏逻辑与 GPU 调度，所以这些是**同屏协作运行成绩**，不能当作各渲染器独占整机的吞吐。边界轮询可能保守少计一帧。完整来源见[同屏实测与验证证据](docs/efinix_2d_gpu/evidence/split_comparison_20261027/README.md)。
+- **软硬件协同**：CPU 负责场景与调度，GPU 在硬件侧执行批量二维绘制，游戏与显示运行于同一 FPGA。
+- **面向场景的图形流水**：FrameList、纹理缓存、DMA 与预取组合，减少重复命令和访存等待。
+- **可交互、可观测**：开发板按键、浏览器控制、实时遥测和自动性能挑战组成完整展示链路。
+- **同屏对比**：CPU 与 GPU 分别更新 480×270 场景，用实际显示帧数展示协作运行效果；结果受显示刷新和 CPU 同时调度 GPU 的工作影响。
 
-网页将游戏档位选择、CPU/GPU 同屏比较、性能测试并列展示，指标区显示实时 GPU 帧率和场景精灵数量，并展示已保存的 GPU 侧 DDR 有效吞吐和 RISC 核已测工作占比。后两项来自 2026-10-17 的 512 全活动专项记录：工作占比只覆盖逻辑与命令构建，不是 RISC 核总占用率；GPU 侧吞吐不代表整机 DDR 物理吞吐。页面标明数据来源，不将历史记录冒充实时值。遥测过期时隐藏实时成绩；未收到的完整成绩不以历史值补齐。原始 CSV 保留有效标志和全部字段。
+## 使用
 
-## 本轮采用的最终优化
-
-缓存行最终写入与下一行交接重叠已采用。同 BIN、1024 普通游戏四轮短 A/B/A/B，各 720 帧：平均帧工作时间 **8702.5 → 8656.5 µs，减少 0.529%**，四轮超预算、迟到、新增下溢和错误均 0。不是新增耐久或硬件极限成绩。[硬件配置、像素、时序与 A/B 证据](docs/efinix_2d_gpu/evidence/key_row_handoff_20261027/README.md)。
-
-同屏展示复用原有紧凑命令构建、纹理缓存和 CPU 基础栅格算法；CPU 逐行推进，GPU 不等待 CPU 完整绘制。仅拷贝已更新的 CPU 图像和变化的 HUD 字形。离开展示后恢复原生纹理缓存，六档游戏已逐一验证。还修复了驱动把连续前进的完成标记误判为错误的问题，保留真实错误、回绕和越界检查。
-
-最终 BIT：`c9c55d8a022e9fa226aa6168185743af67c1a83470bc7f1709c89bbd1f09e94f`。
-
-最终 BIN：`5cff130805e8f00cf918ee07be3a8c69c5e260eb4e66a740b5e8c5b5a8068029`。
-
-## 复现与检查
+板卡 IP `192.168.1.3`，电脑直连网卡 `192.168.1.2`。资源服务 UDP `8080`，控制 UDP `8090`，本机网页 HTTP `8765`。加载 BIT 和 BIN 使用 JTAG / RAM，不写 Flash。
 
 ```powershell
-# 软件集成检查；不连接 JTAG，不跑长板测。
-powershell -File scripts/test-v3-integration.ps1 -SoftwareOnly -ReplayCrcNibble -ShapeLut
-# 最终交互固件；输出目录必须是新目录，工具链可按脚本参数覆盖。
-powershell -File scripts/test-efinix-software.ps1 -FirmwareOnly -Interactive -CopyAhead -LogicCopy -ReplayCrcNibble -ReplaySealBudget -FrameList -HudDirect -ShapeLut -PerformanceChallenge -ObjectCapacity 1024 -NetworkLocalIp 0xc0a80103 -NetworkPeerIp 0xc0a80102 -OutDirectory generated/final-rebuild
+powershell -File scripts/run-bullet-asset-server.ps1 -Manifest sw/efinix_gpu/assets/interactive/manifest.csv -PcAddress 192.168.1.2
+powershell -File scripts/run-control-gateway.ps1 -BoardIp 192.168.1.3 -UdpBind 192.168.1.2
 ```
 
-本轮验证覆盖 32 个真实场景的全部 480×270 像素对照、2400 次逻辑时钟差分、完成标记连续前进/回绕、两段计时与中途退出、双缓冲/HUD 所有权，以及真实浏览器控制和退出后六档游戏。硬件沿用已通过像素与 16 项正裕量时序检查的最终 BIT；本轮不再继续性能搜索或跑长测试。
+打开 [本机网页](http://127.0.0.1:8765/#game)。更多操作见[网页控制](docs/efinix_2d_gpu/v3_control_usage.md)与[游戏说明](docs/efinix_2d_gpu/v3_game_usage.md)。125 MHz 的时钟配置和约束随交付文件保存；工程依赖 Efinity、官方 Sapphire BSP 与生成的 GPU RTL，单靠交付目录不能直接重建位流。
 
-## 工程入口与历史资料
+## 目录
 
 | 路径 | 内容 |
 |---|---|
-| `chisel/src/main/scala/gpu/` | GPU、DMA、缓存、仲裁与显示 |
-| `board/efinix_ti60/` | 官方 SoC 集成、板级 RTL、管脚和约束 |
-| `sw/efinix_gpu/` | 驱动、游戏、CPU 对照、资源与网页 |
-| `scripts/` | 构建、软件检查、JTAG/RAM 加载与采集 |
-| `release/final-20261027/` | 最终演示 BIT、BIN、HEX 和 SHA256 |
-| `docs/efinix_2d_gpu/evidence/` | 原始测量、时序与版本身份 |
+| `chisel/src/main/scala/gpu/` | GPU 硬件设计 |
+| `board/efinix_ti60/` | 板级集成、外设与约束 |
+| `sw/efinix_gpu/` | 驱动、游戏、网络与网页 |
+| `scripts/` | 构建、运行和验证脚本 |
+| `release/` | 板级演示文件及校验值 |
 
-旧 README 的全部开发记录与用户更正移至[历史记录](docs/efinix_2d_gpu/README.history.md)。15 份已被替代、无文件名引用的阶段计划/报告已[归档压缩](docs/efinix_2d_gpu/archive/README.md)并删除散落副本；失败记录、最新复盘与原始实测依据保留。历史“下一步”“当前”“未推送”只适用于相应日期，不覆盖本最终版。
+开发历史和被精简的阶段报告可从 Git 历史查看。

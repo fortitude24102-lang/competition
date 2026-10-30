@@ -1,1 +1,0 @@
-test_hud_direct: sw/efinix_gpu/tests/test_hud_direct.c:120: main: Assertion `candidate(&g,&m,&cache,&scratch,GPU_FRAMEBUFFER_B,2)==GPU_DRIVER_TIMEOUT && !cache.buffers[1].valid' failed.

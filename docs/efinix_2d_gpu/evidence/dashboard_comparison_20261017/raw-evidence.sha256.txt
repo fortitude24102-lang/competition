@@ -1,5 +1,0 @@
-
-Algorithm : SHA256
-Hash      : 49710DDDF234678C129A45DB8BBBE8FA0A1DB9818E315C556BB1C1B100DAB4F3
-Path      : D:\ZYNQ\smallproject\.worktrees\pango-riscv-cpu\docs\efinix_2d_gpu\evidence\dashboard_comparison_20261017\raw-evidence.zip
-

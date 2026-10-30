@@ -1,4 +1,0 @@
-PASS mailbox asynchronous snapshots backpressure ordering both resets re-entry
-PASS control router CRC reserved fields GAME PERFORMANCE depth4 snapshot age async reset TX atomic128
-PASS TX packet arbitration descriptor ownership backpressure fairness done/error/reset
-PASS shared real MAC immutable128 management without DMA RX split independent ASST session length rejection

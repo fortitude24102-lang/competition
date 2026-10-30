@@ -1,8 +1,0 @@
-Get-FileHash : The term 'Get-FileHash' is not recognized as the name of a cmdlet, function, script file, or operable pr
-ogram. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
-At line:1 char:218
-+ ... UMS") { $expected,$name=$line -split "  ",2; if((Get-FileHash "$evide ...
-+                                                      ~~~~~~~~~~~~
-    + CategoryInfo          : ObjectNotFound: (Get-FileHash:String) [], ParentContainsErrorRecordException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 

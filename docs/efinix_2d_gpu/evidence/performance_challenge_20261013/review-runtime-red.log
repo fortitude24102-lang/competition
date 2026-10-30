@@ -1,9 +1,0 @@
-In file included from sw/efinix_gpu/tests/test_v3_menu_integration.c:3:
-sw/efinix_gpu/tests/test_v3_menu_integration.c: In function ‘main’:
-sw/efinix_gpu/tests/test_v3_menu_integration.c:33:45: error: implicit declaration of function ‘v3_runtime_control’; did you mean ‘v3_runtime_status’? [-Werror=implicit-function-declaration]
-   33 |  nc_poll(&d,258,&in);CHECK(!in.connected && v3_runtime_control(&runtime,&in)==1);
-      |                                             ^~~~~~~~~~~~~~~~~~
-sw/efinix_gpu/tests/test_net_control.c:7:29: note: in definition of macro ‘CHECK’
-    7 | #define CHECK(x) do { if (!(x)) { fprintf(stderr,"FAIL %s:%d: %s\n",__FILE__,__LINE__,#x); exit(1); } } while (0)
-      |                             ^
-cc1: all warnings being treated as errors

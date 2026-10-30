@@ -1,8 +1,0 @@
-Invalid GPU suite: gpu.FrameListBatchSpec,gpu.InstanceStreamSpec,gpu.FrameListReaderSpec,gpu.Efinix2dGpuTopSpec
-At D:\ZYNQ\smallproject\.worktrees\pango-riscv-cpu\scripts\test-v3-gpu.ps1:10 char:49
-+ ... notmatch '^gpu\.[A-Za-z0-9_]+$') { throw "Invalid GPU suite: $name" }
-+                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : OperationStopped: (Invalid GPU sui...nix2dGpuTopSpec:String) [], RuntimeException
-    + FullyQualifiedErrorId : Invalid GPU suite: gpu.FrameListBatchSpec,gpu.InstanceStreamSpec,gpu.FrameListReaderSpec 
-   ,gpu.Efinix2dGpuTopSpec
- 

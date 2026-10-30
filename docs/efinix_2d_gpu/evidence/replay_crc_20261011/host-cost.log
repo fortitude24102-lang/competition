@@ -1,2 +1,0 @@
-CRC host word cost: reference=8222 candidate=3194 ticks (not board FPS)
-PASS replay CRC: word/canonical/sign/capacity/tamper equivalence

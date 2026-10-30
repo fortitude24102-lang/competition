@@ -1,3 +1,0 @@
-INSTANCE_BUILD,PASS,frames=12000,field_equivalence,clip,capacity,overflow,header,tagwrap
-INSTANCE_DRIVER,PASS,capability,fallback,tagwrap,transport,bounded_full,partial_fault_no_replay,busy
-FRAME_LIST_BUILD,PASS,frames=9600,pixels=3,friendly_inactive,clip,order,capacity,state_immutable

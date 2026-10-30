@@ -1,6 +1,0 @@
-D:/efinity/risc_v_gcc/toolchain/bin/../lib/gcc/riscv-none-elf/13.4.0/../../../../riscv-none-elf/bin/ld.exe: warning: generated/verification/v3/frame-list-integration/oracle-r1/test.elf has a LOAD segment with RWX permissions
-D:/efinity/risc_v_gcc/toolchain/bin/../lib/gcc/riscv-none-elf/13.4.0/../../../../riscv-none-elf/bin/ld.exe: C:\Users\FORTIU~1\AppData\Local\Temp\ccPzXB91.o: in function `main':
-test_board_frame_list.c:(.text.startup.main+0x218): undefined reference to `gpu_platform_sync'
-D:/efinity/risc_v_gcc/toolchain/bin/../lib/gcc/riscv-none-elf/13.4.0/../../../../riscv-none-elf/bin/ld.exe: C:\Users\FORTIU~1\AppData\Local\Temp\cczzZ0wv.o: in function `gpu_frame_list_render':
-gpu_frame_list.c:(.text.gpu_frame_list_render+0x150): undefined reference to `gpu_platform_sync'
-collect2.exe: error: ld returned 1 exit status

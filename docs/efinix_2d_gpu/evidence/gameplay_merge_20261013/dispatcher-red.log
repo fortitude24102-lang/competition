@@ -1,7 +1,0 @@
-INSTANCE_BUILD,PASS,frames=12000,field_equivalence,clip,capacity,overflow,header,tagwrap
-INSTANCE_DRIVER,PASS,capability,fallback,tagwrap,transport,bounded_full,partial_fault_no_replay,busy
-/usr/bin/ld: /tmp/ccVoQlyC.o: in function `main':
-test_gpu_frame_list.c:(.text.startup.main+0x1c3): undefined reference to `v3_build_gpu_scene'
-/usr/bin/ld: test_gpu_frame_list.c:(.text.startup.main+0x453): undefined reference to `v3_build_gpu_scene'
-/usr/bin/ld: test_gpu_frame_list.c:(.text.startup.main+0x4a1): undefined reference to `v3_build_gpu_scene'
-collect2: error: ld returned 1 exit status

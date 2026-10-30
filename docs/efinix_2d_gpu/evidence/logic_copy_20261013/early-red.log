@@ -1,6 +1,0 @@
-In file included from sw/efinix_gpu/tests/test_copy_ahead.c:6:
-sw/efinix_gpu/tests/test_copy_ahead.c: In function ‘main’:
-sw/efinix_gpu/tests/test_copy_ahead.c:120:10: error: implicit declaration of function ‘copy_ahead_advance’; did you mean ‘copy_ahead_begin’? [-Werror=implicit-function-declaration]
-  120 |   assert(copy_ahead_advance(&d,&runtime,&in,16667,frame_base,net,&bg,&tag,&issued,100)==1);
-      |          ^~~~~~~~~~~~~~~~~~
-cc1: all warnings being treated as errors

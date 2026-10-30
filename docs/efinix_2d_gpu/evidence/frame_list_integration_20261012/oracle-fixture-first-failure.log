@@ -1,5 +1,0 @@
-sw/efinix_gpu/tests/test_board_frame_list.c: In function 'main':
-sw/efinix_gpu/tests/test_board_frame_list.c:25:3: error: implicit declaration of function 'gpu_platform_sync' [-Werror=implicit-function-declaration]
-   25 |   gpu_platform_sync();uint32_t expected=0x55440000u|rgb565_global_alpha(fg,bg,128);
-      |   ^~~~~~~~~~~~~~~~~
-cc1.exe: all warnings being treated as errors
